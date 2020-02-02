@@ -43,11 +43,11 @@ Compiled and run on Windows 8.1
 
 #### Limitations of -map command
 
-Due to unusual way of loading that is not involving standard kernel loader, but uses overwriting already loaded modules with shell-code, there are some limitations:
+Due to unusual way of loading that is not involving standard kernel loader, but uses overwriting already loaded modules with shellcode, there are some limitations:
 
 + Loaded drivers MUST BE specially designed to run as "driverless";
 
-That mean you cannot use parameters specified at your DriverEntry as they won't be valid. That also mean you can not load *any* drivers but only specially designed or you need to alter shell-code responsible for driver mapping.
+That mean you cannot use parameters specified at your DriverEntry as they won't be valid. That also mean you can not load *any* drivers but only specially designed or you need to alter shellcode responsible for driver mapping.
 
 + No SEH support for target drivers;
 
@@ -88,7 +88,7 @@ It uses known to be vulnerable driver from legitimate software to access arbitra
 
 Depending on command KDU will either work as TDL or modify kernel mode process objects (EPROCESS). 
 
-When in -map mode KDU will use 3rd party signed driver from SysInternals Process Explorer and hijack it by placing a small loader shell-code inside it IRP_MJ_DEVICE_CONTROL/IRP_MJ_CREATE/IRP_MJ_CLOSE handler. This is done by overwriting physical memory where Process Explorer dispatch handler located and triggering it by calling driver IRP_MJ_CREATE handler (CreateFile call). Next shell-code will map input driver as code buffer to kernel mode and run it with current IRQL be PASSIVE_LEVEL. After that hijacked Process Explorer driver will be unloaded together with vulnerable provider driver. This entire idea comes from malicious software of the middle of 200x known as rootkits.
+When in -map mode KDU will use 3rd party signed driver from SysInternals Process Explorer and hijack it by placing a small loader shellcode inside it IRP_MJ_DEVICE_CONTROL/IRP_MJ_CREATE/IRP_MJ_CLOSE handler. This is done by overwriting physical memory where Process Explorer dispatch handler located and triggering it by calling driver IRP_MJ_CREATE handler (CreateFile call). Next shellcode will map input driver as code buffer to kernel mode and run it with current IRQL be PASSIVE_LEVEL. After that hijacked Process Explorer driver will be unloaded together with vulnerable provider driver. This entire idea comes from malicious software of the middle of 200x known as rootkits.
 
 # Build 
 
@@ -101,6 +101,7 @@ Using this program might render your computer into BSOD. Compiled binary and sou
 
 # References
 
+* Turla Driver Loader, https://github.com/hfiref0x/TDL
 * Stryker, https://github.com/hfiref0x/Stryker
 * Unwinding RTCore, https://swapcontext.blogspot.com/2020/01/unwinding-rtcore.html
 * CVE-2019-16098, https://github.com/Barakat/CVE-2019-16098
