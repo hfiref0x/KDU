@@ -26,10 +26,10 @@ It features:
 * -list - list currently available providers.
 
 Example:
-+ kde -ps 1337
-+ kde -map c:\driverless\mysuperhack.sys
-+ kde -prv 1 -ps 1337
-+ kde -prv 1 -map c:\driverless\mysuperhack.sys
++ kdu -ps 1337
++ kdu -map c:\driverless\mysuperhack.sys
++ kdu -prv 1 -ps 1337
++ kdu -prv 1 -map c:\driverless\mysuperhack.sys
 
 Run on Windows 10 20H2 (precomplied version)
 
