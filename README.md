@@ -109,4 +109,4 @@ Using this program might render your computer into BSOD. Compiled binary and sou
 
 # Authors
 
-(c) 2020 KDE Project
+(c) 2020 KDU Project
