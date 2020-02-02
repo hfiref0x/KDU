@@ -31,7 +31,7 @@ DRIVER_INITIALIZE DriverEntry;
 *
 */
 NTSTATUS DriverEntry(
-    _In_  struct _DRIVER_OBJECT *DriverObject,
+    _In_  struct _DRIVER_OBJECT* DriverObject,
     _In_  PUNICODE_STRING RegistryPath
 )
 {
@@ -46,15 +46,15 @@ NTSTATUS DriverEntry(
     Irql = KeGetCurrentIrql();
     if (Irql <= DISPATCH_LEVEL) {
 
-        DbgPrintEx(DPFLTR_DEFAULT_ID, 
-            DPFLTR_INFO_LEVEL, 
-            "Hello from kernel mode, system range start is %p, code mapped at %p\r\n", 
-            MmSystemRangeStart, 
+        DbgPrintEx(DPFLTR_DEFAULT_ID,
+            DPFLTR_INFO_LEVEL,
+            "Hello from kernel mode, system range start is %p, code mapped at %p\r\n",
+            MmSystemRangeStart,
             DriverEntry);
 
         Process = PsGetCurrentProcess();
-        DbgPrintEx(DPFLTR_DEFAULT_ID, 
-            DPFLTR_INFO_LEVEL, 
+        DbgPrintEx(DPFLTR_DEFAULT_ID,
+            DPFLTR_INFO_LEVEL,
             "I'm at %s, Process : %lu (%p)\r\n",
             __FUNCTION__,
             (ULONG)PsGetCurrentProcessId(),
@@ -76,9 +76,9 @@ NTSTATUS DriverEntry(
             break;
         }
 
-        DbgPrintEx(DPFLTR_DEFAULT_ID, 
-            DPFLTR_INFO_LEVEL, 
-            "KeGetCurrentIrql=%s\r\n", 
+        DbgPrintEx(DPFLTR_DEFAULT_ID,
+            DPFLTR_INFO_LEVEL,
+            "KeGetCurrentIrql=%s\r\n",
             sIrql);
     }
 
