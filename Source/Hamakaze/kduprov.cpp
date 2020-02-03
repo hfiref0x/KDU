@@ -344,7 +344,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
     // Check current Windows NT build number.
     //
     if (prov->MaxNtBuildNumberSupport != KDU_MAX_NTBUILDNUMBER) {
-        if (NtBuildNumber >= prov->MaxNtBuildNumberSupport) {
+        if (NtBuildNumber > prov->MaxNtBuildNumberSupport) {
             printf_s("[!] Abort: selected provider does not support this Windows NT build\r\n");
             return NULL;
         }

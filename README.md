@@ -66,7 +66,7 @@ If your project need another module dependency then you have to rewrite this loa
 
 Because of unsual way of loading mapped driver won't be inside PsLoadedModulesList. That mean any callback registered by such code will have handler located in memory outside this list. PatchGuard has ability to check whatever the registered callbacks point to valid loaded modules or not and BSOD with "Kernel notification callout modification" if such dynamic code detected.
 
-In general if you want to know what you *should not do* in kernel look at https://github.com/hfiref0x/UPGDSED/tree/master/src/tests/BadRkDemo/drv/dummy which contain a few examples of forbidden things.
+In general if you want to know what you *should not do* in kernel look at https://github.com/hfiref0x/KDU/tree/master/Source/Examples/BadRkDemo which contain a few examples of forbidden things.
 
 #### Kernel traces note
 This tool does not change (and this won't change in future) internal Windows structures of MmUnloadedDrivers and/or PiDDBCacheTable. That's because:
