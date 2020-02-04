@@ -123,6 +123,9 @@ BOOL VictimCreate(
                     printf_s("[!] Could not force unload victim, NTSTATUS(0x%lX) abort\r\n", ntStatus);
                     break;
                 }
+                else {
+                    printf_s("[+] Previous instance of victim driver unloaded\r\n");
+                }
             }
 
             drvBuffer = supQueryResourceData(ResourceId, ModuleBase, &resourceSize);

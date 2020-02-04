@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.126
+*  VERSION:     1.127
 *
-*  DATE:        22 Jan 2020
+*  DATE:        04 Feb 2020
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -7341,7 +7341,10 @@ RtlCopySecurityDescriptor(
     _In_ PSECURITY_DESCRIPTOR InputSecurityDescriptor,
     _Out_ PSECURITY_DESCRIPTOR *OutputSecurityDescriptor);
 
-FORCEINLINE LUID NTAPI RtlConvertLongToLuid(
+FORCEINLINE 
+LUID 
+NTAPI 
+RtlConvertLongToLuid(
     _In_ LONG Long
 )
 {
@@ -7352,6 +7355,20 @@ FORCEINLINE LUID NTAPI RtlConvertLongToLuid(
     TempLuid.LowPart = TempLi.LowPart;
     TempLuid.HighPart = TempLi.HighPart;
     return(TempLuid);
+}
+
+FORCEINLINE 
+LUID 
+RtlConvertUlongToLuid(
+    _In_ ULONG Ulong
+)
+{
+    LUID tempLuid;
+
+    tempLuid.LowPart = Ulong;
+    tempLuid.HighPart = 0;
+
+    return tempLuid;
 }
 
 NTSYSAPI

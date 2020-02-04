@@ -227,92 +227,82 @@ BOOL supRegDeleteKeyRecursive(
 *
 */
 NTSTATUS supEnablePrivilege(
-    _In_ DWORD PrivilegeName,
-    _In_ BOOL fEnable
+    _In_ DWORD Privilege,
+    _In_ BOOL Enable
 )
 {
-    NTSTATUS         status;
-    ULONG            dummy;
-    HANDLE           hToken;
-    TOKEN_PRIVILEGES TokenPrivileges;
+    ULONG Length;
+    NTSTATUS Status;
+    HANDLE TokenHandle;
+    LUID LuidPrivilege;
 
-    status = NtOpenProcessToken(
+    PTOKEN_PRIVILEGES NewState;
+    UCHAR Buffer[sizeof(TOKEN_PRIVILEGES) + sizeof(LUID_AND_ATTRIBUTES)];
+
+    Status = NtOpenProcessToken(
         NtCurrentProcess(),
         TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-        &hToken);
+        &TokenHandle);
 
-    if (!NT_SUCCESS(status)) {
-        return status;
+    if (!NT_SUCCESS(Status)) {
+        return Status;
     }
 
-    TokenPrivileges.PrivilegeCount = 1;
-    TokenPrivileges.Privileges[0].Luid.LowPart = PrivilegeName;
-    TokenPrivileges.Privileges[0].Luid.HighPart = 0;
-    TokenPrivileges.Privileges[0].Attributes = (fEnable) ? SE_PRIVILEGE_ENABLED : 0;
-    status = NtAdjustPrivilegesToken(hToken, FALSE, &TokenPrivileges,
-        sizeof(TOKEN_PRIVILEGES), (PTOKEN_PRIVILEGES)NULL, (PULONG)&dummy);
-    if (status == STATUS_NOT_ALL_ASSIGNED) {
-        status = STATUS_PRIVILEGE_NOT_HELD;
+    NewState = (PTOKEN_PRIVILEGES)Buffer;
+
+    LuidPrivilege = RtlConvertUlongToLuid(Privilege);
+
+    NewState->PrivilegeCount = 1;
+    NewState->Privileges[0].Luid = LuidPrivilege;
+    NewState->Privileges[0].Attributes = Enable ? SE_PRIVILEGE_ENABLED : 0;
+
+    Status = NtAdjustPrivilegesToken(TokenHandle,
+        FALSE,
+        NewState,
+        sizeof(Buffer),
+        NULL,
+        &Length);
+
+    if (Status == STATUS_NOT_ALL_ASSIGNED) {
+        Status = STATUS_PRIVILEGE_NOT_HELD;
     }
 
-    NtClose(hToken);
-    return status;
+    NtClose(TokenHandle);
+    return Status;
 }
 
 /*
-* supLoadDriver
+* supxCreateDriverEntry
 *
 * Purpose:
 *
-* Install driver and load it.
-*
-* N.B.
-* SE_LOAD_DRIVER_PRIVILEGE is required to be assigned and enabled.
+* Creating registry entry for driver.
 *
 */
-NTSTATUS supLoadDriver(
-    _In_ LPCWSTR DriverName,
-    _In_ LPCWSTR DriverPath,
-    _In_ BOOLEAN UnloadPreviousInstance
+NTSTATUS supxCreateDriverEntry(
+    _In_opt_ LPCWSTR DriverPath,
+    _In_ LPCWSTR KeyName
 )
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
     DWORD dwData, dwResult;
     HKEY keyHandle = NULL;
-    SIZE_T keyOffset;
-    UNICODE_STRING driverServiceName, driverImagePath;
-
-    WCHAR szBuffer[MAX_PATH + 1];
-
-    if (DriverName == NULL)
-        return STATUS_INVALID_PARAMETER_1;
-    if (DriverPath == NULL)
-        return STATUS_INVALID_PARAMETER_2;
+    UNICODE_STRING driverImagePath;
 
     RtlInitEmptyUnicodeString(&driverImagePath, NULL, 0);
-    if (!RtlDosPathNameToNtPathName_U(DriverPath,
-        &driverImagePath,
-        NULL,
-        NULL))
-    {
-        return STATUS_INVALID_PARAMETER_2;
-    }
 
-    RtlSecureZeroMemory(szBuffer, sizeof(szBuffer));
-
-    keyOffset = RTL_NUMBER_OF(NT_REG_PREP);
-
-    if (FAILED(StringCchPrintf(szBuffer, MAX_PATH,
-        DRIVER_REGKEY,
-        NT_REG_PREP,
-        DriverName)))
-    {
-        status = STATUS_INVALID_PARAMETER_1;
-        goto Cleanup;
+    if (DriverPath) {
+        if (!RtlDosPathNameToNtPathName_U(DriverPath,
+            &driverImagePath,
+            NULL,
+            NULL))
+        {
+            return STATUS_INVALID_PARAMETER_2;
+        }
     }
 
     if (ERROR_SUCCESS != RegCreateKeyEx(HKEY_LOCAL_MACHINE,
-        &szBuffer[keyOffset],
+        KeyName,
         0,
         NULL,
         REG_OPTION_NON_VOLATILE,
@@ -360,12 +350,14 @@ NTSTATUS supLoadDriver(
         if (dwResult != ERROR_SUCCESS)
             break;
 
-        dwResult = RegSetValueEx(keyHandle,
-            TEXT("ImagePath"),
-            0,
-            REG_EXPAND_SZ,
-            (BYTE*)driverImagePath.Buffer,
-            (DWORD)driverImagePath.Length + sizeof(UNICODE_NULL));
+        if (DriverPath) {
+            dwResult = RegSetValueEx(keyHandle,
+                TEXT("ImagePath"),
+                0,
+                REG_EXPAND_SZ,
+                (BYTE*)driverImagePath.Buffer,
+                (DWORD)driverImagePath.Length + sizeof(UNICODE_NULL));
+        }
 
     } while (FALSE);
 
@@ -373,16 +365,74 @@ NTSTATUS supLoadDriver(
 
     if (dwResult != ERROR_SUCCESS) {
         status = STATUS_ACCESS_DENIED;
-        goto Cleanup;
     }
+    else
+    {
+        status = STATUS_SUCCESS;
+    }
+
+Cleanup:
+    if (DriverPath) {
+        if (driverImagePath.Buffer) {
+            RtlFreeUnicodeString(&driverImagePath);
+        }
+    }
+    return status;
+}
+
+/*
+* supLoadDriver
+*
+* Purpose:
+*
+* Install driver and load it.
+*
+* N.B.
+* SE_LOAD_DRIVER_PRIVILEGE is required to be assigned and enabled.
+*
+*/
+NTSTATUS supLoadDriver(
+    _In_ LPCWSTR DriverName,
+    _In_ LPCWSTR DriverPath,
+    _In_ BOOLEAN UnloadPreviousInstance
+)
+{
+    SIZE_T keyOffset;
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+    UNICODE_STRING driverServiceName;
+
+    WCHAR szBuffer[MAX_PATH + 1];
+
+    if (DriverName == NULL)
+        return STATUS_INVALID_PARAMETER_1;
+    if (DriverPath == NULL)
+        return STATUS_INVALID_PARAMETER_2;
+
+    RtlSecureZeroMemory(szBuffer, sizeof(szBuffer));
+
+    keyOffset = RTL_NUMBER_OF(NT_REG_PREP);
+
+    if (FAILED(StringCchPrintf(szBuffer, MAX_PATH,
+        DRIVER_REGKEY,
+        NT_REG_PREP,
+        DriverName)))
+    {
+        return STATUS_INVALID_PARAMETER_1;
+    }
+
+    status = supxCreateDriverEntry(DriverPath,
+        &szBuffer[keyOffset]);
+
+    if (!NT_SUCCESS(status))
+        return status;
 
     RtlInitUnicodeString(&driverServiceName, szBuffer);
     status = NtLoadDriver(&driverServiceName);
 
     if (UnloadPreviousInstance) {
         if ((status == STATUS_IMAGE_ALREADY_LOADED) ||
-            (status == STATUS_OBJECT_NAME_COLLISION) || 
-            (status == STATUS_OBJECT_NAME_EXISTS)) 
+            (status == STATUS_OBJECT_NAME_COLLISION) ||
+            (status == STATUS_OBJECT_NAME_EXISTS))
         {
             status = NtUnloadDriver(&driverServiceName);
             if (NT_SUCCESS(status)) {
@@ -395,8 +445,6 @@ NTSTATUS supLoadDriver(
             status = STATUS_SUCCESS;
     }
 
-Cleanup:
-    RtlFreeUnicodeString(&driverImagePath);
     return status;
 }
 
@@ -433,6 +481,12 @@ NTSTATUS supUnloadDriver(
     }
 
     keyOffset = RTL_NUMBER_OF(NT_REG_PREP);
+
+    status = supxCreateDriverEntry(NULL,
+        &szBuffer[keyOffset]);
+
+    if (!NT_SUCCESS(status))
+        return status;
 
     RtlInitUnicodeString(&driverServiceName, szBuffer);
     status = NtUnloadDriver(&driverServiceName);

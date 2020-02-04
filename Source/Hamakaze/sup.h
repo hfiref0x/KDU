@@ -34,8 +34,8 @@ BOOL FORCEINLINE supHeapFree(
     _In_ PVOID Memory);
 
 NTSTATUS supEnablePrivilege(
-    _In_ DWORD PrivilegeName,
-    _In_ BOOL fEnable);
+    _In_ DWORD Privilege,
+    _In_ BOOL Enable);
 
 NTSTATUS supLoadDriver(
     _In_ LPCWSTR DriverName,
