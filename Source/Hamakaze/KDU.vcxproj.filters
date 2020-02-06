@@ -93,6 +93,15 @@
     <ClCompile Include="minirtl\_filename.c">
       <Filter>minirtl</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\gdrv.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="tests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\atszio.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -152,6 +161,15 @@
     <ClInclude Include="minirtl\_filename.h">
       <Filter>minirtl</Filter>
     </ClInclude>
+    <ClInclude Include="idrv\gdrv.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="tests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\atszio.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc">
@@ -174,6 +192,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="drv\RTCore64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\gdrv.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\ATSZIO64.bin">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

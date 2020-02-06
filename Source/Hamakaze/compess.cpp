@@ -57,7 +57,7 @@ PVOID KDUDecompressResource(
 
         SIZE_T newSize = (DWORD)doOutput.uSize;
         PVOID decomPtr = doOutput.lpStart;
-        
+
         if (supVerifyMappedImageMatchesChecksum(decomPtr,
             (ULONG)newSize))
         {
@@ -73,7 +73,8 @@ PVOID KDUDecompressResource(
 
         DeltaFree(doOutput.lpStart);
 
-    } else {
+    }
+    else {
         printf_s("[!] Error decompressing resource, GetLastError %lu\r\n", GetLastError());
     }
 

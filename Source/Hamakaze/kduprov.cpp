@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        24 Jan 2020
+*  DATE:        02 Feb 2020
 *
 *  Vulnerable driver providers routines.
 *
@@ -20,6 +20,8 @@
 #include "global.h"
 #include "idrv/nal.h"
 #include "idrv/rtcore.h"
+#include "idrv/gdrv.h"
+#include "idrv/atszio.h"
 
 //
 // Since we have a lot of them, make an abstraction layer.
@@ -38,6 +40,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         NalWriteVirtualMemoryEx,
         NalVirtualToPhysical,
         (provReadControlRegister)KDUProviderStub,
+        (provQueryPML4)KDUProviderStub,
         (provReadPhysicalMemory)KDUProviderStub,
         (provWritePhysicalMemory)KDUProviderStub,
         (provRegisterDriver)KDUProviderStub,
@@ -55,11 +58,49 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         RTCoreWriteVirtualMemory,
         (provVirtualToPhysical)KDUProviderStub,
         (provReadControlRegister)KDUProviderStub,
+        (provQueryPML4)KDUProviderStub,
         (provReadPhysicalMemory)KDUProviderStub,
         (provWritePhysicalMemory)KDUProviderStub,
         (provRegisterDriver)KDUProviderStub,
         (provUnregisterDriver)KDUProviderStub
+    },
+
+    {
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_GDRV,
+        0,
+        (LPWSTR)L"CVE-2018-19320",
+        (LPWSTR)L"Gdrv",
+        (LPWSTR)L"GIO",
+        (provReadKernelVM)GioReadKernelVirtualMemory,
+        (provWriteKernelVM)GioWriteKernelVirtualMemory,
+        (provVirtualToPhysical)GioVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        (provQueryPML4)GioQueryPML4Value,
+        (provReadPhysicalMemory)GioReadPhysicalMemory,
+        (provWritePhysicalMemory)GioWritePhysicalMemory,
+        (provRegisterDriver)KDUProviderStub,
+        (provUnregisterDriver)KDUProviderStub
+    },
+
+    {
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ATSZIO64,
+        0,
+        (LPWSTR)L"ASUSTeK WinFlash",
+        (LPWSTR)L"ATSZIO",
+        (LPWSTR)L"ATSZIO",
+        (provReadKernelVM)AtszioReadKernelVirtualMemory,
+        (provWriteKernelVM)AtszioWriteKernelVirtualMemory,
+        (provVirtualToPhysical)AtszioVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        (provQueryPML4)AtszioQueryPML4Value,
+        (provReadPhysicalMemory)AtszioReadPhysicalMemory,
+        (provWritePhysicalMemory)AtszioWritePhysicalMemory,
+        (provRegisterDriver)KDUProviderStub,
+        (provUnregisterDriver)KDUProviderStub
     }
+
 };
 
 /*
@@ -72,7 +113,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
 */
 VOID KDUProvList()
 {
-    KDU_PROVIDER *prov;
+    KDU_PROVIDER* prov;
 
     printf_s("[>] Entering %s\r\n", __FUNCTION__);
 
@@ -224,8 +265,15 @@ BOOL WINAPI KDUVirtualToPhysical(
 {
     KDU_PROVIDER* prov = Context->Provider;
 
-    if (prov->Callbacks.VirtualToPhysical == NULL)
-        return FALSE;
+    //
+    // Bypass provider implementation and call PwVirtualToPhysical directly.
+    // However some samples may want it own preparations (provider #6), so comment this out.
+    //
+    /*return PwVirtualToPhysical(Context->DeviceHandle,
+        (provQueryPML4Value)prov->Callbacks.QueryPML4Value,
+        (provReadPhysicalMemory)prov->Callbacks.ReadPhysicalMemory,
+        VirtualAddress,
+        PhysicalAddress);*/
 
     return prov->Callbacks.VirtualToPhysical(Context->DeviceHandle,
         VirtualAddress,
@@ -328,7 +376,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
     // Show provider info.
     //
     printf_s("[>] Entering %s\r\n", __FUNCTION__);
-    printf_s("[+] Selected KDU Provider: Desciption %ws, Name \"%ws\"\r\n",
+    printf_s("[+] Provider: Desciption %ws, Name \"%ws\"\r\n",
         prov->Desciption,
         prov->DriverName);
 
@@ -367,7 +415,9 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             printf_s("[!] Abort: selected provider does not support arbitrary kernel read/write or\r\n"\
                 "KDU interface is not implemented for these methods\r\n");
 
+#ifndef _DEBUG
             return NULL;
+#endif
         }
         break;
 
@@ -379,13 +429,13 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
     ntStatus = supEnablePrivilege(SE_DEBUG_PRIVILEGE, TRUE);
     if (!NT_SUCCESS(ntStatus)) {
-        printf_s("[!] Abort: SeDebugPrivilege not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);
+        printf_s("[!] Abort: SeDebugPrivilege is not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);
         return NULL;
     }
 
     ntStatus = supEnablePrivilege(SE_LOAD_DRIVER_PRIVILEGE, TRUE);
     if (!NT_SUCCESS(ntStatus)) {
-        printf_s("[!] Abort: SeLoadDriverPrivilege not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);
+        printf_s("[!] Abort: SeLoadDriverPrivilege is not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);
         return NULL;
     }
 

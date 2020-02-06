@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        24 Jan 2020
+*  DATE:        02 Feb 2020
 *
 *  Support routines header file.
 *
@@ -115,3 +115,6 @@ ULONG_PTR supQueryMaximumUserModeAddress();
 BOOLEAN supVerifyMappedImageMatchesChecksum(
     _In_ PVOID BaseAddress,
     _In_ ULONG FileLength);
+
+ULONG_PTR supGetPML4FromLowStub1M(
+    _In_ ULONG_PTR pbLowStub1M);

@@ -95,6 +95,10 @@ IDR_PROCEXP             RCDATA                  "drv\\procexp.bin"
 
 IDR_RTCORE64            RCDATA                  "drv\\RTCore64.bin"
 
+IDR_GDRV                RCDATA                  "drv\\gdrv.bin"
+
+IDR_ATSZIO64            RCDATA                  "drv\\ATSZIO64.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

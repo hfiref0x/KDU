@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        24 Jan 2020
+*  DATE:        02 Feb 2020
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -34,8 +34,10 @@ volatile LONG g_lApplicationInstances = 0;
 #define CMD_PS          L"-ps"
 #define CMD_LIST        L"-list"
 #define CMD_COMPRESS    L"-compress"
+#define CMD_TEST        L"-test"
 
-#define T_KDUUSAGE   "[?] No parameters specified, see Usage for help\r\n[?] Usage: kdu Mode [Provider][Command]\r\n\n"\
+#define T_KDUUSAGE   "[?] No parameters specified or command not recognized, see Usage for help\r\n"\
+                     "[?] Usage: kdu Mode [Provider][Command]\r\n\n"\
                      "Parameters: \r\n"\
                      "kdu -prv id       - optional parameter, provider id, default 0\r\n"\
                      "kdu -ps pid       - disable ProtectedProcess for given pid\r\n"\
@@ -70,15 +72,14 @@ INT KDUProcessCommandLine(
 
     do {
 
-        //
-        // List providers.
-        //
-        if (supGetCommandLineOption(CMD_LIST,
+#ifdef _DEBUG
+
+        if (supGetCommandLineOption(CMD_TEST,
             FALSE,
             NULL,
             0))
         {
-            KDUProvList();
+            KDUTest();
             retVal = 0;
             break;
         }
@@ -89,6 +90,21 @@ INT KDUProcessCommandLine(
             sizeof(szParameter) / sizeof(WCHAR)))
         {
             KDUCompressResource(szParameter);
+            retVal = 0;
+            break;
+        }
+
+#endif
+
+        //
+        // List providers.
+        //
+        if (supGetCommandLineOption(CMD_LIST,
+            FALSE,
+            NULL,
+            0))
+        {
+            KDUProvList();
             retVal = 0;
             break;
         }
@@ -258,7 +274,7 @@ int main()
 {
     HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
 
-    printf_s(T_PRNTDEFAULT, T_KDUINTRO);  
+    printf_s(T_PRNTDEFAULT, T_KDUINTRO);
 
     int retVal = 0;
 

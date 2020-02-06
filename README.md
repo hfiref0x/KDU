@@ -26,9 +26,9 @@ It features:
 * -list - list currently available providers.
 
 Example:
-+ kdu -ps 1337
++ kdu -ps 1234
 + kdu -map c:\driverless\mysuperhack.sys
-+ kdu -prv 1 -ps 1337
++ kdu -prv 1 -ps 1234
 + kdu -prv 1 -map c:\driverless\mysuperhack.sys
 
 Run on Windows 10 20H2 (precomplied version)
@@ -39,6 +39,10 @@ Run on Windows 10 20H2 (precomplied version)
 Compiled and run on Windows 8.1
 
 <img src="https://raw.githubusercontent.com/hfiref0x/kdu/master/Help/kdu2.png" width="600" />
+
+Run on Windows 7 SP1 fully patched (precomplied version)
+
+<img src="https://raw.githubusercontent.com/hfiref0x/kdu/master/Help/kdu3.png" width="600" />
 
 
 #### Limitations of -map command
@@ -78,7 +82,9 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 #### Currently Supported Providers
 
 + Intel Network Adapter Diagnostic Driver of version 1.03.0.7;
-+ RTCore64 driver from MSI Afterburner of version 4.6.2 build 15658 and below.
++ RTCore64 driver from MSI Afterburner of version 4.6.2 build 15658 and below;
++ Gdrv driver from various Gigabyte TOOLS of undefined version;
++ ATSZIO64 driver from ASUSTeK WinFlash utility of various versions.
 
 More providers maybe added in the future.
 
@@ -106,6 +112,9 @@ Using this program might render your computer into BSOD. Compiled binary and sou
 * Unwinding RTCore, https://swapcontext.blogspot.com/2020/01/unwinding-rtcore.html
 * CVE-2019-16098, https://github.com/Barakat/CVE-2019-16098
 * CVE-2015-2291, https://www.exploit-db.com/exploits/36392
+* CVE-2018-19320, https://seclists.org/fulldisclosure/2018/Dec/39
+* ATSZIO64 headers and libs, https://github.com/DOGSHITD/SciDetectorApp/tree/master/DetectSciApp
+* ATSZIO64 ASUS Drivers Privilege Escalation, https://github.com/LimiQS/AsusDriversPrivEscala
 
 # Authors
 

@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        24 Jan 2020
+*  DATE:        02 Feb 2020
 *
 *  Intel Network Adapter iQVM64 driver interface header.
 *
@@ -32,7 +32,8 @@
 #define NAL_FUNCID_MEMSET               (DWORD)0x30
 #define NAL_FUNCID_MEMMOVE              (DWORD)0x33
 
-#define IOCTL_NAL_MANAGE  CTL_CODE(INTEL_DEVICE_TYPE, INTEL_DEVICE_FUNCTION, METHOD_NEITHER, FILE_ANY_ACCESS) //0x80862007
+#define IOCTL_NAL_MANAGE  \
+    CTL_CODE(INTEL_DEVICE_TYPE, INTEL_DEVICE_FUNCTION, METHOD_NEITHER, FILE_ANY_ACCESS) //0x80862007
 
 
 typedef struct _NAL_REQUEST_HEADER {

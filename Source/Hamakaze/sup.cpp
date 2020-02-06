@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        07 Jan 2020
+*  DATE:        02 Feb 2020
 *
 *  Program global support routines.
 *
@@ -398,7 +398,7 @@ NTSTATUS supLoadDriver(
 )
 {
     SIZE_T keyOffset;
-    NTSTATUS status = STATUS_UNSUCCESSFUL;
+    NTSTATUS status;
     UNICODE_STRING driverServiceName;
 
     WCHAR szBuffer[MAX_PATH + 1];
@@ -693,7 +693,7 @@ SIZE_T supWriteBufferToFile(
     _In_ SIZE_T Size,
     _In_ BOOL Flush,
     _In_ BOOL Append,
-    _Out_opt_ NTSTATUS *Result
+    _Out_opt_ NTSTATUS* Result
 )
 {
     NTSTATUS           Status = STATUS_UNSUCCESSFUL;
@@ -799,8 +799,8 @@ ULONG_PTR supGetProcAddress(
     _In_ LPCSTR FunctionName
 )
 {
-    ANSI_STRING    cStr;
-    ULONG_PTR      pfn = 0;
+    ANSI_STRING cStr;
+    ULONG_PTR   pfn = 0;
 
     RtlInitString(&cStr, FunctionName);
     if (!NT_SUCCESS(LdrGetProcedureAddress((PVOID)KernelImage, &cStr, 0, (PVOID*)&pfn)))
@@ -1037,7 +1037,7 @@ BOOL supQueryObjectFromHandle(
         for (i = 0; i < pHandles->NumberOfHandles; i++) {
             if (pHandles->Handles[i].UniqueProcessId == CurrentProcessId) {
                 if (pHandles->Handles[i].HandleValue == (USHORT)(ULONG_PTR)hOject) {
-                    *Address = (ULONG_PTR)pHandles->Handles[i].Object;               
+                    *Address = (ULONG_PTR)pHandles->Handles[i].Object;
                     bFound = TRUE;
                     break;
                 }
@@ -1063,10 +1063,10 @@ BOOL supGetCommandLineOption(
     _In_ ULONG ValueSize
 )
 {
-    LPTSTR	cmdline = GetCommandLine();
+    LPTSTR  cmdline = GetCommandLine();
     TCHAR   Param[MAX_PATH + 1];
     ULONG   rlen;
-    int		i = 0;
+    int     i = 0;
 
     RtlSecureZeroMemory(Param, sizeof(Param));
     while (GetCommandLineParam(cmdline, i, Param, MAX_PATH, &rlen))
@@ -1259,7 +1259,6 @@ PBYTE supReadFileToBuffer(
     _Inout_opt_ LPDWORD lpBufferSize
 )
 {
-    BOOL        bCond = FALSE;
     NTSTATUS    status;
     HANDLE      hFile = NULL, hRoot = NULL;
     PBYTE       Buffer = NULL;
@@ -1338,7 +1337,7 @@ PBYTE supReadFileToBuffer(
             }
         }
 
-    } while (bCond);
+    } while (FALSE);
 
     if (hRoot != NULL) {
         NtClose(hRoot);
@@ -1352,4 +1351,51 @@ PBYTE supReadFileToBuffer(
         RtlFreeUnicodeString(&usName);
 
     return Buffer;
+}
+
+/*
+* supGetPML4FromLowStub1M
+*
+* Purpose:
+*
+* Search for PML4 entry in low stub.
+*
+* Taken from MemProcFs, https://github.com/ufrisk/MemProcFS/blob/master/vmm/vmmwininit.c#L414
+*
+*/
+ULONG_PTR supGetPML4FromLowStub1M(
+    _In_ ULONG_PTR pbLowStub1M)
+{
+    ULONG offset = 0;
+    ULONG_PTR PML4 = 0;
+
+    SetLastError(ERROR_EXCEPTION_IN_SERVICE);
+
+    __try {
+
+        while (offset < 0x100000) {
+
+            offset += 0x1000;
+
+            if (0x00000001000600E9 != (0xffffffffffff00ff & *(UINT64*)(pbLowStub1M + offset))) //long jump
+                continue;
+
+            if (0xfffff80000000000 != (0xfffff80000000003 & *(UINT64*)(pbLowStub1M + offset + 0x070)))
+                continue;
+
+            if (0xffffff0000000fff & *(UINT64*)(pbLowStub1M + offset + 0x0a0))
+                continue;
+
+            PML4 = *(UINT64*)(pbLowStub1M + offset + 0x0a0);
+            break;
+        }
+
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+
+    SetLastError(ERROR_SUCCESS);
+
+    return PML4;
 }

@@ -60,3 +60,4 @@ extern "C" {
 #include "ps.h"
 #include "victim.h"
 #include "pagewalk.h"
+#include "tests.h"

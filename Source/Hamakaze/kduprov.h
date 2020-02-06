@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        24 Jan 2020
+*  DATE:        02 Feb 2020
 *
 *  Provider support routines.
 *
@@ -19,12 +19,14 @@
 
 #pragma once
 
-#define KDU_PROVIDERS_MAX           2
+#define KDU_PROVIDERS_MAX               4
 
-#define KDU_PROVIDER_INTEL          0
-#define KDU_PROVIDER_RTCORE         1
+#define KDU_PROVIDER_INTEL_NAL          0
+#define KDU_PROVIDER_UNWINDER_RTCORE    1
+#define KDU_PROVIDER_GIGABYTE_GDRV      2
+#define KDU_PROVIDER_ASUSTEK_ATSZIO     3
 
-#define KDU_PROVIDER_DEFAULT        KDU_PROVIDER_INTEL
+#define KDU_PROVIDER_DEFAULT        KDU_PROVIDER_INTEL_NAL
 
 #define KDU_MAX_NTBUILDNUMBER       0xFFFFFFFF
 
@@ -65,14 +67,14 @@ typedef BOOL(WINAPI* provReadPhysicalMemory)(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ PVOID Buffer,
-    _In_ ULONG BufferLength);
+    _In_ ULONG NumberOfBytes);
 
 //
 // Prototype for write physical memory function.
 //
 typedef BOOL(WINAPI* provWritePhysicalMemory)(
     _In_ HANDLE DeviceHandle,
-    _In_ ULONG_PTR VirtualAddress,
+    _In_ ULONG_PTR PhysicalAddress,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
@@ -82,6 +84,13 @@ typedef BOOL(WINAPI* provWritePhysicalMemory)(
 typedef BOOL(WINAPI* provReadControlRegister)(
     _In_ HANDLE DeviceHandle,
     _In_ UCHAR ControlRegister,
+    _Out_ ULONG_PTR* Value);
+
+//
+// Prototype for query PML4 value function.
+//
+typedef BOOL(WINAPI* provQueryPML4)(
+    _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value);
 
 //
@@ -107,7 +116,7 @@ typedef struct _KDU_PROVIDER {
     ULONG MaxNtBuildNumberSupport;
     ULONG ResourceId;
     ULONG HvciSupport;
-    LPWSTR Desciption; 
+    LPWSTR Desciption;
     LPWSTR DriverName; //only file name, e.g. PROCEXP152
     LPWSTR DeviceName; //device name, e.g. PROCEXP152
     struct {
@@ -115,6 +124,7 @@ typedef struct _KDU_PROVIDER {
         provWriteKernelVM WriteKernelVM;
         provVirtualToPhysical VirtualToPhysical; //optional
         provReadControlRegister ReadControlRegister; //optional
+        provQueryPML4 QueryPML4Value; //optional
         provReadPhysicalMemory ReadPhysicalMemory; //optional
         provWritePhysicalMemory WritePhysicalMemory; //optional
         provRegisterDriver RegisterDriver; //optional
