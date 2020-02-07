@@ -22,6 +22,9 @@
     <Filter Include="hde">
       <UniqueIdentifier>{3ec0ce53-a8de-4985-b6d0-dc01135c1d91}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ntos">
+      <UniqueIdentifier>{1df1a36e-45d4-430a-a401-9415b50be4bd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -102,12 +105,12 @@
     <ClCompile Include="idrv\atszio.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\msio.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ntdll\ntos.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sup.h">
@@ -170,6 +173,15 @@
     <ClInclude Include="idrv\atszio.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
+    <ClInclude Include="ntos\ntos.h">
+      <Filter>ntos</Filter>
+    </ClInclude>
+    <ClInclude Include="ntos\halamd64.h">
+      <Filter>ntos</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\msio.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc">
@@ -198,6 +210,9 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="drv\ATSZIO64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\msio64.bin">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

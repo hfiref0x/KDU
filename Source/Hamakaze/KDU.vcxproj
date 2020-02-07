@@ -106,6 +106,7 @@
     <ClCompile Include="hde\hde64.c" />
     <ClCompile Include="idrv\atszio.cpp" />
     <ClCompile Include="idrv\gdrv.cpp" />
+    <ClCompile Include="idrv\msio.cpp" />
     <ClCompile Include="idrv\nal.cpp" />
     <ClCompile Include="idrv\rtcore.cpp" />
     <ClCompile Include="main.cpp" />
@@ -136,6 +137,7 @@
     <ClInclude Include="hde\hde64.h" />
     <ClInclude Include="idrv\atszio.h" />
     <ClInclude Include="idrv\gdrv.h" />
+    <ClInclude Include="idrv\msio.h" />
     <ClInclude Include="idrv\nal.h" />
     <ClInclude Include="idrv\rtcore.h" />
     <ClInclude Include="irp.h" />
@@ -143,8 +145,9 @@
     <ClInclude Include="minirtl\minirtl.h" />
     <ClInclude Include="minirtl\rtltypes.h" />
     <ClInclude Include="minirtl\_filename.h" />
-    <ClInclude Include="ntdll\ntos.h" />
     <ClInclude Include="kduprov.h" />
+    <ClInclude Include="ntos\halamd64.h" />
+    <ClInclude Include="ntos\ntos.h" />
     <ClInclude Include="pagewalk.h" />
     <ClInclude Include="ps.h" />
     <ClInclude Include="resource.h" />
@@ -163,6 +166,7 @@
     <None Include="drv\ATSZIO64.bin" />
     <None Include="drv\gdrv.bin" />
     <None Include="drv\iQVM64.bin" />
+    <None Include="drv\msio64.bin" />
     <None Include="drv\procexp.bin" />
     <None Include="drv\RTCore64.bin" />
   </ItemGroup>

@@ -35,7 +35,6 @@ Run on Windows 10 20H2 (precomplied version)
 
 <img src="https://raw.githubusercontent.com/hfiref0x/kdu/master/Help/kdu1.png" width="600" />
 
-
 Compiled and run on Windows 8.1
 
 <img src="https://raw.githubusercontent.com/hfiref0x/kdu/master/Help/kdu2.png" width="600" />
@@ -43,6 +42,10 @@ Compiled and run on Windows 8.1
 Run on Windows 7 SP1 fully patched (precomplied version)
 
 <img src="https://raw.githubusercontent.com/hfiref0x/kdu/master/Help/kdu3.png" width="600" />
+
+Run on Windows 10 19H2 (precompiled version, SecureBoot enabled)
+
+<img src="https://raw.githubusercontent.com/hfiref0x/kdu/master/Help/kdu4.png" width="600" />
 
 
 #### Limitations of -map command
@@ -84,7 +87,8 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 + Intel Network Adapter Diagnostic Driver of version 1.03.0.7;
 + RTCore64 driver from MSI Afterburner of version 4.6.2 build 15658 and below;
 + Gdrv driver from various Gigabyte TOOLS of undefined version;
-+ ATSZIO64 driver from ASUSTeK WinFlash utility of various versions.
++ ATSZIO64 driver from ASUSTeK WinFlash utility of various versions;
++ MICSYS MsIo driver from Patriot Viper RGB utility of version 1.0.
 
 More providers maybe added in the future.
 
@@ -115,6 +119,7 @@ Using this program might render your computer into BSOD. Compiled binary and sou
 * CVE-2018-19320, https://seclists.org/fulldisclosure/2018/Dec/39
 * ATSZIO64 headers and libs, https://github.com/DOGSHITD/SciDetectorApp/tree/master/DetectSciApp
 * ATSZIO64 ASUS Drivers Privilege Escalation, https://github.com/LimiQS/AsusDriversPrivEscala
+* CVE-2019-18845, https://www.activecyber.us/activelabs/viper-rgb-driver-local-privilege-escalation-cve-2019-18845
 
 # Authors
 

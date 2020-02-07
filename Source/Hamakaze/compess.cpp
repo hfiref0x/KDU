@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        24 Jan 2020
+*  DATE:        07 Feb 2020
 *
 *  Compression support routines.
 *
@@ -19,7 +19,6 @@
 
 #include "global.h"
 #include <msdelta.h>
-#include <compressapi.h>
 
 #pragma comment(lib, "msdelta.lib")
 

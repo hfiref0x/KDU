@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        02 Feb 2020
+*  DATE:        07 Feb 2020
 *
 *  Provider support routines.
 *
@@ -19,12 +19,13 @@
 
 #pragma once
 
-#define KDU_PROVIDERS_MAX               4
+#define KDU_PROVIDERS_MAX               5
 
 #define KDU_PROVIDER_INTEL_NAL          0
 #define KDU_PROVIDER_UNWINDER_RTCORE    1
 #define KDU_PROVIDER_GIGABYTE_GDRV      2
 #define KDU_PROVIDER_ASUSTEK_ATSZIO     3
+#define KDU_PROVIDER_PATRIOT_MSIO64     4
 
 #define KDU_PROVIDER_DEFAULT        KDU_PROVIDER_INTEL_NAL
 
@@ -115,7 +116,14 @@ typedef enum _KDU_ACTION_TYPE {
 typedef struct _KDU_PROVIDER {
     ULONG MaxNtBuildNumberSupport;
     ULONG ResourceId;
-    ULONG HvciSupport;
+    union {
+        ULONG Flags;
+        struct {
+            ULONG SupportHVCI : 1;
+            ULONG SignatureWHQL : 1;
+            ULONG Reserved : 30;
+        };
+    };
     LPWSTR Desciption;
     LPWSTR DriverName; //only file name, e.g. PROCEXP152
     LPWSTR DeviceName; //device name, e.g. PROCEXP152

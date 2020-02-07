@@ -24,16 +24,17 @@ VOID KDUTest()
     PKDU_CONTEXT Context;
     ULONG_PTR objectAddress = 0, value = 0;
 
-    Context = KDUProviderCreate(2, FALSE, 17763, GetModuleHandle(NULL), ActionTypeMapDriver);
+    Context = KDUProviderCreate(4, FALSE, 17763, GetModuleHandle(NULL), ActionTypeMapDriver);
     if (Context) {
 
         if (supQueryObjectFromHandle(Context->DeviceHandle, &objectAddress)) {
+
 
             FILE_OBJECT fileObject;
 
             RtlSecureZeroMemory(&fileObject, sizeof(FILE_OBJECT));
 
-            objectAddress = 0xfffff80561f76d18;
+            objectAddress = 0xfffff800e5566d18;
 
             KDUReadKernelVM(Context,
                 objectAddress,

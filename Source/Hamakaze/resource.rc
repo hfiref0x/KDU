@@ -99,6 +99,8 @@ IDR_GDRV                RCDATA                  "drv\\gdrv.bin"
 
 IDR_ATSZIO64            RCDATA                  "drv\\ATSZIO64.bin"
 
+IDR_MSIO64              RCDATA                  "drv\\msio64.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

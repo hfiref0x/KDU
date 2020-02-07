@@ -1358,7 +1358,7 @@ PBYTE supReadFileToBuffer(
 *
 * Purpose:
 *
-* Search for PML4 entry in low stub.
+* Search for PML4 (CR3) entry in low stub.
 *
 * Taken from MemProcFs, https://github.com/ufrisk/MemProcFS/blob/master/vmm/vmmwininit.c#L414
 *
@@ -1368,6 +1368,8 @@ ULONG_PTR supGetPML4FromLowStub1M(
 {
     ULONG offset = 0;
     ULONG_PTR PML4 = 0;
+    ULONG cr3_offset = FIELD_OFFSET(PROCESSOR_START_BLOCK, ProcessorState) +
+        FIELD_OFFSET(KSPECIAL_REGISTERS, Cr3);
 
     SetLastError(ERROR_EXCEPTION_IN_SERVICE);
 
@@ -1377,16 +1379,16 @@ ULONG_PTR supGetPML4FromLowStub1M(
 
             offset += 0x1000;
 
-            if (0x00000001000600E9 != (0xffffffffffff00ff & *(UINT64*)(pbLowStub1M + offset))) //long jump
+            if (0x00000001000600E9 != (0xffffffffffff00ff & *(UINT64*)(pbLowStub1M + offset))) //PROCESSOR_START_BLOCK->Jmp
                 continue;
 
-            if (0xfffff80000000000 != (0xfffff80000000003 & *(UINT64*)(pbLowStub1M + offset + 0x070)))
+            if (0xfffff80000000000 != (0xfffff80000000003 & *(UINT64*)(pbLowStub1M + offset + FIELD_OFFSET(PROCESSOR_START_BLOCK, LmTarget))))
                 continue;
 
-            if (0xffffff0000000fff & *(UINT64*)(pbLowStub1M + offset + 0x0a0))
+            if (0xffffff0000000fff & *(UINT64*)(pbLowStub1M + offset + cr3_offset))
                 continue;
 
-            PML4 = *(UINT64*)(pbLowStub1M + offset + 0x0a0);
+            PML4 = *(UINT64*)(pbLowStub1M + offset + cr3_offset);
             break;
         }
 

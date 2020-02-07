@@ -35,7 +35,8 @@
 #include <strsafe.h>
 #include <ntstatus.h>
 #include <intrin.h>
-#include "ntdll/ntos.h"
+#include "ntos/ntos.h"
+#include "ntos/halamd64.h"
 #include "resource.h"
 
 #if defined(__cplusplus)
