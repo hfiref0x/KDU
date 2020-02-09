@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        07 Feb 2020
+*  DATE:        09 Feb 2020
 *
 *  Provider support routines.
 *
@@ -52,6 +52,21 @@ typedef BOOL(WINAPI* provWriteKernelVM)(
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
+
+//
+// Prototype for allocating kernel memory function.
+//
+typedef BOOL(WINAPI* provAllocateKernelVM)(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG NumberOfBytes,
+    _Out_ PVOID* Address);
+
+//
+// Prototype for freeing kernel memory function.
+//
+typedef BOOL(WINAPI* provFreeKernelVM)(
+    _In_ HANDLE DeviceHandle,
+    _Out_ PVOID Address);
 
 //
 // Prototype for virtual to physical address translation function.
@@ -109,7 +124,8 @@ typedef BOOL(WINAPI* provUnregisterDriver)(
 typedef enum _KDU_ACTION_TYPE {
     ActionTypeMapDriver = 0,
     ActionTypeDKOM = 1,
-    ActionTypeUnspecified = 2,
+    ActionTypeDSECorruption = 2,
+    ActionTypeUnspecified = 3,
     ActionTypeMax
 } KDU_ACTION_TYPE;
 
@@ -127,16 +143,23 @@ typedef struct _KDU_PROVIDER {
     LPWSTR Desciption;
     LPWSTR DriverName; //only file name, e.g. PROCEXP152
     LPWSTR DeviceName; //device name, e.g. PROCEXP152
+    LPWSTR SignerName;
     struct {
+        provRegisterDriver RegisterDriver; //optional
+        provUnregisterDriver UnregisterDriver; //optional
+
+        provAllocateKernelVM AllocateKernelVM; //optional
+        provFreeKernelVM FreeKernelVM; //optional
+
         provReadKernelVM ReadKernelVM;
         provWriteKernelVM WriteKernelVM;
+
         provVirtualToPhysical VirtualToPhysical; //optional
         provReadControlRegister ReadControlRegister; //optional
+
         provQueryPML4 QueryPML4Value; //optional
         provReadPhysicalMemory ReadPhysicalMemory; //optional
         provWritePhysicalMemory WritePhysicalMemory; //optional
-        provRegisterDriver RegisterDriver; //optional
-        provUnregisterDriver UnregisterDriver; //optional
     } Callbacks;
 } KDU_PROVIDER, * PKDU_PROVIDER;
 

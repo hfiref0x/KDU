@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        07 Feb 2020
+*  DATE:        09 Feb 2020
 *
 *  Vulnerable driver providers routines.
 *
@@ -37,15 +37,18 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         (LPWSTR)L"CVE-2015-2291",
         (LPWSTR)L"NalDrv",
         (LPWSTR)L"Nal",
+        (LPWSTR)L"Intel Corporation",
+        (provRegisterDriver)KDUProviderStub,
+        (provUnregisterDriver)KDUProviderStub,
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
         NalReadVirtualMemoryEx,
         NalWriteVirtualMemoryEx,
         NalVirtualToPhysical,
         (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)KDUProviderStub,
         (provReadPhysicalMemory)KDUProviderStub,
-        (provWritePhysicalMemory)KDUProviderStub,
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub
+        (provWritePhysicalMemory)KDUProviderStub
     },
 
     {
@@ -55,15 +58,18 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         (LPWSTR)L"CVE-2019-16098",
         (LPWSTR)L"RTCore64",
         (LPWSTR)L"RTCore64",
+        (LPWSTR)L"MICRO-STAR INTERNATIONAL CO., LTD.",
+        (provRegisterDriver)KDUProviderStub,
+        (provUnregisterDriver)KDUProviderStub,
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
         RTCoreReadVirtualMemory,
         RTCoreWriteVirtualMemory,
         (provVirtualToPhysical)KDUProviderStub,
         (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)KDUProviderStub,
         (provReadPhysicalMemory)KDUProviderStub,
-        (provWritePhysicalMemory)KDUProviderStub,
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub
+        (provWritePhysicalMemory)KDUProviderStub
     },
 
     {
@@ -73,15 +79,18 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         (LPWSTR)L"CVE-2018-19320",
         (LPWSTR)L"Gdrv",
         (LPWSTR)L"GIO",
-        (provReadKernelVM)GioReadKernelVirtualMemory,
-        (provWriteKernelVM)GioWriteKernelVirtualMemory,
-        (provVirtualToPhysical)GioVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
-        (provQueryPML4)GioQueryPML4Value,
-        (provReadPhysicalMemory)GioReadPhysicalMemory,
-        (provWritePhysicalMemory)GioWritePhysicalMemory,
+        (LPWSTR)L"Giga-Byte Technology",
         (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub
+        (provUnregisterDriver)KDUProviderStub,
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        GioReadKernelVirtualMemory,
+        GioWriteKernelVirtualMemory,
+        GioVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        GioQueryPML4Value,
+        GioReadPhysicalMemory,
+        GioWritePhysicalMemory
     },
 
     {
@@ -91,15 +100,18 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         (LPWSTR)L"ASUSTeK WinFlash",
         (LPWSTR)L"ATSZIO",
         (LPWSTR)L"ATSZIO",
-        (provReadKernelVM)AtszioReadKernelVirtualMemory,
-        (provWriteKernelVM)AtszioWriteKernelVirtualMemory,
-        (provVirtualToPhysical)AtszioVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
-        (provQueryPML4)AtszioQueryPML4Value,
-        (provReadPhysicalMemory)AtszioReadPhysicalMemory,
-        (provWritePhysicalMemory)AtszioWritePhysicalMemory,
+        (LPWSTR)L"ASUSTeK Computer Inc.",
         (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub
+        (provUnregisterDriver)KDUProviderStub,
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        AtszioReadKernelVirtualMemory,
+        AtszioWriteKernelVirtualMemory,
+        AtszioVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        AtszioQueryPML4Value,
+        AtszioReadPhysicalMemory,
+        AtszioWritePhysicalMemory
     },
 
     {
@@ -109,15 +121,18 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         (LPWSTR)L"CVE-2019-18845",
         (LPWSTR)L"MsIo64",
         (LPWSTR)L"MsIo",
-        (provReadKernelVM)MsioReadKernelVirtualMemory,
-        (provWriteKernelVM)MsioWriteKernelVirtualMemory,
-        (provVirtualToPhysical)MsioVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
-        (provQueryPML4)MsioQueryPML4Value,
-        (provReadPhysicalMemory)MsioReadPhysicalMemory,
-        (provWritePhysicalMemory)MsioWritePhysicalMemory,
+        (LPWSTR)L"MICSYS Technology Co., Ltd.",
         (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub
+        (provUnregisterDriver)KDUProviderStub,
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        MsioReadKernelVirtualMemory,
+        MsioWriteKernelVirtualMemory,
+        MsioVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        MsioQueryPML4Value,
+        MsioReadPhysicalMemory,
+        MsioWritePhysicalMemory
     }
 
 };
@@ -146,10 +161,16 @@ VOID KDUProvList()
             prov->DeviceName);
 
         //
+        // Show signer.
+        //
+        printf_s("\tSigned by: \"%ws\"\r\n",
+            prov->SignerName);
+
+        //
         // List provider flags.
         //
         printf_s("\tHVCI support: %s\r\n"\
-            "\tWHQL signature: %s\r\n",
+            "\tWHQL signature present: %s\r\n",
             (prov->SupportHVCI == 0) ? "No" : "Yes",
             (prov->SignatureWHQL == 0) ? "No" : "Yes");
 
@@ -474,11 +495,28 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             (PVOID)prov->Callbacks.WriteKernelVM == (PVOID)KDUProviderStub)
         {
             printf_s("[!] Abort: selected provider does not support arbitrary kernel read/write or\r\n"\
-                "\tKDU interface is not implemented for these methods\r\n");
+                "\tKDU interface is not implemented for these methods.\r\n");
 
 #ifndef _DEBUG
             return NULL;
 #endif
+        }
+        break;
+
+    case ActionTypeDSECorruption:
+
+        //
+        // Check if we can write.
+        //
+        if ((PVOID)prov->Callbacks.WriteKernelVM == (PVOID)KDUProviderStub) {
+
+            printf_s("[!] Abort: selected provider does not support arbitrary kernel write.\r\n");
+
+
+#ifndef _DEBUG
+            return NULL;
+#endif
+
     }
         break;
 

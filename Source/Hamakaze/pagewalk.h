@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        02 Feb 2020
+*  DATE:        07 Feb 2020
 *
 *  Page table translation prototypes.
 *
@@ -21,7 +21,7 @@
 
 BOOL PwVirtualToPhysical(
     _In_ HANDLE DeviceHandle,
-    _In_ provQueryPML4 QueryPML4,
+    _In_ provQueryPML4 QueryPML4Routine,
     _In_ provReadPhysicalMemory ReadPhysicalMemoryRoutine,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress);
