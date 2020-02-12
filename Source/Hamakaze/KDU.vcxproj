@@ -106,7 +106,7 @@
     <ClCompile Include="hde\hde64.c" />
     <ClCompile Include="idrv\atszio.cpp" />
     <ClCompile Include="idrv\gdrv.cpp" />
-    <ClCompile Include="idrv\msio.cpp" />
+    <ClCompile Include="idrv\winio.cpp" />
     <ClCompile Include="idrv\nal.cpp" />
     <ClCompile Include="idrv\rtcore.cpp" />
     <ClCompile Include="main.cpp" />
@@ -127,6 +127,7 @@
     <ClCompile Include="ps.cpp" />
     <ClCompile Include="sup.cpp" />
     <ClCompile Include="tests.cpp" />
+    <ClCompile Include="tinyaes\aes.c" />
     <ClCompile Include="victim.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -137,7 +138,7 @@
     <ClInclude Include="hde\hde64.h" />
     <ClInclude Include="idrv\atszio.h" />
     <ClInclude Include="idrv\gdrv.h" />
-    <ClInclude Include="idrv\msio.h" />
+    <ClInclude Include="idrv\winio.h" />
     <ClInclude Include="idrv\nal.h" />
     <ClInclude Include="idrv\rtcore.h" />
     <ClInclude Include="irp.h" />
@@ -153,6 +154,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="sup.h" />
     <ClInclude Include="tests.h" />
+    <ClInclude Include="tinyaes\aes.h" />
     <ClInclude Include="victim.h" />
   </ItemGroup>
   <ItemGroup>
@@ -164,7 +166,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="drv\ATSZIO64.bin" />
+    <None Include="drv\eneio64.bin" />
     <None Include="drv\gdrv.bin" />
+    <None Include="drv\glckio2.bin" />
     <None Include="drv\iQVM64.bin" />
     <None Include="drv\msio64.bin" />
     <None Include="drv\procexp.bin" />

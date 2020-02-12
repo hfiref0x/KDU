@@ -25,6 +25,9 @@
     <Filter Include="ntos">
       <UniqueIdentifier>{1df1a36e-45d4-430a-a401-9415b50be4bd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tinyaes">
+      <UniqueIdentifier>{c53b77e9-0d5d-4eb3-91d8-1b71f16abd1d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -105,8 +108,11 @@
     <ClCompile Include="idrv\atszio.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
-    <ClCompile Include="idrv\msio.cpp">
+    <ClCompile Include="idrv\winio.cpp">
       <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="tinyaes\aes.c">
+      <Filter>tinyaes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -179,8 +185,11 @@
     <ClInclude Include="ntos\halamd64.h">
       <Filter>ntos</Filter>
     </ClInclude>
-    <ClInclude Include="idrv\msio.h">
+    <ClInclude Include="idrv\winio.h">
       <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyaes\aes.h">
+      <Filter>tinyaes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -213,6 +222,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="drv\msio64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\glckio2.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\eneio64.bin">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

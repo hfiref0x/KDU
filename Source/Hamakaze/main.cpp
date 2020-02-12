@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        02 Feb 2020
+*  DATE:        12 Feb 2020
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -44,7 +44,7 @@ volatile LONG g_lApplicationInstances = 0;
                      "kdu -map filename - map driver to the kernel and execute it entry point\r\n"\
                      "kdu -list         - list available providers\r\n"                     
 
-#define T_KDUINTRO   "[+] Kernel Driver Utility v1.0.0 started, (c) 2020 KDU Project\r\n[+] Supported x64 OS: Windows 7 and above"
+#define T_KDUINTRO   "[+] Kernel Driver Utility v1.0.1 started, (c) 2020 KDU Project\r\n[+] Supported x64 OS: Windows 7 and above"
 #define T_PRNTDEFAULT   "%s\r\n"
 
 /*

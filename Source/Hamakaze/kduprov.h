@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        09 Feb 2020
+*  DATE:        12 Feb 2020
 *
 *  Provider support routines.
 *
@@ -19,13 +19,15 @@
 
 #pragma once
 
-#define KDU_PROVIDERS_MAX               5
+#define KDU_PROVIDERS_MAX               7
 
 #define KDU_PROVIDER_INTEL_NAL          0
 #define KDU_PROVIDER_UNWINDER_RTCORE    1
 #define KDU_PROVIDER_GIGABYTE_GDRV      2
 #define KDU_PROVIDER_ASUSTEK_ATSZIO     3
 #define KDU_PROVIDER_PATRIOT_MSIO64     4
+#define KDU_PROVIDER_GLCKIO2            5
+#define KDU_PROVIDER_ENEIO64            6
 
 #define KDU_PROVIDER_DEFAULT        KDU_PROVIDER_INTEL_NAL
 
@@ -113,13 +115,15 @@ typedef BOOL(WINAPI* provQueryPML4)(
 // Prototype for driver registering/unlocking function.
 //
 typedef BOOL(WINAPI* provRegisterDriver)(
-    _In_ HANDLE DeviceHandle);
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param);
 
 //
 // Prototype for driver unregistering function.
 //
 typedef BOOL(WINAPI* provUnregisterDriver)(
-    _In_ HANDLE DeviceHandle);
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param);
 
 typedef enum _KDU_ACTION_TYPE {
     ActionTypeMapDriver = 0,
@@ -129,6 +133,12 @@ typedef enum _KDU_ACTION_TYPE {
     ActionTypeMax
 } KDU_ACTION_TYPE;
 
+#define KDUPROV_FLAGS_NONE               0x00000000
+#define KDUPROV_FLAGS_SUPPORT_HVCI       0x00000001
+#define KDUPROV_FLAGS_SIGNATURE_WHQL     0x00000002 
+#define KDUPROV_FLAGS_WINIO_BASED        0x00000004
+#define KDUPROV_FLAGS_WINRING0_BASED     0x00000008
+
 typedef struct _KDU_PROVIDER {
     ULONG MaxNtBuildNumberSupport;
     ULONG ResourceId;
@@ -137,7 +147,9 @@ typedef struct _KDU_PROVIDER {
         struct {
             ULONG SupportHVCI : 1;
             ULONG SignatureWHQL : 1;
-            ULONG Reserved : 30;
+            ULONG WinIoBased : 1;
+            ULONG WinRing0Based : 1;
+            ULONG Reserved : 28;
         };
     };
     LPWSTR Desciption;

