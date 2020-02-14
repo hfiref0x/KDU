@@ -91,7 +91,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 + MICSYS MsIo (WinIo) driver from Patriot Viper RGB utility of version 1.0;
 + GLCKIO2 (WinIo) driver from ASRock Polychrome RGB of version 1.0.4;
 + EneIo (WinIo) driver from G.SKILL Trident Z Lighting Control of version 1.00.08;
-+ WinRing0x64 driver from EVGA Precision X of version 1.0.2.0.
++ WinRing0x64 driver from EVGA Precision X1 of version 1.0.2.0.
 
 More providers maybe added in the future.
 
