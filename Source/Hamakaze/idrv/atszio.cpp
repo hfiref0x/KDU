@@ -4,9 +4,9 @@
 *
 *  TITLE:       ATSZIO.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        07 Feb 2020
+*  DATE:        12 Feb 2020
 *
 *  ASUSTeK ATSZIO WinFlash  driver routines.
 *
@@ -26,41 +26,6 @@
 //
 // Another reference https://github.com/LimiQS/AsusDriversPrivEscala
 //
-
-/*
-* AtszioCallDriver
-*
-* Purpose:
-*
-* Call ASUSTeK ATSZIO driver.
-*
-*/
-BOOL AtszioCallDriver(
-    _In_ HANDLE DeviceHandle,
-    _In_ ULONG IoControlCode,
-    _In_ PVOID InputBuffer,
-    _In_ ULONG InputBufferLength,
-    _In_opt_ PVOID OutputBuffer,
-    _In_opt_ ULONG OutputBufferLength)
-{
-    BOOL bResult = FALSE;
-    IO_STATUS_BLOCK ioStatus;
-
-    NTSTATUS ntStatus = NtDeviceIoControlFile(DeviceHandle,
-        NULL,
-        NULL,
-        NULL,
-        &ioStatus,
-        IoControlCode,
-        InputBuffer,
-        InputBufferLength,
-        OutputBuffer,
-        OutputBufferLength);
-
-    bResult = NT_SUCCESS(ntStatus);
-    SetLastError(RtlNtStatusToDosError(ntStatus));
-    return bResult;
-}
 
 /*
 * AtszioMapMemory
@@ -91,7 +56,7 @@ PVOID AtszioMapMemory(
     request.Offset.QuadPart = offset;
     request.ViewSize = mapSize;
 
-    if (AtszioCallDriver(DeviceHandle,
+    if (supCallDriver(DeviceHandle,
         IOCTL_ATSZIO_MAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
@@ -126,7 +91,7 @@ VOID AtszioUnmapMemory(
     request.SectionHandle = SectionHandle;
     request.MappedBaseAddress = SectionToUnmap;
 
-    AtszioCallDriver(DeviceHandle,
+    supCallDriver(DeviceHandle,
         IOCTL_ATSZIO_UNMAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
@@ -193,7 +158,7 @@ BOOL WINAPI AtszioQueryPML4Value(
 BOOL WINAPI AtszioReadWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _In_ PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes,
     _In_ BOOLEAN DoWrite)
 {
@@ -279,7 +244,7 @@ BOOL WINAPI AtszioReadPhysicalMemory(
 BOOL WINAPI AtszioWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
     return AtszioReadWritePhysicalMemory(DeviceHandle,

@@ -82,7 +82,7 @@ This tool does not change (and this won't change in future) internal Windows str
 
 You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware.
 
-#### Currently Supported Providers
+# Currently Supported Providers
 
 + Intel Network Adapter Diagnostic Driver of version 1.03.0.7;
 + RTCore64 driver from MSI Afterburner of version 4.6.2 build 15658 and below;
@@ -90,7 +90,8 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 + ATSZIO64 driver from ASUSTeK WinFlash utility of various versions;
 + MICSYS MsIo (WinIo) driver from Patriot Viper RGB utility of version 1.0;
 + GLCKIO2 (WinIo) driver from ASRock Polychrome RGB of version 1.0.4;
-+ EneIo (WinIo) driver from G.SKILL Trident Z Lighting Control of version 1.00.08.
++ EneIo (WinIo) driver from G.SKILL Trident Z Lighting Control of version 1.00.08;
++ WinRing0x64 driver from EVGA Precision X of version 1.0.2.0.
 
 More providers maybe added in the future.
 

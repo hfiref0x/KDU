@@ -4,9 +4,9 @@
 *
 *  TITLE:       NAL.H
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        02 Feb 2020
+*  DATE:        12 Feb 2020
 *
 *  Intel Network Adapter iQVM64 driver interface header.
 *
@@ -102,7 +102,7 @@ _Success_(return != FALSE)
 BOOL NalWriteVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
 _Success_(return != FALSE)
@@ -116,5 +116,5 @@ _Success_(return != FALSE)
 BOOL NalWriteVirtualMemoryEx(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);

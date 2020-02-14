@@ -4,9 +4,9 @@
 *
 *  TITLE:       DRVMAP.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        24 Jan 2020
+*  DATE:        12 Feb 2020
 *
 *  Driver mapping routines.
 *
@@ -100,13 +100,13 @@ VOID IofCompleteRequestTest(
 *
 */
 NTSTATUS NTAPI PsCreateSystemThreadTest(
-    _Out_ PHANDLE ThreadHandle,
-    _In_ ULONG DesiredAccess,
-    _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
-    _In_opt_  HANDLE ProcessHandle,
-    _Out_opt_ PCLIENT_ID ClientId,
-    _In_ PKSTART_ROUTINE StartRoutine,
-    _In_opt_ PVOID StartContext)
+    PHANDLE ThreadHandle,
+    ULONG DesiredAccess,
+    POBJECT_ATTRIBUTES ObjectAttributes,
+    HANDLE ProcessHandle,
+    PCLIENT_ID ClientId,
+    PKSTART_ROUTINE StartRoutine,
+    PVOID StartContext)
 {
     UNREFERENCED_PARAMETER(ThreadHandle);
     UNREFERENCED_PARAMETER(DesiredAccess);
@@ -812,7 +812,7 @@ Reload:
                 //
                 printf_s("[+] Run shellcode\r\n");
                 Sleep(1000);
-                supOpenDriver((LPWSTR)PROCEXP152, &victimDeviceHandle);
+                supOpenDriver((LPWSTR)PROCEXP152, GENERIC_READ| GENERIC_WRITE, &victimDeviceHandle);
                 Sleep(1000);
             }
         }

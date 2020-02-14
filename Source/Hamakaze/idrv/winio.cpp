@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        12 Feb 2020
+*  DATE:        13 Feb 2020
 *
 *  WINIO based drivers routines.
 *
@@ -54,41 +54,6 @@ pfnWinIoGenericUnmapMemory g_WinIoUnmapMemoryRoutine;
 BOOL g_PhysAddress64bit = FALSE;
 
 /*
-* WinIoCallDriver
-*
-* Purpose:
-*
-* Call WinIo driver.
-*
-*/
-BOOL WinIoCallDriver(
-    _In_ HANDLE DeviceHandle,
-    _In_ ULONG IoControlCode,
-    _In_ PVOID InputBuffer,
-    _In_ ULONG InputBufferLength,
-    _In_opt_ PVOID OutputBuffer,
-    _In_opt_ ULONG OutputBufferLength)
-{
-    BOOL bResult = FALSE;
-    IO_STATUS_BLOCK ioStatus;
-
-    NTSTATUS ntStatus = NtDeviceIoControlFile(DeviceHandle,
-        NULL,
-        NULL,
-        NULL,
-        &ioStatus,
-        IoControlCode,
-        InputBuffer,
-        InputBufferLength,
-        OutputBuffer,
-        OutputBufferLength);
-
-    bResult = NT_SUCCESS(ntStatus);
-    SetLastError(RtlNtStatusToDosError(ntStatus));
-    return bResult;
-}
-
-/*
 * MsIoMapMemory
 *
 * Purpose:
@@ -111,7 +76,7 @@ PVOID MsIoMapMemory(
     RtlSecureZeroMemory(&request, sizeof(request));
     request.ViewSize = PhysicalAddress + NumberOfBytes;
 
-    if (WinIoCallDriver(DeviceHandle,
+    if (supCallDriver(DeviceHandle,
         IOCTL_WINIO_MAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
@@ -148,7 +113,7 @@ VOID MsIoUnmapMemory(
     request.ReferencedObject = ReferencedObject;
     request.SectionHandle = SectionHandle;
 
-    WinIoCallDriver(DeviceHandle,
+    supCallDriver(DeviceHandle,
         IOCTL_WINIO_UNMAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
@@ -180,7 +145,7 @@ PVOID WinIoMapMemory(
     request.ViewSize = NumberOfBytes;
     request.BusAddress = PhysicalAddress;
 
-    if (WinIoCallDriver(DeviceHandle,
+    if (supCallDriver(DeviceHandle,
         IOCTL_WINIO_MAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
@@ -217,14 +182,13 @@ VOID WinIoUnmapMemory(
     request.ReferencedObject = ReferencedObject;
     request.SectionHandle = SectionHandle;
 
-    WinIoCallDriver(DeviceHandle,
+    supCallDriver(DeviceHandle,
         IOCTL_WINIO_UNMAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
         &request,
         sizeof(request));
 }
-
 
 /*
 * WinIoQueryPML4Value
@@ -289,7 +253,7 @@ BOOL WINAPI WinIoQueryPML4Value(
 BOOL WINAPI WinIoReadWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _In_ PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes,
     _In_ BOOLEAN DoWrite)
 {
@@ -390,7 +354,7 @@ BOOL WINAPI WinIoReadPhysicalMemory(
 BOOL WINAPI WinIoWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
     return WinIoReadWritePhysicalMemory(DeviceHandle,
@@ -484,7 +448,7 @@ BOOL WINAPI WinIoReadKernelVirtualMemory(
 BOOL WINAPI WinIoWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
     BOOL bResult;
@@ -539,10 +503,11 @@ BOOL GlckIo2Register(
     encryptedProcessId = SWAP_UINT32(GetCurrentProcessId());
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
+    RtlSecureZeroMemory(&OutBuf, sizeof(OutBuf));
     RtlCopyMemory(&Buffer, &encryptedProcessId, sizeof(ULONG_PTR));
     AES_ECB_encrypt(&ctx, (uint8_t*)&Buffer);
 
-    return WinIoCallDriver(DeviceHandle,
+    return supCallDriver(DeviceHandle,
         IOCTL_GKCKIO2_REGISTER,
         &Buffer,
         sizeof(Buffer),

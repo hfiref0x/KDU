@@ -161,7 +161,7 @@ BOOL VictimCreate(
 
                 if (VictimHandle) {
                    
-                    ntStatus = supOpenDriver(Name, &deviceHandle);
+                    ntStatus = supOpenDriver(Name, GENERIC_READ | GENERIC_WRITE, &deviceHandle);
                     if (NT_SUCCESS(ntStatus)) {
                         *VictimHandle = deviceHandle;
                     }

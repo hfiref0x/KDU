@@ -4,9 +4,9 @@
 *
 *  TITLE:       PAGEWALK.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        07 Feb 2020
+*  DATE:        12 Feb 2020
 *
 *  Function to translate virtual to physical addresses, x86-64.
 *
@@ -45,6 +45,8 @@ BOOL PwVirtualToPhysical(
 {
     ULONG_PTR   pml4_cr3, selector, table, entry = 0;
     INT         r, shift;
+
+    *PhysicalAddress = 0;
 
     if (QueryPML4Routine(DeviceHandle, &pml4_cr3) == 0)
         return 0;

@@ -5,9 +5,9 @@
 *
 *  TITLE:       HALAMD64.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        06 Feb 2020
+*  DATE:        12 Feb 2020
 *
 *  Common header file for the ntos HAL AMD64 definitions.
 *
@@ -25,6 +25,8 @@
 #ifndef HALAMD64_RTL
 #define HALAMD64_RTL
 
+#pragma warning(push)
+#pragma warning(disable: 4214)
 
 //
 // HALAMD64_RTL HEADER BEGIN
@@ -248,6 +250,8 @@ typedef struct _PROCESSOR_START_BLOCK {
     KPROCESSOR_STATE ProcessorState;
 
 } PROCESSOR_START_BLOCK;
+
+#pragma warning(pop)
 
 //
 // HALAMD64_RTL HEADER END

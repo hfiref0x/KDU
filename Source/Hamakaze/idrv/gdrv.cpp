@@ -4,9 +4,9 @@
 *
 *  TITLE:       GDRV.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        07 Feb 2020
+*  DATE:        13 Feb 2020
 *
 *  Gigabyte GiveIO GDRV driver routines.
 *
@@ -23,41 +23,6 @@
 //
 // Gigabyte driver based on MAPMEM.SYS Microsoft Windows NT 3.51 DDK example from 1993.
 //
-
-/*
-* GioCallDriver
-*
-* Purpose:
-*
-* Call Gigabyte Gdrv driver.
-*
-*/
-BOOL GioCallDriver(
-    _In_ HANDLE DeviceHandle,
-    _In_ ULONG IoControlCode,
-    _In_ PVOID InputBuffer,
-    _In_ ULONG InputBufferLength,
-    _In_opt_ PVOID OutputBuffer,
-    _In_opt_ ULONG OutputBufferLength)
-{
-    BOOL bResult = FALSE;
-    IO_STATUS_BLOCK ioStatus;
-
-    NTSTATUS ntStatus = NtDeviceIoControlFile(DeviceHandle,
-        NULL,
-        NULL,
-        NULL,
-        &ioStatus,
-        IoControlCode,
-        InputBuffer,
-        InputBufferLength,
-        OutputBuffer,
-        OutputBufferLength);
-
-    bResult = NT_SUCCESS(ntStatus);
-    SetLastError(RtlNtStatusToDosError(ntStatus));
-    return bResult;
-}
 
 /*
 * GioMapMemory
@@ -79,7 +44,7 @@ PVOID GioMapMemory(
     request.BusAddress.QuadPart = PhysicalAddress;
     request.Length = NumberOfBytes;
 
-    if (GioCallDriver(DeviceHandle,
+    if (supCallDriver(DeviceHandle,
         IOCTL_GDRV_MAP_USER_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
@@ -105,7 +70,7 @@ VOID GioUnmapMemory(
     _In_ PVOID SectionToUnmap
 )
 {
-    GioCallDriver(DeviceHandle,
+    supCallDriver(DeviceHandle,
         IOCTL_GDRV_UNMAP_USER_PHYSICAL_MEMORY,
         &SectionToUnmap,
         sizeof(PVOID),
@@ -142,7 +107,7 @@ BOOL WINAPI GioVirtualToPhysicalEx(
 
     request.Address.QuadPart = VirtualAddress;
 
-    if (GioCallDriver(DeviceHandle,
+    if (supCallDriver(DeviceHandle,
         IOCTL_GDRV_VIRTUALTOPHYSICAL,
         &request,
         sizeof(request),
@@ -246,7 +211,7 @@ BOOL WINAPI GioVirtualToPhysical(
 BOOL WINAPI GioReadWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _In_ PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes,
     _In_ BOOLEAN DoWrite)
 {
@@ -326,7 +291,7 @@ BOOL WINAPI GioReadPhysicalMemory(
 BOOL WINAPI GioWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
     return GioReadWritePhysicalMemory(DeviceHandle,

@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.127
+*  VERSION:     1.130
 *
-*  DATE:        04 Feb 2020
+*  DATE:        14 Feb 2020
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -88,6 +88,7 @@ typedef ULONGLONG REGHANDLE, *PREGHANDLE;
 typedef PVOID *PDEVICE_MAP;
 typedef PVOID PHEAD;
 typedef struct _IO_TIMER* PIO_TIMER;
+typedef LARGE_INTEGER PHYSICAL_ADDRESS;
 
 #ifndef _WIN32_WINNT_WIN10
 #define _WIN32_WINNT_WIN10 0x0A00
@@ -493,6 +494,18 @@ typedef struct _IO_STATUS_BLOCK {
 
     ULONG_PTR Information;
 } IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
+
+#ifndef INTERFACE_TYPE
+typedef enum _INTERFACE_TYPE {
+    Internal,
+    Isa,
+    Eisa,
+    MicroChannel,
+    TurboChannel,
+    PCIBus,
+    MaximumInterfaceType
+} INTERFACE_TYPE, * PINTERFACE_TYPE;
+#endif
 
 /*
 ** FileCache and MemoryList START
@@ -6192,8 +6205,8 @@ NTSYSAPI
 VOID
 NTAPI
 RtlInitString(
-    _Inout_ PSTRING DestinationString,
-    _In_ PCSZ SourceString);
+    _Out_ PSTRING DestinationString,
+    _In_opt_ PCSZ SourceString);
 
 NTSYSAPI
 VOID
@@ -6988,6 +7001,118 @@ RtlGetSaclSecurityDescriptor(
 NTSYSAPI
 NTSTATUS
 NTAPI
+RtlCreateSecurityDescriptor(
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
+    _In_ ULONG Revision);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlSetOwnerSecurityDescriptor(
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
+    _In_ PSID Owner,
+    _In_ BOOLEAN OwnerDefaulted);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlCopySecurityDescriptor(
+    _In_ PSECURITY_DESCRIPTOR InputSecurityDescriptor,
+    _Out_ PSECURITY_DESCRIPTOR* OutputSecurityDescriptor);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlMakeSelfRelativeSD(
+    _In_ PSECURITY_DESCRIPTOR AbsoluteSecurityDescriptor,
+    _Out_writes_bytes_(*BufferLength) PSECURITY_DESCRIPTOR SelfRelativeSecurityDescriptor,
+    _Inout_ PULONG BufferLength);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlAbsoluteToSelfRelativeSD(
+    _In_ PSECURITY_DESCRIPTOR AbsoluteSecurityDescriptor,
+    _Out_writes_bytes_to_opt_(*BufferLength, *BufferLength) PSECURITY_DESCRIPTOR SelfRelativeSecurityDescriptor,
+    _Inout_ PULONG BufferLength);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlSelfRelativeToAbsoluteSD(
+    _In_ PSECURITY_DESCRIPTOR SelfRelativeSecurityDescriptor,
+    _Out_writes_bytes_to_opt_(*AbsoluteSecurityDescriptorSize, *AbsoluteSecurityDescriptorSize) PSECURITY_DESCRIPTOR AbsoluteSecurityDescriptor,
+    _Inout_ PULONG AbsoluteSecurityDescriptorSize,
+    _Out_writes_bytes_to_opt_(*DaclSize, *DaclSize) PACL Dacl,
+    _Inout_ PULONG DaclSize,
+    _Out_writes_bytes_to_opt_(*SaclSize, *SaclSize) PACL Sacl,
+    _Inout_ PULONG SaclSize,
+    _Out_writes_bytes_to_opt_(*OwnerSize, *OwnerSize) PSID Owner,
+    _Inout_ PULONG OwnerSize,
+    _Out_writes_bytes_to_opt_(*PrimaryGroupSize, *PrimaryGroupSize) PSID PrimaryGroup,
+    _Inout_ PULONG PrimaryGroupSize);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlSetDaclSecurityDescriptor(
+    _Inout_ PSECURITY_DESCRIPTOR SecurityDescriptor,
+    _In_ BOOLEAN DaclPresent,
+    _In_opt_ PACL Dacl,
+    _In_opt_ BOOLEAN DaclDefaulted);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlGetDaclSecurityDescriptor(
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
+    _Out_ PBOOLEAN DaclPresent,
+    _Out_ PACL* Dacl,
+    _Out_ PBOOLEAN DaclDefaulted);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlSetSaclSecurityDescriptor(
+    _Inout_ PSECURITY_DESCRIPTOR SecurityDescriptor,
+    _In_ BOOLEAN SaclPresent,
+    _In_opt_ PACL Sacl,
+    _In_opt_ BOOLEAN SaclDefaulted);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlGetSaclSecurityDescriptor(
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
+    _Out_ PBOOLEAN SaclPresent,
+    _Out_ PACL* Sacl,
+    _Out_ PBOOLEAN SaclDefaulted);
+
+NTSYSAPI
+ULONG
+NTAPI
+RtlLengthSecurityDescriptor(
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor);
+
+_Check_return_
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlValidSecurityDescriptor(
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor);
+
+_Check_return_
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlValidRelativeSecurityDescriptor(
+    _In_reads_bytes_(SecurityDescriptorLength) PSECURITY_DESCRIPTOR SecurityDescriptorInput,
+    _In_ ULONG SecurityDescriptorLength,
+    _In_ SECURITY_INFORMATION RequiredInformation);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
 RtlCreateAcl(
     _Out_writes_bytes_(AclLength) PACL Acl,
     _In_ ULONG AclLength,
@@ -7177,23 +7302,24 @@ RtlAddMandatoryAce(
     _In_ ACCESS_MASK AccessMask);
 
 NTSYSAPI
+PVOID
+NTAPI
+RtlFindAceByType(
+    _In_ PACL pAcl,
+    _In_ UCHAR AceType,
+    _Out_opt_ PULONG pIndex);
+
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlOwnerAcesPresent(
+    _In_ PACL pAcl);
+
+NTSYSAPI
 NTSTATUS
 NTAPI
 RtlDefaultNpAcl(
     _Out_ PACL *Acl);
-
-NTSYSAPI
-ULONG
-NTAPI
-RtlLengthSecurityDescriptor(
-    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor);
-
-NTSYSAPI
-VOID
-NTAPI
-RtlMapGenericMask(
-    _In_ PACCESS_MASK AccessMask,
-    _In_ PGENERIC_MAPPING GenericMapping);
 
 NTSYSAPI
 BOOLEAN
@@ -7319,28 +7445,6 @@ RtlCreateServiceSid(
     _Out_writes_bytes_opt_(*ServiceSidLength) PSID ServiceSid,
     _Inout_ PULONG ServiceSidLength);
 
-NTSYSAPI
-NTSTATUS
-NTAPI
-RtlCreateSecurityDescriptor(
-    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
-    _In_ ULONG Revision);
-
-NTSYSAPI
-NTSTATUS
-NTAPI
-RtlSetOwnerSecurityDescriptor(
-    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
-    _In_ PSID Owner,
-    _In_ BOOLEAN OwnerDefaulted);
-
-NTSYSAPI
-NTSTATUS
-NTAPI
-RtlCopySecurityDescriptor(
-    _In_ PSECURITY_DESCRIPTOR InputSecurityDescriptor,
-    _Out_ PSECURITY_DESCRIPTOR *OutputSecurityDescriptor);
-
 FORCEINLINE 
 LUID 
 NTAPI 
@@ -7399,6 +7503,33 @@ RtlAdjustPrivilege(
     _In_ BOOLEAN Enable,
     _In_ BOOLEAN Client,
     _Out_ PBOOLEAN WasEnabled);
+
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlAreAllAccessesGranted(
+    _In_ ACCESS_MASK GrantedAccess,
+    _In_ ACCESS_MASK DesiredAccess);
+
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlAreAnyAccessesGranted(
+    _In_ ACCESS_MASK GrantedAccess,
+    _In_ ACCESS_MASK DesiredAccess);
+
+NTSYSAPI
+VOID
+NTAPI
+RtlMapGenericMask(
+    _In_ PACCESS_MASK AccessMask,
+    _In_ PGENERIC_MAPPING GenericMapping);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlImpersonateSelf(
+    _In_ SECURITY_IMPERSONATION_LEVEL ImpersonationLevel);
 
 /************************************************************************************
 *

@@ -4,9 +4,9 @@
 *
 *  TITLE:       NAL.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        07 Jan 2020
+*  DATE:        12 Feb 2020
 *
 *  Intel Network Adapter iQVM64 driver routines.
 *
@@ -243,7 +243,7 @@ _Success_(return != FALSE)
 BOOL NalWriteVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
     BOOL bResult = FALSE;
@@ -296,7 +296,7 @@ _Success_(return != FALSE)
 BOOL NalWriteVirtualMemoryEx(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes
 )
 {

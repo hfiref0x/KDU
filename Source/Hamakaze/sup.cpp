@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        02 Feb 2020
+*  DATE:        13 Feb 2020
 *
 *  Program global support routines.
 *
@@ -45,6 +45,41 @@ BOOL FORCEINLINE supHeapFree(
     _In_ PVOID Memory)
 {
     return RtlFreeHeap(NtCurrentPeb()->ProcessHeap, 0, Memory);
+}
+
+/*
+* supCallDriver
+*
+* Purpose:
+*
+* Call driver.
+*
+*/
+BOOL supCallDriver(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG IoControlCode,
+    _In_ PVOID InputBuffer,
+    _In_ ULONG InputBufferLength,
+    _In_opt_ PVOID OutputBuffer,
+    _In_opt_ ULONG OutputBufferLength)
+{
+    BOOL bResult = FALSE;
+    IO_STATUS_BLOCK ioStatus;
+
+    NTSTATUS ntStatus = NtDeviceIoControlFile(DeviceHandle,
+        NULL,
+        NULL,
+        NULL,
+        &ioStatus,
+        IoControlCode,
+        InputBuffer,
+        InputBufferLength,
+        OutputBuffer,
+        OutputBufferLength);
+
+    bResult = NT_SUCCESS(ntStatus);
+    SetLastError(RtlNtStatusToDosError(ntStatus));
+    return bResult;
 }
 
 /*
@@ -509,6 +544,7 @@ NTSTATUS supUnloadDriver(
 */
 NTSTATUS supOpenDriver(
     _In_ LPCWSTR DriverName,
+    _In_ ACCESS_MASK DesiredAccess,
     _Out_ PHANDLE DeviceHandle
 )
 {
@@ -542,7 +578,7 @@ NTSTATUS supOpenDriver(
         InitializeObjectAttributes(&obja, &usDeviceLink, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
         status = NtCreateFile(DeviceHandle,
-            GENERIC_READ | GENERIC_WRITE,
+            DesiredAccess,
             &obja,
             &iost,
             NULL,
@@ -1059,7 +1095,7 @@ BOOL supQueryObjectFromHandle(
 BOOL supGetCommandLineOption(
     _In_ LPCTSTR OptionName,
     _In_ BOOL IsParametric,
-    _Out_writes_opt_z_(ValueSize) LPTSTR OptionValue,
+    _Inout_opt_ LPTSTR OptionValue,
     _In_ ULONG ValueSize
 )
 {
@@ -1400,4 +1436,136 @@ ULONG_PTR supGetPML4FromLowStub1M(
     SetLastError(ERROR_SUCCESS);
 
     return PML4;
+}
+
+/*
+* supCreateSystemAdminAccessSD
+*
+* Purpose:
+*
+* Create security descriptor with Admin/System ACL set.
+*
+*/
+NTSTATUS supCreateSystemAdminAccessSD(
+    _Out_ PSECURITY_DESCRIPTOR* SecurityDescriptor,
+    _Out_opt_ PULONG Length
+)
+{
+    NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
+    PSID admSid = NULL;
+    PSID sysSid = NULL;
+    PACL sysAcl = NULL;
+    ULONG daclSize = 0;
+
+    PSECURITY_DESCRIPTOR securityDescriptor;
+
+    SID_IDENTIFIER_AUTHORITY sidAuthority = SECURITY_NT_AUTHORITY;
+
+    *SecurityDescriptor = NULL;
+
+    if (Length)
+        *Length = 0;
+
+    do {
+
+        securityDescriptor = (PSECURITY_DESCRIPTOR)supHeapAlloc(sizeof(SECURITY_DESCRIPTOR));
+        if (securityDescriptor == NULL) {
+            ntStatus = STATUS_MEMORY_NOT_ALLOCATED;
+            break;
+        }
+
+        admSid = (PSID)supHeapAlloc(RtlLengthRequiredSid(2));
+        if (admSid == NULL) {
+            ntStatus = STATUS_MEMORY_NOT_ALLOCATED;
+            break;
+        }
+
+        sysSid = (PSID)supHeapAlloc(RtlLengthRequiredSid(1));
+        if (sysSid == NULL) {
+            ntStatus = STATUS_MEMORY_NOT_ALLOCATED;
+            break;
+        }
+
+        ntStatus = RtlInitializeSid(admSid, &sidAuthority, 2);
+        if (NT_SUCCESS(ntStatus)) {
+            *RtlSubAuthoritySid(admSid, 0) = SECURITY_BUILTIN_DOMAIN_RID;
+            *RtlSubAuthoritySid(admSid, 1) = DOMAIN_ALIAS_RID_ADMINS;
+        }
+        else {
+            break;
+        }
+
+        ntStatus = RtlInitializeSid(sysSid, &sidAuthority, 1);
+        if (NT_SUCCESS(ntStatus)) {
+            *RtlSubAuthoritySid(sysSid, 0) = SECURITY_LOCAL_SYSTEM_RID;
+        }
+        else {
+            break;
+        }
+
+        daclSize = sizeof(ACL) +
+            (2 * sizeof(ACCESS_ALLOWED_ACE)) +
+            RtlLengthSid(admSid) + RtlLengthSid(sysSid) +
+            SECURITY_DESCRIPTOR_MIN_LENGTH;
+
+        sysAcl = (PACL)supHeapAlloc(daclSize);
+        if (sysAcl == NULL) {
+            ntStatus = STATUS_MEMORY_NOT_ALLOCATED;
+            break;
+        }
+
+        ntStatus = RtlCreateAcl(sysAcl, daclSize - SECURITY_DESCRIPTOR_MIN_LENGTH, ACL_REVISION);
+        if (!NT_SUCCESS(ntStatus))
+            break;
+
+        ntStatus = RtlAddAccessAllowedAce(sysAcl,
+            ACL_REVISION,
+            GENERIC_ALL,
+            sysSid);
+
+        if (!NT_SUCCESS(ntStatus))
+            break;
+
+        ntStatus = RtlAddAccessAllowedAce(sysAcl,
+            ACL_REVISION,
+            GENERIC_ALL,
+            admSid);
+
+        if (!NT_SUCCESS(ntStatus))
+            break;
+
+        ntStatus = RtlCreateSecurityDescriptor(securityDescriptor,
+            SECURITY_DESCRIPTOR_REVISION1);
+
+        if (!NT_SUCCESS(ntStatus))
+            break;
+
+        ntStatus = RtlSetDaclSecurityDescriptor(securityDescriptor,
+            TRUE,
+            sysAcl,
+            FALSE);
+
+        if (!NT_SUCCESS(ntStatus))
+            break;
+
+        if (!RtlValidSecurityDescriptor(securityDescriptor))
+            break;
+
+        *SecurityDescriptor = securityDescriptor;
+
+        if (Length)
+            *Length = RtlLengthSecurityDescriptor(securityDescriptor);
+
+    } while (FALSE);
+
+    if (admSid != NULL) supHeapFree(admSid);
+    if (sysSid != NULL) supHeapFree(sysSid);
+    if (sysAcl != NULL) supHeapFree(sysAcl);
+
+    if (!NT_SUCCESS(ntStatus)) {
+        if (securityDescriptor != NULL)
+            supHeapFree(securityDescriptor);
+    }
+
+    return ntStatus;
 }

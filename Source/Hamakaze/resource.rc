@@ -105,6 +105,8 @@ IDR_GLCKIO2             RCDATA                  "drv\\glckio2.bin"
 
 IDR_ENEIO64             RCDATA                  "drv\\eneio64.bin"
 
+IDR_WINRING0            RCDATA                  "drv\\WinRing0x64.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -114,6 +114,9 @@
     <ClCompile Include="tinyaes\aes.c">
       <Filter>tinyaes</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\winring0.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -190,6 +193,9 @@
     </ClInclude>
     <ClInclude Include="tinyaes\aes.h">
       <Filter>tinyaes</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\winring0.h">
+      <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

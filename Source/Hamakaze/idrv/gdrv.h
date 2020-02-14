@@ -4,9 +4,9 @@
 *
 *  TITLE:       GDRV.H
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        02 Feb 2020
+*  DATE:        12 Feb 2020
 *
 *  GigaByte GiveIO Gdrv driver interface header.
 *
@@ -42,18 +42,6 @@ typedef struct _GIO_VIRTUAL_TO_PHYSICAL {
     ULARGE_INTEGER Address;
 } GIO_VIRTUAL_TO_PHYSICAL, * PGIO_VIRTUAL_TO_PHYSICAL;
 
-typedef enum _INTERFACE_TYPE {
-    Internal,
-    Isa,
-    Eisa,
-    MicroChannel,
-    TurboChannel,
-    PCIBus,
-    MaximumInterfaceType
-} INTERFACE_TYPE, * PINTERFACE_TYPE;
-
-typedef LARGE_INTEGER PHYSICAL_ADDRESS;
-
 typedef struct _GDRV_PHYSICAL_MEMORY_INFO {
     INTERFACE_TYPE   InterfaceType; 
     ULONG            BusNumber;     
@@ -76,7 +64,7 @@ BOOL GioReadPhysicalMemory(
 BOOL WINAPI GioWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
 BOOL WINAPI GioWriteKernelVirtualMemory(

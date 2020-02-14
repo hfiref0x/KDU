@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        12 Feb 2020
+*  DATE:        13 Feb 2020
 *
 *  Provider support routines.
 *
@@ -19,7 +19,7 @@
 
 #pragma once
 
-#define KDU_PROVIDERS_MAX               7
+#define KDU_PROVIDERS_MAX               8
 
 #define KDU_PROVIDER_INTEL_NAL          0
 #define KDU_PROVIDER_UNWINDER_RTCORE    1
@@ -28,6 +28,7 @@
 #define KDU_PROVIDER_PATRIOT_MSIO64     4
 #define KDU_PROVIDER_GLCKIO2            5
 #define KDU_PROVIDER_ENEIO64            6
+#define KDU_PROVIDER_WINRING0           7
 
 #define KDU_PROVIDER_DEFAULT        KDU_PROVIDER_INTEL_NAL
 
@@ -93,7 +94,7 @@ typedef BOOL(WINAPI* provReadPhysicalMemory)(
 typedef BOOL(WINAPI* provWritePhysicalMemory)(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
 //
