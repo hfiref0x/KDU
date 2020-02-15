@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        13 Feb 2020
+*  DATE:        14 Feb 2020
 *
 *  WINIO based drivers routines.
 *
@@ -25,6 +25,11 @@ extern "C" {
 #include "tinyaes/aes.h"
 }
 #endif
+
+//
+// AES key used by EneTechIo latest variants.
+//
+ULONG g_EneTechIoUnlockKey[4] = { 0x54454E45, 0x4E484345, 0x474F4C4F, 0x434E4959 };
 
 //
 // Generic WINIO interface for all supported drivers based on WINIO code.
@@ -181,6 +186,95 @@ VOID WinIoUnmapMemory(
     request.BaseAddress = SectionToUnmap;
     request.ReferencedObject = ReferencedObject;
     request.SectionHandle = SectionHandle;
+
+    supCallDriver(DeviceHandle,
+        IOCTL_WINIO_UNMAP_USER_PHYSICAL_MEMORY,
+        &request,
+        sizeof(request),
+        &request,
+        sizeof(request));
+}
+
+/*
+* WinIoMapMemory2
+*
+* Purpose:
+*
+* Map physical memory through \Device\PhysicalMemory.
+* EneTechIo latest version variant with requestor check.
+*
+*/
+PVOID WinIoMapMemory2(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ ULONG NumberOfBytes,
+    _Out_ HANDLE* SectionHandle,
+    _Out_ PVOID* ReferencedObject)
+{
+    AES_ctx ctx;
+    WINIO_PHYSICAL_MEMORY_INFO_EX request;
+
+    *SectionHandle = NULL;
+    *ReferencedObject = NULL;
+
+    RtlSecureZeroMemory(&ctx, sizeof(ctx));
+    AES_init_ctx(&ctx, (uint8_t*)&g_EneTechIoUnlockKey);
+
+    RtlSecureZeroMemory(&request, sizeof(request));
+    request.CommitSize = NumberOfBytes;
+    request.BusAddress = PhysicalAddress;
+
+    ULONG seconds = supGetTimeAsSecondsSince1970();
+
+    RtlCopyMemory(&request.EncryptedKey, (PVOID)&seconds, sizeof(seconds));
+    AES_ECB_encrypt(&ctx, (UCHAR*)&request.EncryptedKey);
+
+    if (supCallDriver(DeviceHandle,
+        IOCTL_WINIO_MAP_USER_PHYSICAL_MEMORY,
+        &request,
+        sizeof(request),
+        &request,
+        sizeof(request)))
+    {
+        *SectionHandle = request.SectionHandle;
+        *ReferencedObject = request.ReferencedObject;
+        return request.BaseAddress;
+    }
+
+    return NULL;
+}
+
+/*
+* WinIoUnmapMemory2
+*
+* Purpose:
+*
+* Unmap previously mapped physical memory.
+* EneTechIo latest version variant with requestor check.
+*
+*/
+VOID WinIoUnmapMemory2(
+    _In_ HANDLE DeviceHandle,
+    _In_ PVOID SectionToUnmap,
+    _In_ HANDLE SectionHandle,
+    _In_ PVOID ReferencedObject
+)
+{
+    AES_ctx ctx;
+    WINIO_PHYSICAL_MEMORY_INFO_EX request;
+
+    RtlSecureZeroMemory(&ctx, sizeof(ctx));
+    AES_init_ctx(&ctx, (uint8_t*)&g_EneTechIoUnlockKey);
+
+    RtlSecureZeroMemory(&request, sizeof(request));
+    request.BaseAddress = SectionToUnmap;
+    request.ReferencedObject = ReferencedObject;
+    request.SectionHandle = SectionHandle;
+
+    ULONG seconds = supGetTimeAsSecondsSince1970();
+
+    RtlCopyMemory(&request.EncryptedKey, (PVOID)&seconds, sizeof(ULONG));
+    AES_ECB_encrypt(&ctx, (UCHAR*)&request.EncryptedKey);
 
     supCallDriver(DeviceHandle,
         IOCTL_WINIO_UNMAP_USER_PHYSICAL_MEMORY,
@@ -387,8 +481,8 @@ BOOL WINAPI WinIoVirtualToPhysical(
     }
 
     bResult = PwVirtualToPhysical(DeviceHandle,
-        (provQueryPML4)WinIoQueryPML4Value,
-        (provReadPhysicalMemory)WinIoReadPhysicalMemory,
+        WinIoQueryPML4Value,
+        WinIoReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
 
@@ -526,7 +620,7 @@ BOOL GlckIo2Register(
 BOOL WINAPI WinIoRegisterDriver(
     _In_ HANDLE DeviceHandle,
     _In_opt_ PVOID Param)
-{ 
+{
     ULONG DriverId = PtrToUlong(Param);
 
     switch (DriverId) {
@@ -545,6 +639,13 @@ BOOL WINAPI WinIoRegisterDriver(
         g_WinIoUnmapMemoryRoutine = MsIoUnmapMemory;
         g_PhysAddress64bit = FALSE;
         break;
+
+    case IDR_ENETECHIO64:
+        g_WinIoMapMemoryRoutine = WinIoMapMemory2;
+        g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory2;
+        g_PhysAddress64bit = TRUE;
+        break;
+
     default:
         g_WinIoMapMemoryRoutine = WinIoMapMemory;
         g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;

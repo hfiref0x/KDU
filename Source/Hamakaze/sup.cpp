@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        13 Feb 2020
+*  DATE:        14 Feb 2020
 *
 *  Program global support routines.
 *
@@ -1568,4 +1568,22 @@ NTSTATUS supCreateSystemAdminAccessSD(
     }
 
     return ntStatus;
+}
+
+/*
+* supGetTimeAsSecondsSince1970
+*
+* Purpose:
+*
+* Return seconds since 1970.
+*
+*/
+ULONG supGetTimeAsSecondsSince1970()
+{
+    LARGE_INTEGER fileTime;
+    ULONG seconds = 0;
+
+    GetSystemTimePreciseAsFileTime((PFILETIME)&fileTime);
+    RtlTimeToSecondsSince1970(&fileTime, &seconds);
+    return seconds;
 }

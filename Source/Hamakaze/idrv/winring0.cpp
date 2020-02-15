@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        13 Feb 2020
+*  DATE:        14 Feb 2020
 *
 *  WinRing0 based drivers routines.
 *
@@ -186,8 +186,8 @@ BOOL WINAPI WRZeroVirtualToPhysical(
     }
 
     bResult = PwVirtualToPhysical(DeviceHandle,
-        (provQueryPML4)WRZeroQueryPML4Value,
-        (provReadPhysicalMemory)WRZeroReadPhysicalMemory,
+        WRZeroQueryPML4Value,
+        WRZeroReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
 

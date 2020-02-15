@@ -107,6 +107,7 @@ IDR_ENEIO64             RCDATA                  "drv\\eneio64.bin"
 
 IDR_WINRING0            RCDATA                  "drv\\WinRing0x64.bin"
 
+IDR_ENETECHIO64         RCDATA                  "drv\\enetechio64.bin"
 
 /////////////////////////////////////////////////////////////////////////////
 //

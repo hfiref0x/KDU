@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        13 Feb 2020
+*  DATE:        14 Feb 2020
 *
 *  Gigabyte GiveIO GDRV driver routines.
 *
@@ -192,8 +192,8 @@ BOOL WINAPI GioVirtualToPhysical(
     }
 
     bResult = PwVirtualToPhysical(DeviceHandle,
-        (provQueryPML4)GioQueryPML4Value,
-        (provReadPhysicalMemory)GioReadPhysicalMemory,
+        GioQueryPML4Value,
+        GioReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
 

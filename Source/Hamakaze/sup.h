@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        12 Feb 2020
+*  DATE:        14 Feb 2020
 *
 *  Support routines header file.
 *
@@ -131,3 +131,5 @@ ULONG_PTR supGetPML4FromLowStub1M(
 NTSTATUS supCreateSystemAdminAccessSD(
     _Out_ PSECURITY_DESCRIPTOR * SecurityDescriptor,
     _Out_opt_ PULONG Length);
+
+ULONG supGetTimeAsSecondsSince1970();

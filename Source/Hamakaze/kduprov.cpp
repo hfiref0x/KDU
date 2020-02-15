@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        13 Feb 2020
+*  DATE:        14 Feb 2020
 *
 *  Vulnerable driver providers routines.
 *
@@ -197,7 +197,28 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         WRZeroQueryPML4Value,
         WRZeroReadPhysicalMemory,
         WRZeroWritePhysicalMemory,
-     }
+     },
+
+    {
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ENETECHIO64,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_WINIO_BASED,
+        (LPWSTR)L"TOUGHRAM Software",
+        (LPWSTR)L"EneTechIo64",
+        (LPWSTR)L"EneTechIo",
+        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
+        WinIoRegisterDriver,
+        (provUnregisterDriver)KDUProviderStub,
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        WinIoReadKernelVirtualMemory,
+        WinIoWriteKernelVirtualMemory,
+        WinIoVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        WinIoQueryPML4Value,
+        WinIoReadPhysicalMemory,
+        WinIoWritePhysicalMemory
+    }
 };
 
 /*

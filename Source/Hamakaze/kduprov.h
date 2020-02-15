@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        13 Feb 2020
+*  DATE:        14 Feb 2020
 *
 *  Provider support routines.
 *
@@ -19,7 +19,7 @@
 
 #pragma once
 
-#define KDU_PROVIDERS_MAX               8
+#define KDU_PROVIDERS_MAX               9
 
 #define KDU_PROVIDER_INTEL_NAL          0
 #define KDU_PROVIDER_UNWINDER_RTCORE    1
@@ -29,6 +29,7 @@
 #define KDU_PROVIDER_GLCKIO2            5
 #define KDU_PROVIDER_ENEIO64            6
 #define KDU_PROVIDER_WINRING0           7
+#define KDU_PROVIDER_ENETECHIO64        8
 
 #define KDU_PROVIDER_DEFAULT        KDU_PROVIDER_INTEL_NAL
 

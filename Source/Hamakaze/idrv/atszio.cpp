@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        12 Feb 2020
+*  DATE:        14 Feb 2020
 *
 *  ASUSTeK ATSZIO WinFlash  driver routines.
 *
@@ -277,8 +277,8 @@ BOOL WINAPI AtszioVirtualToPhysical(
     }
 
     bResult = PwVirtualToPhysical(DeviceHandle,
-        (provQueryPML4)AtszioQueryPML4Value,
-        (provReadPhysicalMemory)AtszioReadPhysicalMemory,
+        AtszioQueryPML4Value,
+        AtszioReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
 

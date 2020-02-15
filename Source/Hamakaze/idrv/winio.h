@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        13 Feb 2020
+*  DATE:        14 Feb 2020
 *
 *  WINIO based drivers interface header.
 *
@@ -34,6 +34,7 @@
 
 #define WINIO_MAP_FUNCID        (DWORD)0x810
 #define WINIO_UNMAP_FUNCID      (DWORD)0x811
+#define WINIO_READMSR           (DWORD)0x816
 
 #define GLCKIO2_REGISTER_FUNCID (DWORD)0x818
 
@@ -42,6 +43,9 @@
 
 #define IOCTL_WINIO_UNMAP_USER_PHYSICAL_MEMORY   \
     CTL_CODE(FILE_DEVICE_WINIO, WINIO_UNMAP_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x80102044
+
+#define IOCTL_WINIO_READMSR     \
+    CTL_CODE(WINIO_DEVICE_TYPE, WINIO_READMSR, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 #define IOCTL_GKCKIO2_REGISTER     \
     CTL_CODE(FILE_DEVICE_WINIO, GLCKIO2_REGISTER_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS)
@@ -81,6 +85,20 @@ typedef struct _WINIO_PHYSICAL_MEMORY_INFO {
     PVOID BaseAddress;
     PVOID ReferencedObject;
 } WINIO_PHYSICAL_MEMORY_INFO, * PWINIO_PHYSICAL_MEMORYINFO;
+
+/*
+
+EneTechIo enhanced variant with requestor check.
+
+*/
+typedef struct _WINIO_PHYSICAL_MEMORY_INFO_EX {
+    ULONG_PTR CommitSize;
+    ULONG_PTR BusAddress;
+    HANDLE SectionHandle;
+    PVOID BaseAddress;
+    PVOID ReferencedObject;
+    UCHAR EncryptedKey[16];
+} WINIO_PHYSICAL_MEMORY_INFO_EX, * PWINIO_PHYSICAL_MEMORY_INFO_EX;
 
 BOOL WINAPI WinIoQueryPML4Value(
     _In_ HANDLE DeviceHandle,
