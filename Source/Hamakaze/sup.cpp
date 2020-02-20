@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        14 Feb 2020
+*  DATE:        18 Feb 2020
 *
 *  Program global support routines.
 *
@@ -24,7 +24,7 @@
 *
 * Purpose:
 *
-* Wrapper for RtlAllocateHeap with WinObjEx heap.
+* Wrapper for RtlAllocateHeap.
 *
 */
 PVOID FORCEINLINE supHeapAlloc(
@@ -38,7 +38,7 @@ PVOID FORCEINLINE supHeapAlloc(
 *
 * Purpose:
 *
-* Wrapper for RtlFreeHeap with WinObjEx heap.
+* Wrapper for RtlFreeHeap.
 *
 */
 BOOL FORCEINLINE supHeapFree(
@@ -1583,7 +1583,40 @@ ULONG supGetTimeAsSecondsSince1970()
     LARGE_INTEGER fileTime;
     ULONG seconds = 0;
 
-    GetSystemTimePreciseAsFileTime((PFILETIME)&fileTime);
+    GetSystemTimeAsFileTime((PFILETIME)&fileTime);
     RtlTimeToSecondsSince1970(&fileTime, &seconds);
     return seconds;
+}
+
+/*
+* supGetModuleBaseByName
+*
+* Purpose:
+*
+* Return module base address.
+*
+*/
+ULONG_PTR supGetModuleBaseByName(
+    _In_ LPCSTR ModuleName
+)
+{
+    ULONG_PTR ReturnAddress = 0;
+    ULONG i, k;
+    PRTL_PROCESS_MODULES miSpace;
+
+    miSpace = (PRTL_PROCESS_MODULES)supGetSystemInfo(SystemModuleInformation);
+    if (miSpace != NULL) {
+        for (i = 0; i < miSpace->NumberOfModules; i++) {
+            k = miSpace->Modules[i].OffsetToFileName;
+            if (_strcmpi_a(
+                (CONST CHAR*)&miSpace->Modules[i].FullPathName[k],
+                ModuleName) == 0)
+            {
+                ReturnAddress = (ULONG_PTR)miSpace->Modules[i].ImageBase;
+                break;
+            }
+        }
+        supHeapFree(miSpace);
+    }
+    return ReturnAddress;
 }

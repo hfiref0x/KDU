@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        14 Feb 2020
+*  DATE:        18 Feb 2020
 *
 *  Support routines header file.
 *
@@ -133,3 +133,6 @@ NTSTATUS supCreateSystemAdminAccessSD(
     _Out_opt_ PULONG Length);
 
 ULONG supGetTimeAsSecondsSince1970();
+
+ULONG_PTR supGetModuleBaseByName(
+    _In_ LPCSTR ModuleName);

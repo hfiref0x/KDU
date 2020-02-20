@@ -104,6 +104,7 @@
   <ItemGroup>
     <ClCompile Include="compess.cpp" />
     <ClCompile Include="drvmap.cpp" />
+    <ClCompile Include="dsefix.cpp" />
     <ClCompile Include="hde\hde64.c" />
     <ClCompile Include="idrv\atszio.cpp" />
     <ClCompile Include="idrv\gdrv.cpp" />
@@ -136,6 +137,7 @@
     <ClInclude Include="compress.h" />
     <ClInclude Include="consts.h" />
     <ClInclude Include="drvmap.h" />
+    <ClInclude Include="dsefix.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="hde\hde64.h" />
     <ClInclude Include="idrv\atszio.h" />

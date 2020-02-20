@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        12 Feb 2020
+*  DATE:        18 Feb 2020
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -32,6 +32,7 @@ volatile LONG g_lApplicationInstances = 0;
 #define CMD_PRV         L"-prv"
 #define CMD_MAP         L"-map"
 #define CMD_PS          L"-ps"
+#define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
 #define CMD_COMPRESS    L"-compress"
 #define CMD_TEST        L"-test"
@@ -42,6 +43,7 @@ volatile LONG g_lApplicationInstances = 0;
                      "kdu -prv id       - optional parameter, provider id, default 0\r\n"\
                      "kdu -ps pid       - disable ProtectedProcess for given pid\r\n"\
                      "kdu -map filename - map driver to the kernel and execute it entry point\r\n"\
+                     "kdu -dse value    - write user defined value to the system DSE state flags\r\n"\
                      "kdu -list         - list available providers\r\n"                     
 
 #define T_KDUINTRO   "[+] Kernel Driver Utility v1.0.1 started, (c) 2020 KDU Project\r\n[+] Supported x64 OS: Windows 7 and above"
@@ -61,7 +63,7 @@ INT KDUProcessCommandLine(
 )
 {
     INT     retVal = -1;
-    ULONG   providerId = KDU_PROVIDER_DEFAULT;
+    ULONG   providerId = KDU_PROVIDER_DEFAULT, dseValue = 0;
     WCHAR   szParameter[MAX_PATH + 1];
 
     HINSTANCE hInstance = GetModuleHandle(NULL);
@@ -74,6 +76,9 @@ INT KDUProcessCommandLine(
 
 #ifdef _DEBUG
 
+        //
+        // Test switch, never used/present in the release build.
+        //
         if (supGetCommandLineOption(CMD_TEST,
             FALSE,
             NULL,
@@ -84,6 +89,9 @@ INT KDUProcessCommandLine(
             break;
         }
 
+        //
+        // Compress switch, never used/present in the release build.
+        //
         if (supGetCommandLineOption(CMD_COMPRESS,
             TRUE,
             szParameter,
@@ -118,68 +126,92 @@ INT KDUProcessCommandLine(
             sizeof(szParameter) / sizeof(WCHAR)))
         {
             providerId = strtoul(szParameter);
-            if (providerId >= KDU_PROVIDERS_MAX)
+            if (providerId >= KDU_PROVIDERS_MAX) {
+                printf_s("[!] Invalid provider id specified, default will be used\r\n");
                 providerId = KDU_PROVIDER_DEFAULT;
+            }
         }
 
         //
-        // Check if -map specified.
+        // Check if -dse specified.
         //
-        if (supGetCommandLineOption(CMD_MAP,
+        if (supGetCommandLineOption(CMD_DSE,
             TRUE,
             szParameter,
             sizeof(szParameter) / sizeof(WCHAR)))
         {
-            //map driver
-            if (RtlDoesFileExists_U(szParameter)) {
+            g_ProvContext = KDUProviderCreate(providerId,
+                HvciEnabled,
+                NtBuildNumber,
+                hInstance,
+                ActionTypeDSECorruption);
 
-                g_ProvContext = KDUProviderCreate(providerId,
-                    HvciEnabled,
-                    NtBuildNumber,
-                    hInstance,
-                    ActionTypeMapDriver);
-
-                if (g_ProvContext) {
-                    retVal = KDUMapDriver(g_ProvContext, szParameter);
-                    KDUProviderRelease(g_ProvContext);
-                }
-            }
-            else {
-                printf_s("[!] Input file not found\r\n");
+            if (g_ProvContext) {
+                dseValue = strtoul(szParameter);
+                KDUControlDSE(g_ProvContext, dseValue);
+                KDUProviderRelease(g_ProvContext);
             }
         }
-
         else
 
             //
-            // Check if -ps specified.
+            // Check if -map specified.
             //
-            if (supGetCommandLineOption(CMD_PS,
+            if (supGetCommandLineOption(CMD_MAP,
                 TRUE,
                 szParameter,
                 sizeof(szParameter) / sizeof(WCHAR)))
             {
-                g_ProvContext = KDUProviderCreate(providerId,
-                    HvciEnabled,
-                    NtBuildNumber,
-                    hInstance,
-                    ActionTypeDKOM);
+                //map driver
+                if (RtlDoesFileExists_U(szParameter)) {
 
-                if (g_ProvContext) {
+                    g_ProvContext = KDUProviderCreate(providerId,
+                        HvciEnabled,
+                        NtBuildNumber,
+                        hInstance,
+                        ActionTypeMapDriver);
 
-                    if (KDUControlProcess(g_ProvContext, strtou64(szParameter)))
-                        retVal = 0;
-
-                    KDUProviderRelease(g_ProvContext);
+                    if (g_ProvContext) {
+                        retVal = KDUMapDriver(g_ProvContext, szParameter);
+                        KDUProviderRelease(g_ProvContext);
+                    }
+                }
+                else {
+                    printf_s("[!] Input file not found\r\n");
                 }
             }
 
-            else {
+            else
+
                 //
-                // Nothing set, show help.
+                // Check if -ps specified.
                 //
-                printf_s(T_PRNTDEFAULT, T_KDUUSAGE);
-            }
+                if (supGetCommandLineOption(CMD_PS,
+                    TRUE,
+                    szParameter,
+                    sizeof(szParameter) / sizeof(WCHAR)))
+                {
+                    g_ProvContext = KDUProviderCreate(providerId,
+                        HvciEnabled,
+                        NtBuildNumber,
+                        hInstance,
+                        ActionTypeDKOM);
+
+                    if (g_ProvContext) {
+
+                        if (KDUControlProcess(g_ProvContext, strtou64(szParameter)))
+                            retVal = 0;
+
+                        KDUProviderRelease(g_ProvContext);
+                    }
+                }
+
+                else {
+                    //
+                    // Nothing set, show help.
+                    //
+                    printf_s(T_PRNTDEFAULT, T_KDUUSAGE);
+                }
 
     } while (FALSE);
 

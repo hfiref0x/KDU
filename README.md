@@ -18,11 +18,13 @@ It features:
 
 ###### KDU -ps ProcessID
 ###### KDU -map filename
+###### KDU -dse value
 ###### KDU -prv ProviderID
 ###### KDU -list
 * -prv  - optional, select vulnerability driver provider;
 * -ps 	- modify process object of given ProcessID;
 * -map  - load input file as code buffer to kernel mode and run it;
+* -dse  - write user defined value to the system DSE state flags;
 * -list - list currently available providers.
 
 Example:
@@ -30,6 +32,8 @@ Example:
 + kdu -map c:\driverless\mysuperhack.sys
 + kdu -prv 1 -ps 1234
 + kdu -prv 1 -map c:\driverless\mysuperhack.sys
++ kdu -dse 0
++ kdu -dse 6
 
 Run on Windows 10 20H2 (precomplied version)
 
@@ -92,7 +96,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 + GLCKIO2 (WinIo) driver from ASRock Polychrome RGB of version 1.0.4;
 + EneIo (WinIo) driver from G.SKILL Trident Z Lighting Control of version 1.00.08;
 + WinRing0x64 driver from EVGA Precision X1 of version 1.0.2.0;
-+ EneTechIo (WinIo) driver from TOUGHRAM Software of version 1.0.3.
++ EneTechIo (WinIo) driver from Thermaltake TOUGHRAM software of version 1.0.3.
 
 More providers maybe added in the future.
 

@@ -4,9 +4,9 @@
 *
 *  TITLE:       GLOBAL.H
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        24 Jan 2020
+*  DATE:        18 Feb 2020
 *
 *  Common include header file.
 *
@@ -61,4 +61,5 @@ extern "C" {
 #include "ps.h"
 #include "victim.h"
 #include "pagewalk.h"
+#include "dsefix.h"
 #include "tests.h"

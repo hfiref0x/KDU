@@ -203,7 +203,7 @@ KDU_PROVIDER g_KDUProviders[KDU_PROVIDERS_MAX] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_ENETECHIO64,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_WINIO_BASED,
-        (LPWSTR)L"TOUGHRAM Software",
+        (LPWSTR)L"Thermaltake TOUGHRAM Software",
         (LPWSTR)L"EneTechIo64",
         (LPWSTR)L"EneTechIo",
         (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",

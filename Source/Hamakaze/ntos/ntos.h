@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.130
+*  VERSION:     1.131
 *
-*  DATE:        14 Feb 2020
+*  DATE:        17 Feb 2020
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -497,12 +497,25 @@ typedef struct _IO_STATUS_BLOCK {
 
 #ifndef INTERFACE_TYPE
 typedef enum _INTERFACE_TYPE {
+    InterfaceTypeUndefined = -1,
     Internal,
     Isa,
     Eisa,
     MicroChannel,
     TurboChannel,
     PCIBus,
+    VMEBus,
+    NuBus,
+    PCMCIABus,
+    CBus,
+    MPIBus,
+    MPSABus,
+    ProcessorInternal,
+    InternalPowerBus,
+    PNPISABus,
+    PNPBus,
+    Vmcs,
+    ACPIBus,
     MaximumInterfaceType
 } INTERFACE_TYPE, * PINTERFACE_TYPE;
 #endif
