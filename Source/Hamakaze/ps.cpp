@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        02 Feb 2020
+*  DATE:        20 Apr 2020
 *
 *  Processes DKOM related routines.
 *
@@ -149,8 +149,9 @@ BOOL KDUControlProcess(
             case 18363:
                 Offset = PsProtectionOffset_15063;
                 break;
-            case 19037:
-                Offset = PsProtectionOffset_19037;
+            case 19041:
+            case 19608:
+                Offset = PsProtectionOffset_19041;
                 break;
             default:
                 Offset = 0;

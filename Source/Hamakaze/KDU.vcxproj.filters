@@ -242,5 +242,11 @@
     <None Include="drv\eneio64.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\WinRing0x64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\enetechio64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -172,12 +172,14 @@
   <ItemGroup>
     <None Include="drv\ATSZIO64.bin" />
     <None Include="drv\eneio64.bin" />
+    <None Include="drv\enetechio64.bin" />
     <None Include="drv\gdrv.bin" />
     <None Include="drv\glckio2.bin" />
     <None Include="drv\iQVM64.bin" />
     <None Include="drv\msio64.bin" />
     <None Include="drv\procexp.bin" />
     <None Include="drv\RTCore64.bin" />
+    <None Include="drv\WinRing0x64.bin" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

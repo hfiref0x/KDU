@@ -4,9 +4,9 @@
 *
 *  TITLE:       DRVMAP.H
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        07 Jan 2020
+*  DATE:        20 Apr 2020
 *
 *  Prototypes and definitions for driver mapping.
 *
@@ -54,6 +54,10 @@ typedef NTSTATUS(NTAPI* pfnZwQueryValueKey)(
     _In_      ULONG Length,
     _Out_     PULONG ResultLength);
 
+typedef NTSTATUS(NTAPI* pfnZwDeleteValueKey)(
+    _In_ HANDLE KeyHandle,
+    _In_ PUNICODE_STRING ValueName);
+
 typedef VOID(NTAPI* pfnIofCompleteRequest)(
     _In_ VOID* Irp,
     _In_ CCHAR PriorityBoost);
@@ -66,7 +70,8 @@ typedef struct _FUNC_TABLE {
     pfnZwClose ZwClose;
     pfnZwOpenKey ZwOpenKey;
     pfnZwQueryValueKey ZwQueryValueKey;
-    pfnDbgPrint DbgPrint;
+    pfnZwDeleteValueKey ZwDeleteValueKey;
+   // pfnDbgPrint DbgPrint;
 } FUNC_TABLE, * PFUNC_TABLE;
 
 BOOL KDUMapDriver(

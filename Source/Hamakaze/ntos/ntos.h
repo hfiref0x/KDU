@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.131
+*  VERSION:     1.132
 *
-*  DATE:        17 Feb 2020
+*  DATE:        24 Feb 2020
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -6297,26 +6297,6 @@ RtlPrefixUnicodeString(
 NTSYSAPI
 NTSTATUS
 NTAPI
-RtlExpandEnvironmentStrings(
-    _In_opt_ PVOID Environment,
-    _In_reads_(SrcLength) PWSTR Src,
-    _In_ SIZE_T SrcLength,
-    _Out_writes_opt_(DstLength) PWSTR Dst,
-    _In_ SIZE_T DstLength,
-    _Out_opt_ PSIZE_T ReturnLength);
-
-NTSYSAPI
-NTSTATUS
-NTAPI
-RtlExpandEnvironmentStrings_U(
-    _In_opt_ PVOID Environment,
-    _In_ PCUNICODE_STRING Source,
-    _Out_ PUNICODE_STRING Destination,
-    _Out_opt_ PULONG ReturnedLength);
-
-NTSYSAPI
-NTSTATUS
-NTAPI
 RtlFormatCurrentUserKeyPath(
     _Out_ PUNICODE_STRING CurrentUserKeyPath);
 
@@ -6716,6 +6696,26 @@ RtlCreateEnvironmentEx(
 NTSYSAPI
 NTSTATUS
 NTAPI
+RtlExpandEnvironmentStrings(
+    _In_opt_ PVOID Environment,
+    _In_reads_(SrcLength) PWSTR Src,
+    _In_ SIZE_T SrcLength,
+    _Out_writes_opt_(DstLength) PWSTR Dst,
+    _In_ SIZE_T DstLength,
+    _Out_opt_ PSIZE_T ReturnLength);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlExpandEnvironmentStrings_U(
+    _In_opt_ PVOID Environment,
+    _In_ PCUNICODE_STRING Source,
+    _Out_ PUNICODE_STRING Destination,
+    _Out_opt_ PULONG ReturnedLength);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
 RtlSetCurrentEnvironment(
     _In_ PVOID Environment,
     _Out_opt_ PVOID *PreviousEnvironment);
@@ -6727,6 +6727,14 @@ RtlQueryEnvironmentVariable_U(
     _In_opt_ PVOID Environment,
     _In_ PUNICODE_STRING Name,
     _Out_ PUNICODE_STRING Value);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlSetEnvironmentVariable(
+    _Inout_opt_ PVOID* Environment,
+    _In_ PUNICODE_STRING Name,
+    _In_opt_ PUNICODE_STRING Value);
 
 NTSYSAPI
 NTSTATUS
