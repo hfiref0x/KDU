@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       DRVMAP.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.02
 *
-*  DATE:        20 Apr 2020
+*  DATE:        11 Feb 2021
 *
 *  Driver mapping routines.
 *

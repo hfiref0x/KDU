@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.02
 *
-*  DATE:        18 Feb 2020
+*  DATE:        11 Feb 2021
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -46,7 +46,7 @@ volatile LONG g_lApplicationInstances = 0;
                      "kdu -dse value    - write user defined value to the system DSE state flags\r\n"\
                      "kdu -list         - list available providers\r\n"                     
 
-#define T_KDUINTRO   "[+] Kernel Driver Utility v1.0.1 started, (c) 2020 KDU Project\r\n[+] Supported x64 OS: Windows 7 and above"
+#define T_KDUINTRO   "[+] Kernel Driver Utility v1.0.2 started, (c) 2020 - 2021 KDU Project\r\n[+] Supported x64 OS: Windows 7 and above"
 #define T_PRNTDEFAULT   "%s\r\n"
 
 /*

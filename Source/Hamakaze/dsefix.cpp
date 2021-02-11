@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2020
+*  (C) COPYRIGHT AUTHORS, 2014 - 2021
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.02
 *
-*  DATE:        18 Feb 2020
+*  DATE:        11 Feb 2021
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -74,7 +74,7 @@ LONG KDUQueryCiOptions(
     if (CiInitialize == NULL)
         return 0;
 
-    if (NtBuildNumber >= NT_WIN10RS3) {
+    if (NtBuildNumber >= NT_WIN10_REDSTONE3) {
 
         c = 0;
         j = 0;
@@ -159,7 +159,7 @@ ULONG_PTR KDUQueryVariable(
 
     CHAR szFullModuleName[MAX_PATH * 2];
 
-    if (NtBuildNumber < NT_WIN8BLUE) {
+    if (NtBuildNumber < NT_WIN8_BLUE) {
         szModuleName = NTOSKRNL_EXE;
     }
     else {
@@ -187,7 +187,7 @@ ULONG_PTR KDUQueryVariable(
 
         printf_s("[+] Module \"%s\" loaded for pattern search\r\n", szModuleName);
 
-        if (NtBuildNumber < NT_WIN8BLUE) {
+        if (NtBuildNumber < NT_WIN8_BLUE) {
             rel = KDUQueryCiEnabled(
                 MappedModule,
                 SizeOfImage,
@@ -260,7 +260,7 @@ BOOL KDUControlDSE(
             //
             // CI status does not updated on Win7.
             //
-            if (Context->NtBuildNumber >= NT_WIN10TH1) {
+            if (Context->NtBuildNumber >= NT_WIN10_THRESHOLD1) {
                 if (DSEValue == 6) {
                     printf_s("[!] DSE already enabled, nothing to do, leaving.\r\n");
                     return TRUE;
@@ -274,7 +274,7 @@ BOOL KDUControlDSE(
             //
             // Check if DSE is disabled so we don't need to disable it again.
             //
-            if (Context->NtBuildNumber >= NT_WIN10TH1) {
+            if (Context->NtBuildNumber >= NT_WIN10_THRESHOLD1) {
 
                 if (DSEValue == 0) {
                     printf_s("[!] DSE already disabled, nothing to do, leaving.\r\n");

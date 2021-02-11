@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.01
+*  VERSION:     1.02
 *
-*  DATE:        18 Feb 2020
+*  DATE:        11 Feb 2021
 *
 *  Support routines header file.
 *
@@ -60,7 +60,7 @@ NTSTATUS supOpenDriver(
     _Out_ PHANDLE DeviceHandle);
 
 PVOID supGetSystemInfo(
-    _In_ SYSTEM_INFORMATION_CLASS InfoClass);
+    _In_ SYSTEM_INFORMATION_CLASS SystemInformationClass);
 
 ULONG_PTR supGetNtOsBase(
     VOID);

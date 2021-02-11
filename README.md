@@ -145,4 +145,4 @@ They are used in multiple products from hardware vendors mostly in unmodified st
 
 # Authors
 
-(c) 2020 KDU Project
+(c) 2020 - 2021 KDU Project

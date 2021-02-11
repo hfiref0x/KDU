@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.02
 *
-*  DATE:        18 Feb 2020
+*  DATE:        11 Feb 2021
 *
 *  Program global support routines.
 *
@@ -597,6 +597,8 @@ NTSTATUS supOpenDriver(
     return status;
 }
 
+#define NTQSI_MAX_BUFFER_LENGTH (512 * 1024 * 1024)
+
 /*
 * supGetSystemInfo
 *
@@ -606,42 +608,40 @@ NTSTATUS supOpenDriver(
 *
 */
 PVOID supGetSystemInfo(
-    _In_ SYSTEM_INFORMATION_CLASS InfoClass
+    _In_ SYSTEM_INFORMATION_CLASS SystemInformationClass
 )
 {
-    INT         c = 0;
-    PVOID       Buffer = NULL;
-    ULONG		Size = 0x1000;
-    NTSTATUS    status;
-    ULONG       memIO;
+    PVOID       buffer = NULL;
+    ULONG       bufferSize = PAGE_SIZE;
+    NTSTATUS    ntStatus;
+    ULONG       returnedLength = 0;
 
-    do {
-        Buffer = supHeapAlloc((SIZE_T)Size);
-        if (Buffer != NULL) {
-            status = NtQuerySystemInformation(InfoClass, Buffer, Size, &memIO);
-        }
-        else {
+    buffer = supHeapAlloc((SIZE_T)bufferSize);
+    if (buffer == NULL)
+        return NULL;
+
+    while ((ntStatus = NtQuerySystemInformation(
+        SystemInformationClass,
+        buffer,
+        bufferSize,
+        &returnedLength)) == STATUS_INFO_LENGTH_MISMATCH)
+    {
+        supHeapFree(buffer);
+        bufferSize *= 2;
+
+        if (bufferSize > NTQSI_MAX_BUFFER_LENGTH)
             return NULL;
-        }
-        if (status == STATUS_INFO_LENGTH_MISMATCH) {
-            supHeapFree(Buffer);
-            Buffer = NULL;
-            Size *= 2;
-            c++;
-            if (c > 100) {
-                status = STATUS_SECRET_TOO_LONG;
-                break;
-            }
-        }
-    } while (status == STATUS_INFO_LENGTH_MISMATCH);
 
-    if (NT_SUCCESS(status)) {
-        return Buffer;
+        buffer = supHeapAlloc((SIZE_T)bufferSize);
     }
 
-    if (Buffer) {
-        supHeapFree(Buffer);
+    if (NT_SUCCESS(ntStatus)) {
+        return buffer;
     }
+
+    if (buffer)
+        supHeapFree(buffer);
+
     return NULL;
 }
 

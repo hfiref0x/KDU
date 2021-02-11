@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2020
+*  (C) COPYRIGHT AUTHORS, 2018 - 2021
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.02
 *
-*  DATE:        20 Apr 2020
+*  DATE:        11 Feb 2021
 *
 *  Processes DKOM related routines.
 *
@@ -129,28 +129,30 @@ BOOL KDUControlProcess(
             printf_s("[+] Process object (EPROCESS) found, 0x%llX\r\n", ProcessObject);
 
             switch (Context->NtBuildNumber) {
-            case 9600:
+            case NT_WIN8_BLUE:
                 Offset = PsProtectionOffset_9600;
                 break;
-            case 10240:
+            case NT_WIN10_THRESHOLD1:
                 Offset = PsProtectionOffset_10240;
                 break;
-            case 10586:
+            case NT_WIN10_THRESHOLD2:
                 Offset = PsProtectionOffset_10586;
                 break;
-            case 14393:
+            case NT_WIN10_REDSTONE1:
                 Offset = PsProtectionOffset_14393;
                 break;
-            case 15063:
-            case 16299:
-            case 17134:
-            case 17763:
-            case 18362:
-            case 18363:
+            case NT_WIN10_REDSTONE2:
+            case NT_WIN10_REDSTONE3:
+            case NT_WIN10_REDSTONE4:
+            case NT_WIN10_REDSTONE5:
+            case NT_WIN10_19H1:
+            case NT_WIN10_19H2:
                 Offset = PsProtectionOffset_15063;
                 break;
-            case 19041:
-            case 19608:
+            case NT_WIN10_20H1:
+            case NT_WIN10_20H2:
+            case NT_WIN10_21H1:
+            case NTX_WIN10_ADB:
                 Offset = PsProtectionOffset_19041;
                 break;
             default:
