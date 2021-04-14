@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2016 - 2020
+*  (C) COPYRIGHT AUTHORS, 2016 - 2021
 *
 *  TITLE:       MAIN.C
 *
-*  VERSION:     1.02
+*  VERSION:     1.03
 *
-*  DATE:        24 Jan 2020
+*  DATE:        02 Apr 2021
 *
-*  Example driver #2 for driver loaders usage (TDL/Stryker/Diplodocus/KDU)
+*  Example driver #2 for driver loaders usage (KDU/ALICE)
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -64,7 +64,8 @@ VOID PrintIrql()
 
     DbgPrintEx(DPFLTR_DEFAULT_ID,
         DPFLTR_INFO_LEVEL,
-        "KeGetCurrentIrql=%u(%s)\r\n",
+        "[%s] KeGetCurrentIrql=%u(%s)\r\n",
+        __FUNCTION__,
         Irql,
         sIrql);
 }
@@ -92,7 +93,7 @@ NTSTATUS DevioctlDispatch(
 
     DbgPrintEx(DPFLTR_DEFAULT_ID,
         DPFLTR_INFO_LEVEL,
-        "%s IRP_MJ_DEVICE_CONTROL",
+        "[%s] IRP_MJ_DEVICE_CONTROL\r\n",
         __FUNCTION__);
 
     stack = IoGetCurrentIrpStackLocation(Irp);
@@ -116,7 +117,7 @@ NTSTATUS DevioctlDispatch(
 
             DbgPrintEx(DPFLTR_DEFAULT_ID,
                 DPFLTR_INFO_LEVEL,
-                "%s DUMMYDRV_REQUEST1 hit",
+                "[%s] DUMMYDRV_REQUEST1 hit\r\n",
                 __FUNCTION__);
 
             if (stack->Parameters.DeviceIoControl.InputBufferLength != sizeof(INOUT_PARAM)) {
@@ -126,7 +127,7 @@ NTSTATUS DevioctlDispatch(
 
             DbgPrintEx(DPFLTR_DEFAULT_ID,
                 DPFLTR_INFO_LEVEL,
-                "%s in params = %lx, %lx, %lx, %lx",
+                "[%s] Params = %lx, %lx, %lx, %lx\r\n",
                 __FUNCTION__,
                 rp->Param1,
                 rp->Param2,
@@ -147,7 +148,7 @@ NTSTATUS DevioctlDispatch(
 
             DbgPrintEx(DPFLTR_DEFAULT_ID,
                 DPFLTR_INFO_LEVEL,
-                "%s hit with invalid IoControlCode",
+                "[%s] Hit with invalid IoControlCode\r\n",
                 __FUNCTION__);
 
             status = STATUS_INVALID_PARAMETER;
@@ -200,7 +201,7 @@ NTSTATUS CreateDispatch(
 
     DbgPrintEx(DPFLTR_DEFAULT_ID,
         DPFLTR_INFO_LEVEL,
-        "%s Create",
+        "[%s] Create\r\n",
         __FUNCTION__);
 
     IoCompleteRequest(Irp, IO_NO_INCREMENT);
@@ -225,7 +226,7 @@ NTSTATUS CloseDispatch(
 
     DbgPrintEx(DPFLTR_DEFAULT_ID,
         DPFLTR_INFO_LEVEL,
-        "%s Close",
+        "[%s] Close\r\n",
         __FUNCTION__);
 
     IoCompleteRequest(Irp, IO_NO_INCREMENT);
@@ -250,36 +251,45 @@ NTSTATUS DriverInitialize(
     PDEVICE_OBJECT  devobj;
     ULONG           t;
 
+    PETHREAD        ThreadObject;
+    PEPROCESS       ProcessObject;
+
     //RegistryPath is NULL
     UNREFERENCED_PARAMETER(RegistryPath);
 
+    ProcessObject = PsGetCurrentProcess();
+    ThreadObject = PsGetCurrentThread();
+
     DbgPrintEx(DPFLTR_DEFAULT_ID,
         DPFLTR_INFO_LEVEL,
-        "%s\n",
-        __FUNCTION__);
+        "[%s] CurrentProcess : %lu (%p) CurrentThread : %lu (%p)\r\n",
+        __FUNCTION__,
+        HandleToUlong(PsGetCurrentProcessId()),
+        ProcessObject,
+        HandleToUlong(PsGetCurrentThreadId()),
+        ThreadObject);
 
     RtlInitUnicodeString(&DevName, L"\\Device\\TDLD");
     status = IoCreateDevice(DriverObject, 0, &DevName, FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, TRUE, &devobj);
 
     DbgPrintEx(DPFLTR_DEFAULT_ID,
         DPFLTR_INFO_LEVEL,
-        "%s IoCreateDevice(%wZ) = %lx\n",
+        "[%s] IoCreateDevice(%wZ) = %lx\r\n",
         __FUNCTION__,
-        DevName,
+        &DevName,
         status);
 
-    if (!NT_SUCCESS(status)) {
+    if (!NT_SUCCESS(status))
         return status;
-    }
 
     RtlInitUnicodeString(&SymLink, L"\\DosDevices\\TDLD");
     status = IoCreateSymbolicLink(&SymLink, &DevName);
 
     DbgPrintEx(DPFLTR_DEFAULT_ID,
         DPFLTR_INFO_LEVEL,
-        "%s IoCreateSymbolicLink(%wZ) = %lx\n",
+        "[%s] IoCreateSymbolicLink(%wZ) = %lx\r\n",
         __FUNCTION__,
-        SymLink,
+        &SymLink,
         status);
 
     devobj->Flags |= DO_BUFFERED_IO;
@@ -316,22 +326,34 @@ NTSTATUS DriverEntry(
     UNREFERENCED_PARAMETER(DriverObject);
     UNREFERENCED_PARAMETER(RegistryPath);
 
-    PrintIrql();
-
     DbgPrintEx(DPFLTR_DEFAULT_ID,
         DPFLTR_INFO_LEVEL,
-        "%s\n",
-        __FUNCTION__);
+        "[%s] Driver built at %s\r\n",
+        __FUNCTION__, __TIMESTAMP__); // Set DriverModel to allow timestamps.
+
+    PrintIrql();
 
     RtlInitUnicodeString(&drvName, L"\\Driver\\TDLD");
     status = IoCreateDriver(&drvName, &DriverInitialize);
 
-    DbgPrintEx(DPFLTR_DEFAULT_ID,
-        DPFLTR_INFO_LEVEL,
-        "%s IoCreateDriver(%wZ) = %lx\n",
-        __FUNCTION__,
-        drvName,
-        status);
+    if (status == STATUS_OBJECT_NAME_COLLISION) {
+
+        DbgPrintEx(DPFLTR_DEFAULT_ID,
+            DPFLTR_INFO_LEVEL,
+            "[%s] Driver object %wZ already exist\r\n",
+            __FUNCTION__, &drvName);
+
+    }
+    else {
+
+        DbgPrintEx(DPFLTR_DEFAULT_ID,
+            DPFLTR_INFO_LEVEL,
+            "[%s] IoCreateDriver(%wZ) = %lx\r\n",
+            __FUNCTION__,
+            &drvName,
+            status);
+
+    }
 
     return status;
 }

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2017 - 2020
+*  (C) COPYRIGHT AUTHORS, 2017 - 2021
 *
 *  TITLE:       MAIN.C
 *
-*  VERSION:     1.01
+*  VERSION:     1.02
 *
-*  DATE:        02 Feb 2020
+*  DATE:        02 Apr 2021
 *
 *  PatchGuard BSOD generator.
 *
@@ -503,7 +503,7 @@ NTSTATUS DriverEntry(
         DPFLTR_INFO_LEVEL, 
         "[PGDemo] %s IoCreateDeviceSecure(%wZ) = %lx\r\n", 
         __FUNCTION__, 
-        DevName, 
+        &DevName, 
         status);
 
     if (NT_SUCCESS(status)) {
@@ -515,7 +515,7 @@ NTSTATUS DriverEntry(
             DPFLTR_INFO_LEVEL, 
             "[PGDemo] %s IoCreateSymbolicLink(%wZ) = %lx\r\n", 
             __FUNCTION__, 
-            SymLink, 
+            &SymLink, 
             status);
 
         devobj->Flags |= DO_BUFFERED_IO;

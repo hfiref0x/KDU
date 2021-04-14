@@ -18,6 +18,7 @@
     <Configuration>Debug</Configuration>
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
     <RootNamespace>dummy</RootNamespace>
+    <WindowsTargetPlatformVersion>$(LatestTargetPlatformVersion)</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -27,6 +28,7 @@
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>KMDF</DriverType>
     <DriverTargetPlatform>Desktop</DriverTargetPlatform>
+    <ALLOW_DATE_TIME>1</ALLOW_DATE_TIME>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
@@ -36,6 +38,8 @@
     <DriverType>KMDF</DriverType>
     <DriverTargetPlatform>Desktop</DriverTargetPlatform>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <ALLOW_DATE_TIME>1</ALLOW_DATE_TIME>
+    <SpectreMitigation>false</SpectreMitigation>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -56,9 +60,10 @@
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
+    <EnableInf2cat>false</EnableInf2cat>
+    <TargetName>dummy</TargetName>
     <OutDir>.\output\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>.\output\$(Platform)\$(Configuration)\</IntDir>
-    <EnableInf2cat>false</EnableInf2cat>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -68,7 +73,6 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExpandAttributedSource>true</ExpandAttributedSource>
       <AssemblerOutput>All</AssemblerOutput>
-      <BrowseInformation>true</BrowseInformation>
       <CompileAs>CompileAsC</CompileAs>
       <EnablePREfast>true</EnablePREfast>
       <TreatWarningAsError>false</TreatWarningAsError>
