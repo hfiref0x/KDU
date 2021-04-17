@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.02
+*  VERSION:     1.10
 *
-*  DATE:        11 Feb 2021
+*  DATE:        02 Apr 2021
 *
 *  Global consts.
 *
@@ -26,6 +26,35 @@
 
 #define NTOSKRNL_EXE            "ntoskrnl.exe"
 #define CI_DLL                  "CI.dll"
+
+#define DRV64DLL                L"drv64.dll"
+#define DUMMYDLL                L"SB_SMBUS_SDK.dll"
+
+#define WINIO_BASE_DESC         "WinIo by Yariv Kaplan"
+#define WINRING0_BASE_DESC      "WinRing0 by Noriyuki Miyazaki"
+#define MAPMEM_BASE_DESC        "MapMem from NTDDK 3.51"
+#define PHYMEM_BASE_DESC        "PhyMem by akui"
+
+#define SHELL_POOL_TAG          '  oI'
+
+#define PROVIDER_RES_KEY        ' uwu' // Giving you enough uwu's.
+
+//
+// Driver id table
+//
+#define IDR_PROCEXP                     100
+#define IDR_iQVM64                      103
+#define IDR_RTCORE64                    105
+#define IDR_GDRV                        106
+#define IDR_ATSZIO64                    107
+#define IDR_MSIO64                      108
+#define IDR_GLCKIO2                     109
+#define IDR_ENEIO64                     110
+#define IDR_WINRING0                    111
+#define IDR_ENETECHIO64                 112
+#define IDR_PHYMEMX64                   113
+#define IDR_RTKIO64                     114
+#define IDR_ENETECHIO64B                115
 
 //
 // Defines for Major Windows NT release builds
@@ -80,4 +109,4 @@
 #define NT_WIN10_21H1           19043
 
 // Windows 10 Active Develepment Branch (21XX)
-#define NTX_WIN10_ADB           21296
+#define NTX_WIN10_ADB           21343

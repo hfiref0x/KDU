@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       ATSZIO.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.10
 *
-*  DATE:        14 Feb 2020
+*  DATE:        02 Apr 2021
 *
-*  ASUSTeK ATSZIO WinFlash  driver routines.
+*  ASUSTeK ATSZIO WinFlash driver routines.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -138,8 +138,6 @@ BOOL WINAPI AtszioQueryPML4Value(
         AtszioUnmapMemory(DeviceHandle,
             (PVOID)pbLowStub1M,
             sectionHandle);
-
-        dwError = ERROR_SUCCESS;
 
     } while (FALSE);
 

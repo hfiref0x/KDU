@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2020
+*  (C) COPYRIGHT AUTHORS, 2018 - 2021
 *
 *  TITLE:       VICTIM.H
 *
-*  VERSION:     1.00
+*  VERSION:     1.10
 *
-*  DATE:        07 Jan 2020
+*  DATE:        02 Apr 2021
 *
 *  Victim support prototypes and definitions.
 *

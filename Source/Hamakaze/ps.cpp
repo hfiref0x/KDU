@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.02
+*  VERSION:     1.10
 *
-*  DATE:        11 Feb 2021
+*  DATE:        02 Apr 2021
 *
 *  Processes DKOM related routines.
 *
@@ -109,7 +109,7 @@ BOOL KDUControlProcess(
 
     PS_PROTECTION* PsProtection;
 
-    printf_s("[>] Entering %s\r\n", __FUNCTION__);
+    FUNCTION_ENTER_MSG(__FUNCTION__);
 
     InitializeObjectAttributes(&obja, NULL, 0, 0, 0);
 
@@ -230,7 +230,7 @@ BOOL KDUControlProcess(
         printf_s("[!] Cannot open target process, NTSTATUS (0x%lX)\r\n", ntStatus);
     }
 
-    printf_s("[<] Leaving %s\r\n", __FUNCTION__);
+    FUNCTION_LEAVE_MSG(__FUNCTION__);
 
     return bResult;
 }

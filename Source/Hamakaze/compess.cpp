@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2015 - 2020 gruf0x
+*  (C) COPYRIGHT AUTHORS, 2015 - 2021
 *
 *  TITLE:       COMPRESS.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.10
 *
-*  DATE:        07 Feb 2020
+*  DATE:        02 Apr 2021
 *
 *  Compression support routines.
 *
@@ -23,6 +23,85 @@
 #pragma comment(lib, "msdelta.lib")
 
 /*
+* EncodeBuffer
+*
+* Purpose:
+*
+* Decrypt/Encrypt given buffer.
+*
+*/
+VOID EncodeBuffer(
+    _In_ PVOID Buffer,
+    _In_ ULONG BufferSize,
+    _In_ ULONG Key
+)
+{
+    ULONG k, c;
+    PUCHAR ptr;
+
+    if ((Buffer == NULL) || (BufferSize == 0))
+        return;
+
+    k = Key;
+    c = BufferSize;
+    ptr = (PUCHAR)Buffer;
+
+    do {
+        *ptr ^= k;
+        k = _rotl(k, 1);
+        ptr++;
+        --c;
+    } while (c != 0);
+}
+
+/*
+* KDULoadResource
+*
+* Purpose:
+*
+* Access and decompress resource.
+*
+* N.B. Use supHeapFree to release memory allocated for the decompressed buffer.
+*
+*/
+PVOID KDULoadResource(
+    _In_ ULONG_PTR ResourceId,
+    _In_ PVOID DllHandle,
+    _In_ PULONG DataSize,
+    _In_ ULONG DecryptKey,
+    _In_ BOOLEAN VerifyChecksum
+)
+{
+    PBYTE dataPtr;
+    ULONG dataSize = 0;
+    SIZE_T decompressedSize = 0;
+
+    if (DataSize)
+        *DataSize = 0;
+
+    dataPtr = supQueryResourceData(ResourceId,
+        DllHandle,
+        &dataSize);
+
+    if (dataPtr && dataSize) {
+
+        dataPtr = (PBYTE)KDUDecompressResource(dataPtr,
+            dataSize,
+            &decompressedSize,
+            DecryptKey,
+            VerifyChecksum);
+
+        if (DataSize)
+            *DataSize = (ULONG)decompressedSize;
+
+        return dataPtr;
+
+    }
+
+    return NULL;
+}
+
+/*
 * KDUDecompressResource
 *
 * Purpose:
@@ -35,12 +114,17 @@
 PVOID KDUDecompressResource(
     _In_ PVOID ResourcePtr,
     _In_ SIZE_T ResourceSize,
-    _Out_ PSIZE_T DecompressedSize
+    _Out_ PSIZE_T DecompressedSize,
+    _In_ ULONG DecryptKey,
+    _In_ BOOLEAN VerifyChecksum
 )
 {
+    BOOLEAN bValidData = FALSE;
     DELTA_INPUT diDelta, diSource;
     DELTA_OUTPUT doOutput;
-    PVOID resultPtr = NULL;
+    PVOID resultPtr = NULL, dataBlob;
+
+    ULONG headerSum = 0, calcSum = 0;
 
     *DecompressedSize = 0;
 
@@ -48,33 +132,58 @@ PVOID KDUDecompressResource(
     RtlSecureZeroMemory(&diDelta, sizeof(DELTA_INPUT));
     RtlSecureZeroMemory(&doOutput, sizeof(DELTA_OUTPUT));
 
-    diDelta.Editable = FALSE;
-    diDelta.lpcStart = ResourcePtr;
-    diDelta.uSize = ResourceSize;
+    dataBlob = supHeapAlloc(ResourceSize);
+    if (dataBlob) {
+        RtlCopyMemory(dataBlob, ResourcePtr, ResourceSize);
+        EncodeBuffer(dataBlob, (ULONG)ResourceSize, DecryptKey);
 
-    if (ApplyDeltaB(DELTA_FILE_TYPE_RAW, diSource, diDelta, &doOutput)) {
+        diDelta.Editable = FALSE;
+        diDelta.lpcStart = dataBlob;
+        diDelta.uSize = ResourceSize;
 
-        SIZE_T newSize = (DWORD)doOutput.uSize;
-        PVOID decomPtr = doOutput.lpStart;
+        if (ApplyDeltaB(DELTA_FILE_TYPE_RAW, diSource, diDelta, &doOutput)) {
 
-        if (supVerifyMappedImageMatchesChecksum(decomPtr,
-            (ULONG)newSize))
-        {
-            resultPtr = (PVOID)supHeapAlloc(newSize);
-            if (resultPtr) {
-                RtlCopyMemory(resultPtr, decomPtr, newSize);
-                *DecompressedSize = newSize;
+            SIZE_T newSize = (DWORD)doOutput.uSize;
+            PVOID decomPtr = doOutput.lpStart;
+
+            bValidData = supVerifyMappedImageMatchesChecksum(decomPtr,
+                (ULONG)newSize,
+                &headerSum,
+                &calcSum);
+
+            if (VerifyChecksum) {
+
+                if (bValidData == FALSE) {
+                    printf_s("[!] Error data checksum mismatch! Header sum 0x%lx, calculated sum 0x%lx\r\n",
+                        headerSum, calcSum);
+                }
             }
+            else {
+
+                if (bValidData == FALSE) {
+                    printf_s("[~] Data checksum mismatch, header sum 0x%lx, calculated sum 0x%lx, trying to continue\r\n",
+                        headerSum, calcSum);
+                }
+
+                bValidData = TRUE; //ignore
+            }
+
+            if (bValidData) {
+                resultPtr = (PVOID)supHeapAlloc(newSize);
+                if (resultPtr) {
+                    RtlCopyMemory(resultPtr, decomPtr, newSize);
+                    *DecompressedSize = newSize;
+                }
+            }
+
+            DeltaFree(doOutput.lpStart);
+
         }
         else {
-            printf_s("[!] Error data checksum mismatch!\r\n");
+            printf_s("[!] Error decompressing resource, GetLastError %lu\r\n", GetLastError());
         }
 
-        DeltaFree(doOutput.lpStart);
-
-    }
-    else {
-        printf_s("[!] Error decompressing resource, GetLastError %lu\r\n", GetLastError());
+        supHeapFree(dataBlob);
     }
 
     return resultPtr;
@@ -89,7 +198,9 @@ PVOID KDUDecompressResource(
 *
 */
 VOID KDUCompressResource(
-    _In_ LPWSTR lpFileName)
+    _In_ LPWSTR lpFileName,
+    _In_ ULONG ulCompressKey
+)
 {
     DWORD fileSize = 0;
     PBYTE fileBuffer;
@@ -97,7 +208,7 @@ VOID KDUCompressResource(
     DELTA_INPUT d_in, d_target, s_op, t_op, g_op;
     DELTA_OUTPUT d_out;
 
-    printf_s("[>] Entering %s\r\n", __FUNCTION__);
+    FUNCTION_ENTER_MSG(__FUNCTION__);
 
     printf_s("[+] Reading %wS\r\n", lpFileName);
     fileBuffer = supReadFileToBuffer(lpFileName, &fileSize);
@@ -139,21 +250,28 @@ VOID KDUCompressResource(
                 &d_out))
             {
                 SIZE_T writeSize = d_out.uSize;
-                PVOID dataBlob = d_out.lpStart;
+                PVOID dataBlob = supHeapAlloc(writeSize);
+                if (dataBlob) {
 
-                _strcat(newFileName, L".bin");
+                    RtlCopyMemory(dataBlob, d_out.lpStart, writeSize);
+                    EncodeBuffer(dataBlob, (ULONG)writeSize, ulCompressKey);
 
-                printf_s("[+] Saving compressed resource as %wS with new size %llu bytes\r\n",
-                    newFileName, writeSize);
+                    _strcat(newFileName, L".bin");
 
-                if (supWriteBufferToFile(newFileName,
-                    dataBlob,
-                    writeSize,
-                    TRUE,
-                    FALSE,
-                    NULL) != writeSize)
-                {
-                    printf_s("[!] Error writing to file\r\n");
+                    printf_s("[+] Saving resource as %wS with new size %llu bytes\r\n",
+                        newFileName, writeSize);
+
+                    if (supWriteBufferToFile(newFileName,
+                        dataBlob,
+                        writeSize,
+                        TRUE,
+                        FALSE,
+                        NULL) != writeSize)
+                    {
+                        printf_s("[!] Error writing to file\r\n");
+                    }
+
+                    supHeapFree(dataBlob);
                 }
 
                 DeltaFree(d_out.lpStart);
@@ -173,5 +291,5 @@ VOID KDUCompressResource(
         printf_s("[!] Could not read input file\r\n");
     }
 
-    printf_s("[<] Leaving %s\r\n", __FUNCTION__);
+    FUNCTION_LEAVE_MSG(__FUNCTION__);
 }

@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.02
+*  VERSION:     1.10
 *
-*  DATE:        11 Feb 2021
+*  DATE:        02 Apr 2021
 *
 *  Program global support routines.
 *
@@ -113,7 +113,9 @@ USHORT supChkSum(
 */
 BOOLEAN supVerifyMappedImageMatchesChecksum(
     _In_ PVOID BaseAddress,
-    _In_ ULONG FileLength
+    _In_ ULONG FileLength,
+    _Out_opt_ PULONG HeaderChecksum,
+    _Out_opt_ PULONG CalculatedChecksum
 )
 {
     PUSHORT AdjustSum;
@@ -139,6 +141,11 @@ BOOLEAN supVerifyMappedImageMatchesChecksum(
     }
 
     CheckSum = (ULONG)PartialSum + FileLength;
+
+    if (HeaderChecksum)
+        *HeaderChecksum = HeaderSum;
+    if (CalculatedChecksum)
+        *CalculatedChecksum = CheckSum;
 
     return (CheckSum == HeaderSum);
 }
@@ -673,7 +680,7 @@ ULONG_PTR supGetNtOsBase(
 *
 * Purpose:
 *
-* Load resource by given id and decompress it.
+* Load resource by given id.
 *
 * N.B. Use supHeapFree to release memory allocated for the decompressed buffer.
 *
@@ -685,7 +692,6 @@ PBYTE supQueryResourceData(
 )
 {
     NTSTATUS                   status;
-    SIZE_T                     decompressedSize = 0;
     ULONG_PTR                  IdPath[3];
     IMAGE_RESOURCE_DATA_ENTRY* DataEntry;
     PBYTE                      Data = NULL;
@@ -701,13 +707,8 @@ PBYTE supQueryResourceData(
         if (NT_SUCCESS(status)) {
             status = LdrAccessResource(DllHandle, DataEntry, (PVOID*)&Data, &SizeOfData);
             if (NT_SUCCESS(status)) {
-
-                Data = (PBYTE)KDUDecompressResource(Data,
-                    SizeOfData,
-                    &decompressedSize);
-
                 if (DataSize) {
-                    *DataSize = (ULONG)decompressedSize;
+                    *DataSize = (ULONG)SizeOfData;
                 }
             }
         }
@@ -853,7 +854,7 @@ ULONG_PTR supGetProcAddress(
 * Resolve import (ntoskrnl only).
 *
 */
-void supResolveKernelImport(
+VOID supResolveKernelImport(
     _In_ ULONG_PTR Image,
     _In_ ULONG_PTR KernelImage,
     _In_ ULONG_PTR KernelBase
@@ -1095,14 +1096,19 @@ BOOL supQueryObjectFromHandle(
 BOOL supGetCommandLineOption(
     _In_ LPCTSTR OptionName,
     _In_ BOOL IsParametric,
-    _Inout_opt_ LPTSTR OptionValue,
-    _In_ ULONG ValueSize
+    _Out_writes_opt_z_(ValueSize) LPTSTR OptionValue,
+    _In_ ULONG ValueSize,
+    _Out_opt_ PULONG ParamLength
 )
 {
-    LPTSTR  cmdline = GetCommandLine();
+    BOOL    bResult;
+    LPTSTR	cmdline = GetCommandLine();
     TCHAR   Param[MAX_PATH + 1];
     ULONG   rlen;
-    int     i = 0;
+    int		i = 0;
+
+    if (ParamLength)
+        *ParamLength = 0;
 
     RtlSecureZeroMemory(Param, sizeof(Param));
     while (GetCommandLineParam(cmdline, i, Param, MAX_PATH, &rlen))
@@ -1112,15 +1118,19 @@ BOOL supGetCommandLineOption(
 
         if (_strcmp(Param, OptionName) == 0)
         {
-            if (IsParametric)
-                return GetCommandLineParam(cmdline, i + 1, OptionValue, ValueSize, &rlen);
+            if (IsParametric) {
+                bResult = GetCommandLineParam(cmdline, i + 1, OptionValue, ValueSize, &rlen);
+                if (ParamLength)
+                    *ParamLength = rlen;
+                return bResult;
+            }
 
             return TRUE;
         }
         ++i;
     }
 
-    return 0;
+    return FALSE;
 }
 
 /*
@@ -1138,31 +1148,41 @@ BOOLEAN supQueryHVCIState(
 )
 {
     BOOLEAN hvciEnabled;
-    ULONG ReturnLength;
-    SYSTEM_CODEINTEGRITY_INFORMATION CodeIntegrity;
+    ULONG returnLength;
+    NTSTATUS ntStatus;
+    SYSTEM_CODEINTEGRITY_INFORMATION ci;
 
     if (pbHVCIEnabled) *pbHVCIEnabled = FALSE;
     if (pbHVCIStrictMode) *pbHVCIStrictMode = FALSE;
     if (pbHVCIIUMEnabled) *pbHVCIIUMEnabled = FALSE;
 
-    CodeIntegrity.Length = sizeof(CodeIntegrity);
-    if (NT_SUCCESS(NtQuerySystemInformation(
+    ci.Length = sizeof(ci);
+
+    ntStatus = NtQuerySystemInformation(
         SystemCodeIntegrityInformation,
-        &CodeIntegrity,
-        sizeof(CodeIntegrity),
-        &ReturnLength)))
-    {
-        hvciEnabled = ((CodeIntegrity.CodeIntegrityOptions & CODEINTEGRITY_OPTION_ENABLED) &&
-            (CodeIntegrity.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED));
+        &ci,
+        sizeof(ci),
+        &returnLength);
 
-        *pbHVCIEnabled = hvciEnabled;
+    if (NT_SUCCESS(ntStatus)) {
 
-        *pbHVCIStrictMode = hvciEnabled &&
-            (CodeIntegrity.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_STRICTMODE_ENABLED);
+        hvciEnabled = ((ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_ENABLED) &&
+            (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED));
 
-        *pbHVCIIUMEnabled = (CodeIntegrity.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_IUM_ENABLED) > 0;
+        if (pbHVCIEnabled)
+            *pbHVCIEnabled = hvciEnabled;
+
+        if (pbHVCIStrictMode)
+            *pbHVCIStrictMode = hvciEnabled &&
+            (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_STRICTMODE_ENABLED);
+
+        if (pbHVCIIUMEnabled)
+            *pbHVCIIUMEnabled = (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_IUM_ENABLED) > 0;
 
         return TRUE;
+    }
+    else {
+        RtlSetLastWin32Error(RtlNtStatusToDosError(ntStatus));
     }
 
     return FALSE;
@@ -1296,7 +1316,7 @@ PBYTE supReadFileToBuffer(
 )
 {
     NTSTATUS    status;
-    HANDLE      hFile = NULL, hRoot = NULL;
+    HANDLE      hFile = NULL;
     PBYTE       Buffer = NULL;
     SIZE_T      sz = 0;
 
@@ -1315,7 +1335,7 @@ PBYTE supReadFileToBuffer(
         if (!RtlDosPathNameToNtPathName_U(lpFileName, &usName, NULL, NULL))
             break;
 
-        InitializeObjectAttributes(&attr, &usName, OBJ_CASE_INSENSITIVE, hRoot, NULL);
+        InitializeObjectAttributes(&attr, &usName, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
         status = NtCreateFile(
             &hFile,
@@ -1374,10 +1394,6 @@ PBYTE supReadFileToBuffer(
         }
 
     } while (FALSE);
-
-    if (hRoot != NULL) {
-        NtClose(hRoot);
-    }
 
     if (hFile != NULL) {
         NtClose(hFile);
@@ -1448,123 +1464,88 @@ ULONG_PTR supGetPML4FromLowStub1M(
 */
 NTSTATUS supCreateSystemAdminAccessSD(
     _Out_ PSECURITY_DESCRIPTOR* SecurityDescriptor,
-    _Out_opt_ PULONG Length
+    _Out_ PACL* DefaultAcl
 )
 {
     NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
-    PSID admSid = NULL;
-    PSID sysSid = NULL;
-    PACL sysAcl = NULL;
-    ULONG daclSize = 0;
+    ULONG aclSize = 0;
+    SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
+    PACL pAcl = NULL;
+    PSECURITY_DESCRIPTOR securityDescriptor = NULL;
 
-    PSECURITY_DESCRIPTOR securityDescriptor;
-
-    SID_IDENTIFIER_AUTHORITY sidAuthority = SECURITY_NT_AUTHORITY;
+    UCHAR sidBuffer[2 * sizeof(SID)];
 
     *SecurityDescriptor = NULL;
-
-    if (Length)
-        *Length = 0;
+    *DefaultAcl = NULL;
 
     do {
 
+        RtlSecureZeroMemory(sidBuffer, sizeof(sidBuffer));
+
         securityDescriptor = (PSECURITY_DESCRIPTOR)supHeapAlloc(sizeof(SECURITY_DESCRIPTOR));
         if (securityDescriptor == NULL) {
-            ntStatus = STATUS_MEMORY_NOT_ALLOCATED;
+            ntStatus = STATUS_INSUFFICIENT_RESOURCES;
             break;
         }
 
-        admSid = (PSID)supHeapAlloc(RtlLengthRequiredSid(2));
-        if (admSid == NULL) {
-            ntStatus = STATUS_MEMORY_NOT_ALLOCATED;
+        aclSize += RtlLengthRequiredSid(1); //LocalSystem sid
+        aclSize += RtlLengthRequiredSid(2); //Admin group sid
+        aclSize += sizeof(ACL);
+        aclSize += 2 * (sizeof(ACCESS_ALLOWED_ACE) - sizeof(ULONG));
+
+        pAcl = (PACL)supHeapAlloc(aclSize);
+        if (pAcl == NULL) {
+            ntStatus = STATUS_INSUFFICIENT_RESOURCES;
             break;
         }
 
-        sysSid = (PSID)supHeapAlloc(RtlLengthRequiredSid(1));
-        if (sysSid == NULL) {
-            ntStatus = STATUS_MEMORY_NOT_ALLOCATED;
-            break;
-        }
-
-        ntStatus = RtlInitializeSid(admSid, &sidAuthority, 2);
-        if (NT_SUCCESS(ntStatus)) {
-            *RtlSubAuthoritySid(admSid, 0) = SECURITY_BUILTIN_DOMAIN_RID;
-            *RtlSubAuthoritySid(admSid, 1) = DOMAIN_ALIAS_RID_ADMINS;
-        }
-        else {
-            break;
-        }
-
-        ntStatus = RtlInitializeSid(sysSid, &sidAuthority, 1);
-        if (NT_SUCCESS(ntStatus)) {
-            *RtlSubAuthoritySid(sysSid, 0) = SECURITY_LOCAL_SYSTEM_RID;
-        }
-        else {
-            break;
-        }
-
-        daclSize = sizeof(ACL) +
-            (2 * sizeof(ACCESS_ALLOWED_ACE)) +
-            RtlLengthSid(admSid) + RtlLengthSid(sysSid) +
-            SECURITY_DESCRIPTOR_MIN_LENGTH;
-
-        sysAcl = (PACL)supHeapAlloc(daclSize);
-        if (sysAcl == NULL) {
-            ntStatus = STATUS_MEMORY_NOT_ALLOCATED;
-            break;
-        }
-
-        ntStatus = RtlCreateAcl(sysAcl, daclSize - SECURITY_DESCRIPTOR_MIN_LENGTH, ACL_REVISION);
+        ntStatus = RtlCreateAcl(pAcl, aclSize, ACL_REVISION);
         if (!NT_SUCCESS(ntStatus))
             break;
 
-        ntStatus = RtlAddAccessAllowedAce(sysAcl,
-            ACL_REVISION,
-            GENERIC_ALL,
-            sysSid);
+        //
+        // Local System - Generic All.
+        //
+        RtlInitializeSid(sidBuffer, &ntAuthority, 1);
+        *(RtlSubAuthoritySid(sidBuffer, 0)) = SECURITY_LOCAL_SYSTEM_RID;
+        RtlAddAccessAllowedAce(pAcl, ACL_REVISION, GENERIC_ALL, (PSID)sidBuffer);
 
-        if (!NT_SUCCESS(ntStatus))
-            break;
-
-        ntStatus = RtlAddAccessAllowedAce(sysAcl,
-            ACL_REVISION,
-            GENERIC_ALL,
-            admSid);
-
-        if (!NT_SUCCESS(ntStatus))
-            break;
+        //
+        // Admins - Generic All.
+        //
+        RtlInitializeSid(sidBuffer, &ntAuthority, 2);
+        *(RtlSubAuthoritySid(sidBuffer, 0)) = SECURITY_BUILTIN_DOMAIN_RID;
+        *(RtlSubAuthoritySid(sidBuffer, 1)) = DOMAIN_ALIAS_RID_ADMINS;
+        RtlAddAccessAllowedAce(pAcl, ACL_REVISION, GENERIC_ALL, (PSID)sidBuffer);
 
         ntStatus = RtlCreateSecurityDescriptor(securityDescriptor,
             SECURITY_DESCRIPTOR_REVISION1);
-
         if (!NT_SUCCESS(ntStatus))
             break;
 
         ntStatus = RtlSetDaclSecurityDescriptor(securityDescriptor,
             TRUE,
-            sysAcl,
+            pAcl,
             FALSE);
 
         if (!NT_SUCCESS(ntStatus))
             break;
 
-        if (!RtlValidSecurityDescriptor(securityDescriptor))
-            break;
-
         *SecurityDescriptor = securityDescriptor;
-
-        if (Length)
-            *Length = RtlLengthSecurityDescriptor(securityDescriptor);
+        *DefaultAcl = pAcl;
 
     } while (FALSE);
 
-    if (admSid != NULL) supHeapFree(admSid);
-    if (sysSid != NULL) supHeapFree(sysSid);
-    if (sysAcl != NULL) supHeapFree(sysAcl);
-
     if (!NT_SUCCESS(ntStatus)) {
-        if (securityDescriptor != NULL)
+
+        if (pAcl) supHeapFree(pAcl);
+
+        if (securityDescriptor) {
             supHeapFree(securityDescriptor);
+        }
+
+        *SecurityDescriptor = NULL;
+        *DefaultAcl = NULL;
     }
 
     return ntStatus;
@@ -1609,7 +1590,7 @@ ULONG_PTR supGetModuleBaseByName(
         for (i = 0; i < miSpace->NumberOfModules; i++) {
             k = miSpace->Modules[i].OffsetToFileName;
             if (_strcmpi_a(
-                (CONST CHAR*)&miSpace->Modules[i].FullPathName[k],
+                (CONST CHAR*) & miSpace->Modules[i].FullPathName[k],
                 ModuleName) == 0)
             {
                 ReturnAddress = (ULONG_PTR)miSpace->Modules[i].ImageBase;
@@ -1619,4 +1600,167 @@ ULONG_PTR supGetModuleBaseByName(
         supHeapFree(miSpace);
     }
     return ReturnAddress;
+}
+
+/*
+* supLoadDummyDll
+*
+* Purpose:
+*
+* Drop dummy dll to the %temp% and load it to trigger ImageLoad notify callbacks.
+* If fRemove set to TRUE then remove previously dropped file and return result of operation.
+*
+*/
+BOOL supLoadDummyDll(
+    _In_ BOOLEAN fRemove
+)
+{
+    BOOL bResult = FALSE;
+    ULONG dataSize = 0;
+    PBYTE dataBuffer;
+    PVOID dllHandle;
+
+    LPWSTR lpFileName;
+    SIZE_T Length = (1024 + _strlen(DUMMYDLL)) * sizeof(WCHAR);
+
+    //
+    // Allocate space for filename.
+    //
+    lpFileName = (LPWSTR)supHeapAlloc(Length);
+    if (lpFileName == NULL) {
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+    }
+    else {
+
+        //
+        // Expand %temp% variable for file path.
+        //
+        DWORD cch = supExpandEnvironmentStrings(L"%temp%\\", lpFileName, MAX_PATH);
+        if (cch == 0 || cch > MAX_PATH) {
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        }
+        else {
+            _strcat(lpFileName, DUMMYDLL);
+
+            //
+            // Depending on function parameter delete file or drop to disk and load it.
+            //
+            if (fRemove) {
+                bResult = DeleteFile(lpFileName);
+            }
+            else {
+
+                //
+                // Extract file from resource and drop to the disk in %temp% directory.
+                //
+                dllHandle = (PVOID)GetModuleHandle(NULL);
+
+                dataBuffer = (PBYTE)KDULoadResource(IDR_TAIGEI,
+                    dllHandle,
+                    &dataSize,
+                    PROVIDER_RES_KEY,
+                    TRUE);
+
+                if (dataBuffer) {
+
+                    if (dataSize == supWriteBufferToFile(lpFileName,
+                        dataBuffer,
+                        dataSize,
+                        TRUE,
+                        FALSE,
+                        NULL))
+                    {
+                        //
+                        // Finally load file and trigger image notify callbacks.
+                        //
+                        if (LoadLibraryEx(lpFileName, NULL, 0))
+                            bResult = TRUE;
+                    }
+                }
+                else {
+                    SetLastError(ERROR_FILE_INVALID);
+                }
+            }
+        }
+    }
+
+    if (lpFileName) supHeapFree(lpFileName);
+
+    return bResult;
+}
+
+/*
+* supSelectNonPagedPoolTag
+*
+* Purpose:
+*
+* Query most used nonpaged pool tag.
+*
+*/
+ULONG supSelectNonPagedPoolTag(
+    VOID
+)
+{
+    ULONG ulResult = SHELL_POOL_TAG;
+    PSYSTEM_POOLTAG_INFORMATION pvPoolInfo;
+
+    pvPoolInfo = (PSYSTEM_POOLTAG_INFORMATION)supGetSystemInfo(SystemPoolTagInformation);
+    if (pvPoolInfo) {
+
+        SIZE_T maxUse = 0;
+
+        for (ULONG i = 0; i < pvPoolInfo->Count; i++) {
+
+            if (pvPoolInfo->TagInfo[i].NonPagedUsed > maxUse) {
+                maxUse = pvPoolInfo->TagInfo[i].NonPagedUsed;
+                ulResult = pvPoolInfo->TagInfo[i].TagUlong;
+            }
+
+        }
+
+        supHeapFree(pvPoolInfo);
+    }
+
+    return ulResult;
+}
+
+/*
+* supLoadFileForMapping
+*
+* Purpose:
+*
+* Load input file for further driver mapping.
+*
+*/
+NTSTATUS supLoadFileForMapping(
+    _In_ LPCWSTR PayloadFileName,
+    _Out_ PVOID *LoadBase
+)
+{
+    NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
+    ULONG dllCharacteristics = IMAGE_FILE_EXECUTABLE_IMAGE;
+    UNICODE_STRING usFileName;
+
+    PVOID pvImage = NULL;
+    PIMAGE_NT_HEADERS pNtHeaders;
+
+    *LoadBase = NULL;
+
+    //
+    // Map input file as image.
+    //
+    RtlInitUnicodeString(&usFileName, PayloadFileName);
+    ntStatus = LdrLoadDll(NULL, &dllCharacteristics, &usFileName, &pvImage);
+    if ((!NT_SUCCESS(ntStatus)) || (pvImage == NULL)) {
+        return ntStatus;
+    }
+
+    pNtHeaders = RtlImageNtHeader(pvImage);
+    if (pNtHeaders == NULL) {
+        return STATUS_INVALID_IMAGE_FORMAT;
+    }
+
+    *LoadBase = pvImage;
+
+    return STATUS_SUCCESS;
 }

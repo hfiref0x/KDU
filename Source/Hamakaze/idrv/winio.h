@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       WINIO.H
 *
-*  VERSION:     1.01
+*  VERSION:     1.10
 *
-*  DATE:        14 Feb 2020
+*  DATE:        02 Apr 2021
 *
 *  WINIO based drivers interface header.
 *
@@ -133,6 +133,13 @@ BOOL WINAPI WinIoWriteKernelVirtualMemory(
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
+BOOL WINAPI WinIoPreOpen(
+    _In_ PVOID Param);
+
 BOOL WINAPI WinIoRegisterDriver(
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param);
+
+BOOL WINAPI WinIoUnregisterDriver(
     _In_ HANDLE DeviceHandle,
     _In_opt_ PVOID Param);

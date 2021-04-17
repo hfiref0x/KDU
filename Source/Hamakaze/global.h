@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       GLOBAL.H
 *
-*  VERSION:     1.01
+*  VERSION:     1.10
 *
-*  DATE:        18 Feb 2020
+*  DATE:        02 Apr 2021
 *
 *  Common include header file.
 *
@@ -31,13 +31,23 @@
 #pragma warning(disable: 4201) // nameless struct/union
 #pragma warning(disable: 26812) // Prefer 'enum class' over 'enum'
 
+#define KDU_SHELLCODE_NONE  (0)
+#define KDU_SHELLCODE_V1    (1)
+#define KDU_SHELLCODE_V2    (2)
+#define KDU_SHELLCODE_V3    (3)
+#define KDU_SHELLCODE_VMAX  KDU_SHELLCODE_V3
+
 #include <Windows.h>
 #include <strsafe.h>
 #include <ntstatus.h>
 #include <intrin.h>
+#include <rpc.h>
 #include "ntos/ntos.h"
 #include "ntos/halamd64.h"
+#include "wdksup.h"
 #include "resource.h"
+
+#pragma comment(lib, "Rpcrt4.lib")
 
 #if defined(__cplusplus)
 extern "C" {
@@ -57,9 +67,13 @@ extern "C" {
 #include "sup.h"
 #include "compress.h"
 #include "kduprov.h"
+#include "shellcode.h"
 #include "drvmap.h"
 #include "ps.h"
 #include "victim.h"
 #include "pagewalk.h"
 #include "dsefix.h"
 #include "tests.h"
+
+#define ASSERT_RESOLVED_FUNC(FunctionPtr) { if (FunctionPtr == 0) break; }
+#define ASSERT_RESOLVED_FUNC_ABORT(FunctionPtr) { if (FunctionPtr == 0) return FALSE; }

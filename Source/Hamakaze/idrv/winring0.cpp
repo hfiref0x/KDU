@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       WINRING0.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.10
 *
-*  DATE:        14 Feb 2020
+*  DATE:        02 Apr 2021
 *
 *  WinRing0 based drivers routines.
 *
@@ -145,14 +145,15 @@ BOOL WINAPI WRZeroQueryPML4Value(
 
         }
 
-        PML4 = supGetPML4FromLowStub1M((ULONG_PTR)pbLowStub1M);
-        if (PML4)
-            *Value = PML4;
-        else
-            *Value = 0;
+        if (dwError == ERROR_SUCCESS) {
 
+            PML4 = supGetPML4FromLowStub1M((ULONG_PTR)pbLowStub1M);
+            if (PML4)
+                *Value = PML4;
+            else
+                *Value = 0;
 
-        dwError = ERROR_SUCCESS;
+        }
 
     } while (FALSE);
 

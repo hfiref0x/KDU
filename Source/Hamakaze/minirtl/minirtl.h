@@ -6,8 +6,10 @@ Description:
 	header for string handling and conversion routines
 
 Date:
-	1 Mar 2015
+	4 Oct 2020
 */
+
+#pragma once
 
 #ifndef _MINIRTL_
 #define _MINIRTL_
@@ -51,6 +53,10 @@ wchar_t *_strstr_w(const wchar_t *s, const wchar_t *sub_s);
 
 char *_strstri_a(const char *s, const char *sub_s);
 wchar_t *_strstri_w(const wchar_t *s, const wchar_t *sub_s);
+
+char *_strchr_a(const char *s, const char ch);
+wchar_t *_strchr_w(const wchar_t *s, const wchar_t ch);
+
 
 // conversion of integer types to string, returning string length
 
@@ -109,6 +115,7 @@ unsigned long long hextou64_w(wchar_t *s);
 #define _strncmpi _strncmpi_w
 #define _strstr _strstr_w
 #define _strstri _strstri_w
+#define _strchr _strchr_w
 
 #define ultostr ultostr_w
 #define ultohex ultohex_w
@@ -117,7 +124,7 @@ unsigned long long hextou64_w(wchar_t *s);
 #define u64tostr u64tostr_w
 #define u64tohex u64tohex_w
 
-#define strtoul strtoul_w
+#define _strtoul strtoul_w
 #define hextoul hextoul_w
 #define strtoi strtoi_w
 #define strtoi64 strtoi64_w
@@ -139,6 +146,7 @@ unsigned long long hextou64_w(wchar_t *s);
 #define _strncmpi _strncmpi_a
 #define _strstr _strstr_a
 #define _strstri _strstri_a
+#define _strchr _strchr_a
 
 #define ultostr ultostr_a
 #define ultohex ultohex_a
@@ -147,7 +155,7 @@ unsigned long long hextou64_w(wchar_t *s);
 #define u64tostr u64tostr_a
 #define u64tohex u64tohex_a
 
-#define strtoul strtoul_a
+#define _strtoul strtoul_a
 #define hextoul hextoul_a
 #define strtoi strtoi_a
 #define strtoi64 strtoi64_a

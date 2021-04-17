@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.10
 *
-*  DATE:        02 Feb 2020
+*  DATE:        01 Apr 2021
 *
 *  KDU tests.
 *
@@ -19,19 +19,53 @@
 
 #include "global.h"
 
+VOID KDUTestLoad()
+{
+    ULONG i, c = KDUProvGetCount();
+    PKDU_PROVIDER refProv = KDUProvGetReference();
+    HINSTANCE hProv = KDUProviderLoadDB();
+    ULONG dataSize = 0;
+    PVOID pvData;
+
+    for (i = 0; i < c; i++) {
+
+        pvData = KDULoadResource(refProv[i].ResourceId,
+            hProv,
+            &dataSize,
+            PROVIDER_RES_KEY,
+            TRUE);
+
+        if (pvData) {
+            printf_s("[+] Provider[%lu] loaded\r\n", refProv[i].ResourceId);
+            supHeapFree(pvData);
+        }
+        else {
+            printf_s("[+] Provider[%lu] failed to load\r\n", refProv[i].ResourceId);
+        }
+
+
+    }
+}
+
 VOID KDUTest()
 {
     PKDU_CONTEXT Context;
-    ULONG_PTR objectAddress = 0, value = 0;
+    ULONG_PTR objectAddress = 0, value;
 
     UCHAR Buffer[4096];
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(7, FALSE, 14393, GetModuleHandle(NULL), ActionTypeMapDriver);
+    Context = KDUProviderCreate(KDU_PROVIDER_ENETECHIO64B, FALSE, 17763, KDU_SHELLCODE_V1, ActionTypeMapDriver);
     if (Context) {
 
         if (supQueryObjectFromHandle(Context->DeviceHandle, &objectAddress)) {
+
+            /*Context->Provider->Callbacks.ReadPhysicalMemory(
+                Context->DeviceHandle,
+                0x1000,
+                &Buffer,
+                0x1000);*/
 
             value = 0x1234567890ABCDEF;
 
@@ -39,19 +73,10 @@ VOID KDUTest()
 
             RtlSecureZeroMemory(&fileObject, sizeof(FILE_OBJECT));
 
-            objectAddress = 0xfffff8087fe36d18;
-
             KDUReadKernelVM(Context,
                 objectAddress,
-                &value,
-                sizeof(value));
-
-            ULONG_PTR newValue = 0xABCDEF0;
-
-            KDUWriteKernelVM(Context,
-                objectAddress,
-                &newValue,
-                sizeof(newValue));
+                &fileObject,
+                sizeof(fileObject));
 
             Beep(0, 0);
 

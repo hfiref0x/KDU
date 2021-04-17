@@ -128,7 +128,12 @@ BOOL VictimCreate(
                 }
             }
 
-            drvBuffer = supQueryResourceData(ResourceId, ModuleBase, &resourceSize);
+            drvBuffer = (PBYTE)KDULoadResource(ResourceId, 
+                ModuleBase, 
+                &resourceSize,
+                PROVIDER_RES_KEY,
+                TRUE);
+
             if (drvBuffer == NULL) {
                 SetLastError(ERROR_FILE_NOT_FOUND);
                 break;

@@ -1,0 +1,9 @@
+EXPORTS
+SB_SMS_ReadByteEx     = StubFunc
+SB_SMS_ReadWordEx     = StubFunc
+SB_SMS_ReadBlockEx    = StubFunc
+SB_SMS_WriteByteEx    = StubFunc
+SB_SMS_WriteWordEx    = StubFunc
+SB_SMS_WriteBlockEx   = StubFunc
+SB_SMS_GetCtrlCountEx = StubFunc
+SB_SMS_QuickCommandEx = StubFunc

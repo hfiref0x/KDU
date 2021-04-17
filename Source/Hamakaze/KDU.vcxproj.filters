@@ -99,7 +99,7 @@
     <ClCompile Include="minirtl\_filename.c">
       <Filter>minirtl</Filter>
     </ClCompile>
-    <ClCompile Include="idrv\gdrv.cpp">
+    <ClCompile Include="idrv\mapmem.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
     <ClCompile Include="tests.cpp">
@@ -118,6 +118,12 @@
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
     <ClCompile Include="dsefix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\phymem.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="shellcode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -143,7 +149,7 @@
     <ClInclude Include="drvmap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="irp.h">
+    <ClInclude Include="wdksup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ps.h">
@@ -176,7 +182,7 @@
     <ClInclude Include="minirtl\_filename.h">
       <Filter>minirtl</Filter>
     </ClInclude>
-    <ClInclude Include="idrv\gdrv.h">
+    <ClInclude Include="idrv\mapmem.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
     <ClInclude Include="tests.h">
@@ -203,6 +209,15 @@
     <ClInclude Include="dsefix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="kduplist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\phymem.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="shellcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc">
@@ -210,42 +225,12 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="274.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="res\274.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="drv\iQVM64.bin">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="drv\procexp.bin">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="drv\RTCore64.bin">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="drv\gdrv.bin">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="drv\ATSZIO64.bin">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="drv\msio64.bin">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="drv\glckio2.bin">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="drv\eneio64.bin">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="drv\WinRing0x64.bin">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="drv\enetechio64.bin">
+    <None Include="res\SB_SMBUS_SDK.bin">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

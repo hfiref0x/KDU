@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
-*  TITLE:       GDRV.H
+*  TITLE:       MAPMEM.H
 *
-*  VERSION:     1.01
+*  VERSION:     1.10
 *
-*  DATE:        12 Feb 2020
+*  DATE:        02 Apr 2020
 *
-*  GigaByte GiveIO Gdrv driver interface header.
+*  MAPMEM driver interface header.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -37,25 +37,40 @@
 #define IOCTL_GDRV_UNMAP_USER_PHYSICAL_MEMORY   \
     CTL_CODE(GDRV_DEVICE_TYPE, GRV_IOCTL_INDEX+2, METHOD_BUFFERED, FILE_ANY_ACCESS) //0xC3502008
 
+//
+// SuperMicro SUPERBMC driver interface.
+//
+
+#define SUPERBMC_DEVICE_TYPE  (DWORD)0x8010
+
+#define SUPERBMC_MAP_FUNCID   (DWORD)0x88E
+#define SUPERBMC_UNMAP_FUNCID (DWORD)0x890
+
+#define IOCTL_SUPERBMC_MAP_USER_PHYSICAL_MEMORY      \
+    CTL_CODE(SUPERBMC_DEVICE_TYPE, SUPERBMC_MAP_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x80102238
+
+#define IOCTL_SUPERBMC_UNMAP_USER_PHYSICAL_MEMORY    \
+    CTL_CODE(SUPERBMC_DEVICE_TYPE, SUPERBMC_UNMAP_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x80102240
+
 
 typedef struct _GIO_VIRTUAL_TO_PHYSICAL {
     ULARGE_INTEGER Address;
 } GIO_VIRTUAL_TO_PHYSICAL, * PGIO_VIRTUAL_TO_PHYSICAL;
 
-typedef struct _GDRV_PHYSICAL_MEMORY_INFO {
+typedef struct _MAPMEM_PHYSICAL_MEMORY_INFO {
     INTERFACE_TYPE   InterfaceType; 
     ULONG            BusNumber;     
     PHYSICAL_ADDRESS BusAddress;
     ULONG            AddressSpace;  
     ULONG            Length;        
-} GDRV_PHYSICAL_MEMORY_INFO, * PGDRV_PHYSICAL_MEMORY_INFO;
+} MAPMEM_PHYSICAL_MEMORY_INFO, * PMAPMEM_PHYSICAL_MEMORY_INFO;
 
 BOOL GioVirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress);
 
-BOOL GioReadPhysicalMemory(
+BOOL WINAPI GioReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ PVOID Buffer,
@@ -82,3 +97,7 @@ BOOL WINAPI GioReadKernelVirtualMemory(
 BOOL WINAPI GioQueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value);
+
+BOOL WINAPI MapMemRegisterDriver(
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param);

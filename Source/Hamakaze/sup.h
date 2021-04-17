@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.02
+*  VERSION:     1.10
 *
-*  DATE:        11 Feb 2021
+*  DATE:        02 Apr 2021
 *
 *  Support routines header file.
 *
@@ -18,6 +18,8 @@
 *******************************************************************************/
 #pragma once
 
+//#define VERBOSE_FUNCTION_LOG
+
 typedef NTSTATUS(NTAPI* PENUMOBJECTSCALLBACK)(POBJECT_DIRECTORY_INFORMATION Entry, PVOID CallbackParam);
 
 #define USER_TO_KERNEL_HANDLE(Handle) { Handle += 0xffffffff80000000; }
@@ -26,6 +28,14 @@ typedef struct _OBJSCANPARAM {
     PWSTR Buffer;
     ULONG BufferSize;
 } OBJSCANPARAM, * POBJSCANPARAM;
+
+#ifdef VERBOSE_FUNCTION_LOG
+#define FUNCTION_ENTER_MSG(lpFunctionName) printf_s("[>] Entering %s\r\n", lpFunctionName)
+#define FUNCTION_LEAVE_MSG(lpFunctionName) printf_s("[<] Leaving %s\r\n", lpFunctionName)
+#else
+#define FUNCTION_ENTER_MSG(lpFunctionName) 
+#define FUNCTION_LEAVE_MSG(lpFunctionName)
+#endif
 
 PVOID FORCEINLINE supHeapAlloc(
     _In_ SIZE_T Size);
@@ -87,7 +97,7 @@ ULONG_PTR supGetProcAddress(
     _In_ ULONG_PTR KernelImage,
     _In_ LPCSTR FunctionName);
 
-void supResolveKernelImport(
+VOID supResolveKernelImport(
     _In_ ULONG_PTR Image,
     _In_ ULONG_PTR KernelImage,
     _In_ ULONG_PTR KernelBase);
@@ -103,8 +113,9 @@ BOOL supQueryObjectFromHandle(
 BOOL supGetCommandLineOption(
     _In_ LPCTSTR OptionName,
     _In_ BOOL IsParametric,
-    _Inout_opt_ LPTSTR OptionValue,
-    _In_ ULONG ValueSize);
+    _Out_writes_opt_z_(ValueSize) LPTSTR OptionValue,
+    _In_ ULONG ValueSize,
+    _Out_opt_ PULONG ParamLength);
 
 BOOLEAN supQueryHVCIState(
     _Out_ PBOOLEAN pbHVCIEnabled,
@@ -123,16 +134,28 @@ ULONG_PTR supQueryMaximumUserModeAddress();
 
 BOOLEAN supVerifyMappedImageMatchesChecksum(
     _In_ PVOID BaseAddress,
-    _In_ ULONG FileLength);
+    _In_ ULONG FileLength,
+    _Out_opt_ PULONG HeaderChecksum,
+    _Out_opt_ PULONG CalculatedChecksum);
 
 ULONG_PTR supGetPML4FromLowStub1M(
     _In_ ULONG_PTR pbLowStub1M);
 
 NTSTATUS supCreateSystemAdminAccessSD(
     _Out_ PSECURITY_DESCRIPTOR * SecurityDescriptor,
-    _Out_opt_ PULONG Length);
+    _Out_ PACL * DefaultAcl);
 
 ULONG supGetTimeAsSecondsSince1970();
 
 ULONG_PTR supGetModuleBaseByName(
     _In_ LPCSTR ModuleName);
+
+BOOL supLoadDummyDll(
+    _In_ BOOLEAN fRemove);
+
+ULONG supSelectNonPagedPoolTag(
+    VOID);
+
+NTSTATUS supLoadFileForMapping(
+    _In_ LPCWSTR PayloadFileName,
+    _Out_ PVOID * LoadBase);

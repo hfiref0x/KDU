@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,2,2102
- PRODUCTVERSION 1,0,2,2102
+ FILEVERSION 1,1,0,2104
+ PRODUCTVERSION 1,1,0,2104
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -69,12 +69,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility"
-            VALUE "FileVersion", "1.0.2.2102"
+            VALUE "FileVersion", "1.1.0.2104"
             VALUE "InternalName", "Hamakaze.exe"
             VALUE "LegalCopyright", "Copyright (C) 2020 - 2021 KDU Project"
             VALUE "OriginalFilename", "Hamakaze.exe"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.0.2.2102"
+            VALUE "ProductVersion", "1.1.0.2104"
         END
     END
     BLOCK "VarFileInfo"
@@ -86,38 +86,20 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// RCDATA
-//
-
-IDR_iQVM64              RCDATA                  "drv\\iQVM64.bin"
-
-IDR_PROCEXP             RCDATA                  "drv\\procexp.bin"
-
-IDR_RTCORE64            RCDATA                  "drv\\RTCore64.bin"
-
-IDR_GDRV                RCDATA                  "drv\\gdrv.bin"
-
-IDR_ATSZIO64            RCDATA                  "drv\\ATSZIO64.bin"
-
-IDR_MSIO64              RCDATA                  "drv\\msio64.bin"
-
-IDR_GLCKIO2             RCDATA                  "drv\\glckio2.bin"
-
-IDR_ENEIO64             RCDATA                  "drv\\eneio64.bin"
-
-IDR_WINRING0            RCDATA                  "drv\\WinRing0x64.bin"
-
-IDR_ENETECHIO64         RCDATA                  "drv\\enetechio64.bin"
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // Icon
 //
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICON1               ICON                    "res\\274.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RCDATA
+//
+
+IDR_TAIGEI              RCDATA                  "res\\SB_SMBUS_SDK.bin"
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////

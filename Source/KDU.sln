@@ -5,6 +5,12 @@ VisualStudioVersion = 16.0.29709.97
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hamakaze", "Hamakaze\KDU.vcxproj", "{46C8FB0F-C8BF-4932-B84C-A10B38904728}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Taigei", "Taigei\Taigei.vcxproj", "{82970D46-0966-4D20-9158-C0EB05090488}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tanikaze", "Tanikaze\Tanikaze.vcxproj", "{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dlls", "Dlls", "{0BB4D8FA-8E46-4947-900A-9BEE39816DCF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -15,9 +21,21 @@ Global
 		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Debug|x64.Build.0 = Debug|x64
 		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x64.ActiveCfg = Release|x64
 		{46C8FB0F-C8BF-4932-B84C-A10B38904728}.Release|x64.Build.0 = Release|x64
+		{82970D46-0966-4D20-9158-C0EB05090488}.Debug|x64.ActiveCfg = Debug|x64
+		{82970D46-0966-4D20-9158-C0EB05090488}.Debug|x64.Build.0 = Debug|x64
+		{82970D46-0966-4D20-9158-C0EB05090488}.Release|x64.ActiveCfg = Release|x64
+		{82970D46-0966-4D20-9158-C0EB05090488}.Release|x64.Build.0 = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|x64.ActiveCfg = Debug|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Debug|x64.Build.0 = Debug|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|x64.ActiveCfg = Release|x64
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{82970D46-0966-4D20-9158-C0EB05090488} = {0BB4D8FA-8E46-4947-900A-9BEE39816DCF}
+		{072F189A-CEA9-4CA8-A0FA-1257A7524A8E} = {0BB4D8FA-8E46-4947-900A-9BEE39816DCF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A3AB05D5-3256-4A90-8B28-22C0E11621E9}

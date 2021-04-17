@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2020
+*  (C) COPYRIGHT AUTHORS, 2014 - 2021
 *
 *  TITLE:       DSEFIX.H
 *
-*  VERSION:     1.00
+*  VERSION:     1.10
 *
-*  DATE:        18 Feb 2018
+*  DATE:        02 Apr 2021
 *
 *  CI DSE corruption prototypes and definitions.
 *

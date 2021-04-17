@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.02
+*  VERSION:     1.10
 *
-*  DATE:        11 Feb 2021
+*  DATE:        02 Apr 2021
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -237,7 +237,7 @@ BOOL KDUControlDSE(
     NTSTATUS ntStatus;
     SYSTEM_CODEINTEGRITY_INFORMATION state;
 
-    printf_s("[>] Entering %s\r\n", __FUNCTION__);
+    FUNCTION_ENTER_MSG(__FUNCTION__);
 
     state.CodeIntegrityOptions = 0;
     state.Length = sizeof(state);
@@ -308,7 +308,7 @@ BOOL KDUControlDSE(
     }
 
 
-    printf_s("[<] Leaving %s\r\n", __FUNCTION__);
+    FUNCTION_LEAVE_MSG(__FUNCTION__);
 
     return bResult;
 }

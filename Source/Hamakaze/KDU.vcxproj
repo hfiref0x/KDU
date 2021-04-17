@@ -107,7 +107,8 @@
     <ClCompile Include="dsefix.cpp" />
     <ClCompile Include="hde\hde64.c" />
     <ClCompile Include="idrv\atszio.cpp" />
-    <ClCompile Include="idrv\gdrv.cpp" />
+    <ClCompile Include="idrv\mapmem.cpp" />
+    <ClCompile Include="idrv\phymem.cpp" />
     <ClCompile Include="idrv\winio.cpp" />
     <ClCompile Include="idrv\nal.cpp" />
     <ClCompile Include="idrv\rtcore.cpp" />
@@ -128,6 +129,7 @@
     <ClCompile Include="kduprov.cpp" />
     <ClCompile Include="pagewalk.cpp" />
     <ClCompile Include="ps.cpp" />
+    <ClCompile Include="shellcode.cpp" />
     <ClCompile Include="sup.cpp" />
     <ClCompile Include="tests.cpp" />
     <ClCompile Include="tinyaes\aes.c" />
@@ -141,12 +143,15 @@
     <ClInclude Include="global.h" />
     <ClInclude Include="hde\hde64.h" />
     <ClInclude Include="idrv\atszio.h" />
-    <ClInclude Include="idrv\gdrv.h" />
+    <ClInclude Include="idrv\mapmem.h" />
+    <ClInclude Include="idrv\phymem.h" />
     <ClInclude Include="idrv\winio.h" />
     <ClInclude Include="idrv\nal.h" />
     <ClInclude Include="idrv\rtcore.h" />
     <ClInclude Include="idrv\winring0.h" />
-    <ClInclude Include="irp.h" />
+    <ClInclude Include="shellcode.h" />
+    <ClInclude Include="wdksup.h" />
+    <ClInclude Include="kduplist.h" />
     <ClInclude Include="minirtl\cmdline.h" />
     <ClInclude Include="minirtl\minirtl.h" />
     <ClInclude Include="minirtl\rtltypes.h" />
@@ -166,20 +171,10 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="274.ico" />
     <Image Include="res\274.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="drv\ATSZIO64.bin" />
-    <None Include="drv\eneio64.bin" />
-    <None Include="drv\enetechio64.bin" />
-    <None Include="drv\gdrv.bin" />
-    <None Include="drv\glckio2.bin" />
-    <None Include="drv\iQVM64.bin" />
-    <None Include="drv\msio64.bin" />
-    <None Include="drv\procexp.bin" />
-    <None Include="drv\RTCore64.bin" />
-    <None Include="drv\WinRing0x64.bin" />
+    <None Include="res\SB_SMBUS_SDK.bin" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

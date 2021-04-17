@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.161
+*  VERSION:     1.164
 *
-*  DATE:        14 Jan 2021
+*  DATE:        01 Apr 2021
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -884,6 +884,70 @@ typedef struct _SYSTEM_PROCESSOR_FEATURES_INFORMATION { //chappell
     ULONGLONG ProcessorFeatureBits;
     ULONGLONG Reserved[3];
 } SYSTEM_PROCESSOR_FEATURES_INFORMATION, * PSYSTEM_PROCESSOR_FEATURES_INFORMATION;
+
+typedef struct _SYSTEM_POOL_ENTRY {
+    BOOLEAN Allocated;
+    BOOLEAN Spare0;
+    USHORT AllocatorBackTraceIndex;
+    ULONG Size;
+    union {
+        UCHAR Tag[4];
+        ULONG TagUlong;
+        PVOID ProcessChargedQuota;
+    };
+} SYSTEM_POOL_ENTRY, * PSYSTEM_POOL_ENTRY;
+
+typedef struct _SYSTEM_POOL_INFORMATION {
+    SIZE_T TotalSize;
+    PVOID FirstEntry;
+    USHORT EntryOverhead;
+    BOOLEAN PoolTagPresent;
+    BOOLEAN Spare0;
+    ULONG NumberOfEntries;
+    SYSTEM_POOL_ENTRY Entries[1];
+} SYSTEM_POOL_INFORMATION, * PSYSTEM_POOL_INFORMATION;
+
+typedef struct _SYSTEM_POOLTAG {
+    union {
+        UCHAR Tag[4];
+        ULONG TagUlong;
+    };
+    ULONG PagedAllocs;
+    ULONG PagedFrees;
+    SIZE_T PagedUsed;
+    ULONG NonPagedAllocs;
+    ULONG NonPagedFrees;
+    SIZE_T NonPagedUsed;
+} SYSTEM_POOLTAG, * PSYSTEM_POOLTAG;
+
+typedef struct _SYSTEM_BIGPOOL_ENTRY {
+    union {
+        PVOID VirtualAddress;
+        ULONG_PTR NonPaged : 1;
+    };
+    SIZE_T SizeInBytes;
+    union {
+        UCHAR Tag[4];
+        ULONG TagUlong;
+    };
+} SYSTEM_BIGPOOL_ENTRY, * PSYSTEM_BIGPOOL_ENTRY;
+
+typedef struct _SYSTEM_POOLTAG_INFORMATION {
+    ULONG Count;
+    SYSTEM_POOLTAG TagInfo[1];
+} SYSTEM_POOLTAG_INFORMATION, * PSYSTEM_POOLTAG_INFORMATION;
+
+typedef struct _SYSTEM_SESSION_POOLTAG_INFORMATION {
+    SIZE_T NextEntryOffset;
+    ULONG SessionId;
+    ULONG Count;
+    SYSTEM_POOLTAG TagInfo[1];
+} SYSTEM_SESSION_POOLTAG_INFORMATION, * PSYSTEM_SESSION_POOLTAG_INFORMATION;
+
+typedef struct _SYSTEM_BIGPOOL_INFORMATION {
+    ULONG Count;
+    SYSTEM_BIGPOOL_ENTRY AllocatedInfo[1];
+} SYSTEM_BIGPOOL_INFORMATION, * PSYSTEM_BIGPOOL_INFORMATION;
 
 typedef enum _PROCESSINFOCLASS {
     ProcessBasicInformation = 0,
@@ -12582,6 +12646,34 @@ NtCallEnclave(
     _In_ PVOID Parameter,
     _In_ BOOLEAN WaitForThread,
     _Out_opt_ PVOID* ReturnValue);
+
+
+/************************************************************************************
+*
+* LUID/UUID API.
+*
+************************************************************************************/
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtSetUuidSeed(
+    _In_ PCHAR Seed);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtAllocateUuids(
+    _Out_ PULARGE_INTEGER Time,
+    _Out_ PULONG Range,
+    _Out_ PULONG Sequence,
+    _Out_ PCHAR Seed);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtAllocateLocallyUniqueId(
+    _Out_ PLUID Luid);
 
 
 /************************************************************************************

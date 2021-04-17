@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
-*  TITLE:       GDRV.CPP
+*  TITLE:       MAPMEM.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.10
 *
-*  DATE:        14 Feb 2020
+*  DATE:        02 Apr 2021
 *
-*  Gigabyte GiveIO GDRV driver routines.
+*  MAPMEM driver routines.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -18,34 +18,37 @@
 *******************************************************************************/
 
 #include "global.h"
-#include "idrv/gdrv.h"
+#include "idrv/mapmem.h"
 
 //
 // Gigabyte driver based on MAPMEM.SYS Microsoft Windows NT 3.51 DDK example from 1993.
 //
 
+ULONG g_MapMem_MapIoctl;
+ULONG g_MapMem_UnmapIoctl;
+
 /*
-* GioMapMemory
+* MapMemMapMemory
 *
 * Purpose:
 *
 * Map physical memory through \Device\PhysicalMemory.
 *
 */
-PVOID GioMapMemory(
+PVOID MapMemMapMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ ULONG NumberOfBytes)
 {
     PVOID pMapSection = NULL;
-    GDRV_PHYSICAL_MEMORY_INFO request;
+    MAPMEM_PHYSICAL_MEMORY_INFO request;
 
     RtlSecureZeroMemory(&request, sizeof(request));
     request.BusAddress.QuadPart = PhysicalAddress;
     request.Length = NumberOfBytes;
 
     if (supCallDriver(DeviceHandle,
-        IOCTL_GDRV_MAP_USER_PHYSICAL_MEMORY,
+        g_MapMem_MapIoctl,
         &request,
         sizeof(request),
         (PVOID)&pMapSection,
@@ -58,20 +61,20 @@ PVOID GioMapMemory(
 }
 
 /*
-* GioUnmapMemory
+* MapMemUnmapMemory
 *
 * Purpose:
 *
 * Unmap previously mapped physical memory.
 *
 */
-VOID GioUnmapMemory(
+VOID MapMemUnmapMemory(
     _In_ HANDLE DeviceHandle,
     _In_ PVOID SectionToUnmap
 )
 {
     supCallDriver(DeviceHandle,
-        IOCTL_GDRV_UNMAP_USER_PHYSICAL_MEMORY,
+        g_MapMem_UnmapIoctl,
         &SectionToUnmap,
         sizeof(PVOID),
         NULL,
@@ -145,7 +148,7 @@ BOOL WINAPI GioQueryPML4Value(
 
     do {
 
-        pbLowStub1M = (ULONG_PTR)GioMapMemory(DeviceHandle,
+        pbLowStub1M = (ULONG_PTR)MapMemMapMemory(DeviceHandle,
             0ULL,
             0x100000);
 
@@ -160,8 +163,7 @@ BOOL WINAPI GioQueryPML4Value(
         else
             *Value = 0;
 
-        GioUnmapMemory(DeviceHandle, (PVOID)pbLowStub1M);
-        dwError = ERROR_SUCCESS;
+        MapMemUnmapMemory(DeviceHandle, (PVOID)pbLowStub1M);
 
     } while (FALSE);
 
@@ -222,7 +224,7 @@ BOOL WINAPI GioReadWritePhysicalMemory(
     //
     // Map physical memory section.
     //
-    mappedSection = GioMapMemory(DeviceHandle,
+    mappedSection = MapMemMapMemory(DeviceHandle,
         PhysicalAddress,
         NumberOfBytes);
 
@@ -247,7 +249,8 @@ BOOL WINAPI GioReadWritePhysicalMemory(
         //
         // Unmap physical memory section.
         //
-        GioUnmapMemory(DeviceHandle,
+        MapMemUnmapMemory(
+            DeviceHandle,
             mappedSection);
 
     }
@@ -383,4 +386,31 @@ BOOL WINAPI GioReadKernelVirtualMemory(
 
     SetLastError(dwError);
     return bResult;
+}
+
+/*
+* MapMemRegisterDriver
+*
+* Purpose:
+*
+* Register MapMem driver.
+*
+*/
+BOOL WINAPI MapMemRegisterDriver(
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param)
+{
+    ULONG DriverId = PtrToUlong(Param);
+
+    UNREFERENCED_PARAMETER(DeviceHandle);
+
+    switch (DriverId) {
+    case IDR_GDRV:
+    default:
+        g_MapMem_MapIoctl = IOCTL_GDRV_MAP_USER_PHYSICAL_MEMORY;
+        g_MapMem_UnmapIoctl = IOCTL_GDRV_UNMAP_USER_PHYSICAL_MEMORY;
+        break;
+    }
+
+    return TRUE;
 }
