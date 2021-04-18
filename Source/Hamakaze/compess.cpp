@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Apr 2021
 *
 *  Compression support routines.
 *
@@ -142,8 +142,8 @@ PVOID KDUDecompressResource(
         diDelta.uSize = ResourceSize;
 
         if (ApplyDeltaB(DELTA_FILE_TYPE_RAW, diSource, diDelta, &doOutput)) {
-
-            SIZE_T newSize = (DWORD)doOutput.uSize;
+            
+            SIZE_T newSize = doOutput.uSize;
             PVOID decomPtr = doOutput.lpStart;
 
             bValidData = supVerifyMappedImageMatchesChecksum(decomPtr,
@@ -154,8 +154,12 @@ PVOID KDUDecompressResource(
             if (VerifyChecksum) {
 
                 if (bValidData == FALSE) {
-                    printf_s("[!] Error data checksum mismatch! Header sum 0x%lx, calculated sum 0x%lx\r\n",
-                        headerSum, calcSum);
+                    
+                    supPrintfEvent(kduEventError, 
+                        "[!] Error data checksum mismatch! Header sum 0x%lx, calculated sum 0x%lx\r\n",
+                        headerSum, 
+                        calcSum);
+
                 }
             }
             else {
@@ -180,7 +184,10 @@ PVOID KDUDecompressResource(
 
         }
         else {
-            printf_s("[!] Error decompressing resource, GetLastError %lu\r\n", GetLastError());
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Error decompressing resource, GetLastError %lu\r\n", GetLastError());
+
         }
 
         supHeapFree(dataBlob);
@@ -222,7 +229,10 @@ VOID KDUCompressResource(
 
         newFileName = (PWSTR)supHeapAlloc(sz);
         if (newFileName == NULL) {
-            printf_s("[!] Could not allocate memory for filename\r\n");
+
+            supPrintfEvent(kduEventError, 
+                "[!] Could not allocate memory for filename\r\n");
+
         }
         else {
 
@@ -268,7 +278,10 @@ VOID KDUCompressResource(
                         FALSE,
                         NULL) != writeSize)
                     {
-                        printf_s("[!] Error writing to file\r\n");
+                        
+                        supPrintfEvent(kduEventError, 
+                            "[!] Error writing to file\r\n");
+
                     }
 
                     supHeapFree(dataBlob);
@@ -278,7 +291,9 @@ VOID KDUCompressResource(
             }
             else {
 
-                printf_s("[!] Error compressing resource, GetLastError %lu\r\n", GetLastError());
+                supPrintfEvent(kduEventError, 
+                    "[!] Error compressing resource, GetLastError %lu\r\n", GetLastError());
+
             }
 
             supHeapFree(newFileName);
@@ -288,7 +303,10 @@ VOID KDUCompressResource(
 
     }
     else {
-        printf_s("[!] Could not read input file\r\n");
+
+        supPrintfEvent(kduEventError, 
+            "[!] Could not read input file\r\n");
+
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);

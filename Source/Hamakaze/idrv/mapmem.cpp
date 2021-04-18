@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Apr 2021
 *
 *  MAPMEM driver routines.
 *
@@ -184,22 +184,11 @@ BOOL WINAPI GioVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    BOOL bResult = FALSE;
-
-    if (PhysicalAddress)
-        *PhysicalAddress = 0;
-    else {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-
-    bResult = PwVirtualToPhysical(DeviceHandle,
+    return PwVirtualToPhysical(DeviceHandle,
         GioQueryPML4Value,
         GioReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
-
-    return bResult;
 }
 
 /*
@@ -243,7 +232,7 @@ BOOL WINAPI GioReadWritePhysicalMemory(
         }
         __except (EXCEPTION_EXECUTE_HANDLER) {
             bResult = FALSE;
-            SetLastError(GetExceptionCode());
+            dwError = GetExceptionCode();
         }
 
         //

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       RTCORE.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.10
 *
-*  DATE:        24 Jan 2020
+*  DATE:        15 Apr 2021
 *
 *  RTCORE64 driver routines.
 *
@@ -65,7 +65,7 @@ BOOL RTCoreCallDriver(
 * Read given msr.
 *
 */
-BOOL RTCoreReadMsr(
+BOOL WINAPI RTCoreReadMsr(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG Msr,
     _Out_ ULONG64* Value
@@ -291,7 +291,7 @@ BOOL RTCoreWriteMemoryULONG64(
 *
 */
 _Success_(return != FALSE)
-BOOL RTCoreReadVirtualMemory(
+BOOL WINAPI RTCoreReadVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -328,7 +328,7 @@ BOOL RTCoreReadVirtualMemory(
 *
 */
 _Success_(return != FALSE)
-BOOL RTCoreWriteVirtualMemory(
+BOOL WINAPI RTCoreWriteVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,

@@ -179,6 +179,7 @@
     <None Include="drv\gdrv.bin" />
     <None Include="drv\glckio2.bin" />
     <None Include="drv\iQVM64.bin" />
+    <None Include="drv\lha.bin" />
     <None Include="drv\msio64.bin" />
     <None Include="drv\phymemx64.bin" />
     <None Include="drv\procexp.bin" />

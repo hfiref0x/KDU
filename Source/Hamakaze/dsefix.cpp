@@ -168,7 +168,10 @@ ULONG_PTR KDUQueryVariable(
 
     ModuleKernelBase = supGetModuleBaseByName(szModuleName);
     if (ModuleKernelBase == 0) {
-        printf_s("[!] Abort, could not query \"%s\" image base\r\n", szModuleName);
+        
+        supPrintfEvent(kduEventError, 
+            "[!] Abort, could not query \"%s\" image base\r\n", szModuleName);
+        
         return 0;
     }
 
@@ -211,7 +214,10 @@ ULONG_PTR KDUQueryVariable(
         //
         // Output error.
         //
-        printf_s("[!] Could not load \"%s\", GetLastError %lu\r\n", szModuleName, GetLastError());
+        supPrintfEvent(kduEventError, 
+            "[!] Could not load \"%s\", GetLastError %lu\r\n", 
+            szModuleName, 
+            GetLastError());
 
     }
 
@@ -262,7 +268,10 @@ BOOL KDUControlDSE(
             //
             if (Context->NtBuildNumber >= NT_WIN10_THRESHOLD1) {
                 if (DSEValue == 6) {
-                    printf_s("[!] DSE already enabled, nothing to do, leaving.\r\n");
+                    
+                    supPrintfEvent(kduEventError, 
+                        "[!] DSE already enabled, nothing to do, leaving.\r\n");
+                    
                     return TRUE;
                 }
             }
@@ -277,7 +286,10 @@ BOOL KDUControlDSE(
             if (Context->NtBuildNumber >= NT_WIN10_THRESHOLD1) {
 
                 if (DSEValue == 0) {
-                    printf_s("[!] DSE already disabled, nothing to do, leaving.\r\n");
+                    
+                    supPrintfEvent(kduEventError, 
+                        "[!] DSE already disabled, nothing to do, leaving.\r\n");
+                    
                     return TRUE;
                 }
             }
@@ -291,7 +303,10 @@ BOOL KDUControlDSE(
 
     variableAddress = KDUQueryVariable(Context->NtBuildNumber);
     if (variableAddress == 0) {
-        printf_s("[!] Could not query system variable address, abort.\r\n");
+
+        supPrintfEvent(kduEventError, 
+            "[!] Could not query system variable address, abort.\r\n");
+
     }
     else {
 
@@ -302,9 +317,12 @@ BOOL KDUControlDSE(
             &DSEValue,
             sizeof(DSEValue));
 
-        printf_s("%s Kernel memory %s\r\n",
+        supPrintfEvent(
+            (bResult == FALSE) ? kduEventError : kduEventNone,
+            "%s Kernel memory %s\r\n",
             (bResult == FALSE) ? "[!]" : "[+]",
             (bResult == FALSE) ? "not patched" : "patched");
+
     }
 
 

@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Apr 2021
 *
 *  PhyMem based drivers routines.
 *
@@ -101,18 +101,19 @@ BOOL WINAPI PhyMemQueryPML4Value(
     DWORD dwError = ERROR_SUCCESS;
     ULONG_PTR PML4 = 0;
     UCHAR* pbLowStub1M;
+    ULONG cbSize = 0x100000;
 
     *Value = 0;
 
     do {
 
-        pbLowStub1M = (UCHAR*)supHeapAlloc(0x100000);
+        pbLowStub1M = (UCHAR*)supHeapAlloc(cbSize);
         if (pbLowStub1M == NULL) {
             dwError = GetLastError();
             break;
         }
 
-        for (ULONG_PTR i = 0; i < 0x100000; i += PAGE_SIZE) {
+        for (ULONG_PTR i = 0; i < cbSize; i += PAGE_SIZE) {
 
             if (!PhyMemReadPhysicalMemory(DeviceHandle,
                 i,
@@ -157,22 +158,11 @@ BOOL WINAPI PhyMemVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    BOOL bResult = FALSE;
-
-    if (PhysicalAddress)
-        *PhysicalAddress = 0;
-    else {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-
-    bResult = PwVirtualToPhysical(DeviceHandle,
+    return PwVirtualToPhysical(DeviceHandle,
         PhyMemQueryPML4Value,
         PhyMemReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
-
-    return bResult;
 }
 
 /*
@@ -216,7 +206,7 @@ BOOL WINAPI PhyMemReadWritePhysicalMemory(
         }
         __except (EXCEPTION_EXECUTE_HANDLER) {
             bResult = FALSE;
-            SetLastError(GetExceptionCode());
+            dwError = GetExceptionCode();
         }
 
         //

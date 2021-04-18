@@ -2,13 +2,13 @@
 *
 *  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
-*  TITLE:       WINRING0.H
+*  TITLE:       LHA.H
 *
 *  VERSION:     1.10
 *
-*  DATE:        15 Apr 2021
+*  DATE:        03 Apr 2021
 *
-*  WinRing0 based drivers interface header.
+*  LG LHA driver interface header.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -20,67 +20,64 @@
 #pragma once
 
 //
-// WinRing0 driver interface definitions. Recognizable CVE-2017-14311.
-//
-// Taken from WinRing0 source.
+// LG LHA driver interface.
 //
 
-#define OLS_TYPE            (DWORD)40000
+#define LHA_DEVICE_TYPE          (DWORD)0x9C40
 
-#define OLS_READ_MEMORY     (DWORD)0x841
-#define OLS_WRITE_MEMORY    (DWORD)0x842
+#define LHA_READ_PHYSMEM_FUNCID  (DWORD)0xBF6
+#define LHA_WRITE_PHYSMEM_FUNCID (DWORD)0xBF7
 
-#define IOCTL_OLS_READ_MEMORY \
-	CTL_CODE(OLS_TYPE, OLS_READ_MEMORY, METHOD_BUFFERED, FILE_READ_ACCESS)
 
-#define IOCTL_OLS_WRITE_MEMORY \
-	CTL_CODE(OLS_TYPE, OLS_WRITE_MEMORY, METHOD_BUFFERED, FILE_WRITE_ACCESS)
+#define IOCTL_LHA_READ_PHYSICAL_MEMORY      \
+    CTL_CODE(LHA_DEVICE_TYPE, LHA_READ_PHYSMEM_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x9C402FD8
+
+#define IOCTL_LHA_WRITE_PHYSICAL_MEMORY    \
+    CTL_CODE(LHA_DEVICE_TYPE, LHA_WRITE_PHYSMEM_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x9C402FDC
 
 #pragma pack(push,4)
 
-typedef struct _OLS_READ_MEMORY_INPUT {
-    PHYSICAL_ADDRESS Address;
-    ULONG UnitSize;
-    ULONG Count;
-} OLS_READ_MEMORY_INPUT;
-
-typedef struct _OLS_WRITE_MEMORY_INPUT {
-    PHYSICAL_ADDRESS Address;
-    ULONG UnitSize;
-    ULONG Count;
-    UCHAR Data[1];
-} OLS_WRITE_MEMORY_INPUT;
+typedef struct _LHA_READ_PHYSICAL_MEMORY {
+    ULONG_PTR Address;
+    ULONG Size;
+} LHA_READ_PHYSICAL_MEMORY, * PLHA_READ_PHYSICAL_MEMORY;
 
 #pragma pack(pop)
 
-BOOL WINAPI WRZeroReadPhysicalMemory(
+typedef struct _LHA_WRITE_PHYSICAL_MEMORY {
+    ULONG_PTR Address;
+    ULONG Size;
+    UCHAR Data[ANYSIZE_ARRAY];
+} LHA_WRITE_PHYSICAL_MEMORY, * PLHA_WRITE_PHYSICAL_MEMORY;
+
+BOOL WINAPI LHAReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
-BOOL WINAPI WRZeroWritePhysicalMemory(
+BOOL WINAPI LHAWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
-BOOL WINAPI WRZeroQueryPML4Value(
+BOOL WINAPI LHAQueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value);
 
-BOOL WINAPI WRZeroVirtualToPhysical(
+BOOL WINAPI LHAVirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress);
 
-BOOL WINAPI WRZeroReadKernelVirtualMemory(
+BOOL WINAPI LHAReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
-BOOL WINAPI WRZeroKernelVirtualMemory(
+BOOL WINAPI LHAWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,

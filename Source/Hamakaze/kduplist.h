@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Apr 2021
 *
 *  Providers global list.
 *
@@ -346,5 +346,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        NT_WIN10_REDSTONE3,
+        IDR_LHA,
+        SourceBaseNone,
+        KDUPROV_FLAGS_NONE,
+        (LPWSTR)L"CVE-2019-8372",
+        (LPWSTR)L"lha",
+        (LPWSTR)L"{E8F2FF20-6AF7-4914-9398-CE2132FE170F}",
+        (LPWSTR)L"LG Electronics Inc.",
+
+        (provRegisterDriver)KDUProviderStub,
+        (provUnregisterDriver)KDUProviderStub,
+        (provPreOpenDriver)KDUProviderStub,
+        (provPostOpenDriver)KDUProviderPostOpen,
+
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        (provReadKernelVM)LHAReadKernelVirtualMemory,
+        (provWriteKernelVM)LHAWriteKernelVirtualMemory,
+        (provVirtualToPhysical)LHAVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        (provQueryPML4)LHAQueryPML4Value,
+        (provReadPhysicalMemory)LHAReadPhysicalMemory,
+        (provWritePhysicalMemory)LHAWritePhysicalMemory,
     }
 };

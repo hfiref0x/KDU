@@ -56,7 +56,7 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(KDU_PROVIDER_ENETECHIO64B, FALSE, 17763, KDU_SHELLCODE_V1, ActionTypeMapDriver);
+    Context = KDUProviderCreate(KDU_PROVIDER_LHA, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
     if (Context) {
 
         if (supQueryObjectFromHandle(Context->DeviceHandle, &objectAddress)) {

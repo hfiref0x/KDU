@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Apr 2021
 *
 *  Driver mapping shellcode implementation.
 *
@@ -1143,7 +1143,10 @@ ULONG_PTR ScResolveFunctionByName(
 {
     ULONG_PTR Address = supGetProcAddress(KernelBase, KernelImage, Function);
     if (Address == 0) {
-        printf_s("[!] Error, %s address cannot be found\r\n", Function);
+        
+        supPrintfEvent(kduEventError, 
+            "[!] Error, %s address cannot be found\r\n", Function);
+        
         return 0;
     }
 
@@ -1532,7 +1535,12 @@ PVOID ScAllocate(
 
     procSize = ScSizeOfProc(procPtr);
     if (procSize > bootstrapSize) {
-        printf_s("[!] Bootstrap code size 0x%lX exceeds limit 0x%lX, abort\r\n", procSize, bootstrapSize);
+
+        supPrintfEvent(kduEventError, 
+            "[!] Bootstrap code size 0x%lX exceeds limit 0x%lX, abort\r\n", 
+            procSize, 
+            bootstrapSize);
+
 #ifndef _DEBUG
         return NULL;
 #endif
@@ -1633,7 +1641,10 @@ PVOID ScAllocate(
         KernelImage))
     {
         VirtualFree(pvShellCode, 0, MEM_RELEASE);
-        printf_s("[!] Failed to resolve base shellcode import\r\n");
+        
+        supPrintfEvent(kduEventError, 
+            "[!] Failed to resolve base shellcode import\r\n");
+        
         return NULL;
     }
 
@@ -1644,7 +1655,11 @@ PVOID ScAllocate(
 
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
-        printf_s("[!] Exception during building shellcode, 0x%lX\r\n", GetExceptionCode());
+        
+        supPrintfEvent(kduEventError, 
+            "[!] Exception during building shellcode, 0x%lX\r\n", 
+            GetExceptionCode());
+        
         return NULL;
     }
 

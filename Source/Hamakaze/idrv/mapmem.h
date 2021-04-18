@@ -65,7 +65,7 @@ typedef struct _MAPMEM_PHYSICAL_MEMORY_INFO {
     ULONG            Length;        
 } MAPMEM_PHYSICAL_MEMORY_INFO, * PMAPMEM_PHYSICAL_MEMORY_INFO;
 
-BOOL GioVirtualToPhysical(
+BOOL WINAPI GioVirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress);

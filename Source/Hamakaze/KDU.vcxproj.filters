@@ -126,6 +126,9 @@
     <ClCompile Include="shellcode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\lha.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -217,6 +220,9 @@
     </ClInclude>
     <ClInclude Include="shellcode.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\lha.h">
+      <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

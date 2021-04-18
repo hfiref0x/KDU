@@ -95,18 +95,21 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 
 # Currently Supported Providers
 
-+ Intel Network Adapter Diagnostic Driver of version 1.03.0.7;
-+ RTCore64 driver from MSI Afterburner of version 4.6.2 build 15658 and below;
-+ Gdrv (MapMem) driver from various Gigabyte TOOLS of undefined version;
-+ ATSZIO64 driver from ASUSTeK WinFlash utility of various versions;
-+ MICSYS MsIo (WinIo) driver from Patriot Viper RGB utility of version 1.0;
-+ GLCKIO2 (WinIo) driver from ASRock Polychrome RGB of version 1.0.4;
-+ EneIo (WinIo) driver from G.SKILL Trident Z Lighting Control of version 1.00.08;
-+ WinRing0x64 driver from EVGA Precision X1 of version 1.0.2.0;
-+ EneTechIo (WinIo) driver from Thermaltake TOUGHRAM software of version 1.0.3;
-+ PhyMemx64 (WinIo) driver from Huawei MateBook Manager software of undefined version;
-+ RtkIo64 (PhyMem) driver from Realtek Dash Client Utility of various versions;
-+ EneTechIo (WinIo) driver from MSI Dragon Center of various versions.
+| Provider Id | Product Vendor | Driver      | Software package                   | Code base         | Version                     |
+|:-----------:|----------------|-------------|------------------------------------|-------------------|-----------------------------|
+|      0      | Intel          | IQVM64      | Network Adapter Diagnostic Driver  | Original          | 1.03.0.7                    |
+|      1      | MSI            | RTCore64    | MSI Afterburner                    | Semi-original     | 4.6.2 build 15658 and below |
+|      2      | Gigabyte       | Gdrv        | Gigabyte TOOLS                     | MAPMEM NTDKK 3.51 | Undefined                   |
+|      3      | ASUSTeK        | ATSZIO64    | ASUSTeK WinFlash utility           | Semi-original     | Undefined                   |
+|      4      | Patriot        | MsIo64      | Patriot Viper RGB utility          | WINIO             | 1.0                         |
+|      5      | ASRock         | GLCKIO2     | ASRock Polychrome RGB              | WINIO             | 1.0.4                       |
+|      6      | G.SKILL        | EneIo64     | G.SKILL Trident Z Lighting Control | WINIO             | 1.00.08                     |
+|      7      | EVGA           | WinRing0x64 | EVGA Precision X1                  | WINRING0          | 1.0.2.0                     |
+|      8      | Thermaltake    | EneTechIo64 | Thermaltake TOUGHRAM software      | WINIO             | 1.0.3                       |
+|      9      | Huawei         | PhyMemx64   | Huawei MateBook Manager software   | WINIO             | Undefined                   |
+|      10     | Realtek        | RtkIo64     | Realtek Dash Client Utility        | PHYMEM            | Various                     |
+|      11     | MSI            | EneTechIo64 | MSI Dragon Center                  | WINIO             | Various                     |
+|      12     | LG             | LHA         | LG Device Manager                  | Semi-original     | 1.6.0.2                     |
 
 More providers maybe added in the future.
 
@@ -144,6 +147,7 @@ Using this program might render your computer into BSOD. Compiled binary and sou
 * ATSZIO64 ASUS Drivers Privilege Escalation, https://github.com/LimiQS/AsusDriversPrivEscala
 * CVE-2019-18845, https://www.activecyber.us/activelabs/viper-rgb-driver-local-privilege-escalation-cve-2019-18845
 * DEFCON27: Get off the kernel if you cant drive, https://eclypsium.com/wp-content/uploads/2019/08/EXTERNAL-Get-off-the-kernel-if-you-cant-drive-DEFCON27.pdf
+* CVE-2019-8372: Local Privilege Elevation in LG Kernel Driver, http://www.jackson-t.ca/lg-driver-lpe.html
 
 # Wormhole drivers code
 

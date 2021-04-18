@@ -55,6 +55,7 @@
 #define IDR_PHYMEMX64                   113
 #define IDR_RTKIO64                     114
 #define IDR_ENETECHIO64B                115
+#define IDR_LHA                         116
 
 //
 // Defines for Major Windows NT release builds
@@ -109,4 +110,4 @@
 #define NT_WIN10_21H1           19043
 
 // Windows 10 Active Develepment Branch (21XX)
-#define NTX_WIN10_ADB           21343
+#define NTX_WIN10_ADB           21359

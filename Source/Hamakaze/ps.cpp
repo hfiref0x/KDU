@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Apr 2021
 *
 *  Processes DKOM related routines.
 *
@@ -161,7 +161,10 @@ BOOL KDUControlProcess(
             }
 
             if (Offset == 0) {
-                printf_s("[!] Unsupported WinNT version\r\n");
+
+                supPrintfEvent(kduEventError,
+                    "[!] Unsupported WinNT version\r\n");
+
             }
             else {
 
@@ -213,21 +216,31 @@ BOOL KDUControlProcess(
 
                     }
                     else {
-                        printf_s("[!] Cannot modify process object\r\n");
+
+                        supPrintfEvent(kduEventError,
+                            "[!] Cannot modify process object\r\n");
+
                     }
                 }
                 else {
-                    printf_s("[!] Cannot read kernel memory\r\n");
+
+                    supPrintfEvent(kduEventError,
+                        "[!] Cannot read kernel memory\r\n");
+
                 }
             }
         }
         else {
-            printf_s("[!] Cannot query process object\r\n");
+            supPrintfEvent(kduEventError,
+                "[!] Cannot query process object\r\n");
         }
         NtClose(hProcess);
     }
     else {
-        printf_s("[!] Cannot open target process, NTSTATUS (0x%lX)\r\n", ntStatus);
+
+        supPrintfEvent(kduEventError,
+            "[!] Cannot open target process, NTSTATUS (0x%lX)\r\n", ntStatus);
+
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);

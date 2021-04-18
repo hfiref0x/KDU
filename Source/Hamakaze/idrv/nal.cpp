@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
 *  TITLE:       NAL.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.10
 *
-*  DATE:        12 Feb 2020
+*  DATE:        15 Apr 2021
 *
 *  Intel Network Adapter iQVM64 driver routines.
 *
@@ -71,7 +71,6 @@ BOOL NalMapAddressEx(
     _In_ ULONG NumberOfBytes)
 {
     BOOL bResult = FALSE;
-    DWORD dwError = ERROR_SUCCESS;
     NAL_MAP_IO_SPACE request;
 
     if (VirtualAddress)
@@ -90,13 +89,10 @@ BOOL NalMapAddressEx(
             bResult = TRUE;
         }
         else {
-            dwError = ERROR_INTERNAL_ERROR;
+            SetLastError(ERROR_INTERNAL_ERROR);
         }
     }
-    else {
-        dwError = GetLastError();
-    }
-    SetLastError(dwError);
+
     return bResult;
 }
 
@@ -114,7 +110,6 @@ BOOL NalUnmapAddress(
     _In_ ULONG NumberOfBytes)
 {
     BOOL bResult = FALSE;
-    DWORD dwError = ERROR_SUCCESS;
     NAL_UNMAP_IO_SPACE request;
 
     RtlSecureZeroMemory(&request, sizeof(request));
@@ -124,14 +119,11 @@ BOOL NalUnmapAddress(
 
     if (NalCallDriver(DeviceHandle, &request, sizeof(request))) {
         bResult = (request.OpResult == 0);
-        if (bResult == FALSE)
-            dwError = ERROR_NONE_MAPPED;
-    }
-    else {
-        dwError = GetLastError();
+        if (bResult == FALSE) {
+            SetLastError(ERROR_NONE_MAPPED);
+        }
     }
 
-    SetLastError(dwError);
     return bResult;
 }
 
@@ -146,13 +138,12 @@ BOOL NalUnmapAddress(
 * Call driver Intel Nal driver MmGetVirtualForPhysical switch case.
 *
 */
-BOOL NalVirtualToPhysical(
+BOOL WINAPI NalVirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
     BOOL bResult = FALSE;
-    DWORD dwError = ERROR_SUCCESS;
     NAL_GET_PHYSICAL_ADDRESS request;
 
     if (PhysicalAddress)
@@ -170,11 +161,7 @@ BOOL NalVirtualToPhysical(
         *PhysicalAddress = request.PhysicalAddress;
         bResult = TRUE;
     }
-    else {
-        dwError = GetLastError();
-    }
 
-    SetLastError(dwError);
     return bResult;
 }
 
@@ -293,7 +280,7 @@ BOOL NalWriteVirtualMemory(
 *
 */
 _Success_(return != FALSE)
-BOOL NalWriteVirtualMemoryEx(
+BOOL WINAPI NalWriteVirtualMemoryEx(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
@@ -335,7 +322,7 @@ BOOL NalWriteVirtualMemoryEx(
 *
 */
 _Success_(return != FALSE)
-BOOL NalReadVirtualMemoryEx(
+BOOL WINAPI NalReadVirtualMemoryEx(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,

@@ -76,6 +76,8 @@ IDR_RTKIO64             RCDATA                  "drv\\rtkio64.bin"
 
 IDR_ENETECHIO64B        RCDATA                  "drv\\ene2.bin"
 
+IDR_LHA                 RCDATA                  "drv\\lha.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -83,8 +85,8 @@ IDR_ENETECHIO64B        RCDATA                  "drv\\ene2.bin"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+ FILEVERSION 1,0,0,2104
+ PRODUCTVERSION 1,0,0,2104
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -101,12 +103,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility Database"
-            VALUE "FileVersion", "1.0.0.1"
+            VALUE "FileVersion", "1.0.0.2104"
             VALUE "InternalName", "Tanikaze.dll"
             VALUE "LegalCopyright", "Copyright (C) 2020 - 2021 KDU Project"
             VALUE "OriginalFilename", "Tanikaze.dll"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.0.0.1"
+            VALUE "ProductVersion", "1.0.0.2104"
         END
     END
     BLOCK "VarFileInfo"

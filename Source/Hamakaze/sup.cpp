@@ -1603,7 +1603,7 @@ ULONG_PTR supGetModuleBaseByName(
 }
 
 /*
-* supLoadDummyDll
+* supManageDummyDll
 *
 * Purpose:
 *
@@ -1611,7 +1611,8 @@ ULONG_PTR supGetModuleBaseByName(
 * If fRemove set to TRUE then remove previously dropped file and return result of operation.
 *
 */
-BOOL supLoadDummyDll(
+BOOL supManageDummyDll(
+    _In_ LPCWSTR lpDllName,
     _In_ BOOLEAN fRemove
 )
 {
@@ -1621,7 +1622,7 @@ BOOL supLoadDummyDll(
     PVOID dllHandle;
 
     LPWSTR lpFileName;
-    SIZE_T Length = (1024 + _strlen(DUMMYDLL)) * sizeof(WCHAR);
+    SIZE_T Length = (1024 + _strlen(lpDllName)) * sizeof(WCHAR);
 
     //
     // Allocate space for filename.
@@ -1629,58 +1630,64 @@ BOOL supLoadDummyDll(
     lpFileName = (LPWSTR)supHeapAlloc(Length);
     if (lpFileName == NULL) {
         SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
+
+
+    if (fRemove) {
+
+        HMODULE hModule = GetModuleHandle(lpDllName);
+
+        if (hModule) {
+
+            if (GetModuleFileName(hModule, lpFileName, MAX_PATH)) {
+                FreeLibrary(hModule);
+                bResult = DeleteFile(lpFileName);
+            }
+
+        }
+
     }
     else {
 
-        //
-        // Expand %temp% variable for file path.
-        //
         DWORD cch = supExpandEnvironmentStrings(L"%temp%\\", lpFileName, MAX_PATH);
         if (cch == 0 || cch > MAX_PATH) {
             SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         }
         else {
-            _strcat(lpFileName, DUMMYDLL);
 
             //
-            // Depending on function parameter delete file or drop to disk and load it.
+            // Extract file from resource and drop to the disk in %temp% directory.
             //
-            if (fRemove) {
-                bResult = DeleteFile(lpFileName);
+            dllHandle = (PVOID)GetModuleHandle(NULL);
+
+            dataBuffer = (PBYTE)KDULoadResource(IDR_TAIGEI,
+                dllHandle,
+                &dataSize,
+                PROVIDER_RES_KEY,
+                TRUE);
+
+            if (dataBuffer) {
+
+                _strcat(lpFileName, lpDllName);
+                if (dataSize == supWriteBufferToFile(lpFileName,
+                    dataBuffer,
+                    dataSize,
+                    TRUE,
+                    FALSE,
+                    NULL))
+                {
+                    //
+                    // Finally load file and trigger image notify callbacks.
+                    //
+                    if (LoadLibraryEx(lpFileName, NULL, 0))
+                        bResult = TRUE;
+                }
             }
             else {
-
-                //
-                // Extract file from resource and drop to the disk in %temp% directory.
-                //
-                dllHandle = (PVOID)GetModuleHandle(NULL);
-
-                dataBuffer = (PBYTE)KDULoadResource(IDR_TAIGEI,
-                    dllHandle,
-                    &dataSize,
-                    PROVIDER_RES_KEY,
-                    TRUE);
-
-                if (dataBuffer) {
-
-                    if (dataSize == supWriteBufferToFile(lpFileName,
-                        dataBuffer,
-                        dataSize,
-                        TRUE,
-                        FALSE,
-                        NULL))
-                    {
-                        //
-                        // Finally load file and trigger image notify callbacks.
-                        //
-                        if (LoadLibraryEx(lpFileName, NULL, 0))
-                            bResult = TRUE;
-                    }
-                }
-                else {
-                    SetLastError(ERROR_FILE_INVALID);
-                }
+                SetLastError(ERROR_FILE_INVALID);
             }
+
         }
     }
 
@@ -1737,7 +1744,7 @@ NTSTATUS supLoadFileForMapping(
     _Out_ PVOID *LoadBase
 )
 {
-    NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
+    NTSTATUS ntStatus;
     ULONG dllCharacteristics = IMAGE_FILE_EXECUTABLE_IMAGE;
     UNICODE_STRING usFileName;
 
@@ -1763,4 +1770,57 @@ NTSTATUS supLoadFileForMapping(
     *LoadBase = pvImage;
 
     return STATUS_SUCCESS;
+}
+
+/*
+* supPrintfEvent
+*
+* Purpose:
+*
+* Wrapper for printf_s for displaying specific events.
+*
+*/
+VOID supPrintfEvent(
+    _In_ KDU_EVENT_TYPE Event,
+    _In_ LPCSTR Format,
+    ...
+)
+{
+    HANDLE stdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
+    WORD origColor = FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN, newColor;
+    va_list args;
+
+    //
+    // Rememeber original text color.
+    //
+    if (GetConsoleScreenBufferInfo(stdHandle, &screenBufferInfo)) {
+        origColor = *(&screenBufferInfo.wAttributes);
+    }
+
+    switch (Event) {
+    case kduEventInformation:
+        newColor = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+        break;
+    case kduEventError:
+        newColor = FOREGROUND_RED | FOREGROUND_INTENSITY;
+        break;
+    default:
+        newColor = FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN;
+        break;
+    }
+
+    SetConsoleTextAttribute(stdHandle, newColor);
+
+    //
+    // Printf message.
+    //
+    va_start(args, Format);
+    vprintf_s(Format, args);
+    va_end(args);
+
+    //
+    // Restore original text color.
+    //
+    SetConsoleTextAttribute(stdHandle, origColor);
 }

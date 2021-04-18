@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Apr 2021
 *
 *  Support routines header file.
 *
@@ -36,6 +36,13 @@ typedef struct _OBJSCANPARAM {
 #define FUNCTION_ENTER_MSG(lpFunctionName) 
 #define FUNCTION_LEAVE_MSG(lpFunctionName)
 #endif
+
+typedef enum _KDU_EVENT_TYPE {
+    kduEventNone = 0,
+    kduEventError,
+    kduEventInformation,
+    kduEventMax
+} KDU_EVENT_TYPE, * PKDU_EVENT_TYPE;
 
 PVOID FORCEINLINE supHeapAlloc(
     _In_ SIZE_T Size);
@@ -150,7 +157,8 @@ ULONG supGetTimeAsSecondsSince1970();
 ULONG_PTR supGetModuleBaseByName(
     _In_ LPCSTR ModuleName);
 
-BOOL supLoadDummyDll(
+BOOL supManageDummyDll(
+    _In_ LPCWSTR lpDllName,
     _In_ BOOLEAN fRemove);
 
 ULONG supSelectNonPagedPoolTag(
@@ -159,3 +167,8 @@ ULONG supSelectNonPagedPoolTag(
 NTSTATUS supLoadFileForMapping(
     _In_ LPCWSTR PayloadFileName,
     _Out_ PVOID * LoadBase);
+
+VOID supPrintfEvent(
+    _In_ KDU_EVENT_TYPE Event,
+    _In_ LPCSTR Format,
+    ...);

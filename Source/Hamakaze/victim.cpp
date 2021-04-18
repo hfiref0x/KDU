@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2020
+*  (C) COPYRIGHT AUTHORS, 2018 - 2021
 *
 *  TITLE:       VICTIM.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.10
 *
-*  DATE:        24 Jan 2020
+*  DATE:        15 Apr 2021
 *
 *  Victim support routines.
 *
@@ -114,13 +114,20 @@ BOOL VictimCreate(
         do {
             
             if (supIsObjectExists((LPWSTR)L"\\Device", Name)) {
-                printf_s("[!] Victim driver already loaded, force reload\r\n");
+                
+                supPrintfEvent(kduEventError, 
+                    "[!] Victim driver already loaded, force reload\r\n");
 
-                printf_s("[!] Attempt to unload %ws\r\n", Name);
+                supPrintfEvent(kduEventError, 
+                    "[!] Attempt to unload %ws\r\n", Name);
 
                 NTSTATUS ntStatus;
                 if (!VictimLoadUnload(Name, driverFileName, FALSE, TRUE, &ntStatus)) {
-                    printf_s("[!] Could not force unload victim, NTSTATUS(0x%lX) abort\r\n", ntStatus);
+                    
+                    supPrintfEvent(kduEventError, 
+                        "[!] Could not force unload victim, NTSTATUS(0x%lX) abort\r\n", 
+                        ntStatus);
+                    
                     break;
                 }
                 else {
@@ -154,7 +161,11 @@ BOOL VictimCreate(
             supHeapFree(drvBuffer);
 
             if (resourceSize != writeBytes) {
-                printf_s("[!] Could not extract victim driver, NTSTATUS(0x%lX) abort\r\n", ntStatus);
+                
+                supPrintfEvent(kduEventError, 
+                    "[!] Could not extract victim driver, NTSTATUS(0x%lX) abort\r\n", 
+                    ntStatus);
+                
                 SetLastError(RtlNtStatusToDosError(ntStatus));
                 break;
             }

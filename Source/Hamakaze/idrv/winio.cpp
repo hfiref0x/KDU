@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Apr 2021
 *
 *  WINIO based drivers routines.
 *
@@ -412,8 +412,8 @@ BOOL WINAPI WinIoReadWritePhysicalMemory(
         }
         __except (EXCEPTION_EXECUTE_HANDLER)
         {
-            SetLastError(GetExceptionCode());
             bResult = FALSE;
+            dwError = GetExceptionCode();
         }
 
         //
@@ -488,22 +488,11 @@ BOOL WINAPI WinIoVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    BOOL bResult = FALSE;
-
-    if (PhysicalAddress)
-        *PhysicalAddress = 0;
-    else {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-
-    bResult = PwVirtualToPhysical(DeviceHandle,
+    return PwVirtualToPhysical(DeviceHandle,
         WinIoQueryPML4Value,
         WinIoReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
-
-    return bResult;
 }
 
 /*
@@ -639,7 +628,7 @@ BOOL WINAPI WinIoPreOpen(
 )
 {
     UNREFERENCED_PARAMETER(Param);
-    return supLoadDummyDll(FALSE);
+    return supManageDummyDll(DUMMYDLL, FALSE);
 }
 
 /*
@@ -709,7 +698,6 @@ BOOL WINAPI WinIoUnregisterDriver(
     _In_ HANDLE DeviceHandle,
     _In_opt_ PVOID Param)
 {
-    HMODULE hDummyDll;
     KDU_CONTEXT* Context = (KDU_CONTEXT*)Param;
 
     UNREFERENCED_PARAMETER(DeviceHandle);
@@ -718,14 +706,8 @@ BOOL WINAPI WinIoUnregisterDriver(
 
         if (Context->Provider->ResourceId == IDR_ENETECHIO64B) {
 
-            hDummyDll = GetModuleHandle(DUMMYDLL);
+            return supManageDummyDll(DUMMYDLL, TRUE);
 
-            if (hDummyDll) {
-
-                if (FreeLibrary(hDummyDll)) {
-                    return supLoadDummyDll(TRUE);
-                }
-            }
         }
     }
 

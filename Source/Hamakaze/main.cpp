@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Apr 2021
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -23,9 +23,6 @@
 volatile LONG g_lApplicationInstances = 0;
 #pragma data_seg()
 #pragma comment(linker, "/Section:redx,RWS")
-
-#define T_KDUUNSUP   "[!] Unsupported WinNT version"
-#define T_KDURUN     "[!] Another instance running, close it before"
 
 #define CMD_PRV         L"-prv"
 #define CMD_MAP         L"-map"
@@ -52,7 +49,7 @@ volatile LONG g_lApplicationInstances = 0;
                      "-drvn name        - driver object name (only valid for shellcode version 3)\r\n"\
                      "-drvr name        - optional, driver registry key name (only valid for shellcode version 3)\r\n"
 
-#define T_KDUINTRO   "[+] Kernel Driver Utility v1.1.0 started, (c) 2020 - 2021 KDU Project\r\n[+] Supported x64 OS: Windows 7 and above"
+#define T_KDUINTRO   "[#] Kernel Driver Utility v1.1.0 started, (c) 2020 - 2021 KDU Project\r\n[#] Supported x64 OS: Windows 7 and above"
 #define T_PRNTDEFAULT   "%s\r\n"
 
 /*
@@ -141,7 +138,10 @@ INT KDUProcessDrvMapSwitch(
     KDU_CONTEXT* provContext;
 
     if (!RtlDoesFileExists_U(DriverFileName)) {
-        printf_s("[!] Input file cannot be found\r\n");
+        
+        supPrintfEvent(kduEventError, 
+            "[!] Input file cannot be found, abort.\r\n");
+        
         return 0;
     }
 
@@ -151,7 +151,7 @@ INT KDUProcessDrvMapSwitch(
 
         if (DriverObjectName == NULL) {
 
-            printf_s("[!] Driver object name is required when working with this shellcode\r\n"\
+            supPrintfEvent(kduEventError, "[!] Driver object name is required when working with this shellcode\r\n"\
                 "[?] Use the following commands to supply object name and optionally registry key name\r\n"\
                 "\t-drvn [ObjectName] and/or\r\n"\
                 "\t-drvr [ObjectKeyName]\r\n"\
@@ -177,7 +177,10 @@ INT KDUProcessDrvMapSwitch(
     NTSTATUS ntStatus = supLoadFileForMapping(DriverFileName, &pvImage);
 
     if ((!NT_SUCCESS(ntStatus)) || (pvImage == NULL)) {
-        printf_s("[!] Error while loading input driver file, NTSTATUS (0x%lX)\r\n", ntStatus);
+        
+        supPrintfEvent(kduEventError, 
+            "[!] Error while loading input driver file, NTSTATUS (0x%lX)\r\n", ntStatus);
+        
         return 0;
     }
     else {
@@ -322,7 +325,8 @@ INT KDUProcessCommandLine(
             providerId = _strtoul(szParameter);
             if (providerId >= KDUProvGetCount()) {
 
-                printf_s("[!] Invalid provider id %lu specified, default will be used (%lu)\r\n",
+                supPrintfEvent(kduEventError,
+                    "[!] Invalid provider id %lu specified, default will be used (%lu)\r\n",
                     providerId,
                     KDU_PROVIDER_DEFAULT);
 
@@ -365,7 +369,10 @@ INT KDUProcessCommandLine(
                 &paramLength))
             {
                 if (paramLength == 0) {
-                    printf_s("[!] Input file not specified\r\n");
+
+                    supPrintfEvent(kduEventError, 
+                        "[!] Input file not specified\r\n");
+
                 }
                 else {
 
@@ -383,7 +390,8 @@ INT KDUProcessCommandLine(
                         shellVersion = _strtoul(szExtraParameter);
                         if (shellVersion == 0 || shellVersion > KDU_SHELLCODE_VMAX) {
 
-                            printf_s("[!] Unrecognized shellcode version %lu, default will be used (%lu)\r\n",
+                            supPrintfEvent(kduEventError,
+                                "[!] Unrecognized shellcode version %lu, default will be used (%lu)\r\n",
                                 shellVersion,
                                 KDU_SHELLCODE_V1);
 
@@ -485,15 +493,24 @@ int KDUMain()
 
         x = InterlockedIncrement((PLONG)&g_lApplicationInstances);
         if (x > 1) {
-            printf_s(T_PRNTDEFAULT, T_KDURUN);
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Another instance running, close it before\r\n");
+            
             break;
         }
 
         RtlSecureZeroMemory(&osv, sizeof(osv));
         osv.dwOSVersionInfoSize = sizeof(osv);
         RtlGetVersion((PRTL_OSVERSIONINFOW)&osv);
-        if (osv.dwMajorVersion < 6) {
-            printf_s(T_PRNTDEFAULT, T_KDUUNSUP);
+        if ((osv.dwMajorVersion < 6) ||
+            (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0) ||
+            (osv.dwBuildNumber == 7600))       
+        {
+            
+            supPrintfEvent(kduEventError, 
+                "[!] Unsupported WinNT version\r\n");
+            
             break;
         }
 
@@ -563,6 +580,6 @@ int main()
         return -1;
     }
 
-    printf_s("[+] Return value: %lu. Bye-bye!\r\n", retVal);
+    printf_s("[+] Return value: %d. Bye-bye!\r\n", retVal);
     return retVal;
 }

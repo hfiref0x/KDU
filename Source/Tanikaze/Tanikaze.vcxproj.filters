@@ -64,5 +64,8 @@
     <None Include="drv\ene2.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\lha.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
