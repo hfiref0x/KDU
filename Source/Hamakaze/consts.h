@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        16 Apr 2021
 *
 *  Global consts.
 *
@@ -56,6 +56,7 @@
 #define IDR_RTKIO64                     114
 #define IDR_ENETECHIO64B                115
 #define IDR_LHA                         116
+#define IDR_ASUSIO2                     117
 
 //
 // Defines for Major Windows NT release builds

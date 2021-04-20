@@ -71,6 +71,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>$(ProjectDir)Utils\GenAsIo2Unlock .\output\$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -100,8 +103,24 @@
       <AdditionalOptions>/NOCOFFGRPINFO %(AdditionalOptions)</AdditionalOptions>
       <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
     </Link>
+    <PostBuildEvent>
+      <Command>$(ProjectDir)Utils\GenAsIo2Unlock .\output\$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Shared\minirtl\cmdline.c" />
+    <ClCompile Include="..\Shared\minirtl\strtou64.c" />
+    <ClCompile Include="..\Shared\minirtl\strtoul.c" />
+    <ClCompile Include="..\Shared\minirtl\u64tohex.c" />
+    <ClCompile Include="..\Shared\minirtl\_filename.c" />
+    <ClCompile Include="..\Shared\minirtl\_strcat.c" />
+    <ClCompile Include="..\Shared\minirtl\_strcmp.c" />
+    <ClCompile Include="..\Shared\minirtl\_strcmpi.c" />
+    <ClCompile Include="..\Shared\minirtl\_strcpy.c" />
+    <ClCompile Include="..\Shared\minirtl\_strend.c" />
+    <ClCompile Include="..\Shared\minirtl\_strlen.c" />
+    <ClCompile Include="..\Shared\minirtl\_strncpy.c" />
+    <ClCompile Include="..\Shared\tinyaes\aes.c" />
     <ClCompile Include="compess.cpp" />
     <ClCompile Include="drvmap.cpp" />
     <ClCompile Include="dsefix.cpp" />
@@ -115,28 +134,22 @@
     <ClCompile Include="idrv\rtcore.cpp" />
     <ClCompile Include="idrv\winring0.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="minirtl\cmdline.c" />
-    <ClCompile Include="minirtl\strtou64.c" />
-    <ClCompile Include="minirtl\strtoul.c" />
-    <ClCompile Include="minirtl\u64tohex.c" />
-    <ClCompile Include="minirtl\_filename.c" />
-    <ClCompile Include="minirtl\_strcat.c" />
-    <ClCompile Include="minirtl\_strcmp.c" />
-    <ClCompile Include="minirtl\_strcmpi.c" />
-    <ClCompile Include="minirtl\_strcpy.c" />
-    <ClCompile Include="minirtl\_strend.c" />
-    <ClCompile Include="minirtl\_strlen.c" />
-    <ClCompile Include="minirtl\_strncpy.c" />
     <ClCompile Include="kduprov.cpp" />
     <ClCompile Include="pagewalk.cpp" />
     <ClCompile Include="ps.cpp" />
     <ClCompile Include="shellcode.cpp" />
     <ClCompile Include="sup.cpp" />
     <ClCompile Include="tests.cpp" />
-    <ClCompile Include="tinyaes\aes.c" />
     <ClCompile Include="victim.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Shared\minirtl\cmdline.h" />
+    <ClInclude Include="..\Shared\minirtl\minirtl.h" />
+    <ClInclude Include="..\Shared\minirtl\rtltypes.h" />
+    <ClInclude Include="..\Shared\minirtl\_filename.h" />
+    <ClInclude Include="..\Shared\ntos\halamd64.h" />
+    <ClInclude Include="..\Shared\ntos\ntos.h" />
+    <ClInclude Include="..\Shared\tinyaes\aes.h" />
     <ClInclude Include="compress.h" />
     <ClInclude Include="consts.h" />
     <ClInclude Include="drvmap.h" />
@@ -154,19 +167,12 @@
     <ClInclude Include="shellcode.h" />
     <ClInclude Include="wdksup.h" />
     <ClInclude Include="kduplist.h" />
-    <ClInclude Include="minirtl\cmdline.h" />
-    <ClInclude Include="minirtl\minirtl.h" />
-    <ClInclude Include="minirtl\rtltypes.h" />
-    <ClInclude Include="minirtl\_filename.h" />
     <ClInclude Include="kduprov.h" />
-    <ClInclude Include="ntos\halamd64.h" />
-    <ClInclude Include="ntos\ntos.h" />
     <ClInclude Include="pagewalk.h" />
     <ClInclude Include="ps.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="sup.h" />
     <ClInclude Include="tests.h" />
-    <ClInclude Include="tinyaes\aes.h" />
     <ClInclude Include="victim.h" />
   </ItemGroup>
   <ItemGroup>

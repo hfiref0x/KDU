@@ -78,6 +78,8 @@ IDR_ENETECHIO64B        RCDATA                  "drv\\ene2.bin"
 
 IDR_LHA                 RCDATA                  "drv\\lha.bin"
 
+IDR_ASIO2               RCDATA                  "drv\\asio2.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        17 Apr 2021
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -17,8 +17,6 @@
 * PARTICULAR PURPOSE.
 *
 *******************************************************************************/
-
-#pragma once
 
 #include "global.h"
 

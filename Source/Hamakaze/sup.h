@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        15 Apr 2021
+*  DATE:        16 Apr 2021
 *
 *  Support routines header file.
 *
@@ -120,7 +120,7 @@ BOOL supQueryObjectFromHandle(
 BOOL supGetCommandLineOption(
     _In_ LPCTSTR OptionName,
     _In_ BOOL IsParametric,
-    _Out_writes_opt_z_(ValueSize) LPTSTR OptionValue,
+    _Inout_opt_ LPTSTR OptionValue,
     _In_ ULONG ValueSize,
     _Out_opt_ PULONG ParamLength);
 
@@ -170,5 +170,5 @@ NTSTATUS supLoadFileForMapping(
 
 VOID supPrintfEvent(
     _In_ KDU_EVENT_TYPE Event,
-    _In_ LPCSTR Format,
+    _Printf_format_string_ LPCSTR Format,
     ...);

@@ -11,6 +11,7 @@
 #pragma warning(push)
 #pragma warning(disable:4701)
 #pragma warning(disable:4706)
+#pragma warning(disable:26451)
 
 unsigned int hde64_disasm(const void *code, hde64s *hs)
 {

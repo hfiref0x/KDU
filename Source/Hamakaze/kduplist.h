@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        15 Apr 2021
+*  DATE:        16 Apr 2021
 *
 *  Providers global list.
 *
@@ -373,5 +373,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)LHAQueryPML4Value,
         (provReadPhysicalMemory)LHAReadPhysicalMemory,
         (provWritePhysicalMemory)LHAWritePhysicalMemory,
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ASUSIO2,
+        SourceBaseWinIo,
+        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        (LPWSTR)L"ASUS GPU Tweak",
+        (LPWSTR)L"AsIO2",
+        (LPWSTR)L"Asusgio2",
+        (LPWSTR)L"ASUSTeK Computer Inc.",
+
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)KDUProviderStub,
+        (provPreOpenDriver)KDUProviderStub,
+        (provPostOpenDriver)KDUProviderPostOpen,
+
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        (provReadKernelVM)WinIoReadKernelVirtualMemory,
+        (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+        (provVirtualToPhysical)WinIoVirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        (provQueryPML4)WinIoQueryPML4Value,
+        (provReadPhysicalMemory)WinIoReadPhysicalMemory,
+        (provWritePhysicalMemory)WinIoWritePhysicalMemory
     }
 };

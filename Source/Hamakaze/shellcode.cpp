@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        15 Apr 2021
+*  DATE:        17 Apr 2021
 *
 *  Driver mapping shellcode implementation.
 *
@@ -16,6 +16,7 @@
 * PARTICULAR PURPOSE.
 *
 *******************************************************************************/
+
 #include "global.h"
 
 
@@ -29,6 +30,12 @@
 // Disable: GS/Spectre/SDL and other bullshit.
 // Favor Size & small code.
 //
+
+#define OB_DRIVER_PREFIX            L"\\Driver\\"
+#define OB_DRIVER_PREFIX_SIZE       sizeof(OB_DRIVER_PREFIX) - sizeof(WCHAR)
+#define OB_DRIVER_PREFIX_MAXSIZE    sizeof(OB_DRIVER_PREFIX)
+
+#define MAX_BASE_SCIMPORTS 8
 
 //
 // Import functions for shellcode.
@@ -75,7 +82,7 @@ typedef struct _FUNC_TABLE {
     sizeof(ULONG) - sizeof(SIZE_T) - sizeof(PVOID) - sizeof(HANDLE) - sizeof(HANDLE) - sizeof(FUNC_TABLE) )
 
 typedef struct _SHELLCODE {
-    BYTE InitCode[16];
+    BYTE InitCode[SC_INIT_CODE_SIZE];
     BYTE BootstrapCode[BOOTSTRAPCODE_SIZE_V1];
     ULONG Tag;
     SIZE_T SectionViewSize;
@@ -1256,8 +1263,6 @@ BOOL ScBuildShellImportDebug(
     return TRUE;
 }
 
-#define MAX_BASE_SCIMPORTS 8
-
 /*
 * ScBuildShellImport
 *
@@ -1372,10 +1377,6 @@ HANDLE ScCreateReadyEvent(
 
     return hReadyEvent;
 }
-
-#define OB_DRIVER_PREFIX            L"\\Driver\\"
-#define OB_DRIVER_PREFIX_SIZE       sizeof(OB_DRIVER_PREFIX) - sizeof(WCHAR)
-#define OB_DRIVER_PREFIX_MAXSIZE    sizeof(OB_DRIVER_PREFIX)
 
 /*
 * ScStoreVersionSpecificData

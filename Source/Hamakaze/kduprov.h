@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        02 Apr 2021
+*  DATE:        17 Apr 2021
 *
 *  Provider support routines.
 *
@@ -32,6 +32,7 @@
 #define KDU_PROVIDER_RTKIO64            10
 #define KDU_PROVIDER_ENETECHIO64B       11
 #define KDU_PROVIDER_LHA                12
+#define KDU_PROVIDER_ASUSIO2            13
 
 #define KDU_PROVIDER_DEFAULT            KDU_PROVIDER_INTEL_NAL
 

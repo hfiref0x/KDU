@@ -42,8 +42,8 @@
 #include <ntstatus.h>
 #include <intrin.h>
 #include <rpc.h>
-#include "ntos/ntos.h"
-#include "ntos/halamd64.h"
+#include "../Shared/ntos/ntos.h"
+#include "../Shared/ntos/halamd64.h"
 #include "wdksup.h"
 #include "resource.h"
 
@@ -54,10 +54,10 @@ extern "C" {
 #endif
 
 #include "hde/hde64.h"
-#include "minirtl/minirtl.h"
-#include "minirtl/rtltypes.h"
-#include "minirtl/cmdline.h"
-#include "minirtl/_filename.h"
+#include "../Shared/minirtl/minirtl.h"
+#include "../Shared/minirtl/rtltypes.h"
+#include "../Shared/minirtl/cmdline.h"
+#include "../Shared/minirtl/_filename.h"
 
 #ifdef __cplusplus
 }

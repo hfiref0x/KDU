@@ -56,16 +56,16 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(KDU_PROVIDER_LHA, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
+    Context = KDUProviderCreate(KDU_PROVIDER_ASUSIO2, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
     if (Context) {
 
         if (supQueryObjectFromHandle(Context->DeviceHandle, &objectAddress)) {
 
-            /*Context->Provider->Callbacks.ReadPhysicalMemory(
+            Context->Provider->Callbacks.ReadPhysicalMemory(
                 Context->DeviceHandle,
                 0x1000,
                 &Buffer,
-                0x1000);*/
+                0x1000);
 
             value = 0x1234567890ABCDEF;
 

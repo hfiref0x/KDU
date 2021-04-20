@@ -36,41 +36,11 @@
     <ClCompile Include="sup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="minirtl\_strcat.c">
-      <Filter>minirtl</Filter>
-    </ClCompile>
-    <ClCompile Include="minirtl\_strcpy.c">
-      <Filter>minirtl</Filter>
-    </ClCompile>
-    <ClCompile Include="minirtl\_strend.c">
-      <Filter>minirtl</Filter>
-    </ClCompile>
-    <ClCompile Include="minirtl\_strlen.c">
-      <Filter>minirtl</Filter>
-    </ClCompile>
-    <ClCompile Include="minirtl\_strncpy.c">
-      <Filter>minirtl</Filter>
-    </ClCompile>
-    <ClCompile Include="minirtl\cmdline.c">
-      <Filter>minirtl</Filter>
-    </ClCompile>
-    <ClCompile Include="minirtl\u64tohex.c">
-      <Filter>minirtl</Filter>
-    </ClCompile>
-    <ClCompile Include="minirtl\_strcmpi.c">
-      <Filter>minirtl</Filter>
-    </ClCompile>
     <ClCompile Include="drvmap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ps.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="minirtl\_strcmp.c">
-      <Filter>minirtl</Filter>
-    </ClCompile>
-    <ClCompile Include="minirtl\strtou64.c">
-      <Filter>minirtl</Filter>
     </ClCompile>
     <ClCompile Include="kduprov.cpp">
       <Filter>Source Files</Filter>
@@ -87,17 +57,11 @@
     <ClCompile Include="hde\hde64.c">
       <Filter>hde</Filter>
     </ClCompile>
-    <ClCompile Include="minirtl\strtoul.c">
-      <Filter>minirtl</Filter>
-    </ClCompile>
     <ClCompile Include="pagewalk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="compess.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="minirtl\_filename.c">
-      <Filter>minirtl</Filter>
     </ClCompile>
     <ClCompile Include="idrv\mapmem.cpp">
       <Filter>Source Files\idrv</Filter>
@@ -110,9 +74,6 @@
     </ClCompile>
     <ClCompile Include="idrv\winio.cpp">
       <Filter>Source Files\idrv</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyaes\aes.c">
-      <Filter>tinyaes</Filter>
     </ClCompile>
     <ClCompile Include="idrv\winring0.cpp">
       <Filter>Source Files\idrv</Filter>
@@ -129,6 +90,45 @@
     <ClCompile Include="idrv\lha.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="..\Shared\tinyaes\aes.c">
+      <Filter>tinyaes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_filename.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strcat.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strcmp.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strcmpi.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strcpy.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strend.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strlen.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strncpy.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\cmdline.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\strtou64.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\strtoul.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\u64tohex.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -137,17 +137,8 @@
     <ClInclude Include="sup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="minirtl\minirtl.h">
-      <Filter>minirtl</Filter>
-    </ClInclude>
-    <ClInclude Include="minirtl\rtltypes.h">
-      <Filter>minirtl</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="minirtl\cmdline.h">
-      <Filter>minirtl</Filter>
     </ClInclude>
     <ClInclude Include="drvmap.h">
       <Filter>Header Files</Filter>
@@ -182,9 +173,6 @@
     <ClInclude Include="compress.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="minirtl\_filename.h">
-      <Filter>minirtl</Filter>
-    </ClInclude>
     <ClInclude Include="idrv\mapmem.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
@@ -194,17 +182,8 @@
     <ClInclude Include="idrv\atszio.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
-    <ClInclude Include="ntos\ntos.h">
-      <Filter>ntos</Filter>
-    </ClInclude>
-    <ClInclude Include="ntos\halamd64.h">
-      <Filter>ntos</Filter>
-    </ClInclude>
     <ClInclude Include="idrv\winio.h">
       <Filter>Source Files\idrv</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyaes\aes.h">
-      <Filter>tinyaes</Filter>
     </ClInclude>
     <ClInclude Include="idrv\winring0.h">
       <Filter>Source Files\idrv</Filter>
@@ -223,6 +202,27 @@
     </ClInclude>
     <ClInclude Include="idrv\lha.h">
       <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\tinyaes\aes.h">
+      <Filter>tinyaes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\ntos\halamd64.h">
+      <Filter>ntos</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\ntos\ntos.h">
+      <Filter>ntos</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\minirtl\_filename.h">
+      <Filter>minirtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\minirtl\cmdline.h">
+      <Filter>minirtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\minirtl\minirtl.h">
+      <Filter>minirtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\minirtl\rtltypes.h">
+      <Filter>minirtl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

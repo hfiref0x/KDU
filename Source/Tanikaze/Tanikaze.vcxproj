@@ -172,6 +172,7 @@
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="drv\asio2.bin" />
     <None Include="drv\ATSZIO64.bin" />
     <None Include="drv\ene2.bin" />
     <None Include="drv\eneio64.bin" />
