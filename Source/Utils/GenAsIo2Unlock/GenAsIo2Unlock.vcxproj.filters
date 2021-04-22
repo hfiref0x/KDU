@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="tinyaes">
-      <UniqueIdentifier>{1ca9a6c2-4dc2-414c-aa8e-a3ef2080ed6a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="minirtl">
       <UniqueIdentifier>{df6b50ba-6a92-4149-873b-67cf23736ddf}</UniqueIdentifier>
     </Filter>
@@ -24,17 +21,11 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Shared\tinyaes\aes.c">
-      <Filter>tinyaes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Shared\minirtl\cmdline.c">
       <Filter>minirtl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Shared\tinyaes\aes.h">
-      <Filter>tinyaes</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Shared\ntos\ntos.h">
       <Filter>Header Files</Filter>
     </ClInclude>

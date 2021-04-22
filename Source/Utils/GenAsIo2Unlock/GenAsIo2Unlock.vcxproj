@@ -90,13 +90,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Shared\minirtl\cmdline.c" />
-    <ClCompile Include="..\..\Shared\tinyaes\aes.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Shared\minirtl\cmdline.h" />
     <ClInclude Include="..\..\Shared\ntos\ntos.h" />
-    <ClInclude Include="..\..\Shared\tinyaes\aes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

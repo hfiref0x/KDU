@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.00
 *
-*  DATE:        16 Apr 2021
+*  DATE:        18 Apr 2021
 *
 *  AsIo2 "unlock" resource generator and binder.
 *
@@ -22,7 +22,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#include "../../Shared/tinyaes/aes.h"
 #include "../../Shared/ntos/ntos.h"
 #include "../../Shared/minirtl/cmdline.h"
 }
@@ -108,31 +107,31 @@ BOOL UpdateChecksum(
             0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
         if (hFile == INVALID_HANDLE_VALUE) {
-            printf_s("Cannot open input file\n");
+            printf_s("[G] Cannot open input file\n");
             __leave;
         }
 
         FileSize = GetFileSize(hFile, NULL);
         if (FileSize == 0) {
-            printf_s("Input file is empty\n");
+            printf_s("[G] Input file is empty\n");
             __leave;
         }
 
         hFileMap = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, 0, NULL);
         if (hFileMap == NULL) {
-            printf_s("CreateFileMapping failed for input file\n");
+            printf_s("[G] CreateFileMapping failed for input file\n");
             __leave;
         }
 
         ImageBase = MapViewOfFile(hFileMap, FILE_MAP_WRITE, 0, 0, 0);
         if (ImageBase == NULL) {
-            printf_s("MapViewOfFile failed for input file\n");
+            printf_s("[G] MapViewOfFile failed for input file\n");
             __leave;
         }
 
         NtHeaders = RtlImageNtHeader(ImageBase);
         if (NtHeaders == NULL) {
-            printf_s("RtlImageNtHeader failed for input file\n");
+            printf_s("[G] RtlImageNtHeader failed for input file\n");
             __leave;
         }
 
@@ -140,7 +139,7 @@ BOOL UpdateChecksum(
         oh64 = (PIMAGE_OPTIONAL_HEADER64)oh32;
 
         if ((NtHeaders->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64) && (NtHeaders->FileHeader.Machine != IMAGE_FILE_MACHINE_I386)) {
-            printf_s("Unsuported FileHeader.Machine value\n");
+            printf_s("[G] Unsuported FileHeader.Machine value\n");
             __leave;
         }
 
@@ -171,18 +170,27 @@ BOOL UpdateChecksum(
     return bResult;
 }
 
+
 VOID ProcessFile(
     _In_ LPCSTR lpFileName)
 {
-    AES_ctx ctx;
-    BOOL bUpdated = FALSE;
+    BOOL bUpdated = FALSE, bInit;
     ULONG seconds = 0, dwError;
     LARGE_INTEGER fileTime;
 
     BYTE Buffer[16];
     DWORD aKey[4] = { 0x16157EAA, 0xA6D2AE28, 0x8815F7AB, 0x3C4FCF09 };
 
-    AES_init_ctx(&ctx, (uint8_t*)aKey);
+    HCRYPTPROV hProv;
+    HCRYPTKEY hKey = NULL;
+    DWORD bytesIO = 0;
+    DWORD dwMode;
+
+    struct {
+        BLOBHEADER hdr;
+        DWORD len;
+        BYTE key[16];
+    } KeyBlob;
 
     GetSystemTimeAsFileTime((PFILETIME)&fileTime);
     RtlTimeToSecondsSince1970(&fileTime, &seconds);
@@ -190,9 +198,76 @@ VOID ProcessFile(
     RtlSecureZeroMemory(Buffer, sizeof(Buffer));
 
     RtlCopyMemory(Buffer, &seconds, sizeof(DWORD));
-    AES_ECB_encrypt(&ctx, (uint8_t*)Buffer);
 
-    printf_s("Generating AsIo2 unlock resource\n");
+    do {
+
+        bInit = CryptAcquireContext(&hProv,
+            NULL,
+            MS_ENH_RSA_AES_PROV,
+            PROV_RSA_AES,
+            CRYPT_SILENT);
+
+        if (!bInit)
+        {
+            if (GetLastError() == NTE_BAD_KEYSET) {
+
+                bInit = CryptAcquireContext(&hProv,
+                    NULL,
+                    MS_ENH_RSA_AES_PROV,
+                    PROV_RSA_AES,
+                    CRYPT_NEWKEYSET);
+            }
+
+        }
+
+        if (bInit == FALSE) {
+            printf_s("[G] Failed to acquire context for Crypto API, error %lX\n", GetLastError());
+            break;
+        }
+
+        printf_s("[G] CryptoAPI context acquired\n");
+
+        KeyBlob.hdr.bType = PLAINTEXTKEYBLOB;
+        KeyBlob.hdr.bVersion = CUR_BLOB_VERSION;
+        KeyBlob.hdr.reserved = 0;
+        KeyBlob.hdr.aiKeyAlg = CALG_AES_128;
+        KeyBlob.len = sizeof(aKey);
+        RtlCopyMemory(KeyBlob.key, aKey, sizeof(aKey));
+
+        if (!CryptImportKey(hProv, (BYTE*)&KeyBlob, sizeof(KeyBlob), NULL, 0, &hKey)) {
+            printf_s("[G] Failed to import key, error %lX\n", GetLastError());
+            break;
+        }
+        else {
+            printf_s("[G] AES key imported successfully\n");
+        }
+
+        dwMode = CRYPT_MODE_ECB;
+
+        if (!CryptSetKeyParam(hKey, KP_MODE, (BYTE*)&dwMode, 0)) {
+            printf_s("[G] Failed to set key param, error %lX\n", GetLastError());
+            break;
+        }
+        else {
+            printf_s("[G] AES ECB mode set\n");
+        }
+
+        bytesIO = sizeof(Buffer);
+
+        if (!CryptEncrypt(hKey, NULL, FALSE, 0, (BYTE*)Buffer, &bytesIO, bytesIO)) {
+            printf_s("[G] Failed to encrypt data, error %lX\n", GetLastError());
+            break;
+        }
+        else {
+            printf_s("[G] Data for driver unlocking encrypted successfully\n");
+        }
+
+    } while (FALSE);
+
+    if (hKey) CryptDestroyKey(hKey); 
+    CryptReleaseContext(hProv, 0);
+
+    printf_s("[G] Generating AsIo2 unlock resource\n");
 
     HANDLE hRes = BeginUpdateResourceA(lpFileName, FALSE);
     if (hRes) {
@@ -205,10 +280,10 @@ VOID ProcessFile(
             sizeof(Buffer)))
         {
             dwError = GetLastError();
-            printf_s("Could not update resources, GetLastError %lu\n", dwError);
+            printf_s("[G] Could not update resources, GetLastError %lu\n", dwError);
         }
         else {
-            printf_s("File resources updated\n");
+            printf_s("[G] File resources updated\n");
         }
 
         bUpdated = EndUpdateResource(hRes, FALSE);
@@ -216,18 +291,18 @@ VOID ProcessFile(
     }
     else {
         dwError = GetLastError();
-        printf_s("Could not open %s, GetLastError %lu\n", lpFileName, dwError);
+        printf_s("[G] Could not open %s, GetLastError %lu\n", lpFileName, dwError);
     }
 
     if (bUpdated) {
 
-        printf_s("Updating file checksum\n");
+        printf_s("[G] Updating file checksum\n");
 
         if (UpdateChecksum(lpFileName)) {
-            printf_s("Checksum updated\n");
+            printf_s("[G] Checksum updated\n");
         }
         else {
-            printf_s("Could not update checksum!\n");
+            printf_s("[G] Could not update checksum!\n");
         }
     }
 }
@@ -241,11 +316,11 @@ int main()
     RtlSecureZeroMemory(szFileName, sizeof(szFileName));
     GetCommandLineParamA(GetCommandLineA(), 1, szFileName, MAX_PATH, &l);
     if (l > 0) {
-        printf_s("GenAsIo2Unlock v1.0 built at %s\nProcessing input file %s\n", __TIMESTAMP__, szFileName);
+        printf_s("GenAsIo2Unlock v1.0 built at %s\n[G] Processing input file %s\n", __TIMESTAMP__, szFileName);
         ProcessFile(szFileName);
     }
     else {
-        printf_s("Input file not specified\n");
+        printf_s("[G] Input file not specified\n");
     }
     return 0;
 }
