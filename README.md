@@ -131,9 +131,9 @@ In order to build from source you need Microsoft Visual Studio 2019 and later ve
 
 GenAsIo2Unlock is a special utility used to generate "unlocking" resource which is required for working with AsIO2 driver. Full source of this utility included in Source\Utils\GenAsIo2Unlock. Compiled version located in Sources\Hamakaze\Utils\GenAsIo2Unlock.exe. **Warning this utility is set on execution at post-build-event for both Debug/Release configurations.** If you don't want to run precompiled version replace it with newly compiled from sources. If you remove this post-build-event newly compiled KDU will NOT BE ABLE to use AsIO2 driver (provider #13).
 
-# Support and Warranties
+# Disclaimer
 
-Using this program might render your computer into BSOD. Compiled binary and source code provided AS-IS in help it will be useful BUT WITHOUT WARRANTY OF ANY KIND.
+Using this program might crash your computer with BSOD. Compiled binary and source code provided AS-IS in hope it will be useful BUT WITHOUT WARRANTY OF ANY KIND. Since KDU rely on completely bugged and vulnerable drivers security of computer where it executed maybe put at risk. Make sure you understand what you do.
 
 # Third party code usage
 
