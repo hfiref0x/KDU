@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        16 Apr 2021
+*  DATE:        18 Apr 2021
 *
 *  Providers global list.
 *
@@ -400,5 +400,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_DIRECTIO64,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        (LPWSTR)L"PassMark DirectIO",
+        (LPWSTR)L"DirectIo64",
+        (LPWSTR)L"DIRECTIO64",
+        (LPWSTR)L"PassMark Software Pty Ltd",
+
+        (provRegisterDriver)KDUProviderStub,
+        (provUnregisterDriver)KDUProviderStub,
+        (provPreOpenDriver)KDUProviderStub,
+        (provPostOpenDriver)KDUProviderPostOpen,
+
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        (provReadKernelVM)DI64ReadKernelVirtualMemory,
+        (provWriteKernelVM)DI64WriteKernelVirtualMemory,
+        (provVirtualToPhysical)DI64VirtualToPhysical,
+        (provReadControlRegister)KDUProviderStub,
+        (provQueryPML4)DI64QueryPML4Value,
+        (provReadPhysicalMemory)DI64ReadPhysicalMemory,
+        (provWritePhysicalMemory)DI64WritePhysicalMemory
     }
 };

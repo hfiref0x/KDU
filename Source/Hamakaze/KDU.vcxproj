@@ -126,6 +126,7 @@
     <ClCompile Include="dsefix.cpp" />
     <ClCompile Include="hde\hde64.c" />
     <ClCompile Include="idrv\atszio.cpp" />
+    <ClCompile Include="idrv\directio64.cpp" />
     <ClCompile Include="idrv\lha.cpp" />
     <ClCompile Include="idrv\mapmem.cpp" />
     <ClCompile Include="idrv\phymem.cpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="global.h" />
     <ClInclude Include="hde\hde64.h" />
     <ClInclude Include="idrv\atszio.h" />
+    <ClInclude Include="idrv\directio64.h" />
     <ClInclude Include="idrv\lha.h" />
     <ClInclude Include="idrv\mapmem.h" />
     <ClInclude Include="idrv\phymem.h" />

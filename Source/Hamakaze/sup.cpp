@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        16 Apr 2021
+*  DATE:        18 Apr 2021
 *
 *  Program global support routines.
 *
@@ -1691,7 +1691,7 @@ BOOL supManageDummyDll(
         }
     }
 
-    if (lpFileName) supHeapFree(lpFileName);
+    supHeapFree(lpFileName);
 
     return bResult;
 }

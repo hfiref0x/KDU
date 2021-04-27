@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        15 Apr 2021
+*  DATE:        18 Apr 2021
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -26,6 +26,7 @@
 #include "idrv/winring0.h"
 #include "idrv/phymem.h"
 #include "idrv/lha.h"
+#include "idrv/directio64.h"
 #include "kduplist.h"
 
 /*
@@ -89,7 +90,7 @@ VOID KDUProvList()
         // List provider flags.
         //
         if (prov->SignatureWHQL)
-            printf_s("\tWHQL signed\r\n");
+            printf_s("\tDriver is WHQL signed\r\n");
         //
         // Some Realtek drivers are digitally signed 
         // after binary modification with wrong PE checksum as result.

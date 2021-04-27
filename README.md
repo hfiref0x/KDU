@@ -111,6 +111,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 11          | MSI            | EneTechIo64 | MSI Dragon Center                  | WINIO             | Various                     |
 | 12          | LG             | LHA         | LG Device Manager                  | Semi-original     | 1.6.0.2                     |
 | 13          | ASUSTeK        | AsIO2       | ASUS GPU Tweak                     | WINIO             | 2.1.7.1 and below           |
+| 14          | PassMark       | DirectIo64  | PassMark Performance Test          | Original          | 10.1 and below              |
 
 More providers maybe added in the future.
 

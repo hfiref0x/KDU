@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.164
+*  VERSION:     1.165
 *
-*  DATE:        01 Apr 2021
+*  DATE:        26 Apr 2021
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -363,7 +363,8 @@ char _RTL_CONSTANT_STRING_type_check(const void *s);
 #define THREAD_CREATE_FLAGS_SKIP_THREAD_ATTACH      0x00000002 
 #define THREAD_CREATE_FLAGS_HIDE_FROM_DEBUGGER      0x00000004
 #define THREAD_CREATE_FLAGS_HAS_SECURITY_DESCRIPTOR 0x00000010 
-#define THREAD_CREATE_FLAGS_ACCESS_CHECK_IN_TARGET  0x00000020 
+#define THREAD_CREATE_FLAGS_ACCESS_CHECK_IN_TARGET  0x00000020
+#define THREAD_CREATE_FLAGS_SKIP_THREAD_SUSPEND     0x00000040
 #define THREAD_CREATE_FLAGS_INITIAL_THREAD          0x00000080
 
 //
@@ -1052,6 +1053,7 @@ typedef enum _PROCESSINFOCLASS {
     ProcessFreeFiberShadowStackAllocation = 99,
     ProcessAltSystemCallInformation = 100,
     ProcessDynamicEHContinuationTargets = 101,
+    ProcessDynamicEnforcedCetCompatibleRanges = 102,
     MaxProcessInfoClass
 } PROCESSINFOCLASS;
 
@@ -1676,6 +1678,20 @@ typedef enum _SYSTEM_INFORMATION_CLASS {
     SystemFeatureConfigurationSectionInformation = 211,
     SystemFeatureUsageSubscriptionInformation = 212,
     SystemSecureSpeculationControlInformation = 213,
+    SystemSpacesBootInformation = 214,
+    SystemFwRamdiskInformation = 215,
+    SystemWheaIpmiHardwareInformation = 216,
+    SystemDifSetRuleClassInformation = 217,
+    SystemDifClearRuleClassInformation = 218,
+    SystemDifApplyPluginVerificationOnDriver = 219,
+    SystemDifRemovePluginVerificationOnDriver = 220,
+    SystemShadowStackInformation = 221,
+    SystemBuildVersionInformation = 222,
+    SystemPoolLimitInformation = 223,
+    SystemCodeIntegrityAddDynamicStore = 224,
+    SystemCodeIntegrityClearDynamicStores = 225,
+    SystemDifPoolTrackingInformation = 226,
+    SystemPoolZeroingInformation = 227,
     MaxSystemInfoClass
 } SYSTEM_INFORMATION_CLASS, * PSYSTEM_INFORMATION_CLASS;
 
@@ -4440,6 +4456,15 @@ typedef struct _CALLBACK_OBJECT {
     BOOLEAN AllowMultipleCallbacks;
     UCHAR reserved[3];
 } CALLBACK_OBJECT, *PCALLBACK_OBJECT;
+
+// Since 8.1
+typedef struct _CALLBACK_OBJECT_V2 {
+    ULONG Signature;
+    KSPIN_LOCK Lock;
+    LIST_ENTRY RegisteredCallbacks;
+    BOOLEAN AllowMultipleCallbacks;
+    LIST_ENTRY ExpCallbackList;
+} CALLBACK_OBJECT_V2, * PCALLBACK_OBJECT_V2;
 
 typedef struct _CALLBACK_REGISTRATION {
     LIST_ENTRY Link;
@@ -8831,6 +8856,12 @@ NTAPI
 RtlLocalTimeToSystemTime(
     _In_ PLARGE_INTEGER LocalTime,
     _Out_ PLARGE_INTEGER SystemTime);
+
+NTSYSAPI
+ULONGLONG
+NTAPI
+RtlGetSystemTimePrecise(
+    VOID);
 
 /************************************************************************************
 *

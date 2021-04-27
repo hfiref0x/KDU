@@ -4,9 +4,9 @@
 *
 *  TITLE:       COMPRESS.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        02 Apr 2021
+*  DATE:        18 Apr 2021
 *
 *  Compression support routines.
 *
@@ -38,6 +38,3 @@ PVOID KDUDecompressResource(
     _In_ ULONG DecryptKey,
     _In_ BOOLEAN VerifyChecksum);
 
-VOID KDUCompressResource(
-    _In_ LPWSTR lpFileName,
-    _In_ ULONG ulCompressKey);
