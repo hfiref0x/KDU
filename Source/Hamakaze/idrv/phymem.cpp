@@ -4,9 +4,9 @@
 *
 *  TITLE:       PHYMEM.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        15 Apr 2021
+*  DATE:        19 Apr 2021
 *
 *  PhyMem based drivers routines.
 *
@@ -105,6 +105,8 @@ BOOL WINAPI PhyMemQueryPML4Value(
 
     *Value = 0;
 
+    SetLastError(ERROR_SUCCESS);
+
     do {
 
         pbLowStub1M = (UCHAR*)supHeapAlloc(cbSize);
@@ -131,8 +133,6 @@ BOOL WINAPI PhyMemQueryPML4Value(
             PML4 = supGetPML4FromLowStub1M((ULONG_PTR)pbLowStub1M);
             if (PML4)
                 *Value = PML4;
-            else
-                *Value = 0;
 
         }
 
@@ -283,7 +283,8 @@ BOOL WINAPI PhyMemWriteKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
-    DWORD dwError = ERROR_SUCCESS;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = PhyMemVirtualToPhysical(DeviceHandle,
         Address,
@@ -297,15 +298,8 @@ BOOL WINAPI PhyMemWriteKernelVirtualMemory(
             NumberOfBytes,
             TRUE);
 
-        if (!bResult)
-            dwError = GetLastError();
-
-    }
-    else {
-        dwError = GetLastError();
     }
 
-    SetLastError(dwError);
     return bResult;
 }
 
@@ -325,7 +319,8 @@ BOOL WINAPI PhyMemReadKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
-    DWORD dwError = ERROR_SUCCESS;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = PhyMemVirtualToPhysical(DeviceHandle,
         Address,
@@ -339,14 +334,7 @@ BOOL WINAPI PhyMemReadKernelVirtualMemory(
             NumberOfBytes,
             FALSE);
 
-        if (!bResult)
-            dwError = GetLastError();
-
-    }
-    else {
-        dwError = GetLastError();
     }
 
-    SetLastError(dwError);
     return bResult;
 }

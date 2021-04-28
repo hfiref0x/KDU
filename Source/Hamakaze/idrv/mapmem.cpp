@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAPMEM.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        15 Apr 2021
+*  DATE:        19 Apr 2021
 *
 *  MAPMEM driver routines.
 *
@@ -140,34 +140,27 @@ BOOL WINAPI GioQueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
-    DWORD dwError = ERROR_SUCCESS;
+    DWORD cbRead = 0x100000;
     ULONG_PTR pbLowStub1M = NULL, PML4 = 0;
-
 
     *Value = 0;
 
-    do {
+    SetLastError(ERROR_SUCCESS);
 
-        pbLowStub1M = (ULONG_PTR)MapMemMapMemory(DeviceHandle,
-            0ULL,
-            0x100000);
+    pbLowStub1M = (ULONG_PTR)MapMemMapMemory(DeviceHandle,
+        0ULL,
+        cbRead);
 
-        if (pbLowStub1M == 0) {
-            dwError = GetLastError();
-            break;
-        }
+    if (pbLowStub1M) {
 
         PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
         if (PML4)
             *Value = PML4;
-        else
-            *Value = 0;
 
         MapMemUnmapMemory(DeviceHandle, (PVOID)pbLowStub1M);
 
-    } while (FALSE);
+    }
 
-    SetLastError(dwError);
     return (PML4 != 0);
 }
 
@@ -309,7 +302,8 @@ BOOL WINAPI GioWriteKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
-    DWORD dwError = ERROR_SUCCESS;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = GioVirtualToPhysical(DeviceHandle,
         Address,
@@ -323,15 +317,8 @@ BOOL WINAPI GioWriteKernelVirtualMemory(
             NumberOfBytes,
             TRUE);
 
-        if (!bResult)
-            dwError = GetLastError();
-
-    }
-    else {
-        dwError = GetLastError();
     }
 
-    SetLastError(dwError);
     return bResult;
 }
 
@@ -351,7 +338,8 @@ BOOL WINAPI GioReadKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
-    DWORD dwError = ERROR_SUCCESS;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = GioVirtualToPhysical(DeviceHandle,
         Address,
@@ -365,15 +353,8 @@ BOOL WINAPI GioReadKernelVirtualMemory(
             NumberOfBytes,
             FALSE);
 
-        if (!bResult)
-            dwError = GetLastError();
-
-    }
-    else {
-        dwError = GetLastError();
     }
 
-    SetLastError(dwError);
     return bResult;
 }
 

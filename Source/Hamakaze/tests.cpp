@@ -59,14 +59,14 @@ VOID KDUTest()
     Context = KDUProviderCreate(14, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
     if (Context) {
 
-        ULONG64 dummy = 0;
+        /*ULONG64 dummy = 0;
 
         KDUReadKernelVM(Context,
             0xfffff80afbbe6d18,
             &dummy,
-            sizeof(dummy));
+            sizeof(dummy));*/
 
-        /*if (supQueryObjectFromHandle(Context->DeviceHandle, &objectAddress)) {
+        if (supQueryObjectFromHandle(Context->DeviceHandle, &objectAddress)) {
 
             Context->Provider->Callbacks.ReadPhysicalMemory(
                 Context->DeviceHandle,
@@ -87,7 +87,7 @@ VOID KDUTest()
 
             Beep(0, 0);
 
-        }*/
+        }
         
         KDUProviderRelease(Context);
     }

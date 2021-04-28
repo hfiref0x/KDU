@@ -4,9 +4,9 @@
 *
 *  TITLE:       RTCORE.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        15 Apr 2021
+*  DATE:        19 Apr 2021
 *
 *  RTCORE64 driver routines.
 *

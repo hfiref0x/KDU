@@ -4,9 +4,9 @@
 *
 *  TITLE:       WINIO.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        16 Apr 2021
+*  DATE:        19 Apr 2021
 *
 *  WINIO based drivers routines.
 *
@@ -319,7 +319,7 @@ BOOL WINAPI WinIoQueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
-    DWORD dwError = ERROR_SUCCESS;
+    DWORD cbRead = 0x100000;
     ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
 
     PVOID refObject = NULL;
@@ -327,33 +327,26 @@ BOOL WINAPI WinIoQueryPML4Value(
 
     *Value = 0;
 
-    do {
+    SetLastError(ERROR_SUCCESS);
 
-        pbLowStub1M = (ULONG_PTR)g_WinIoMapMemoryRoutine(DeviceHandle,
-            0ULL,
-            0x100000,
-            &sectionHandle,
-            &refObject);
+    pbLowStub1M = (ULONG_PTR)g_WinIoMapMemoryRoutine(DeviceHandle,
+        0ULL,
+        cbRead,
+        &sectionHandle,
+        &refObject);
 
-        if (pbLowStub1M == 0) {
-            dwError = GetLastError();
-            break;
-        }
+    if (pbLowStub1M) {
 
         PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
         if (PML4)
             *Value = PML4;
-        else
-            *Value = 0;
 
         g_WinIoUnmapMemoryRoutine(DeviceHandle,
             (PVOID)pbLowStub1M,
             sectionHandle,
             refObject);
+    }
 
-    } while (FALSE);
-
-    SetLastError(dwError);
     return (PML4 != 0);
 }
 
@@ -515,7 +508,8 @@ BOOL WINAPI WinIoReadKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
-    DWORD dwError = ERROR_SUCCESS;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = WinIoVirtualToPhysical(DeviceHandle,
         Address,
@@ -529,15 +523,8 @@ BOOL WINAPI WinIoReadKernelVirtualMemory(
             NumberOfBytes,
             FALSE);
 
-        if (!bResult)
-            dwError = GetLastError();
-
-    }
-    else {
-        dwError = GetLastError();
     }
 
-    SetLastError(dwError);
     return bResult;
 }
 
@@ -557,7 +544,8 @@ BOOL WINAPI WinIoWriteKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
-    DWORD dwError = ERROR_SUCCESS;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = WinIoVirtualToPhysical(DeviceHandle,
         Address,
@@ -571,15 +559,8 @@ BOOL WINAPI WinIoWriteKernelVirtualMemory(
             NumberOfBytes,
             TRUE);
 
-        if (!bResult)
-            dwError = GetLastError();
-
-    }
-    else {
-        dwError = GetLastError();
     }
 
-    SetLastError(dwError);
     return bResult;
 }
 

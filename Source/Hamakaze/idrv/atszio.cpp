@@ -4,9 +4,9 @@
 *
 *  TITLE:       ATSZIO.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        15 Apr 2021
+*  DATE:        19 Apr 2021
 *
 *  ASUSTeK ATSZIO WinFlash driver routines.
 *
@@ -111,37 +111,32 @@ BOOL WINAPI AtszioQueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
-    DWORD dwError = ERROR_SUCCESS;
     ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
     HANDLE sectionHandle = NULL;
 
+    DWORD cbRead = 0x100000;
+
     *Value = 0;
 
-    do {
+    SetLastError(ERROR_SUCCESS);
 
-        pbLowStub1M = (ULONG_PTR)AtszioMapMemory(DeviceHandle,
-            0ULL,
-            0x100000,
-            &sectionHandle);
+    pbLowStub1M = (ULONG_PTR)AtszioMapMemory(DeviceHandle,
+        0ULL,
+        cbRead,
+        &sectionHandle);
 
-        if (pbLowStub1M == 0) {
-            dwError = GetLastError();
-            break;
-        }
+    if (pbLowStub1M) {
 
         PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
         if (PML4)
             *Value = PML4;
-        else
-            *Value = 0;
 
         AtszioUnmapMemory(DeviceHandle,
             (PVOID)pbLowStub1M,
             sectionHandle);
 
-    } while (FALSE);
+    }
 
-    SetLastError(dwError);
     return (PML4 != 0);
 }
 
@@ -288,7 +283,8 @@ BOOL WINAPI AtszioWriteKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
-    DWORD dwError = ERROR_SUCCESS;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = AtszioVirtualToPhysical(DeviceHandle,
         Address,
@@ -302,15 +298,8 @@ BOOL WINAPI AtszioWriteKernelVirtualMemory(
             NumberOfBytes,
             TRUE);
 
-        if (!bResult)
-            dwError = GetLastError();
-
-    }
-    else {
-        dwError = GetLastError();
     }
 
-    SetLastError(dwError);
     return bResult;
 }
 
@@ -330,7 +319,8 @@ BOOL WINAPI AtszioReadKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
-    DWORD dwError = ERROR_SUCCESS;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = AtszioVirtualToPhysical(DeviceHandle,
         Address,
@@ -344,14 +334,7 @@ BOOL WINAPI AtszioReadKernelVirtualMemory(
             NumberOfBytes,
             FALSE);
 
-        if (!bResult)
-            dwError = GetLastError();
-
-    }
-    else {
-        dwError = GetLastError();
     }
 
-    SetLastError(dwError);
     return bResult;
 }

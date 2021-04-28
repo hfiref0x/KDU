@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.11
 *
-*  DATE:        18 Apr 2021
+*  DATE:        19 Apr 2021
 *
 *  PassMark DIRECTIO driver routines.
 *
@@ -42,7 +42,6 @@ PVOID DI64MapMemory(
     _Out_ PVOID* AllocatedMdl,
     _In_ BOOLEAN MapForWrite)
 {
-    NTSTATUS ntStatus;
     DIRECTIO_PHYSICAL_MEMORY_INFO request;
 
     *SectionHandle = NULL;
@@ -56,16 +55,13 @@ PVOID DI64MapMemory(
     request.Offset.QuadPart = offset;
     request.Writeable = MapForWrite;
 
-    ntStatus = supCallDriver(DeviceHandle,
+    if (supCallDriver(DeviceHandle,
         IOCTL_DIRECTIO_MAP_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
         &request,
-        sizeof(request));
-
-    SetLastError(RtlNtStatusToDosError(ntStatus));
-
-    if (NT_SUCCESS(ntStatus)) {
+        sizeof(request))) 
+    {
         *SectionHandle = request.SectionHandle;
         *AllocatedMdl = request.AllocatedMdl;
         return request.BaseAddress;
@@ -116,44 +112,37 @@ BOOL WINAPI DI64QueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
-    DWORD dwError = ERROR_SUCCESS;
     ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
 
-    ULONG cbSize = 0x100000;
+    ULONG cbRead = 0x100000;
 
     PVOID refObject = NULL;
     HANDLE sectionHandle = NULL;
 
     *Value = 0;
 
-    do {
+    SetLastError(ERROR_SUCCESS);
 
-        pbLowStub1M = (ULONG_PTR)DI64MapMemory(DeviceHandle,
-            0ULL,
-            cbSize,
-            &sectionHandle,
-            &refObject,
-            FALSE);
+    pbLowStub1M = (ULONG_PTR)DI64MapMemory(DeviceHandle,
+        0ULL,
+        cbRead,
+        &sectionHandle,
+        &refObject,
+        FALSE);
 
-        if (pbLowStub1M == 0) {
-            dwError = GetLastError();
-            break;
-        }
+    if (pbLowStub1M) {
 
         PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
         if (PML4)
             *Value = PML4;
-        else
-            *Value = 0;
 
         DI64UnmapMemory(DeviceHandle,
             (PVOID)pbLowStub1M,
             sectionHandle,
             refObject);
 
-    } while (FALSE);
+    }
 
-    SetLastError(dwError);
     return (PML4 != 0);
 }
 
@@ -301,7 +290,8 @@ BOOL WINAPI DI64ReadKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
-    DWORD dwError = ERROR_SUCCESS;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = DI64VirtualToPhysical(DeviceHandle,
         Address,
@@ -315,15 +305,8 @@ BOOL WINAPI DI64ReadKernelVirtualMemory(
             NumberOfBytes,
             FALSE);
 
-        if (!bResult)
-            dwError = GetLastError();
-
-    }
-    else {
-        dwError = GetLastError();
     }
 
-    SetLastError(dwError);
     return bResult;
 }
 
@@ -343,7 +326,8 @@ BOOL WINAPI DI64WriteKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
-    DWORD dwError = ERROR_SUCCESS;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = DI64VirtualToPhysical(DeviceHandle,
         Address,
@@ -357,14 +341,7 @@ BOOL WINAPI DI64WriteKernelVirtualMemory(
             NumberOfBytes,
             TRUE);
 
-        if (!bResult)
-            dwError = GetLastError();
-
-    }
-    else {
-        dwError = GetLastError();
     }
 
-    SetLastError(dwError);
     return bResult;
 }
