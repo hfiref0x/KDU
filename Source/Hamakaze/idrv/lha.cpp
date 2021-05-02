@@ -4,9 +4,9 @@
 *
 *  TITLE:       LHA.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        15 Apr 2021
+*  DATE:        19 Apr 2021
 *
 *  LG LHA driver routines.
 *
@@ -129,6 +129,8 @@ BOOL WINAPI LHAQueryPML4Value(
 
     *Value = 0;
 
+    SetLastError(ERROR_SUCCESS);
+
     do {
 
         pbLowStub1M = (UCHAR*)supHeapAlloc(cbRead);
@@ -155,8 +157,6 @@ BOOL WINAPI LHAQueryPML4Value(
             PML4 = supGetPML4FromLowStub1M((ULONG_PTR)pbLowStub1M);
             if (PML4)
                 *Value = PML4;
-            else
-                *Value = 0;
 
         }
 
@@ -206,6 +206,8 @@ BOOL WINAPI LHAReadKernelVirtualMemory(
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
 
+    SetLastError(ERROR_SUCCESS);
+
     bResult = LHAVirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
@@ -238,6 +240,8 @@ BOOL WINAPI LHAWriteKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = LHAVirtualToPhysical(DeviceHandle,
         Address,

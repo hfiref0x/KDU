@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        16 Apr 2021
+*  DATE:        18 Apr 2021
 *
 *  Global consts.
 *
@@ -57,6 +57,7 @@
 #define IDR_ENETECHIO64B                115
 #define IDR_LHA                         116
 #define IDR_ASUSIO2                     117
+#define IDR_DIRECTIO64                  118
 
 //
 // Defines for Major Windows NT release builds

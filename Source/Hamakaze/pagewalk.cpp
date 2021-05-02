@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2020
+*  (C) COPYRIGHT AUTHORS, 2018 - 2021
 *
 *  TITLE:       PAGEWALK.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.11
 *
-*  DATE:        12 Feb 2020
+*  DATE:        18 Apr 2021
 *
 *  Function to translate virtual to physical addresses, x86-64.
 *
@@ -48,8 +48,10 @@ BOOL PwVirtualToPhysical(
 
     *PhysicalAddress = 0;
 
-    if (QueryPML4Routine(DeviceHandle, &pml4_cr3) == 0)
+    if (QueryPML4Routine(DeviceHandle, &pml4_cr3) == 0) {
+        SetLastError(ERROR_DEVICE_HARDWARE_ERROR);
         return 0;
+    }
 
     table = pml4_cr3 & PHY_ADDRESS_MASK;
 
@@ -63,11 +65,16 @@ BOOL PwVirtualToPhysical(
             &entry,
             sizeof(ULONG_PTR)) == 0)
         {
+            //
+            // Last error set by called routine.
+            //
             return 0;
         }
 
-        if (PwEntryToPhyAddr(entry, &table) == 0)
+        if (PwEntryToPhyAddr(entry, &table) == 0) {
+            SetLastError(ERROR_INVALID_ADDRESS);
             return 0;
+        }
 
         if ((r == 2) && ((entry & ENTRY_PAGE_SIZE_BIT) != 0)) {
             table &= PHY_ADDRESS_MASK_2MB_PAGES;

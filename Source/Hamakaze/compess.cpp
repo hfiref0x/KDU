@@ -4,9 +4,9 @@
 *
 *  TITLE:       COMPRESS.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        15 Apr 2021
+*  DATE:        18 Apr 2021
 *
 *  Compression support routines.
 *
@@ -194,120 +194,4 @@ PVOID KDUDecompressResource(
     }
 
     return resultPtr;
-}
-
-/*
-* KDUCompressResource
-*
-* Purpose:
-*
-* Compress resource and write it to the disk into new file with same name and .bin extension.
-*
-*/
-VOID KDUCompressResource(
-    _In_ LPWSTR lpFileName,
-    _In_ ULONG ulCompressKey
-)
-{
-    DWORD fileSize = 0;
-    PBYTE fileBuffer;
-
-    DELTA_INPUT d_in, d_target, s_op, t_op, g_op;
-    DELTA_OUTPUT d_out;
-
-    FUNCTION_ENTER_MSG(__FUNCTION__);
-
-    printf_s("[+] Reading %wS\r\n", lpFileName);
-    fileBuffer = supReadFileToBuffer(lpFileName, &fileSize);
-
-    if (fileBuffer) {
-
-        printf_s("[+] %lu bytes read\r\n", fileSize);
-
-        PWSTR newFileName;
-        SIZE_T sz = _strlen(lpFileName) + (2 * MAX_PATH);
-
-        newFileName = (PWSTR)supHeapAlloc(sz);
-        if (newFileName == NULL) {
-
-            supPrintfEvent(kduEventError, 
-                "[!] Could not allocate memory for filename\r\n");
-
-        }
-        else {
-
-            _filename_noext(newFileName, lpFileName);
-
-            RtlSecureZeroMemory(&d_in, sizeof(DELTA_INPUT));
-            d_target.lpcStart = fileBuffer;
-            d_target.uSize = fileSize;
-            d_target.Editable = FALSE;
-
-            RtlSecureZeroMemory(&s_op, sizeof(DELTA_INPUT));
-            RtlSecureZeroMemory(&t_op, sizeof(DELTA_INPUT));
-            RtlSecureZeroMemory(&g_op, sizeof(DELTA_INPUT));
-
-            if (CreateDeltaB(DELTA_FILE_TYPE_RAW,
-                DELTA_FLAG_NONE,
-                DELTA_FLAG_NONE,
-                d_in,
-                d_target,
-                s_op,
-                t_op,
-                g_op,
-                NULL,
-                0,
-                &d_out))
-            {
-                SIZE_T writeSize = d_out.uSize;
-                PVOID dataBlob = supHeapAlloc(writeSize);
-                if (dataBlob) {
-
-                    RtlCopyMemory(dataBlob, d_out.lpStart, writeSize);
-                    EncodeBuffer(dataBlob, (ULONG)writeSize, ulCompressKey);
-
-                    _strcat(newFileName, L".bin");
-
-                    printf_s("[+] Saving resource as %wS with new size %llu bytes\r\n",
-                        newFileName, writeSize);
-
-                    if (supWriteBufferToFile(newFileName,
-                        dataBlob,
-                        writeSize,
-                        TRUE,
-                        FALSE,
-                        NULL) != writeSize)
-                    {
-                        
-                        supPrintfEvent(kduEventError, 
-                            "[!] Error writing to file\r\n");
-
-                    }
-
-                    supHeapFree(dataBlob);
-                }
-
-                DeltaFree(d_out.lpStart);
-            }
-            else {
-
-                supPrintfEvent(kduEventError, 
-                    "[!] Error compressing resource, GetLastError %lu\r\n", GetLastError());
-
-            }
-
-            supHeapFree(newFileName);
-        }
-
-        supHeapFree(fileBuffer);
-
-    }
-    else {
-
-        supPrintfEvent(kduEventError, 
-            "[!] Could not read input file\r\n");
-
-    }
-
-    FUNCTION_LEAVE_MSG(__FUNCTION__);
 }

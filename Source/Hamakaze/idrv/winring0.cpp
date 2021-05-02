@@ -4,9 +4,9 @@
 *
 *  TITLE:       WINRING0.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        15 Apr 2021
+*  DATE:        19 Apr 2021
 *
 *  WinRing0 based drivers routines.
 *
@@ -119,20 +119,23 @@ BOOL WINAPI WRZeroQueryPML4Value(
     _Out_ ULONG_PTR* Value)
 {
     DWORD dwError = ERROR_SUCCESS;
+    DWORD cbSize = 0x100000;
     ULONG_PTR PML4 = 0;
     UCHAR* pbLowStub1M;
 
     *Value = 0;
 
+    SetLastError(ERROR_SUCCESS);
+
     do {
 
-        pbLowStub1M = (UCHAR*)supHeapAlloc(0x100000);
+        pbLowStub1M = (UCHAR*)supHeapAlloc(cbSize);
         if (pbLowStub1M == NULL) {
             dwError = GetLastError();
             break;
         }
 
-        for (ULONG_PTR i = 0; i < 0x100000; i += PAGE_SIZE) {
+        for (ULONG_PTR i = 0; i < cbSize; i += PAGE_SIZE) {
 
             if (!WRZeroReadPhysicalMemory(DeviceHandle,
                 i,
@@ -150,8 +153,6 @@ BOOL WINAPI WRZeroQueryPML4Value(
             PML4 = supGetPML4FromLowStub1M((ULONG_PTR)pbLowStub1M);
             if (PML4)
                 *Value = PML4;
-            else
-                *Value = 0;
 
         }
 
@@ -201,6 +202,8 @@ BOOL WINAPI WRZeroReadKernelVirtualMemory(
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
 
+    SetLastError(ERROR_SUCCESS);
+
     bResult = WRZeroVirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
@@ -233,6 +236,8 @@ BOOL WINAPI WRZeroKernelVirtualMemory(
 {
     BOOL bResult;
     ULONG_PTR physicalAddress = 0;
+
+    SetLastError(ERROR_SUCCESS);
 
     bResult = WRZeroVirtualToPhysical(DeviceHandle,
         Address,

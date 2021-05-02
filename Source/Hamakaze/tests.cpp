@@ -56,8 +56,15 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(KDU_PROVIDER_ASUSIO2, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
+    Context = KDUProviderCreate(14, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
     if (Context) {
+
+        /*ULONG64 dummy = 0;
+
+        KDUReadKernelVM(Context,
+            0xfffff80afbbe6d18,
+            &dummy,
+            sizeof(dummy));*/
 
         if (supQueryObjectFromHandle(Context->DeviceHandle, &objectAddress)) {
 
