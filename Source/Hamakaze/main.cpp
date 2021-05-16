@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.11
 *
-*  DATE:        18 Apr 2021
+*  DATE:        14 May 2021
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -47,7 +47,6 @@ volatile LONG g_lApplicationInstances = 0;
                      "-drvn name        - driver object name (only valid for shellcode version 3)\r\n"\
                      "-drvr name        - optional, driver registry key name (only valid for shellcode version 3)\r\n"
 
-#define T_KDUINTRO   "[#] Kernel Driver Utility v1.1.1 started, (c) 2020 - 2021 KDU Project\r\n[#] Supported x64 OS: Windows 7 and above"
 #define T_PRNTDEFAULT   "%s\r\n"
 
 /*
@@ -523,6 +522,25 @@ int KDUMain()
 }
 
 /*
+* KDUIntroBanner
+*
+* Purpose:
+*
+* Display general KDU version info.
+*
+*/
+VOID KDUIntroBanner()
+{
+    IMAGE_NT_HEADERS* ntHeaders = RtlImageNtHeader(NtCurrentPeb()->ImageBaseAddress);
+
+    printf_s("[#] Kernel Driver Utility v1.1.1 started, (c)2020 - 2021 KDU Project\r\n"\
+        "[#] Build at %s, header checksum 0x%lX\r\n"\
+        "[#] Supported x64 OS : Windows 7 and above\r\n", 
+        __TIMESTAMP__,
+        ntHeaders->OptionalHeader.CheckSum);
+}
+
+/*
 * main
 *
 * Purpose:
@@ -532,9 +550,11 @@ int KDUMain()
 */
 int main()
 {
+    
+
     HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
 
-    printf_s(T_PRNTDEFAULT, T_KDUINTRO);
+    KDUIntroBanner();
 
     int retVal = 0;
 

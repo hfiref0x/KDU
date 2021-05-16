@@ -4,9 +4,9 @@
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        01 Apr 2021
+*  DATE:        14 May 2021
 *
 *  KDU tests.
 *

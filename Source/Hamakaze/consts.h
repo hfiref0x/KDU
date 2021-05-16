@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.11
 *
-*  DATE:        18 Apr 2021
+*  DATE:        14 May 2021
 *
 *  Global consts.
 *
@@ -24,8 +24,8 @@
 
 #define PROCEXP152              L"PROCEXP152"
 
-#define NTOSKRNL_EXE            "ntoskrnl.exe"
-#define CI_DLL                  "CI.dll"
+#define NTOSKRNL_EXE            L"ntoskrnl.exe"
+#define CI_DLL                  L"CI.dll"
 
 #define DRV64DLL                L"drv64.dll"
 #define DUMMYDLL                L"SB_SMBUS_SDK.dll"
@@ -112,4 +112,4 @@
 #define NT_WIN10_21H1           19043
 
 // Windows 10 Active Develepment Branch (21XX)
-#define NTX_WIN10_ADB           21359
+#define NTX_WIN10_ADB           21376

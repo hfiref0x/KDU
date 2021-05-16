@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.11
 *
-*  DATE:        18 Apr 2021
+*  DATE:        14 May 2021
 *
 *  Program global support routines.
 *
@@ -653,6 +653,87 @@ PVOID supGetSystemInfo(
 }
 
 /*
+* supGetLoadedModulesList
+*
+* Purpose:
+*
+* Read list of loaded kernel modules.
+*
+*/
+PVOID supGetLoadedModulesList(
+    _In_ BOOL ExtendedOutput,
+    _Out_opt_ PULONG ReturnLength
+)
+{
+    NTSTATUS    ntStatus;
+    PVOID       buffer;
+    ULONG       bufferSize = PAGE_SIZE;
+
+    PRTL_PROCESS_MODULES pvModules;
+    SYSTEM_INFORMATION_CLASS infoClass;
+
+    if (ReturnLength)
+        *ReturnLength = 0;
+
+    if (ExtendedOutput)
+        infoClass = SystemModuleInformationEx;
+    else
+        infoClass = SystemModuleInformation;
+
+    buffer = supHeapAlloc((SIZE_T)bufferSize);
+    if (buffer == NULL)
+        return NULL;
+
+    ntStatus = NtQuerySystemInformation(
+        infoClass,
+        buffer,
+        bufferSize,
+        &bufferSize);
+
+    if (ntStatus == STATUS_INFO_LENGTH_MISMATCH) {
+        supHeapFree(buffer);
+        buffer = supHeapAlloc((SIZE_T)bufferSize);
+
+        ntStatus = NtQuerySystemInformation(
+            infoClass,
+            buffer,
+            bufferSize,
+            &bufferSize);
+    }
+
+    if (ReturnLength)
+        *ReturnLength = bufferSize;
+
+    //
+    // Handle unexpected return.
+    //
+    // If driver image path exceeds structure field size then 
+    // RtlUnicodeStringToAnsiString will throw STATUS_BUFFER_OVERFLOW.
+    // 
+    // If this is the last driver in the enumeration service will return 
+    // valid data but STATUS_BUFFER_OVERFLOW in result.
+    //
+    if (ntStatus == STATUS_BUFFER_OVERFLOW) {
+
+        //
+        // Force ignore this status if list is not empty.
+        //
+        pvModules = (PRTL_PROCESS_MODULES)buffer;
+        if (pvModules->NumberOfModules != 0)
+            return buffer;
+    }
+
+    if (NT_SUCCESS(ntStatus)) {
+        return buffer;
+    }
+
+    if (buffer)
+        supHeapFree(buffer);
+
+    return NULL;
+}
+
+/*
 * supGetNtOsBase
 *
 * Purpose:
@@ -667,10 +748,10 @@ ULONG_PTR supGetNtOsBase(
     PRTL_PROCESS_MODULES   miSpace;
     ULONG_PTR              NtOsBase = 0;
 
-    miSpace = (PRTL_PROCESS_MODULES)supGetSystemInfo(SystemModuleInformation);
+    miSpace = (PRTL_PROCESS_MODULES)supGetLoadedModulesList(FALSE, NULL);
     if (miSpace) {
         NtOsBase = (ULONG_PTR)miSpace->Modules[0].ImageBase;
-        RtlFreeHeap(NtCurrentPeb()->ProcessHeap, 0, miSpace);
+        supHeapFree(miSpace);
     }
     return NtOsBase;
 }
@@ -1578,27 +1659,49 @@ ULONG supGetTimeAsSecondsSince1970()
 *
 */
 ULONG_PTR supGetModuleBaseByName(
-    _In_ LPCSTR ModuleName
+    _In_ LPCWSTR ModuleName,
+    _Out_opt_ PULONG ImageSize
 )
 {
     ULONG_PTR ReturnAddress = 0;
     ULONG i, k;
     PRTL_PROCESS_MODULES miSpace;
 
-    miSpace = (PRTL_PROCESS_MODULES)supGetSystemInfo(SystemModuleInformation);
+    ANSI_STRING moduleName;
+
+    if (ImageSize)
+        *ImageSize = 0;  
+
+    moduleName.Buffer = NULL;
+    moduleName.Length = moduleName.MaximumLength = 0;
+
+    if (!NT_SUCCESS(supConvertToAnsi(ModuleName, &moduleName)))
+        return 0;
+
+    miSpace = (PRTL_PROCESS_MODULES)supGetLoadedModulesList(FALSE, NULL);
     if (miSpace != NULL) {
+
         for (i = 0; i < miSpace->NumberOfModules; i++) {
+
             k = miSpace->Modules[i].OffsetToFileName;
             if (_strcmpi_a(
                 (CONST CHAR*) & miSpace->Modules[i].FullPathName[k],
-                ModuleName) == 0)
+                moduleName.Buffer) == 0)
             {
                 ReturnAddress = (ULONG_PTR)miSpace->Modules[i].ImageBase;
+                if (ImageSize)
+                    *ImageSize = miSpace->Modules[i].ImageSize;
                 break;
             }
+
         }
+
         supHeapFree(miSpace);
+
     }
+
+    RtlFreeAnsiString(&moduleName);
+
     return ReturnAddress;
 }
 
@@ -1823,4 +1926,56 @@ VOID supPrintfEvent(
     // Restore original text color.
     //
     SetConsoleTextAttribute(stdHandle, origColor);
+}
+
+/*
+* supQueryImageSize
+*
+* Purpose:
+*
+* Get image size from PEB loader list.
+*
+*/
+NTSTATUS supQueryImageSize(
+    _In_ PVOID ImageBase,
+    _Out_ PSIZE_T ImageSize
+)
+{
+    NTSTATUS ntStatus;
+    LDR_DATA_TABLE_ENTRY *ldrEntry = NULL;
+
+    *ImageSize = 0;
+
+    ntStatus = LdrFindEntryForAddress(
+        ImageBase,
+        &ldrEntry);
+
+    if (NT_SUCCESS(ntStatus)) {
+
+        *ImageSize = ldrEntry->SizeOfImage;
+
+    }
+
+    return ntStatus;
+}
+
+/*
+* supConvertToAnsi
+*
+* Purpose:
+*
+* Convert UNICODE string to ANSI string.
+*
+* N.B.
+* If function succeeded - use RtlFreeAnsiString to release allocated string.
+*
+*/
+NTSTATUS supConvertToAnsi(
+    _In_ LPCWSTR UnicodeString,
+    _Inout_ PANSI_STRING AnsiString)
+{
+    UNICODE_STRING unicodeString;
+
+    RtlInitUnicodeString(&unicodeString, UnicodeString);
+    return RtlUnicodeStringToAnsiString(AnsiString, &unicodeString, TRUE);
 }
