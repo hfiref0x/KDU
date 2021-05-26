@@ -97,9 +97,9 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 
 | Provider Id | Product Vendor | Driver      | Software package                   | Code base         | Version                     |
 |-------------|----------------|-------------|------------------------------------|-------------------|-----------------------------|
-| 0           | Intel          | IQVM64      | Network Adapter Diagnostic Driver  | Original          | 1.03.0.7                    |
+| 0           | Intel          | IQVM64/Nal  | Network Adapter Diagnostic Driver  | Original          | 1.03.0.7                    |
 | 1           | MSI            | RTCore64    | MSI Afterburner                    | Semi-original     | 4.6.2 build 15658 and below |
-| 2           | Gigabyte       | Gdrv        | Gigabyte TOOLS                     | MAPMEM NTDKK 3.51 | Undefined                   |
+| 2           | Gigabyte       | Gdrv        | Gigabyte TOOLS                     | MAPMEM NTDDK 3.51 | Undefined                   |
 | 3           | ASUSTeK        | ATSZIO64    | ASUSTeK WinFlash utility           | Semi-original     | Undefined                   |
 | 4           | Patriot        | MsIo64      | Patriot Viper RGB utility          | WINIO             | 1.0                         |
 | 5           | ASRock         | GLCKIO2     | ASRock Polychrome RGB              | WINIO             | 1.0.4                       |
