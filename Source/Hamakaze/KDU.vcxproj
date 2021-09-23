@@ -121,7 +121,7 @@
     <ClCompile Include="..\Shared\minirtl\_strlen.c" />
     <ClCompile Include="..\Shared\minirtl\_strncpy.c" />
     <ClCompile Include="..\Shared\tinyaes\aes.c" />
-    <ClCompile Include="compess.cpp" />
+    <ClCompile Include="compress.cpp" />
     <ClCompile Include="drvmap.cpp" />
     <ClCompile Include="dsefix.cpp" />
     <ClCompile Include="hde\hde64.c" />

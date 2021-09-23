@@ -60,7 +60,7 @@
     <ClCompile Include="pagewalk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="compess.cpp">
+    <ClCompile Include="compress.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="idrv\mapmem.cpp">
