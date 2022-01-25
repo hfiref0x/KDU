@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.12
 *
-*  DATE:        14 May 2021
+*  DATE:        25 Jan 2022
 *
 *  KDU tests.
 *
@@ -56,25 +56,27 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(14, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
+    Context = KDUProviderCreate(15, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
     if (Context) {
 
-        /*ULONG64 dummy = 0;
+        //ULONG64 dummy = 0;
 
-        KDUReadKernelVM(Context,
+        /*KDUReadKernelVM(Context,
             0xfffff80afbbe6d18,
             &dummy,
             sizeof(dummy));*/
 
         if (supQueryObjectFromHandle(Context->DeviceHandle, &objectAddress)) {
 
-            Context->Provider->Callbacks.ReadPhysicalMemory(
+         /*   Context->Provider->Callbacks.ReadPhysicalMemory(
                 Context->DeviceHandle,
                 0x1000,
                 &Buffer,
                 0x1000);
-
+                */
             value = 0x1234567890ABCDEF;
+
+            //objectAddress = 0xfffff80710636d18;
 
             FILE_OBJECT fileObject;
 
@@ -83,7 +85,7 @@ VOID KDUTest()
             KDUReadKernelVM(Context,
                 objectAddress,
                 &fileObject,
-                sizeof(fileObject));
+                sizeof(FILE_OBJECT));
 
             Beep(0, 0);
 

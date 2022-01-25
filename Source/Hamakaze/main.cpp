@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.12
 *
-*  DATE:        14 May 2021
+*  DATE:        25 Jan 2022
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -533,7 +533,7 @@ VOID KDUIntroBanner()
 {
     IMAGE_NT_HEADERS* ntHeaders = RtlImageNtHeader(NtCurrentPeb()->ImageBaseAddress);
 
-    printf_s("[#] Kernel Driver Utility v1.1.1 started, (c)2020 - 2021 KDU Project\r\n"\
+    printf_s("[#] Kernel Driver Utility v1.1.2 started, (c)2020 - 2022 KDU Project\r\n"\
         "[#] Build at %s, header checksum 0x%lX\r\n"\
         "[#] Supported x64 OS : Windows 7 and above\r\n", 
         __TIMESTAMP__,

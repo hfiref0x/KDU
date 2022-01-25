@@ -3,7 +3,7 @@
 
 #### System Requirements
 
-+ x64 Windows 7/8/8.1/10;
++ x64 Windows 7/8/8.1/10/11;
 + Administrative privilege is required.
 
 # Purpose and Features
@@ -112,6 +112,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 12          | LG             | LHA         | LG Device Manager                  | Semi-original     | 1.6.0.2                     |
 | 13          | ASUSTeK        | AsIO2       | ASUS GPU Tweak                     | WINIO             | 2.1.7.1 and below           |
 | 14          | PassMark       | DirectIo64  | PassMark Performance Test          | Original          | 10.1 and below              |
+| 15          | GMER           | GmerDrv     | Gmer "Antirootkit"                 | Original          | 2.2 and below               |
 
 More providers maybe added in the future.
 
@@ -166,4 +167,4 @@ They are used in multiple products from hardware vendors mostly in unmodified st
 
 # Authors
 
-(c) 2020 - 2021 KDU Project
+(c) 2020 - 2022 KDU Project

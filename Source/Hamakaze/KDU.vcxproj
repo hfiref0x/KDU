@@ -127,6 +127,7 @@
     <ClCompile Include="hde\hde64.c" />
     <ClCompile Include="idrv\atszio.cpp" />
     <ClCompile Include="idrv\directio64.cpp" />
+    <ClCompile Include="idrv\gmer.cpp" />
     <ClCompile Include="idrv\lha.cpp" />
     <ClCompile Include="idrv\mapmem.cpp" />
     <ClCompile Include="idrv\phymem.cpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="..\Shared\minirtl\rtltypes.h" />
     <ClInclude Include="..\Shared\minirtl\_filename.h" />
     <ClInclude Include="..\Shared\ntos\halamd64.h" />
+    <ClInclude Include="..\Shared\ntos\ntbuilds.h" />
     <ClInclude Include="..\Shared\ntos\ntos.h" />
     <ClInclude Include="..\Shared\tinyaes\aes.h" />
     <ClInclude Include="compress.h" />
@@ -159,6 +161,7 @@
     <ClInclude Include="hde\hde64.h" />
     <ClInclude Include="idrv\atszio.h" />
     <ClInclude Include="idrv\directio64.h" />
+    <ClInclude Include="idrv\gmer.h" />
     <ClInclude Include="idrv\lha.h" />
     <ClInclude Include="idrv\mapmem.h" />
     <ClInclude Include="idrv\phymem.h" />

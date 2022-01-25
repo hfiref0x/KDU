@@ -132,6 +132,9 @@
     <ClCompile Include="idrv\directio64.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\gmer.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -228,6 +231,12 @@
       <Filter>minirtl</Filter>
     </ClInclude>
     <ClInclude Include="idrv\directio64.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\ntos\ntbuilds.h">
+      <Filter>ntos</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\gmer.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>

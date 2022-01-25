@@ -1,12 +1,12 @@
 ﻿/*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.12
 *
-*  DATE:        18 Apr 2021
+*  DATE:        25 Jan 2022
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -27,6 +27,7 @@
 #include "idrv/phymem.h"
 #include "idrv/lha.h"
 #include "idrv/directio64.h"
+#include "idrv/gmer.h"
 #include "kduplist.h"
 
 /*

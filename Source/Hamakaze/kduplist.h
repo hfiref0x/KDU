@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.11
+*  VERSION:     1.12
 *
-*  DATE:        18 Apr 2021
+*  DATE:        25 Jan 2022
 *
 *  Providers global list.
 *
@@ -232,7 +232,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provAllocateKernelVM)KDUProviderStub,
         (provFreeKernelVM)KDUProviderStub,
         (provReadKernelVM)WRZeroReadKernelVirtualMemory,
-        (provWriteKernelVM)WRZeroKernelVirtualMemory,
+        (provWriteKernelVM)WRZeroWriteKernelVirtualMemory,
         (provVirtualToPhysical)WRZeroVirtualToPhysical,
         (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)WRZeroQueryPML4Value,
@@ -427,5 +427,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)DI64QueryPML4Value,
         (provReadPhysicalMemory)DI64ReadPhysicalMemory,
         (provWritePhysicalMemory)DI64WritePhysicalMemory
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_GMERDRV,
+        SourceBaseNone,
+        KDUPROV_FLAGS_NONE,
+        (LPWSTR)L"Gmer \"Antirootkit\"",
+        (LPWSTR)L"gmerdrv",
+        (LPWSTR)L"gmerdrv",
+        (LPWSTR)L"GMEREK Systemy Komputerowe Przemyslaw Gmerek",
+
+        (provRegisterDriver)GmerRegisterDriver,
+        (provUnregisterDriver)KDUProviderStub,
+        (provPreOpenDriver)KDUProviderStub,
+        (provPostOpenDriver)KDUProviderStub,
+
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        (provReadKernelVM)GmerReadVirtualMemory,
+        (provWriteKernelVM)GmerWriteVirtualMemory,
+        (provVirtualToPhysical)KDUProviderStub,
+        (provReadControlRegister)KDUProviderStub,
+        (provQueryPML4)KDUProviderStub,
+        (provReadPhysicalMemory)KDUProviderStub,
+        (provWritePhysicalMemory)KDUProviderStub
     }
 };

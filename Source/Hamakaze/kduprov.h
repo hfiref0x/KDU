@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2021
+*  (C) COPYRIGHT AUTHORS, 2014 - 2022
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.11
+*  VERSION:     1.12
 *
-*  DATE:        18 Apr 2021
+*  DATE:        25 Jan 2022
 *
 *  Provider support routines.
 *
@@ -34,6 +34,7 @@
 #define KDU_PROVIDER_LHA                12
 #define KDU_PROVIDER_ASUSIO2            13
 #define KDU_PROVIDER_DIRECTIO64         14
+#define KDU_PROVIDER_GMER               15
 
 #define KDU_PROVIDER_DEFAULT            KDU_PROVIDER_INTEL_NAL
 
