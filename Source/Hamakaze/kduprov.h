@@ -35,6 +35,7 @@
 #define KDU_PROVIDER_ASUSIO2            13
 #define KDU_PROVIDER_DIRECTIO64         14
 #define KDU_PROVIDER_GMER               15
+#define KDU_PROVIDER_DBUTIL23           16
 
 #define KDU_PROVIDER_DEFAULT            KDU_PROVIDER_INTEL_NAL
 
@@ -184,6 +185,11 @@ typedef enum _KDU_ACTION_TYPE {
 //
 #define KDUPROV_FLAGS_NO_FORCED_SD       0x00000008
 
+//
+// Do not unload, driver does not support this.
+//
+#define KDUPROV_FLAGS_NO_UNLOAD_SUP      0x00000010
+
 typedef enum _KDU_SOURCEBASE {
     SourceBaseNone = 0,
     SourceBaseWinIo,
@@ -205,7 +211,8 @@ typedef struct _KDU_PROVIDER {
             ULONG SignatureWHQL : 1;
             ULONG IgnoreChecksum : 1;
             ULONG NoForcedSD : 1;
-            ULONG Reserved : 28;
+            ULONG NoUnloadSupported : 1;
+            ULONG Reserved : 27;
         };
     };
     LPWSTR Desciption;

@@ -113,6 +113,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 13          | ASUSTeK        | AsIO2       | ASUS GPU Tweak                     | WINIO             | 2.1.7.1 and below           |
 | 14          | PassMark       | DirectIo64  | PassMark Performance Test          | Original          | 10.1 and below              |
 | 15          | GMER           | GmerDrv     | Gmer "Antirootkit"                 | Original          | 2.2 and below               |
+| 16          | Dell           | DBUtil_2_3  | Dell BIOS Utility                  | Original          | 2.3 and below               |
 
 More providers maybe added in the future.
 
@@ -155,6 +156,7 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 * CVE-2019-18845, https://www.activecyber.us/activelabs/viper-rgb-driver-local-privilege-escalation-cve-2019-18845
 * DEFCON27: Get off the kernel if you cant drive, https://eclypsium.com/wp-content/uploads/2019/08/EXTERNAL-Get-off-the-kernel-if-you-cant-drive-DEFCON27.pdf
 * CVE-2019-8372: Local Privilege Elevation in LG Kernel Driver, http://www.jackson-t.ca/lg-driver-lpe.html
+* CVE-2021-21551, https://attackerkb.com/topics/zAHZGAFaQX/cve-2021-21551
 
 # Wormhole drivers code
 

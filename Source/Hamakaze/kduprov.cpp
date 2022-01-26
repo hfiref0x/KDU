@@ -28,6 +28,7 @@
 #include "idrv/lha.h"
 #include "idrv/directio64.h"
 #include "idrv/gmer.h"
+#include "idrv/dbutil23.h"
 #include "kduplist.h"
 
 /*
@@ -99,6 +100,12 @@ VOID KDUProvList()
         //
         if (prov->IgnoreChecksum)
             printf_s("\tIgnore invalid image checksum\r\n");
+
+        //
+        // Some BIOS flashing drivers does not support unload.
+        //
+        if (prov->NoUnloadSupported)
+            printf_s("\tDriver does not support unload procedure\r\n");
 
         //
         // List "based" flags.
@@ -836,10 +843,18 @@ VOID WINAPI KDUProviderRelease(
         if (Context->DeviceHandle)
             NtClose(Context->DeviceHandle);
 
-        //
-        // Unload driver.
-        //
-        KDUProvStopVulnerableDriver(Context);
+        if (Context->Provider->NoUnloadSupported) {
+            supPrintfEvent(kduEventInformation,
+                "[~] This driver does not support unload procedure, reboot PC to get rid of it\r\n");
+        }
+        else {
+
+            //
+            // Unload driver.
+            //
+            KDUProvStopVulnerableDriver(Context);
+
+        }
 
         if (Context->DriverFileName)
             supHeapFree(Context->DriverFileName);

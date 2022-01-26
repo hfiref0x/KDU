@@ -84,6 +84,8 @@ IDR_DIRECTIO64          RCDATA                  "drv\\DirectIo64.bin"
 
 IDR_GMERDRV             RCDATA                  "drv\\gmerdrv.bin"
 
+IDR_DBUTIL23            RCDATA                  "drv\\DbUtil2_3.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

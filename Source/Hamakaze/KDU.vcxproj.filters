@@ -135,6 +135,9 @@
     <ClCompile Include="idrv\gmer.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\dbutil23.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -237,6 +240,9 @@
       <Filter>ntos</Filter>
     </ClInclude>
     <ClInclude Include="idrv\gmer.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\dbutil23.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>

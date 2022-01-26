@@ -454,5 +454,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)KDUProviderStub,
         (provReadPhysicalMemory)KDUProviderStub,
         (provWritePhysicalMemory)KDUProviderStub
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_DBUTIL23,
+        SourceBaseNone,
+        KDUPROV_FLAGS_NO_UNLOAD_SUP,
+        (LPWSTR)L"CVE-2021-21551",
+        (LPWSTR)L"DBUtil23",
+        (LPWSTR)L"DBUtil_2_3",
+        (LPWSTR)L"Dell Inc.",
+
+        (provRegisterDriver)KDUProviderStub,
+        (provUnregisterDriver)KDUProviderStub,
+        (provPreOpenDriver)KDUProviderStub,
+        (provPostOpenDriver)KDUProviderStub,
+
+        (provAllocateKernelVM)KDUProviderStub,
+        (provFreeKernelVM)KDUProviderStub,
+        (provReadKernelVM)DbUtilReadVirtualMemory,
+        (provWriteKernelVM)DbUtilWriteVirtualMemory,
+        (provVirtualToPhysical)KDUProviderStub,
+        (provReadControlRegister)KDUProviderStub,
+        (provQueryPML4)KDUProviderStub,
+        (provReadPhysicalMemory)KDUProviderStub,
+        (provWritePhysicalMemory)KDUProviderStub
     }
 };

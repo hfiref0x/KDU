@@ -76,5 +76,8 @@
     <None Include="drv\gmerdrv.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\DbUtil2_3.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

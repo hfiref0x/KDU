@@ -59,3 +59,4 @@
 #define IDR_ASUSIO2                     117
 #define IDR_DIRECTIO64                  118
 #define IDR_GMERDRV                     119
+#define IDR_DBUTIL23                    120
