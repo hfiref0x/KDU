@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.01
 *
-*  DATE:        18 Apr 2021
+*  DATE:        25 Jan 2022
 *
 *  PCOMP - KDU's Provider Compressor.
 *
@@ -221,6 +221,7 @@ VOID KDUCompressResource(
     DELTA_INPUT d_in, d_target, s_op, t_op, g_op;
     DELTA_OUTPUT d_out;
 
+    printf_s("[+] Compress key used 0x%lx\r\n", ulCompressKey);
     printf_s("[+] Reading \"%wS\"\r\n", lpFileName);
     fileBuffer = supReadFileToBuffer(lpFileName, &fileSize);
 

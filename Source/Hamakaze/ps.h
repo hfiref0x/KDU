@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2021
+*  (C) COPYRIGHT AUTHORS, 2018 - 2022
 *
 *  TITLE:       PS.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.12
 *
-*  DATE:        02 Apr 2021
+*  DATE:        25 Jan 2022
 *
 *  Processes support prototypes and definitions.
 *
@@ -26,7 +26,7 @@
 #define PsProtectionOffset_15063 (ULONG_PTR)0x6CA //same for 16299, 17134, 17763
 #define PsProtectionOffset_18362 (ULONG_PTR)0x6FA
 #define PsProtectionOffset_18363 (ULONG_PTR)0x6FA
-#define PsProtectionOffset_19041 (ULONG_PTR)0x87A; //same for 19042..19043
+#define PsProtectionOffset_19041 (ULONG_PTR)0x87A //same for 19042..19044
 
 #define EPROCESS_TO_PROTECTION(Object, PsProtectionOffset) ((ULONG_PTR)Object + (ULONG_PTR)PsProtectionOffset)
 

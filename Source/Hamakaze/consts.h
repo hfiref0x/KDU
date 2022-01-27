@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.11
+*  VERSION:     1.12
 *
-*  DATE:        14 May 2021
+*  DATE:        25 Jan 2022
 *
 *  Global consts.
 *
@@ -37,7 +37,7 @@
 
 #define SHELL_POOL_TAG          '  oI'
 
-#define PROVIDER_RES_KEY        ' uwu' // Giving you enough uwu's.
+#define PROVIDER_RES_KEY        ' owo' // Giving you enough uwu's.
 
 //
 // Driver id table
@@ -58,58 +58,5 @@
 #define IDR_LHA                         116
 #define IDR_ASUSIO2                     117
 #define IDR_DIRECTIO64                  118
-
-//
-// Defines for Major Windows NT release builds
-//
-
-// Windows 7 RTM
-#define NT_WIN7_RTM             7600
-
-// Windows 7 SP1
-#define NT_WIN7_SP1             7601
-
-// Windows 8 RTM
-#define NT_WIN8_RTM             9200
-
-// Windows 8.1
-#define NT_WIN8_BLUE            9600
-
-// Windows 10 TH1
-#define NT_WIN10_THRESHOLD1     10240
-
-// Windows 10 TH2
-#define NT_WIN10_THRESHOLD2     10586
-
-// Windows 10 RS1
-#define NT_WIN10_REDSTONE1      14393
-
-// Windows 10 RS2
-#define NT_WIN10_REDSTONE2      15063
-
-// Windows 10 RS3
-#define NT_WIN10_REDSTONE3      16299
-
-// Windows 10 RS4
-#define NT_WIN10_REDSTONE4      17134
-
-// Windows 10 RS5
-#define NT_WIN10_REDSTONE5      17763
-
-// Windows 10 19H1
-#define NT_WIN10_19H1           18362
-
-// Windows 10 19H2
-#define NT_WIN10_19H2           18363
-
-// Windows 10 20H1
-#define NT_WIN10_20H1           19041
-
-// Windows 10 20H2
-#define NT_WIN10_20H2           19042
-
-// Windows 10 21H1
-#define NT_WIN10_21H1           19043
-
-// Windows 10 Active Develepment Branch (21XX)
-#define NTX_WIN10_ADB           21376
+#define IDR_GMERDRV                     119
+#define IDR_DBUTIL23                    120

@@ -80,7 +80,7 @@ BOOL WINAPI WRZeroReadKernelVirtualMemory(
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
-BOOL WINAPI WRZeroKernelVirtualMemory(
+BOOL WINAPI WRZeroWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,

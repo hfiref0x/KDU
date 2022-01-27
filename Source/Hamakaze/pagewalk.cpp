@@ -4,9 +4,9 @@
 *
 *  TITLE:       PAGEWALK.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.12
 *
-*  DATE:        18 Apr 2021
+*  DATE:        16 May 2021
 *
 *  Function to translate virtual to physical addresses, x86-64.
 *
@@ -20,7 +20,9 @@
 #include "global.h"
 
 #define PHY_ADDRESS_MASK                0x000ffffffffff000ull
+#define PHY_ADDRESS_MASK_1GB_PAGES      0x000fffffc0000000ull
 #define PHY_ADDRESS_MASK_2MB_PAGES      0x000fffffffe00000ull
+#define VADDR_ADDRESS_MASK_1GB_PAGES    0x000000003fffffffull
 #define VADDR_ADDRESS_MASK_2MB_PAGES    0x00000000001fffffull
 #define VADDR_ADDRESS_MASK_4KB_PAGES    0x0000000000000fffull
 #define ENTRY_PRESENT_BIT               1
@@ -76,11 +78,21 @@ BOOL PwVirtualToPhysical(
             return 0;
         }
 
-        if ((r == 2) && ((entry & ENTRY_PAGE_SIZE_BIT) != 0)) {
-            table &= PHY_ADDRESS_MASK_2MB_PAGES;
-            table += VirtualAddress & VADDR_ADDRESS_MASK_2MB_PAGES;
-            *PhysicalAddress = table;
-            return 1;
+        if (entry & ENTRY_PAGE_SIZE_BIT)
+        {
+            if (r == 1) {
+                table &= PHY_ADDRESS_MASK_1GB_PAGES;
+                table += VirtualAddress & VADDR_ADDRESS_MASK_1GB_PAGES;
+                *PhysicalAddress = table;
+                return 1;
+            }
+
+            if (r == 2) {
+                table &= PHY_ADDRESS_MASK_2MB_PAGES;
+                table += VirtualAddress & VADDR_ADDRESS_MASK_2MB_PAGES;
+                *PhysicalAddress = table;
+                return 1;
+            }
         }
     }
 

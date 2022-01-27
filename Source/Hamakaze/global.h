@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       GLOBAL.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.12
 *
-*  DATE:        02 Apr 2021
+*  DATE:        25 Jan 2022
 *
 *  Common include header file.
 *
@@ -44,6 +44,7 @@
 #include <rpc.h>
 #include "../Shared/ntos/ntos.h"
 #include "../Shared/ntos/halamd64.h"
+#include "../Shared/ntos/ntbuilds.h"
 #include "wdksup.h"
 #include "resource.h"
 

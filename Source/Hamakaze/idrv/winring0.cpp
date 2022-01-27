@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       WINRING0.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.12
 *
-*  DATE:        19 Apr 2021
+*  DATE:        25 Jan 2022
 *
 *  WinRing0 based drivers routines.
 *
@@ -221,14 +221,14 @@ BOOL WINAPI WRZeroReadKernelVirtualMemory(
 }
 
 /*
-* WRZeroKernelVirtualMemory
+* WRZeroWriteKernelVirtualMemory
 *
 * Purpose:
 *
 * Write virtual memory.
 *
 */
-BOOL WINAPI WRZeroKernelVirtualMemory(
+BOOL WINAPI WRZeroWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
