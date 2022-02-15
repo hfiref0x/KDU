@@ -20,12 +20,22 @@
 #define IDR_DIRECTIO64                  118
 #define IDR_GMERDRV                     119
 #define IDR_DBUTIL23                    120
+#define IDR_MIMIDRV                     121
+#define IDR_KPH                         122
+#define IDR_DBUTILDRV2                  123
+#define IDR_DBK64                       124
+#define IDR_ASIO3                       125
+#define IDR_DATA_DBUTILCAT              1000
+#define IDR_DATA_DBUTILINF              1001
+#define IDR_DATA_KMUEXE                 1002
+#define IDR_DATA_KMUSIG                 1003
+#define IDR_DATA_ASUSCERTSERVICE        1004
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        121
+#define _APS_NEXT_RESOURCE_VALUE        126
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101

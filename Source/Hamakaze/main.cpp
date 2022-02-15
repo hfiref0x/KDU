@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.12
+*  VERSION:     1.20
 *
-*  DATE:        25 Jan 2022
+*  DATE:        08 Feb 2022
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -18,11 +18,6 @@
 *******************************************************************************/
 
 #include "global.h"
-
-#pragma data_seg("redx")
-volatile LONG g_lApplicationInstances = 0;
-#pragma data_seg()
-#pragma comment(linker, "/Section:redx,RWS")
 
 #define CMD_PRV         L"-prv"
 #define CMD_MAP         L"-map"
@@ -135,10 +130,10 @@ INT KDUProcessDrvMapSwitch(
     KDU_CONTEXT* provContext;
 
     if (!RtlDoesFileExists_U(DriverFileName)) {
-        
-        supPrintfEvent(kduEventError, 
+
+        supPrintfEvent(kduEventError,
             "[!] Input file cannot be found, abort.\r\n");
-        
+
         return 0;
     }
 
@@ -174,14 +169,14 @@ INT KDUProcessDrvMapSwitch(
     NTSTATUS ntStatus = supLoadFileForMapping(DriverFileName, &pvImage);
 
     if ((!NT_SUCCESS(ntStatus)) || (pvImage == NULL)) {
-        
-        supPrintfEvent(kduEventError, 
+
+        supPrintfEvent(kduEventError,
             "[!] Error while loading input driver file, NTSTATUS (0x%lX)\r\n", ntStatus);
-        
+
         return 0;
     }
     else {
-        printf_s("[+] Input driver file loaded at 0x%p\r\n", pvImage);
+        printf_s("[+] Input driver file \"%ws\" loaded at 0x%p\r\n", DriverFileName, pvImage);
 
         provContext = KDUProviderCreate(ProviderId,
             HvciEnabled,
@@ -210,7 +205,7 @@ INT KDUProcessDrvMapSwitch(
 
             }
 
-            retVal = KDUMapDriver(provContext, pvImage);
+            retVal = provContext->Provider->Callbacks.MapDriver(provContext, pvImage);
             KDUProviderRelease(provContext);
         }
 
@@ -335,7 +330,7 @@ INT KDUProcessCommandLine(
             {
                 if (paramLength == 0) {
 
-                    supPrintfEvent(kduEventError, 
+                    supPrintfEvent(kduEventError,
                         "[!] Input file not specified\r\n");
 
                 }
@@ -441,10 +436,8 @@ INT KDUProcessCommandLine(
 * KDU main.
 *
 */
-
 int KDUMain()
 {
-    LONG x = 0;
     INT iResult = 0;
     OSVERSIONINFO osv;
 
@@ -456,26 +449,17 @@ int KDUMain()
 
     do {
 
-        x = InterlockedIncrement((PLONG)&g_lApplicationInstances);
-        if (x > 1) {
-            
-            supPrintfEvent(kduEventError, 
-                "[!] Another instance running, close it before\r\n");
-            
-            break;
-        }
-
         RtlSecureZeroMemory(&osv, sizeof(osv));
         osv.dwOSVersionInfoSize = sizeof(osv);
         RtlGetVersion((PRTL_OSVERSIONINFOW)&osv);
         if ((osv.dwMajorVersion < 6) ||
             (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0) ||
-            (osv.dwBuildNumber == 7600))       
+            (osv.dwBuildNumber == NT_WIN7_RTM))
         {
-            
-            supPrintfEvent(kduEventError, 
+
+            supPrintfEvent(kduEventError,
                 "[!] Unsupported WinNT version\r\n");
-            
+
             break;
         }
 
@@ -514,8 +498,6 @@ int KDUMain()
 
     } while (FALSE);
 
-    InterlockedDecrement((PLONG)&g_lApplicationInstances);
-
     FUNCTION_LEAVE_MSG(__FUNCTION__);
 
     return iResult;
@@ -533,11 +515,53 @@ VOID KDUIntroBanner()
 {
     IMAGE_NT_HEADERS* ntHeaders = RtlImageNtHeader(NtCurrentPeb()->ImageBaseAddress);
 
-    printf_s("[#] Kernel Driver Utility v1.1.2 started, (c)2020 - 2022 KDU Project\r\n"\
+    printf_s("[#] Kernel Driver Utility v%lu.%lu.%lu (build %lu) started, (c)2020 - 2022 KDU Project\r\n"\
         "[#] Build at %s, header checksum 0x%lX\r\n"\
-        "[#] Supported x64 OS : Windows 7 and above\r\n", 
+        "[#] Supported x64 OS : Windows 7 and above\r\n",
+        KDU_VERSION_MAJOR,
+        KDU_VERSION_MINOR,
+        KDU_VERSION_REVISION,
+        KDU_VERSION_BUILD,
         __TIMESTAMP__,
         ntHeaders->OptionalHeader.CheckSum);
+}
+
+/*
+* KDUCheckAnotherInstance
+*
+* Purpose:
+*
+* Check if there is another instance running.
+*
+*/
+UINT KDUCheckAnotherInstance()
+{
+    HANDLE mutantHandle;
+    WCHAR szObject[MAX_PATH + 1];
+    WCHAR szName[128];
+
+    OBJECT_ATTRIBUTES obja;
+    UNICODE_STRING usName;
+
+    RtlSecureZeroMemory(szName, sizeof(szName));
+    RtlSecureZeroMemory(szObject, sizeof(szObject));
+
+    supGenerateSharedObjectName(KDU_SYNC_MUTANT, (LPWSTR)&szName);
+
+    StringCchPrintf(szObject,
+        MAX_PATH,
+        L"\\BaseNamedObjects\\%ws",
+        szName);
+
+    RtlInitUnicodeString(&usName, szObject);
+    InitializeObjectAttributes(&obja, &usName, OBJ_CASE_INSENSITIVE, NULL, NULL);
+    NTSTATUS status = NtCreateMutant(&mutantHandle, MUTANT_ALL_ACCESS, &obja, FALSE);
+
+    if (status == STATUS_OBJECT_NAME_COLLISION) {
+        return ERROR_ALREADY_EXISTS;
+    }
+
+    return 0;
 }
 
 /*
@@ -550,20 +574,25 @@ VOID KDUIntroBanner()
 */
 int main()
 {
-    
-
     HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
-
     KDUIntroBanner();
 
-    int retVal = 0;
+    int retVal = KDUCheckAnotherInstance();
 
-    __try {
-        retVal = KDUMain();
+    if (retVal != ERROR_ALREADY_EXISTS) {
+
+        __try {
+            retVal = KDUMain();
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
+            printf_s("[!] Unhandled exception 0x%lx\r\n", GetExceptionCode());
+            return -1;
+        }
+
     }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        printf_s("[!] Unhandled exception 0x%lx\r\n", GetExceptionCode());
-        return -1;
+    else {
+        supPrintfEvent(kduEventError,
+            "[!] Another instance is running, close it before\r\n");
     }
 
     printf_s("[+] Return value: %d. Bye-bye!\r\n", retVal);

@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,2,2201
- PRODUCTVERSION 1,1,2,2201
+ FILEVERSION 1,2,0,2202
+ PRODUCTVERSION 1,2,0,2202
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -69,12 +69,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility"
-            VALUE "FileVersion", "1.1.2.2201"
+            VALUE "FileVersion", "1.2.0.2202"
             VALUE "InternalName", "Hamakaze.exe"
             VALUE "LegalCopyright", "Copyright (C) 2020 - 2022 KDU Project"
             VALUE "OriginalFilename", "Hamakaze.exe"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.1.2.2201"
+            VALUE "ProductVersion", "1.2.0.2202"
         END
     END
     BLOCK "VarFileInfo"
@@ -99,7 +99,9 @@ IDI_ICON1               ICON                    "res\\274.ico"
 // RCDATA
 //
 
-IDR_TAIGEI              RCDATA                  "res\\SB_SMBUS_SDK.bin"
+IDR_TAIGEI64            RCDATA                  "res\\SB_SMBUS_SDK.bin"
+
+IDR_TAIGEI32            RCDATA                  "res\\Taigei32.bin"
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////

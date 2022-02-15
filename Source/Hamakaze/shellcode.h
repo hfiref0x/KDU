@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       SHELLCODE.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.20
 *
-*  DATE:        02 Apr 2021
+*  DATE:        08 Feb 2022
 *
-*  Driver mapping shellcode prototypes and definitions.
+*  Default driver mapping shellcode(s) prototypes and definitions.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED

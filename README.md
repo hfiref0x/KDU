@@ -114,16 +114,26 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 14          | PassMark       | DirectIo64  | PassMark Performance Test          | Original          | 10.1 and below              |
 | 15          | GMER           | GmerDrv     | Gmer "Antirootkit"                 | Original          | 2.2 and below               |
 | 16          | Dell           | DBUtil_2_3  | Dell BIOS Utility                  | Original          | 2.3 and below               |
+| 17          | Benjamin Delpy | Mimidrv     | Mimikatz                           | Original          | 2.2 and below               |
+| 18          | Wen Jia Liu    | KProcessHacker2  | Process Hacker                | Original          | 2.38 and below              |
+| 19          | Microsoft      | ProcExp152  | Process Explorer                   | Original          | 1.5.2 and below             |
+| 20          | Dell           | DBUtilDrv2  | Dell BIOS Utility                  | Original          | 2.7 and below               |
+| 21          | DarkByte       | Dbk64       | Cheat Engine                       | Original          | 7.4 and below               |
+| 22          | ASUSTeK        | AsIO3       | ASUS GPU TweakII                   | WINIO             | 2.3.0.3                     |
 
 More providers maybe added in the future.
 
 # How it work
 
-It uses known to be vulnerable driver from legitimate software to access arbitrary kernel memory with read/write primitives.
+It uses known to be vulnerable (or wormhole by design) driver from legitimate software to access arbitrary kernel memory with read/write primitives.
 
 Depending on command KDU will either work as TDL/DSEFix or modify kernel mode process objects (EPROCESS). 
 
-When in -map mode KDU will use 3rd party signed driver from SysInternals Process Explorer and hijack it by placing a small loader shellcode inside it IRP_MJ_DEVICE_CONTROL/IRP_MJ_CREATE/IRP_MJ_CLOSE handler. This is done by overwriting physical memory where Process Explorer dispatch handler located and triggering it by calling driver IRP_MJ_CREATE handler (CreateFile call). Next shellcode will map input driver as code buffer to kernel mode and run it with current IRQL be PASSIVE_LEVEL. After that hijacked Process Explorer driver will be unloaded together with vulnerable provider driver. This entire idea comes from malicious software of the middle of 200x known as rootkits.
+When in -map mode KDU for most available providers will by default use 3rd party signed driver from SysInternals Process Explorer and hijack it by placing a small loader shellcode inside it IRP_MJ_DEVICE_CONTROL/IRP_MJ_CREATE/IRP_MJ_CLOSE handler. This is done by overwriting physical memory where Process Explorer dispatch handler located and triggering it by calling driver IRP_MJ_CREATE handler (CreateFile call). Next shellcode will map input driver as code buffer to kernel mode and run it with current IRQL be PASSIVE_LEVEL. After that hijacked Process Explorer driver will be unloaded together with vulnerable provider driver. This entire idea comes from malicious software of the middle of 200x known as rootkits.
+
+# Shellcode versions
+
+KDU uses shellcode to map input drivers and execute their DriverEntry. There are few shellcode variants embedded into KDU. Shellcode V1, V2 and V3 used together with 3rd party victim driver (Process Explorer, by default). They are implemented as fake driver dispatch entry and their differences are: V1 uses newly created system thread to execute code, V2 uses system work items, V3 manually builds driver object and runs DriverEntry as if this driver was loaded normally. Shellcode V4 is simplified version of previous variants intended to be run not like an driver dispatch entry. While theoretically all "providers" can support all variants this implementation is limited per provider. You can view it by typing -list command and looking for shellcode support mask. Currently all providers except N21 support V1, V2 and V3 variants.
 
 # Build 
 
@@ -157,6 +167,8 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 * DEFCON27: Get off the kernel if you cant drive, https://eclypsium.com/wp-content/uploads/2019/08/EXTERNAL-Get-off-the-kernel-if-you-cant-drive-DEFCON27.pdf
 * CVE-2019-8372: Local Privilege Elevation in LG Kernel Driver, http://www.jackson-t.ca/lg-driver-lpe.html
 * CVE-2021-21551, https://attackerkb.com/topics/zAHZGAFaQX/cve-2021-21551
+* KDU v1.1 release and bonus (AsIO3.sys unlock), https://swapcontext.blogspot.com/2021/04/kdu-v11-release-and-bonus-asio3sys.html
+* GhostEmperor: From ProxyLogon to kernel mode, https://securelist.com/ghostemperor-from-proxylogon-to-kernel-mode/104407/
 
 # Wormhole drivers code
 

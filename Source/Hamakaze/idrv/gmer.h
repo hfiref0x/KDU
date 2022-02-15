@@ -4,9 +4,9 @@
 *
 *  TITLE:       GMER.H
 *
-*  VERSION:     1.12
+*  VERSION:     1.20
 *
-*  DATE:        25 Jan 2022
+*  DATE:        08 Feb 2022
 *
 *  GMER driver interface header.
 *
@@ -55,14 +55,12 @@ BOOL WINAPI GmerRegisterDriver(
     _In_ HANDLE DeviceHandle,
     _In_opt_ PVOID Param);
 
-_Success_(return != FALSE)
 BOOL WINAPI GmerReadVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
-_Success_(return != FALSE)
 BOOL WINAPI GmerWriteVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,

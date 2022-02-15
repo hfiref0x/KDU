@@ -108,6 +108,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Shared\ldr\ldr.cpp" />
     <ClCompile Include="..\Shared\minirtl\cmdline.c" />
     <ClCompile Include="..\Shared\minirtl\strtou64.c" />
     <ClCompile Include="..\Shared\minirtl\strtoul.c" />
@@ -126,16 +127,21 @@
     <ClCompile Include="dsefix.cpp" />
     <ClCompile Include="hde\hde64.c" />
     <ClCompile Include="idrv\atszio.cpp" />
-    <ClCompile Include="idrv\dbutil23.cpp" />
+    <ClCompile Include="idrv\dbk.cpp" />
+    <ClCompile Include="idrv\dbutil.cpp" />
     <ClCompile Include="idrv\directio64.cpp" />
     <ClCompile Include="idrv\gmer.cpp" />
+    <ClCompile Include="idrv\kph.cpp" />
     <ClCompile Include="idrv\lha.cpp" />
     <ClCompile Include="idrv\mapmem.cpp" />
+    <ClCompile Include="idrv\mimidrv.cpp" />
     <ClCompile Include="idrv\phymem.cpp" />
+    <ClCompile Include="idrv\procexp.cpp" />
     <ClCompile Include="idrv\winio.cpp" />
     <ClCompile Include="idrv\nal.cpp" />
     <ClCompile Include="idrv\rtcore.cpp" />
     <ClCompile Include="idrv\winring0.cpp" />
+    <ClCompile Include="ipcsvc.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="kduprov.cpp" />
     <ClCompile Include="pagewalk.cpp" />
@@ -146,11 +152,13 @@
     <ClCompile Include="victim.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Shared\ldr\ldr.h" />
     <ClInclude Include="..\Shared\minirtl\cmdline.h" />
     <ClInclude Include="..\Shared\minirtl\minirtl.h" />
     <ClInclude Include="..\Shared\minirtl\rtltypes.h" />
     <ClInclude Include="..\Shared\minirtl\_filename.h" />
     <ClInclude Include="..\Shared\ntos\halamd64.h" />
+    <ClInclude Include="..\Shared\ntos\ntalpc.h" />
     <ClInclude Include="..\Shared\ntos\ntbuilds.h" />
     <ClInclude Include="..\Shared\ntos\ntos.h" />
     <ClInclude Include="..\Shared\tinyaes\aes.h" />
@@ -161,16 +169,22 @@
     <ClInclude Include="global.h" />
     <ClInclude Include="hde\hde64.h" />
     <ClInclude Include="idrv\atszio.h" />
-    <ClInclude Include="idrv\dbutil23.h" />
+    <ClInclude Include="idrv\dbk.h" />
+    <ClInclude Include="idrv\ldrsc.h" />
+    <ClInclude Include="idrv\dbutil.h" />
     <ClInclude Include="idrv\directio64.h" />
     <ClInclude Include="idrv\gmer.h" />
+    <ClInclude Include="idrv\kph.h" />
     <ClInclude Include="idrv\lha.h" />
     <ClInclude Include="idrv\mapmem.h" />
+    <ClInclude Include="idrv\mimidrv.h" />
     <ClInclude Include="idrv\phymem.h" />
+    <ClInclude Include="idrv\procexp.h" />
     <ClInclude Include="idrv\winio.h" />
     <ClInclude Include="idrv\nal.h" />
     <ClInclude Include="idrv\rtcore.h" />
     <ClInclude Include="idrv\winring0.h" />
+    <ClInclude Include="ipcsvc.h" />
     <ClInclude Include="shellcode.h" />
     <ClInclude Include="wdksup.h" />
     <ClInclude Include="kduplist.h" />
@@ -190,6 +204,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="res\SB_SMBUS_SDK.bin" />
+    <None Include="res\Taigei32.bin" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

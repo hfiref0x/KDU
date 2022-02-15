@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       DRVMAP.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.20
 *
-*  DATE:        02 Apr 2021
+*  DATE:        10 Feb 2022
 *
 *  Prototypes and definitions for driver mapping.
 *
@@ -17,6 +17,15 @@
 *
 *******************************************************************************/
 #pragma once
+
+PVOID KDUSetupShellCode(
+    _In_ PKDU_CONTEXT Context,
+    _In_ PVOID ImageBase,
+    _Out_ PHANDLE SectionHandle);
+
+VOID KDUShowPayloadResult(
+    _In_ PKDU_CONTEXT Context,
+    _In_ HANDLE SectionHandle);
 
 BOOL KDUMapDriver(
     _In_ PKDU_CONTEXT Context,

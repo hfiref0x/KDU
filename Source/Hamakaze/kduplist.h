@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.12
+*  VERSION:     1.20
 *
-*  DATE:        25 Jan 2022
+*  DATE:        10 Feb 2022
 *
 *  Providers global list.
 *
@@ -20,6 +20,22 @@
 #pragma once
 
 //
+// Victims public array.
+//
+static KDU_VICTIM_PROVIDER g_KDUVictims[] = {
+    {
+        (LPCWSTR)PROCEXP152,              // Device and driver name,
+        (LPCWSTR)PROCEXP_DESC,            // Description
+        IDR_PROCEXP,                      // Resource id in drivers database
+        GENERIC_READ | GENERIC_WRITE,     // Desired access flags used for acquiring victim handle
+        KDU_VICTIM_FLAGS_SUPPORT_RELOAD,  // Victim flags, target dependent
+        VpCreateCallback,                 // Victim create callback
+        VpReleaseCallback,                // Victim release callback
+        VpExecuteCallback                 // Victim execute payload callback
+    }
+};
+
+//
 // Providers public array, unsupported methods must be set to provider stub and cannot be NULL.
 //
 static KDU_PROVIDER g_KDUProviders[] =
@@ -30,25 +46,28 @@ static KDU_PROVIDER g_KDUProviders[] =
         IDR_iQVM64,
         SourceBaseNone,
         KDUPROV_FLAGS_NONE,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2015-2291",
         (LPWSTR)L"NalDrv",
         (LPWSTR)L"Nal",
         (LPWSTR)L"Intel Corporation",
 
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)NalReadVirtualMemoryEx,
         (provWriteKernelVM)NalWriteVirtualMemoryEx,
+
         (provVirtualToPhysical)NalVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
-        (provQueryPML4)KDUProviderStub,
-        (provReadPhysicalMemory)KDUProviderStub,
-        (provWritePhysicalMemory)KDUProviderStub
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL
     },
 
     {
@@ -57,25 +76,28 @@ static KDU_PROVIDER g_KDUProviders[] =
         IDR_RTCORE64,
         SourceBaseNone,
         KDUPROV_FLAGS_NONE,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2019-16098",
         (LPWSTR)L"RTCore64",
         (LPWSTR)L"RTCore64",
         (LPWSTR)L"MICRO-STAR INTERNATIONAL CO., LTD.",
 
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)RTCoreReadVirtualMemory,
         (provWriteKernelVM)RTCoreWriteVirtualMemory,
-        (provVirtualToPhysical)KDUProviderStub,
-        (provReadControlRegister)KDUProviderStub,
-        (provQueryPML4)KDUProviderStub,
-        (provReadPhysicalMemory)KDUProviderStub,
-        (provWritePhysicalMemory)KDUProviderStub
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL
     },
 
     {
@@ -83,23 +105,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_GDRV,
         SourceBaseMapMem,
-        KDUPROV_FLAGS_NONE,
+        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2018-19320",
         (LPWSTR)L"Gdrv",
         (LPWSTR)L"GIO",
         (LPWSTR)L"Giga-Byte Technology",
 
-        (provRegisterDriver)MapMemRegisterDriver,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)MapMemRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)GioReadKernelVirtualMemory,
         (provWriteKernelVM)GioWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)GioVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)GioQueryPML4Value,
         (provReadPhysicalMemory)GioReadPhysicalMemory,
         (provWritePhysicalMemory)GioWritePhysicalMemory
@@ -110,23 +135,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_ATSZIO64,
         SourceBaseNone,
-        KDUPROV_FLAGS_NONE,
+        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"ASUSTeK WinFlash",
         (LPWSTR)L"ATSZIO",
         (LPWSTR)L"ATSZIO",
         (LPWSTR)L"ASUSTeK Computer Inc.",
 
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)AtszioReadKernelVirtualMemory,
         (provWriteKernelVM)AtszioWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)AtszioVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)AtszioQueryPML4Value,
         (provReadPhysicalMemory)AtszioReadPhysicalMemory,
         (provWritePhysicalMemory)AtszioWritePhysicalMemory
@@ -137,23 +165,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_MSIO64,
         SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2019-18845",
         (LPWSTR)L"MsIo64",
         (LPWSTR)L"MsIo",
         (LPWSTR)L"MICSYS Technology Co., Ltd.",
 
-        (provRegisterDriver)WinIoRegisterDriver,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
@@ -164,23 +195,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_GLCKIO2,
         SourceBaseWinIo,
-        KDUPROV_FLAGS_NONE,
+        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"ASRock Polychrome RGB, multiple CVE ids",
         (LPWSTR)L"GLCKIo2",
         (LPWSTR)L"GLCKIo2",
         (LPWSTR)L"ASUSTeK Computer Inc.",
 
-        (provRegisterDriver)WinIoRegisterDriver,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
@@ -191,23 +225,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_ENEIO64,
         SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"G.SKILL Trident Z Lighting Control",
         (LPWSTR)L"EneIo64",
         (LPWSTR)L"EneIo",
         (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
 
-        (provRegisterDriver)WinIoRegisterDriver,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
@@ -218,23 +255,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         NT_WIN10_REDSTONE3,
         IDR_WINRING0,
         SourceBaseWinRing0,
-        KDUPROV_FLAGS_NONE,
+        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"EVGA Precision X1",
         (LPWSTR)L"WinRing0x64",
         (LPWSTR)L"WinRing0_1_2_0",
         (LPWSTR)L"EVGA",
 
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)WRZeroReadKernelVirtualMemory,
         (provWriteKernelVM)WRZeroWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)WRZeroVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)WRZeroQueryPML4Value,
         (provReadPhysicalMemory)WRZeroReadPhysicalMemory,
         (provWritePhysicalMemory)WRZeroWritePhysicalMemory,
@@ -245,23 +285,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_ENETECHIO64,
         SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"Thermaltake TOUGHRAM Software",
         (LPWSTR)L"EneTechIo64",
         (LPWSTR)L"EneTechIo",
         (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
 
-        (provRegisterDriver)WinIoRegisterDriver,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
@@ -272,23 +315,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_PHYMEMX64,
         SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"Huawei MateBook Manager",
         (LPWSTR)L"phymemx64",
         (LPWSTR)L"PhyMem",
         (LPWSTR)L"Huawei Technologies Co.,Ltd.",
 
-        (provRegisterDriver)WinIoRegisterDriver,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
@@ -299,23 +345,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         NT_WIN10_REDSTONE3,
         IDR_RTKIO64,
         SourceBasePhyMem,
-        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"Realtek Dash Client Utility",
         (LPWSTR)L"rtkio64",
         (LPWSTR)L"rtkio",
         (LPWSTR)L"Realtek Semiconductor Corp.",
 
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)PhyMemReadKernelVirtualMemory,
         (provWriteKernelVM)PhyMemWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)PhyMemVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)PhyMemQueryPML4Value,
         (provReadPhysicalMemory)PhyMemReadPhysicalMemory,
         (provWritePhysicalMemory)PhyMemWritePhysicalMemory
@@ -326,23 +375,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_ENETECHIO64B,
         SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"MSI Dragon Center",
         (LPWSTR)L"EneTechIo64",
         (LPWSTR)L"EneTechIo",
         (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
 
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
         (provRegisterDriver)WinIoRegisterDriver,
         (provUnregisterDriver)WinIoUnregisterDriver,
         (provPreOpenDriver)WinIoPreOpen,
         (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
@@ -353,23 +405,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         NT_WIN10_REDSTONE3,
         IDR_LHA,
         SourceBaseNone,
-        KDUPROV_FLAGS_NONE,
+        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2019-8372",
         (LPWSTR)L"lha",
         (LPWSTR)L"{E8F2FF20-6AF7-4914-9398-CE2132FE170F}",
         (LPWSTR)L"LG Electronics Inc.",
 
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)LHAReadKernelVirtualMemory,
         (provWriteKernelVM)LHAWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)LHAVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)LHAQueryPML4Value,
         (provReadPhysicalMemory)LHAReadPhysicalMemory,
         (provWritePhysicalMemory)LHAWritePhysicalMemory,
@@ -380,23 +435,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_ASUSIO2,
         SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"ASUS GPU Tweak",
         (LPWSTR)L"AsIO2",
         (LPWSTR)L"Asusgio2",
         (LPWSTR)L"ASUSTeK Computer Inc.",
 
-        (provRegisterDriver)WinIoRegisterDriver,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
@@ -407,23 +465,26 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_DIRECTIO64,
         SourceBaseNone,
-        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"PassMark DirectIO",
         (LPWSTR)L"DirectIo64",
         (LPWSTR)L"DIRECTIO64",
         (LPWSTR)L"PassMark Software Pty Ltd",
 
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderPostOpen,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)DI64ReadKernelVirtualMemory,
         (provWriteKernelVM)DI64WriteKernelVirtualMemory,
+
         (provVirtualToPhysical)DI64VirtualToPhysical,
-        (provReadControlRegister)KDUProviderStub,
         (provQueryPML4)DI64QueryPML4Value,
         (provReadPhysicalMemory)DI64ReadPhysicalMemory,
         (provWritePhysicalMemory)DI64WritePhysicalMemory
@@ -434,26 +495,29 @@ static KDU_PROVIDER g_KDUProviders[] =
         KDU_MAX_NTBUILDNUMBER,
         IDR_GMERDRV,
         SourceBaseNone,
-        KDUPROV_FLAGS_NONE,
-        (LPWSTR)L"Gmer \"Antirootkit\"",
+        KDUPROV_FLAGS_NO_FORCED_SD,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Gmer 'Antirootkit'",
         (LPWSTR)L"gmerdrv",
         (LPWSTR)L"gmerdrv",
         (LPWSTR)L"GMEREK Systemy Komputerowe Przemyslaw Gmerek",
 
-        (provRegisterDriver)GmerRegisterDriver,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderStub,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)GmerRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)GmerReadVirtualMemory,
         (provWriteKernelVM)GmerWriteVirtualMemory,
-        (provVirtualToPhysical)KDUProviderStub,
-        (provReadControlRegister)KDUProviderStub,
-        (provQueryPML4)KDUProviderStub,
-        (provReadPhysicalMemory)KDUProviderStub,
-        (provWritePhysicalMemory)KDUProviderStub
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL
     },
 
     {
@@ -462,24 +526,207 @@ static KDU_PROVIDER g_KDUProviders[] =
         IDR_DBUTIL23,
         SourceBaseNone,
         KDUPROV_FLAGS_NO_UNLOAD_SUP,
+        KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2021-21551",
         (LPWSTR)L"DBUtil23",
         (LPWSTR)L"DBUtil_2_3",
         (LPWSTR)L"Dell Inc.",
 
-        (provRegisterDriver)KDUProviderStub,
-        (provUnregisterDriver)KDUProviderStub,
-        (provPreOpenDriver)KDUProviderStub,
-        (provPostOpenDriver)KDUProviderStub,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provAllocateKernelVM)KDUProviderStub,
-        (provFreeKernelVM)KDUProviderStub,
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
         (provReadKernelVM)DbUtilReadVirtualMemory,
         (provWriteKernelVM)DbUtilWriteVirtualMemory,
-        (provVirtualToPhysical)KDUProviderStub,
-        (provReadControlRegister)KDUProviderStub,
-        (provQueryPML4)KDUProviderStub,
-        (provReadPhysicalMemory)KDUProviderStub,
-        (provWritePhysicalMemory)KDUProviderStub
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_MIMIDRV,
+        SourceBaseNone,
+        KDUPROV_FLAGS_NONE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Mimikatz mimidrv",
+        (LPWSTR)L"mimidrv",
+        (LPWSTR)L"mimidrv",
+        (LPWSTR)L"Benjamin Delpy",
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
+        (provReadKernelVM)MimidrvReadVirtualMemory,
+        (provWriteKernelVM)MimidrvWriteVirtualMemory,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        NT_WIN10_21H2,
+        IDR_KPH,
+        SourceBaseNone,
+        KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"KProcessHacker",
+        (LPWSTR)L"KProcessHacker",
+        (LPWSTR)L"KProcessHacker2",
+        (LPWSTR)L"Wen Jia Liu",
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)KphRegisterDriver,
+        (provUnregisterDriver)KphUnregisterDriver,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)KDUMapDriver,
+
+        (provReadKernelVM)KphReadKernelVirtualMemory,
+        (provWriteKernelVM)KphWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)KphVirtualToPhysical,
+        (provQueryPML4)KphQueryPML4Value,
+        (provReadPhysicalMemory)KphReadPhysicalMemory,
+        (provWritePhysicalMemory)KphWritePhysicalMemory
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        NT_WIN10_21H2,
+        IDR_PROCEXP,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_NO_VICTIM,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)PROCEXP_DESC,
+        (LPWSTR)PROCEXP152,
+        (LPWSTR)PROCEXP152,
+        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)PexRegisterDriver,
+        (provUnregisterDriver)PexpUnregisterDriver,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)KDUMapDriver,
+
+        (provReadKernelVM)PexReadKernelVirtualMemory,
+        (provWriteKernelVM)PexWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)PexVirtualToPhysical,
+        (provQueryPML4)PexQueryPML4Value,
+        (provReadPhysicalMemory)PexReadPhysicalMemory,
+        (provWritePhysicalMemory)PexWritePhysicalMemory
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_DBUTILDRV2,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"CVE-2021-36276",
+        (LPWSTR)L"DBUtilDrv2",
+        (LPWSTR)L"DBUtil_2_5",
+        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
+
+        (provStartVulnerableDriver)DbUtilStartVulnerableDriver,
+        (provStopVulnerableDriver)DbUtilStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
+        (provReadKernelVM)DbUtilReadVirtualMemory,
+        (provWriteKernelVM)DbUtilWriteVirtualMemory,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_DBK64,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_NO_VICTIM,
+        KDUPROV_SC_V4,
+        (LPWSTR)L"Cheat Engine Dbk64",
+        (LPWSTR)L"CEDRIVER73",
+        (LPWSTR)L"CEDRIVER73",
+        (LPWSTR)L"Cheat Engine",
+
+        (provStartVulnerableDriver)DbkStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)DbkMapDriver,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ASUSIO3,
+        SourceBaseWinIo,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"ASUS GPU Tweak",
+        (LPWSTR)L"AsIO3",
+        (LPWSTR)L"Asusgio3",
+        (LPWSTR)L"ASUSTeK Computer Inc.",
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)AsusIO3UnregisterDriver,
+        (provPreOpenDriver)AsusIO3PreOpen,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+
+        (provReadKernelVM)WinIoReadKernelVirtualMemory,
+        (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)WinIoVirtualToPhysical,
+        (provQueryPML4)WinIoQueryPML4Value,
+        (provReadPhysicalMemory)WinIoReadPhysicalMemory,
+        (provWritePhysicalMemory)WinIoWritePhysicalMemory
     }
 };

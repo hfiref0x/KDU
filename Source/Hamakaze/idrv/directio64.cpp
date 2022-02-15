@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       DIRECTIO64.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.13
 *
-*  DATE:        19 Apr 2021
+*  DATE:        05 Feb 2022
 *
 *  PassMark DIRECTIO driver routines.
 *
@@ -47,7 +47,7 @@ PVOID DI64MapMemory(
     *SectionHandle = NULL;
     *AllocatedMdl = NULL;
 
-    ULONG_PTR offset = PhysicalAddress & 0xFFFFFFFFFFFFF000;
+    ULONG_PTR offset = PhysicalAddress & ~(PAGE_SIZE - 1);
     ULONG mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
 
     RtlSecureZeroMemory(&request, sizeof(request));
@@ -179,7 +179,7 @@ BOOL WINAPI DI64ReadWritePhysicalMemory(
 
     if (mappedSection) {
 
-        offset = PhysicalAddress - (PhysicalAddress & 0xFFFFFFFFFFFFF000);
+        offset = PhysicalAddress - (PhysicalAddress & ~(PAGE_SIZE - 1));
 
         __try {
 

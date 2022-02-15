@@ -4,9 +4,9 @@
 *
 *  TITLE:       GLOBAL.H
 *
-*  VERSION:     1.12
+*  VERSION:     1.20
 *
-*  DATE:        25 Jan 2022
+*  DATE:        10 Feb 2022
 *
 *  Common include header file.
 *
@@ -35,20 +35,26 @@
 #define KDU_SHELLCODE_V1    (1)
 #define KDU_SHELLCODE_V2    (2)
 #define KDU_SHELLCODE_V3    (3)
-#define KDU_SHELLCODE_VMAX  KDU_SHELLCODE_V3
+#define KDU_SHELLCODE_V4    (4)
+#define KDU_SHELLCODE_VMAX  KDU_SHELLCODE_V4
 
 #include <Windows.h>
 #include <strsafe.h>
 #include <ntstatus.h>
 #include <intrin.h>
 #include <rpc.h>
+#include <SetupAPI.h>
+#include <newdev.h>
 #include "../Shared/ntos/ntos.h"
 #include "../Shared/ntos/halamd64.h"
 #include "../Shared/ntos/ntbuilds.h"
+#include "../Shared/ldr/ldr.h"
 #include "wdksup.h"
 #include "resource.h"
 
 #pragma comment(lib, "Rpcrt4.lib")
+#pragma comment(lib, "Setupapi.lib")
+#pragma comment(lib, "Newdev.lib")
 
 #if defined(__cplusplus)
 extern "C" {
@@ -67,13 +73,14 @@ extern "C" {
 #include "consts.h"
 #include "sup.h"
 #include "compress.h"
+#include "victim.h"
 #include "kduprov.h"
 #include "shellcode.h"
 #include "drvmap.h"
 #include "ps.h"
-#include "victim.h"
 #include "pagewalk.h"
 #include "dsefix.h"
+#include "ipcsvc.h"
 #include "tests.h"
 
 #define ASSERT_RESOLVED_FUNC(FunctionPtr) { if (FunctionPtr == 0) break; }

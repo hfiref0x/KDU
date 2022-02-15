@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.187
+*  VERSION:     1.189
 *
-*  DATE:        03 Dec 2021
+*  DATE:        10 Feb 2022
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -13345,19 +13345,27 @@ NtCreatePagingFile(
 ************************************************************************************/
 
 typedef struct _PORT_VIEW {
-    ULONG Length;
-    HANDLE SectionHandle;
-    ULONG SectionOffset;
-    SIZE_T ViewSize;
-    PVOID ViewBase;
-    PVOID ViewRemoteBase;
-} PORT_VIEW, *PPORT_VIEW;
+
+    ULONG  Length;                      // Size of this structure
+    HANDLE SectionHandle;               // Handle to section object with
+                                        // SECTION_MAP_WRITE and SECTION_MAP_READ
+    ULONG  SectionOffset;               // The offset in the section to map a view for
+                                        // the port data area. The offset must be aligned 
+                                        // with the allocation granularity of the system.
+    SIZE_T ViewSize;                    // The size of the view (in bytes)
+    PVOID  ViewBase;                    // The base address of the view in the creator
+                                        // 
+    PVOID  ViewRemoteBase;              // The base address of the view in the process
+                                        // connected to the port.
+} PORT_VIEW, * PPORT_VIEW;
 
 typedef struct _REMOTE_PORT_VIEW {
-    ULONG Length;
-    SIZE_T ViewSize;
-    PVOID ViewBase;
-} REMOTE_PORT_VIEW, *PREMOTE_PORT_VIEW;
+
+    ULONG  Length;                      // Size of this structure
+    SIZE_T ViewSize;                    // The size of the view (bytes)
+    PVOID  ViewBase;                    // Base address of the view
+
+} REMOTE_PORT_VIEW, * PREMOTE_PORT_VIEW;
 
 typedef struct _PORT_MESSAGE {
     union {
@@ -13380,11 +13388,69 @@ typedef struct _PORT_MESSAGE {
     } u3;
     ULONG MessageId;
     union {
+        SIZE_T ClientViewSize;               // Only valid on LPC_CONNECTION_REQUEST message
+        ULONG CallbackId;                   // Only valid on LPC_REQUEST message
+    } u4;
+} PORT_MESSAGE, *PPORT_MESSAGE;
+
+typedef struct _PORT_MESSAGE32 {
+    union {
+        struct {
+            CSHORT DataLength;
+            CSHORT TotalLength;
+        } s1;
+        ULONG Length;
+    } u1;
+    union {
+        struct {
+            CSHORT Type;
+            CSHORT DataInfoOffset;
+        } s2;
+        ULONG ZeroInit;
+    } u2;
+    union {
+        CLIENT_ID32 ClientId;
+        double DoNotUseThisField;       // Force quadword alignment
+    } u3;
+    ULONG MessageId;
+    union {
         ULONG ClientViewSize;               // Only valid on LPC_CONNECTION_REQUEST message
         ULONG CallbackId;                   // Only valid on LPC_REQUEST message
     } u4;
-    UCHAR Reserved[8];
-} PORT_MESSAGE, *PPORT_MESSAGE;
+} PORT_MESSAGE32, * PPORT_MESSAGE32;
+
+typedef struct _PORT_MESSAGE64
+{
+    union
+    {
+        struct
+        {
+            CSHORT DataLength;
+            CSHORT TotalLength;
+        } s1;
+        ULONG Length;
+    } u1;
+    union
+    {
+        struct
+        {
+            CSHORT Type;
+            CSHORT DataInfoOffset;
+        } s2;
+        ULONG ZeroInit;
+    } u2;
+    union
+    {
+        CLIENT_ID64 ClientId;
+        double DoNotUseThisField;
+    };
+    ULONG MessageId;
+    union
+    {
+        ULONGLONG ClientViewSize; // only valid for LPC_CONNECTION_REQUEST messages
+        ULONG CallbackId; // only valid for LPC_REQUEST messages
+    };
+} PORT_MESSAGE64, * PPORT_MESSAGE64;
 
 typedef struct _PORT_DATA_ENTRY {
     PVOID Base;
@@ -13396,16 +13462,32 @@ typedef struct _PORT_DATA_INFORMATION {
     PORT_DATA_ENTRY DataEntries[1];
 } PORT_DATA_INFORMATION, *PPORT_DATA_INFORMATION;
 
-#define LPC_REQUEST             1
-#define LPC_REPLY               2
-#define LPC_DATAGRAM            3
-#define LPC_LOST_REPLY          4
-#define LPC_PORT_CLOSED         5
-#define LPC_CLIENT_DIED         6
-#define LPC_EXCEPTION           7
-#define LPC_DEBUG_EVENT         8
-#define LPC_ERROR_EVENT         9
-#define LPC_CONNECTION_REQUEST 10
+#ifndef InitializeMessageHeader
+#define InitializeMessageHeader(ph, l, t)                              \
+{                                                                      \
+    (ph)->u1.s1.TotalLength      = (USHORT)(l);                        \
+    (ph)->u1.s1.DataLength       = (USHORT)(l - sizeof(PORT_MESSAGE)); \
+    (ph)->u2.s2.Type             = (USHORT)(t);                        \
+    (ph)->u2.s2.DataInfoOffset   = 0;                                  \
+    (ph)->ClientId.UniqueProcess = NULL;                               \
+    (ph)->ClientId.UniqueThread  = NULL;                               \
+    (ph)->MessageId              = 0;                                  \
+    (ph)->ClientViewSize         = 0;                                  \
+}
+#endif
+
+#define LPC_REQUEST                 1
+#define LPC_REPLY                   2
+#define LPC_DATAGRAM                3
+#define LPC_LOST_REPLY              4
+#define LPC_PORT_CLOSED             5
+#define LPC_CLIENT_DIED             6
+#define LPC_EXCEPTION               7
+#define LPC_DEBUG_EVENT             8
+#define LPC_ERROR_EVENT             9
+#define LPC_CONNECTION_REQUEST      10
+#define LPC_CONTINUATION_REQUIRED   0x2000
+
 
 #define PORT_VALID_OBJECT_ATTRIBUTES (OBJ_CASE_INSENSITIVE)
 #define PORT_MAXIMUM_MESSAGE_LENGTH 256

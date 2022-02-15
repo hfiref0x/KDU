@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       WINIO.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.20
 *
-*  DATE:        16 Apr 2021
+*  DATE:        10 Feb 2022
 *
 *  WINIO based drivers interface header.
 *
@@ -60,7 +60,6 @@
 
 #define IOCTL_ASUSIO_UNMAP_USER_PHYSICAL_MEMORY   \
     CTL_CODE(FILE_DEVICE_ASUSIO, ASUSIO_UNMAP_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS) //0xA0402450
-
 
 #define SWAP_UINT32(x) (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
 
@@ -147,6 +146,13 @@ BOOL WINAPI WinIoWriteKernelVirtualMemory(
 
 BOOL WINAPI WinIoPreOpen(
     _In_ PVOID Param);
+
+BOOL WINAPI AsusIO3PreOpen(
+    _In_ PVOID Param);
+
+BOOL WINAPI AsusIO3UnregisterDriver(
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param);
 
 BOOL WINAPI WinIoRegisterDriver(
     _In_ HANDLE DeviceHandle,

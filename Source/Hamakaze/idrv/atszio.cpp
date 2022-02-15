@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       ATSZIO.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.13
 *
-*  DATE:        19 Apr 2021
+*  DATE:        05 Feb 2022
 *
 *  ASUSTeK ATSZIO WinFlash driver routines.
 *
@@ -50,7 +50,7 @@ PVOID AtszioMapMemory(
 
     RtlSecureZeroMemory(&request, sizeof(request));
 
-    offset = PhysicalAddress & 0xFFFFFFFFFFFFF000;
+    offset = PhysicalAddress & ~(PAGE_SIZE - 1);
     mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
 
     request.Offset.QuadPart = offset;
@@ -171,7 +171,7 @@ BOOL WINAPI AtszioReadWritePhysicalMemory(
 
     if (mappedSection) {
 
-        offset = PhysicalAddress - (PhysicalAddress & 0xFFFFFFFFFFFFF000);
+        offset = PhysicalAddress - (PhysicalAddress & ~(PAGE_SIZE - 1));
 
         __try {
 

@@ -4,9 +4,9 @@
 *
 *  TITLE:       GMER.CPP
 *
-*  VERSION:     1.12
+*  VERSION:     1.20
 *
-*  DATE:        25 Jan 2022
+*  DATE:        08 Feb 2022
 *
 *  GMER driver routines.
 *
@@ -55,7 +55,6 @@ BOOL WINAPI GmerRegisterDriver(
 * Read virtual memory via Gmer.
 *
 */
-_Success_(return != FALSE)
 BOOL WINAPI GmerReadVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
@@ -83,7 +82,6 @@ BOOL WINAPI GmerReadVirtualMemory(
 * Write virtual memory via Gmer.
 *
 */
-_Success_(return != FALSE)
 BOOL WINAPI GmerWriteVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,

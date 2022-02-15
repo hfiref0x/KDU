@@ -4,9 +4,9 @@
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.12
+*  VERSION:     1.20
 *
-*  DATE:        25 Jan 2022
+*  DATE:        08 Feb 2022
 *
 *  KDU tests.
 *
@@ -49,7 +49,7 @@ VOID KDUTestLoad()
 
 VOID KDUTestDSE(PKDU_CONTEXT Context)
 {
-    ULONG_PTR g_CiOptions = 0xfffff805fc446d18;
+    ULONG_PTR g_CiOptions = 0xfffff806161f6d18;
     ULONG_PTR oldValue = 0, newValue = 0x1337, testValue = 0;
 
     KDUReadKernelVM(Context, g_CiOptions, &oldValue, sizeof(oldValue));
@@ -71,10 +71,10 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(16, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
+    Context = KDUProviderCreate(21, FALSE, 7601, KDU_SHELLCODE_VMAX, ActionTypeMapDriver);
     if (Context) {
 
-        KDUTestDSE(Context);
+        //KDUTestDSE(Context);
 
         //ULONG64 dummy = 0;
 
@@ -99,10 +99,10 @@ VOID KDUTest()
 
             RtlSecureZeroMemory(&fileObject, sizeof(FILE_OBJECT));
 
-            KDUReadKernelVM(Context,
+            /*KDUReadKernelVM(Context,
                 objectAddress,
                 &fileObject,
-                sizeof(FILE_OBJECT));
+                sizeof(FILE_OBJECT));*/
 
             Beep(0, 0);
 
