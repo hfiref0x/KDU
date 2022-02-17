@@ -20,7 +20,7 @@
 #pragma once
 
 /*
-dbkl.cpp
+ldrsc.cpp
  
 #ifdef _WIN64
 #error Compile shell as x86 only

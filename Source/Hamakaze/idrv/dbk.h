@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.20
 *
-*  DATE:        09 Feb 2022
+*  DATE:        14 Feb 2022
 *
 *  Cheat Engine's DBK driver interface header.
 *
@@ -52,3 +52,8 @@ BOOL DbkStartVulnerableDriver(
 BOOL DbkMapDriver(
     _In_ PKDU_CONTEXT Context,
     _In_ PVOID ImageBase);
+
+BOOL DbkControlDSE(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG DSEValue,
+    _In_ ULONG_PTR Address);

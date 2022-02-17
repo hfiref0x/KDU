@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.12
+*  VERSION:     1.20
 *
-*  DATE:        25 Jan 2022
+*  DATE:        14 Feb 2022
 *
 *  Processes DKOM related routines.
 *
@@ -174,13 +174,16 @@ BOOL KDUControlProcess(
 
                 printf_s("[+] EPROCESS->PS_PROTECTION, 0x%llX\r\n", VirtualAddress);
 
-                Buffer = 0;
-                if (KDUReadKernelVM(Context, VirtualAddress, &Buffer, sizeof(ULONG))) {
+                Buffer = 0;               
 
+                if (Context->Provider->Callbacks.ReadKernelVM(Context, 
+                    VirtualAddress, 
+                    &Buffer, 
+                    sizeof(ULONG))) 
+                {
                     PsProtection = (PS_PROTECTION*)&Buffer;
 
                     LPSTR pStr;
-
 
                     printf_s("[+] Kernel memory read succeeded\r\n");
 
@@ -200,7 +203,11 @@ BOOL KDUControlProcess(
                     PsProtection->Type = PsProtectedTypeNone;
                     PsProtection->Audit = 0;
 
-                    bResult = KDUWriteKernelVM(Context, VirtualAddress, &Buffer, sizeof(ULONG));
+                    bResult = Context->Provider->Callbacks.WriteKernelVM(Context, 
+                        VirtualAddress, 
+                        &Buffer, 
+                        sizeof(ULONG));
+
                     if (bResult) {
                         printf_s("[+] Process object modified\r\n");
 

@@ -160,7 +160,7 @@ VOID UnlockCheatEngineDriver(
 #pragma comment(linker, "/ENTRY:DllMainUnlockDBK")
 
 /*
-* DllMain
+* DllMainUnlockDBK
 *
 * Purpose:
 *

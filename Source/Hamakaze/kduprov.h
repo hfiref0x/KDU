@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.20
 *
-*  DATE:        10 Feb 2022
+*  DATE:        14 Feb 2022
 *
 *  Provider support routines.
 *
@@ -151,6 +151,15 @@ typedef void(WINAPI* provStopVulnerableDriver)(
     );
 
 //
+// Control DSE callback prototype
+//
+typedef BOOL(WINAPI* provControlDSE)(
+    _In_ struct _KDU_CONTEXT* Context,
+    _In_ ULONG DSEValue,
+    _In_ ULONG_PTR Address
+    );
+
+//
 // Prototype for driver mapping action.
 //
 typedef BOOL(WINAPI* provMapDriver)(
@@ -263,6 +272,7 @@ typedef struct _KDU_PROVIDER {
         provPreOpenDriver PreOpenDriver; //optional;
         provPostOpenDriver PostOpenDriver; //optional;
         provMapDriver MapDriver;
+        provControlDSE ControlDSE;
 
         provReadKernelVM ReadKernelVM;
         provWriteKernelVM WriteKernelVM;

@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.20
 *
-*  DATE:        08 Feb 2022
+*  DATE:        14 Feb 2022
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -93,6 +93,7 @@ INT KDUProcessDSEFixSwitch(
 {
     INT retVal = 0;
     KDU_CONTEXT* provContext;
+    ULONG_PTR ciVarAddress;
 
     provContext = KDUProviderCreate(ProviderId,
         HvciEnabled,
@@ -101,7 +102,26 @@ INT KDUProcessDSEFixSwitch(
         ActionTypeDSECorruption);
 
     if (provContext) {
-        retVal = KDUControlDSE(provContext, DSEValue);
+
+        if (provContext->Provider->Callbacks.ControlDSE) {
+
+            ciVarAddress = KDUQueryCodeIntegrityVariableAddress(NtBuildNumber);
+
+            if (ciVarAddress == 0) {
+
+                supPrintfEvent(kduEventError,
+                    "[!] Could not query system variable address, abort.\r\n");
+
+            }
+            else {
+
+                retVal = provContext->Provider->Callbacks.ControlDSE(provContext,
+                    DSEValue,
+                    ciVarAddress);
+
+            }
+
+        }
         KDUProviderRelease(provContext);
     }
 

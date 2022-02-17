@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.20
 *
-*  DATE:        10 Feb 2022
+*  DATE:        14 Feb 2022
 *
 *  Providers global list.
 *
@@ -60,6 +60,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)NalReadVirtualMemoryEx,
         (provWriteKernelVM)NalWriteVirtualMemoryEx,
@@ -90,6 +91,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)RTCoreReadVirtualMemory,
         (provWriteKernelVM)RTCoreWriteVirtualMemory,
@@ -120,6 +122,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)GioReadKernelVirtualMemory,
         (provWriteKernelVM)GioWriteKernelVirtualMemory,
@@ -150,6 +153,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)AtszioReadKernelVirtualMemory,
         (provWriteKernelVM)AtszioWriteKernelVirtualMemory,
@@ -180,6 +184,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
@@ -210,6 +215,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
@@ -240,6 +246,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
@@ -270,6 +277,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)WRZeroReadKernelVirtualMemory,
         (provWriteKernelVM)WRZeroWriteKernelVirtualMemory,
@@ -300,6 +308,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
@@ -330,6 +339,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
@@ -360,6 +370,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)PhyMemReadKernelVirtualMemory,
         (provWriteKernelVM)PhyMemWriteKernelVirtualMemory,
@@ -390,6 +401,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)WinIoPreOpen,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
@@ -420,6 +432,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)LHAReadKernelVirtualMemory,
         (provWriteKernelVM)LHAWriteKernelVirtualMemory,
@@ -450,6 +463,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
@@ -480,6 +494,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)DI64ReadKernelVirtualMemory,
         (provWriteKernelVM)DI64WriteKernelVirtualMemory,
@@ -510,6 +525,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)NULL,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)GmerReadVirtualMemory,
         (provWriteKernelVM)GmerWriteVirtualMemory,
@@ -540,6 +556,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)DbUtilReadVirtualMemory,
         (provWriteKernelVM)DbUtilWriteVirtualMemory,
@@ -570,6 +587,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)MimidrvReadVirtualMemory,
         (provWriteKernelVM)MimidrvWriteVirtualMemory,
@@ -600,6 +618,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)NULL,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)KphReadKernelVirtualMemory,
         (provWriteKernelVM)KphWriteKernelVirtualMemory,
@@ -630,6 +649,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)NULL,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)PexReadKernelVirtualMemory,
         (provWriteKernelVM)PexWriteKernelVirtualMemory,
@@ -660,6 +680,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)DbUtilReadVirtualMemory,
         (provWriteKernelVM)DbUtilWriteVirtualMemory,
@@ -690,6 +711,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)NULL,
         (provMapDriver)DbkMapDriver,
+        (provControlDSE)DbkControlDSE,
 
         (provReadKernelVM)NULL,
         (provWriteKernelVM)NULL,
@@ -707,7 +729,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         SourceBaseWinIo,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"ASUS GPU Tweak",
+        (LPWSTR)L"ASUS GPU Tweak II",
         (LPWSTR)L"AsIO3",
         (LPWSTR)L"Asusgio3",
         (LPWSTR)L"ASUSTeK Computer Inc.",
@@ -720,6 +742,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)AsusIO3PreOpen,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)WinIoReadKernelVirtualMemory,
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,

@@ -71,6 +71,9 @@ DWORD ScSizeOf(
     _In_ ULONG ShellVersion,
     _Out_opt_ PULONG PayloadSize);
 
+ULONG ScSizeOfProc(
+    _In_ PBYTE FunctionPtr);
+
 BOOLEAN ScCreateFixedUnicodeString(
     _Inout_ PFIXED_UNICODE_STRING DestinationString,
     _In_ PCWSTR SourceString);

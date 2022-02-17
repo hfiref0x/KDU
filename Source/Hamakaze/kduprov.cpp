@@ -731,12 +731,13 @@ BOOL KDUProviderVerifyActionType(
     case ActionTypeDSECorruption:
 
         //
-        // Check if we can write.
+        // Check if we have DSE control callback set.
         //
-        if ((PVOID)Provider->Callbacks.WriteKernelVM == NULL) {
+        if ((PVOID)Provider->Callbacks.ControlDSE == NULL) {
 
             supPrintfEvent(kduEventError,
-                "[!] Abort: selected provider does not support arbitrary kernel write.\r\n");
+                "[!] Abort: selected provider does not support changing DSE values or\r\n"\
+                "\tKDU interface is not implemented for this method.\r\n");
 
             bResult = FALSE;
 
