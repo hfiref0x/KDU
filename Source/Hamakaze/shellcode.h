@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.20
 *
-*  DATE:        08 Feb 2022
+*  DATE:        15 Feb 2022
 *
 *  Default driver mapping shellcode(s) prototypes and definitions.
 *
@@ -86,14 +86,23 @@ BOOLEAN ScStoreVersionSpecificData(
     _In_ PKDU_CONTEXT Context,
     _In_ PVOID PayloadPtr);
 
-VOID ScFree(
-    _In_ PVOID ShellPtr);
+ULONG_PTR ScResolveFunctionByName(
+    _In_ ULONG_PTR KernelBase,
+    _In_ ULONG_PTR KernelImage,
+    _In_ LPCSTR Function);
 
 BOOLEAN ScResolveImportForPayload(
     _In_ ULONG ShellVersion,
     _In_ PVOID PayloadHead,
     _In_ ULONG_PTR KernelImage,
     _In_ ULONG_PTR KernelBase);
+
+PVOID ScGetBootstrapLdr(
+    _In_ ULONG ShellVersion,
+    _Out_opt_ PULONG Size);
+
+VOID ScFree(
+    _In_ PVOID ShellPtr);
 
 PVOID ScAllocate(
     _In_ ULONG ShellVersion,

@@ -1,12 +1,12 @@
 /************************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2021, translated from Microsoft sources/debugger
+*  (C) COPYRIGHT AUTHORS, 2018 - 2022, translated from Microsoft sources/debugger
 *
 *  TITLE:       WDKSUP.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.20
 *
-*  DATE:        02 Apr 2021
+*  DATE:        15 Feb 2022
 *
 *  Header file for NT WDK definitions.
 *
@@ -74,6 +74,8 @@ typedef struct _WORK_QUEUE_ITEM {
     __volatile PVOID Parameter;
 } WORK_QUEUE_ITEM, * PWORK_QUEUE_ITEM;
 
+typedef NTSTATUS(NTAPI* pfnDriverEntry)();
+
 typedef BOOLEAN (NTAPI *pfnRtlCreateUnicodeString)(
     _Out_ _At_(DestinationString->Buffer, __drv_allocatesMem(Mem))
     PUNICODE_STRING DestinationString,
@@ -111,6 +113,10 @@ typedef NTSTATUS(NTAPI* pfnZwUnmapViewOfSection)(
 typedef ULONG(NTAPI* pfnDbgPrint)(
     _In_ PCHAR Format,
     ...);
+
+typedef PVOID(NTAPI* pfnExAllocatePool)(
+    _In_ POOL_TYPE PoolType,
+    _In_ SIZE_T NumberOfBytes);
 
 typedef PVOID(NTAPI* pfnExAllocatePoolWithTag)(
     _In_ POOL_TYPE PoolType,

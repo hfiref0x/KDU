@@ -297,6 +297,7 @@ typedef struct _KDU_CONTEXT {
     HINSTANCE ModuleBase;
 
     ULONG_PTR NtOsBase;
+    ULONG_PTR NtOsMappedBase;
     HANDLE DeviceHandle;
 
     //full file name to the vulnerable driver

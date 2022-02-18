@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.20
 *
-*  DATE:        10 Feb 2022
+*  DATE:        16 Feb 2022
 *
 *  Default driver mapping shellcode(s) implementation.
 *
@@ -97,6 +97,67 @@ typedef struct _SHELLCODE {
 //
 static IO_STACK_LOCATION g_testIostl;
 static ULONG64 g_DummyULONG64;
+
+//
+// ScBootstrapLdr.asm
+// 
+// 00 call +5
+// 05 pop rcx
+// 06 sub rcx, 5
+// 0A jmps 10 
+// 0B int 3
+// 0C int 3
+// 0D int 3
+// 0E int 3
+// 0F int 3
+// 10 code
+//
+BYTE ScBootstrapLdr[] = { 0xE8, 0x00, 0x00, 0x00, 0x00, 0x59, 0x48, 0x83, 0xE9, 0x05, 0xEB, 0x04 };
+
+//
+// ScBootstrapLdrCommon.asm
+// 
+// 00 call +5
+// 05 pop r8
+// 07 sub r8, 5
+// 0B jmps 10 
+// 0D int 3
+// 0E int 3
+// 0F int 3
+// 10 code
+//
+BYTE ScBootstrapLdrCommon[] = { 0xE8, 0x00, 0x00, 0x00, 0x00, 0x41, 0x58, 0x49, 0x83, 0xE8, 0x05, 0xEB, 0x03 };
+
+/*
+* ScGetBootstrapLdr
+*
+* Purpose:
+*
+* Return shellcode bootstrap loader pointer and size.
+*
+*/
+PVOID ScGetBootstrapLdr(
+    _In_ ULONG ShellVersion,
+    _Out_opt_ PULONG Size
+)
+{
+    ULONG size;
+    PVOID ptr;
+
+    switch (ShellVersion) {
+    case KDU_SHELLCODE_V4:
+        size = sizeof(ScBootstrapLdr);
+        ptr = ScBootstrapLdr;
+        break;
+    default:
+        size = sizeof(ScBootstrapLdrCommon);
+        ptr = ScBootstrapLdrCommon;
+        break;
+    }
+
+    if (Size) *Size = size;
+    return ptr;
+}
 
 /*
 *
@@ -1691,91 +1752,33 @@ VOID ScFree(
 *
 * Purpose:
 *
-* Prepare init code for shellcode version specific.
+* Store init code for shellcode version specific.
 *
 */
-VOID ScBuildInitCodeForVersion(
+BOOL ScBuildInitCodeForVersion(
     _In_ ULONG ShellVersion,
     _In_ PSHELLCODE pvShellCode
 )
 {
+    PVOID pvInitCode;
+    ULONG initSize = 0;
+
     //
     // Fill entire init code with int 3
     //
-    memset(pvShellCode->InitCode, 0xCC, sizeof(pvShellCode->InitCode));
+    RtlFillMemory(pvShellCode->InitCode, sizeof(pvShellCode->InitCode), 0xCC);
 
-    switch (ShellVersion) {
-    case KDU_SHELLCODE_V4:
-        // 00 call +5
-        // 05 pop rcx
-        // 06 sub rcx, 5
-        // 0A jmps 10 
-        // 0B int 3
-        // 0C int 3
-        // 0D int 3
-        // 0E int 3
-        // 0F int 3
-        // 10 code
-
-        //call +5
-        pvShellCode->InitCode[0x0] = 0xE8;
-        pvShellCode->InitCode[0x1] = 0x00;
-        pvShellCode->InitCode[0x2] = 0x00;
-        pvShellCode->InitCode[0x3] = 0x00;
-        pvShellCode->InitCode[0x4] = 0x00;
-
-        //pop rcx
-        pvShellCode->InitCode[0x5] = 0x59;
-
-        //sub rcx, 5
-        pvShellCode->InitCode[0x6] = 0x48;
-        pvShellCode->InitCode[0x7] = 0x83;
-        pvShellCode->InitCode[0x8] = 0xE9;
-        pvShellCode->InitCode[0x9] = 0x05;
-
-        // jmps 
-        pvShellCode->InitCode[0xA] = 0xEB;
-        pvShellCode->InitCode[0xB] = 0x04;
-
-        break;
-
-    case KDU_SHELLCODE_V3:
-    case KDU_SHELLCODE_V2:
-    case KDU_SHELLCODE_V1:
-    default:
-
-        // 00 call +5
-        // 05 pop r8
-        // 07 sub r8, 5
-        // 0B jmps 10 
-        // 0D int 3
-        // 0E int 3
-        // 0F int 3
-        // 10 code
-
-        //call +5
-        pvShellCode->InitCode[0x0] = 0xE8;
-        pvShellCode->InitCode[0x1] = 0x00;
-        pvShellCode->InitCode[0x2] = 0x00;
-        pvShellCode->InitCode[0x3] = 0x00;
-        pvShellCode->InitCode[0x4] = 0x00;
-
-        //pop r8
-        pvShellCode->InitCode[0x5] = 0x41;
-        pvShellCode->InitCode[0x6] = 0x58;
-
-        //sub r8, 5
-        pvShellCode->InitCode[0x7] = 0x49;
-        pvShellCode->InitCode[0x8] = 0x83;
-        pvShellCode->InitCode[0x9] = 0xE8;
-        pvShellCode->InitCode[0xA] = 0x05;
-
-        // jmps 
-        pvShellCode->InitCode[0xB] = 0xEB;
-        pvShellCode->InitCode[0xC] = 0x03;
-
-        break;
+    //
+    // Select and copy code.
+    //
+    pvInitCode = ScGetBootstrapLdr(ShellVersion, &initSize);
+    if (initSize > sizeof(pvShellCode->InitCode)) {
+        return FALSE;
     }
+
+    RtlCopyMemory(pvShellCode->InitCode, pvInitCode, initSize);
+
+    return TRUE;
 }
 
 /*
@@ -1860,9 +1863,12 @@ PVOID ScAllocate(
     }
 
     //
-    // Build initial code part (init code always at same offset for all variants).
+    // Build initial loader code part.
     //
-    ScBuildInitCodeForVersion(ShellVersion, pvShellCode);
+    if (!ScBuildInitCodeForVersion(ShellVersion, pvShellCode)) {
+        VirtualFree(pvShellCode, 0, MEM_RELEASE);
+        return NULL;
+    }
 
 #ifdef _DEBUG
 
@@ -1910,7 +1916,7 @@ PVOID ScAllocate(
     }
 
     __try {
-        memcpy(pvBootstrap, procPtr, procSize);
+        RtlCopyMemory(pvBootstrap, procPtr, procSize);
         //supWriteBufferToFile((PWSTR)L"out.bin", pvBootstrap, procSize, FALSE, FALSE, NULL);
         ////((void(*)())ShellCode.Version.v1->InitCode)();
 

@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.20
 *
-*  DATE:        10 Feb 2022
+*  DATE:        15 Feb 2022
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -827,7 +827,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         if (ShellCodeVersion != KDU_SHELLCODE_NONE) {
             if (!KDUIsSupportedShell(ShellCodeVersion, prov->SupportedShellFlags)) {
                 supPrintfEvent(kduEventError, 
-                    "[!] Selected shellcode %lu is not supported by this provider (supported mask: %lu), abort\r\n", 
+                    "[!] Selected shellcode %lu is not supported by this provider (supported mask: 0x%08x), abort\r\n", 
                     ShellCodeVersion, prov->SupportedShellFlags);
                 break;
             }

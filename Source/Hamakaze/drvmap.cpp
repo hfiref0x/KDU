@@ -407,6 +407,7 @@ PVOID KDUSetupShellCode(
         }
 
         printf_s("[+] Ntoskrnl.exe mapped at 0x%llX\r\n", KernelImage);
+        Context->NtOsMappedBase = KernelImage;
 
         //
         // Prepare and store payload for later shellcode use.

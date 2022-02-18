@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.20
 *
-*  DATE:        14 Feb 2022
+*  DATE:        15 Feb 2022
 *
 *  Providers global list.
 *
@@ -752,4 +752,5 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
     }
+
 };

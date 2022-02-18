@@ -119,7 +119,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 19          | Microsoft      | ProcExp152  | Process Explorer                   | Original          | 1.5.2 and below             |
 | 20          | Dell           | DBUtilDrv2  | Dell BIOS Utility                  | Original          | 2.7 and below               |
 | 21          | DarkByte       | Dbk64       | Cheat Engine                       | Original          | 7.4 and below               |
-| 22          | ASUSTeK        | AsIO3       | ASUS GPU Tweak II / III            | WINIO             | 2.3.0.3                     |
+| 22          | ASUSTeK        | AsIO3       | ASUS GPU Tweak II/III              | WINIO             | 2.3.0.3                     |
 
 More providers maybe added in the future.
 
