@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.25
 *
-*  DATE:        15 Feb 2022
+*  DATE:        17 Aug 2022
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -33,6 +33,7 @@
 #include "idrv/kph.h"
 #include "idrv/procexp.h"
 #include "idrv/dbk.h"
+#include "idrv/marvinhw.h"
 #include "kduplist.h"
 
 /*

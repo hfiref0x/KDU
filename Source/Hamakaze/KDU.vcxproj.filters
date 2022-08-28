@@ -159,6 +159,18 @@
     <ClCompile Include="ipcsvc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Shared\ntos\ntsup.c">
+      <Filter>ntos</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\minirtl\_strncmp.c">
+      <Filter>minirtl</Filter>
+    </ClCompile>
+    <ClCompile Include="diag.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\marvinhw.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -289,6 +301,15 @@
     </ClInclude>
     <ClInclude Include="tests.h">
       <Filter>minirtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\ntos\ntsup.h">
+      <Filter>ntos</Filter>
+    </ClInclude>
+    <ClInclude Include="diag.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\marvinhw.h">
+      <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

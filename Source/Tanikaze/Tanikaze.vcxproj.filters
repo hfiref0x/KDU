@@ -109,5 +109,11 @@
     <None Include="data\AsusCertService.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\HW64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\rcdata1.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

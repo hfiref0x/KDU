@@ -106,6 +106,8 @@ IDR_ASIO3               RCDATA                  "drv\\AsIO3.bin"
 
 IDR_DATA_ASUSCERTSERVICE RCDATA                  "data\\AsusCertService.bin"
 
+IDR_HW64                RCDATA                  "drv\\HW64.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -113,8 +115,8 @@ IDR_DATA_ASUSCERTSERVICE RCDATA                  "data\\AsusCertService.bin"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,3,2202
- PRODUCTVERSION 1,0,3,2202
+ FILEVERSION 1,0,4,2208
+ PRODUCTVERSION 1,0,4,2208
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -131,12 +133,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility Database"
-            VALUE "FileVersion", "1.0.3.2202"
+            VALUE "FileVersion", "1.0.4.2208"
             VALUE "InternalName", "Tanikaze.dll"
             VALUE "LegalCopyright", "Copyright (C) 2020 - 2022 KDU Project"
             VALUE "OriginalFilename", "Tanikaze.dll"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.0.3.2202"
+            VALUE "ProductVersion", "1.0.4.2208"
         END
     END
     BLOCK "VarFileInfo"

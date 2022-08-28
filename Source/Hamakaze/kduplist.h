@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.25
 *
-*  DATE:        15 Feb 2022
+*  DATE:        17 Aug 2022
 *
 *  Providers global list.
 *
@@ -751,6 +751,37 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_HW64,
+        SourceBaseNone,
+        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Marvin Hardware Access Driver for Windows",
+        (LPWSTR)L"hw64",
+        (LPWSTR)L"hw",
+        (LPWSTR)L"Marvin Test Solutions, Inc.",
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)HwReadKernelVirtualMemory,
+        (provWriteKernelVM)HwWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)HwVirtualToPhysical,
+        (provQueryPML4)HwQueryPML4Value,
+        (provReadPhysicalMemory)HwReadPhysicalMemory,
+        (provWritePhysicalMemory)HwWritePhysicalMemory
     }
 
 };

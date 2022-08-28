@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.25
 *
-*  DATE:        15 Feb 2022
+*  DATE:        17 Aug 2022
 *
 *  Global consts.
 *
@@ -21,8 +21,8 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       2
-#define KDU_VERSION_REVISION    0
-#define KDU_VERSION_BUILD       2202
+#define KDU_VERSION_REVISION    5
+#define KDU_VERSION_BUILD       2208
 
 #define KDU_BASE_ID             0xff123456
 #define KDU_SYNC_MUTANT         0xabcd
@@ -85,3 +85,4 @@
 #define IDR_DBUTILDRV2                  123
 #define IDR_DBK64                       124
 #define IDR_ASUSIO3                     125
+#define IDR_HW64                        126

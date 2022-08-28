@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.25
 *
-*  DATE:        14 Feb 2022
+*  DATE:        17 Aug 2022
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -25,6 +25,7 @@
 #define CMD_PS          L"-ps"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
+#define CMD_SI          L"-diag"
 #define CMD_TEST        L"-test"
 
 #define CMD_DRVNAME     L"-drvn"
@@ -34,6 +35,7 @@
                      "[?] Usage: kdu [Provider][Command]\r\n\n"\
                      "Parameters: \r\n"\
                      "kdu -list         - list available providers\r\n"\
+                     "kdu -diag         - run system diagnostic for troubleshooting\r\n"\
                      "kdu -prv id       - optional, sets provider id to be used with rest of commands, default 0\r\n"\
                      "kdu -ps pid       - disable ProtectedProcess for given pid\r\n"\
                      "kdu -dse value    - write user defined value to the system DSE state flags\r\n"\
@@ -294,6 +296,20 @@ INT KDUProcessCommandLine(
         }
 
         //
+        // List system information
+        //
+        if (supGetCommandLineOption(CMD_SI,
+            FALSE,
+            NULL,
+            0,
+            NULL))
+        {
+            KDUDiagStart();
+            retVal = 1;
+            break;
+        }
+
+        //
         // Select CVE provider.
         //
         if (supGetCommandLineOption(CMD_PRV,
@@ -480,6 +496,14 @@ int KDUMain()
             supPrintfEvent(kduEventError,
                 "[!] Unsupported WinNT version\r\n");
 
+            iResult = ERROR_UNKNOWN_REVISION;
+            break;
+        }
+
+        if (!ntsupUserIsFullAdmin()) {
+            printf_s("[!] Administrator privileges are required to continue.\r\n"\
+                     "Verify that you have sufficient privileges and you are not running program under compatibility layer.\r\n");
+            iResult = ERROR_PRIVILEGE_NOT_HELD;
             break;
         }
 

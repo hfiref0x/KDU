@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.25
 *
-*  DATE:        10 Feb 2022
+*  DATE:        17 Aug 2022
 *
 *  Support routines header file.
 *
@@ -20,10 +20,7 @@
 
 //#define VERBOSE_FUNCTION_LOG
 
-typedef NTSTATUS(NTAPI* PENUMOBJECTSCALLBACK)(POBJECT_DIRECTORY_INFORMATION Entry, PVOID CallbackParam);
-
 #define USER_TO_KERNEL_HANDLE(Handle) { Handle += 0xffffffff80000000; }
-#define NTQSI_MAX_BUFFER_LENGTH (512 * 1024 * 1024)
 
 typedef BOOL(CALLBACK* pfnOpenProcessCallback)(
     _In_ HANDLE DeviceHandle,
@@ -41,28 +38,21 @@ typedef BOOL(CALLBACK* pfnDuplicateHandleCallback)(
     _In_ ULONG HandleAttributes,
     _In_ ULONG Options);
 
-typedef NTSTATUS(NTAPI* PFN_NTQUERYROUTINE)(
-    _In_ HANDLE ObjectHandle,
-    _In_ DWORD InformationClass,
-    _Out_writes_bytes_(ObjectInformationLength) PVOID ObjectInformation,
-    _In_ ULONG ObjectInformationLength,
-    _Out_opt_ PULONG ReturnLength);
-
-typedef PVOID(CALLBACK* PNTSUPMEMALLOC)(
-    _In_ SIZE_T NumberOfBytes);
-
-typedef BOOL(CALLBACK* PNTSUPMEMFREE)(
-    _In_ PVOID Memory);
-
 typedef NTSTATUS(CALLBACK* pfnLoadDriverCallback)(
     _In_ PUNICODE_STRING RegistryPath,
     _In_opt_ PVOID Param
     );
 
-typedef struct _OBJSCANPARAM {
-    PCWSTR Buffer;
-    ULONG BufferSize;
-} OBJSCANPARAM, * POBJSCANPARAM;
+#define supEnablePrivilege ntsupEnablePrivilege
+#define supQueryHVCIState ntsupQueryHVCIState
+#define supExpandEnvironmentStrings ntsupExpandEnvironmentStrings
+#define supQueryResourceData ntsupQueryResourceData
+#define supWriteBufferToFile ntsupWriteBufferToFile
+#define supIsObjectExists ntsupIsObjectExists
+#define supConvertToAnsi ntsupConvertToAnsi
+#define supQueryObjectInformation ntsupQueryObjectInformation
+#define supEnumSystemObjects ntsupEnumSystemObjects
+#define supFindModuleEntryByAddress ntsupFindModuleEntryByAddress
 
 #ifdef VERBOSE_FUNCTION_LOG
 #define FUNCTION_ENTER_MSG(lpFunctionName) printf_s("[>] Entering %s\r\n", lpFunctionName)
@@ -115,10 +105,6 @@ BOOL supCallDriver(
     _In_opt_ PVOID OutputBuffer,
     _In_opt_ ULONG OutputBufferLength);
 
-NTSTATUS supEnablePrivilege(
-    _In_ DWORD Privilege,
-    _In_ BOOL Enable);
-
 NTSTATUS supLoadDriverEx(
     _In_ LPCWSTR DriverName,
     _In_ LPCWSTR DriverPath,
@@ -155,22 +141,9 @@ PVOID supGetSystemInfo(
 ULONG_PTR supGetNtOsBase(
     VOID);
 
-PBYTE supQueryResourceData(
-    _In_ ULONG_PTR ResourceId,
-    _In_ PVOID DllHandle,
-    _In_ PULONG DataSize);
-
 PBYTE supReadFileToBuffer(
     _In_ LPWSTR lpFileName,
     _Inout_opt_ LPDWORD lpBufferSize);
-
-SIZE_T supWriteBufferToFile(
-    _In_ PCWSTR lpFileName,
-    _In_ PVOID Buffer,
-    _In_ SIZE_T Size,
-    _In_ BOOL Flush,
-    _In_ BOOL Append,
-    _Out_opt_ NTSTATUS* Result);
 
 ULONG_PTR supGetProcAddress(
     _In_ ULONG_PTR KernelBase,
@@ -182,10 +155,6 @@ VOID supResolveKernelImport(
     _In_ ULONG_PTR KernelImage,
     _In_ ULONG_PTR KernelBase);
 
-BOOLEAN supIsObjectExists(
-    _In_ LPCWSTR RootDirectory,
-    _In_ LPCWSTR ObjectName);
-
 BOOL supQueryObjectFromHandle(
     _In_ HANDLE hOject,
     _Out_ ULONG_PTR* Address);
@@ -196,16 +165,6 @@ BOOL supGetCommandLineOption(
     _Inout_opt_ LPTSTR OptionValue,
     _In_ ULONG ValueSize,
     _Out_opt_ PULONG ParamLength);
-
-BOOLEAN supQueryHVCIState(
-    _Out_ PBOOLEAN pbHVCIEnabled,
-    _Out_ PBOOLEAN pbHVCIStrictMode,
-    _Out_ PBOOLEAN pbHVCIIUMEnabled);
-
-DWORD supExpandEnvironmentStrings(
-    _In_ LPCWSTR lpSrc,
-    _Out_writes_to_opt_(nSize, return) LPWSTR lpDst,
-    _In_ DWORD nSize);
 
 BOOLEAN supQuerySecureBootState(
     _Out_ PBOOLEAN pbSecureBoot);
@@ -269,18 +228,6 @@ NTSTATUS supQueryImageSize(
     _In_ PVOID ImageBase,
     _Out_ PSIZE_T ImageSize);
 
-NTSTATUS supConvertToAnsi(
-    _In_ LPCWSTR UnicodeString,
-    _Inout_ PANSI_STRING AnsiString);
-
-NTSTATUS supQueryObjectInformation(
-    _In_ HANDLE ObjectHandle,
-    _In_ OBJECT_INFORMATION_CLASS ObjectInformationClass,
-    _Out_ PVOID * Buffer,
-    _Out_opt_ PULONG ReturnLength,
-    _In_ PNTSUPMEMALLOC AllocMem,
-    _In_ PNTSUPMEMFREE FreeMem);
-
 VOID supGenerateSharedObjectName(
     _In_ WORD ObjectId,
     _Inout_ LPWSTR lpBuffer);
@@ -325,3 +272,12 @@ NTSTATUS supInjectPayload(
     _In_ ULONG cbShellCode,
     _In_ LPWSTR lpTargetModule,
     _Out_ PHANDLE phZombieProcess);
+
+NTSTATUS supFilterDeviceIoControl(
+    _In_ HANDLE Handle,
+    _In_ ULONG IoControlCode,
+    _In_reads_bytes_(InBufferSize) PVOID InBuffer,
+    _In_ ULONG InBufferSize,
+    _Out_writes_bytes_to_opt_(OutBufferSize, *BytesReturned) PVOID OutBuffer,
+    _In_ ULONG OutBufferSize,
+    _Out_opt_ PULONG BytesReturned);
