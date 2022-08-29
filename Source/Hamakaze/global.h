@@ -4,9 +4,9 @@
 *
 *  TITLE:       GLOBAL.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.25
 *
-*  DATE:        15 Feb 2022
+*  DATE:        17 Aug 2022
 *
 *  Common include header file.
 *
@@ -45,30 +45,32 @@
 #include <rpc.h>
 #include <SetupAPI.h>
 #include <newdev.h>
-#include "../Shared/ntos/ntos.h"
-#include "../Shared/ntos/halamd64.h"
-#include "../Shared/ntos/ntbuilds.h"
-#include "../Shared/ldr/ldr.h"
-#include "wdksup.h"
-#include "resource.h"
-
-#pragma comment(lib, "Rpcrt4.lib")
-#pragma comment(lib, "Setupapi.lib")
-#pragma comment(lib, "Newdev.lib")
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include "hde/hde64.h"
-#include "../Shared/minirtl/minirtl.h"
-#include "../Shared/minirtl/rtltypes.h"
-#include "../Shared/minirtl/cmdline.h"
-#include "../Shared/minirtl/_filename.h"
+#include "minirtl/minirtl.h"
+#include "minirtl/rtltypes.h"
+#include "minirtl/cmdline.h"
+#include "minirtl/_filename.h"
 
 #ifdef __cplusplus
 }
 #endif
+
+#include "ntos/ntos.h"
+#include "ntos/halamd64.h"
+#include "ntos/ntbuilds.h"
+#include "ntos/ntsup.h"
+#include "ldr/ldr.h"
+#include "wdksup.h"
+#include "resource.h"
+
+#pragma comment(lib, "Rpcrt4.lib")
+#pragma comment(lib, "Setupapi.lib")
+#pragma comment(lib, "Newdev.lib")
 
 #include "consts.h"
 #include "sup.h"
@@ -81,6 +83,7 @@ extern "C" {
 #include "pagewalk.h"
 #include "dsefix.h"
 #include "ipcsvc.h"
+#include "diag.h"
 #include "tests.h"
 
 #define ASSERT_RESOLVED_FUNC(FunctionPtr) { if (FunctionPtr == 0) break; }

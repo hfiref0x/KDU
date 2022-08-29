@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.25
 *
-*  DATE:        14 Feb 2022
+*  DATE:        17 Aug 2022
 *
 *  Provider support routines.
 *
@@ -45,14 +45,15 @@
 #define KDU_PROVIDER_DBUTILDRV2         20
 #define KDU_PROVIDER_DBK64              21
 #define KDU_PROVIDER_ASUSIO3            22
+#define KDU_PROVIDER_HW64               23
 
 //
 // Victim providers id
 //
-#define KDU_VICTIM_PROCEXP              0
+#define KDU_VICTIM_PROCEXP          0
 
-#define KDU_PROVIDER_DEFAULT            KDU_PROVIDER_INTEL_NAL
-#define KDU_VICTIM_DEFAULT              KDU_VICTIM_PROCEXP
+#define KDU_PROVIDER_DEFAULT        KDU_PROVIDER_INTEL_NAL
+#define KDU_VICTIM_DEFAULT          KDU_VICTIM_PROCEXP
 
 #define KDU_MIN_NTBUILDNUMBER       0x1DB1      //Windows 7 SP1
 #define KDU_MAX_NTBUILDNUMBER       0xFFFFFFFF  //Undefined

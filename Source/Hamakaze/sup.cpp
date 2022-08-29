@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.25
 *
-*  DATE:        08 Feb 2022
+*  DATE:        17 Aug 2022
 *
 *  Program global support routines.
 *
@@ -575,62 +575,7 @@ NTSTATUS supRegWriteValueString(
     RtlInitUnicodeString(&valueName, ValueName);
     _strcpy(szData, ValueData);
     return NtSetValueKey(RegistryHandle, &valueName, 0, REG_SZ,
-        (PVOID)&szData, (ULONG)(1 + (ULONG)_strlen(szData)) * sizeof(WCHAR));
-}
-
-/*
-* supEnablePrivilege
-*
-* Purpose:
-*
-* Enable/Disable given privilege.
-*
-* Return NTSTATUS value.
-*
-*/
-NTSTATUS supEnablePrivilege(
-    _In_ DWORD Privilege,
-    _In_ BOOL Enable
-)
-{
-    ULONG Length;
-    NTSTATUS Status;
-    HANDLE TokenHandle;
-    LUID LuidPrivilege;
-
-    PTOKEN_PRIVILEGES NewState;
-    UCHAR Buffer[sizeof(TOKEN_PRIVILEGES) + sizeof(LUID_AND_ATTRIBUTES)];
-
-    Status = NtOpenProcessToken(
-        NtCurrentProcess(),
-        TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-        &TokenHandle);
-
-    if (!NT_SUCCESS(Status)) {
-        return Status;
-    }
-
-    NewState = (PTOKEN_PRIVILEGES)Buffer;
-
-    LuidPrivilege = RtlConvertUlongToLuid(Privilege);
-
-    NewState->PrivilegeCount = 1;
-    NewState->Privileges[0].Luid = LuidPrivilege;
-    NewState->Privileges[0].Attributes = Enable ? SE_PRIVILEGE_ENABLED : 0;
-
-    Status = NtAdjustPrivilegesToken(TokenHandle,
-        FALSE,
-        NewState,
-        sizeof(Buffer),
-        NULL,
-        &Length);
-
-    if (Status == STATUS_NOT_ALL_ASSIGNED) {
-        Status = STATUS_PRIVILEGE_NOT_HELD;
-    }
-
-    NtClose(TokenHandle);
-    return Status;
+        (PVOID)&szData, (1 + (ULONG)_strlen(szData)) * sizeof(WCHAR));
 }
 
 /*
@@ -1022,38 +967,11 @@ PVOID supGetSystemInfo(
     _In_ SYSTEM_INFORMATION_CLASS SystemInformationClass
 )
 {
-    PVOID       buffer = NULL;
-    ULONG       bufferSize = PAGE_SIZE;
-    NTSTATUS    ntStatus;
-    ULONG       returnedLength = 0;
-
-    buffer = supHeapAlloc((SIZE_T)bufferSize);
-    if (buffer == NULL)
-        return NULL;
-
-    while ((ntStatus = NtQuerySystemInformation(
+    return ntsupGetSystemInfoEx(
         SystemInformationClass,
-        buffer,
-        bufferSize,
-        &returnedLength)) == STATUS_INFO_LENGTH_MISMATCH)
-    {
-        supHeapFree(buffer);
-        bufferSize *= 2;
-
-        if (bufferSize > NTQSI_MAX_BUFFER_LENGTH)
-            return NULL;
-
-        buffer = supHeapAlloc((SIZE_T)bufferSize);
-    }
-
-    if (NT_SUCCESS(ntStatus)) {
-        return buffer;
-    }
-
-    if (buffer)
-        supHeapFree(buffer);
-
-    return NULL;
+        NULL,
+        (PNTSUPMEMALLOC)supHeapAlloc,
+        (PNTSUPMEMFREE)supHeapFree);
 }
 
 /*
@@ -1069,72 +987,10 @@ PVOID supGetLoadedModulesList(
     _Out_opt_ PULONG ReturnLength
 )
 {
-    NTSTATUS    ntStatus;
-    PVOID       buffer;
-    ULONG       bufferSize = PAGE_SIZE;
-
-    PRTL_PROCESS_MODULES pvModules;
-    SYSTEM_INFORMATION_CLASS infoClass;
-
-    if (ReturnLength)
-        *ReturnLength = 0;
-
-    if (ExtendedOutput)
-        infoClass = SystemModuleInformationEx;
-    else
-        infoClass = SystemModuleInformation;
-
-    buffer = supHeapAlloc((SIZE_T)bufferSize);
-    if (buffer == NULL)
-        return NULL;
-
-    ntStatus = NtQuerySystemInformation(
-        infoClass,
-        buffer,
-        bufferSize,
-        &bufferSize);
-
-    if (ntStatus == STATUS_INFO_LENGTH_MISMATCH) {
-        supHeapFree(buffer);
-        buffer = supHeapAlloc((SIZE_T)bufferSize);
-
-        ntStatus = NtQuerySystemInformation(
-            infoClass,
-            buffer,
-            bufferSize,
-            &bufferSize);
-    }
-
-    if (ReturnLength)
-        *ReturnLength = bufferSize;
-
-    //
-    // Handle unexpected return.
-    //
-    // If driver image path exceeds structure field size then 
-    // RtlUnicodeStringToAnsiString will throw STATUS_BUFFER_OVERFLOW.
-    // 
-    // If this is the last driver in the enumeration service will return 
-    // valid data but STATUS_BUFFER_OVERFLOW in result.
-    //
-    if (ntStatus == STATUS_BUFFER_OVERFLOW) {
-
-        //
-        // Force ignore this status if list is not empty.
-        //
-        pvModules = (PRTL_PROCESS_MODULES)buffer;
-        if (pvModules->NumberOfModules != 0)
-            return buffer;
-    }
-
-    if (NT_SUCCESS(ntStatus)) {
-        return buffer;
-    }
-
-    if (buffer)
-        supHeapFree(buffer);
-
-    return NULL;
+    return ntsupGetLoadedModulesListEx(ExtendedOutput,
+        ReturnLength,
+        (PNTSUPMEMALLOC)supHeapAlloc,
+        (PNTSUPMEMFREE)supHeapFree);
 }
 
 /*
@@ -1158,153 +1014,6 @@ ULONG_PTR supGetNtOsBase(
         supHeapFree(miSpace);
     }
     return NtOsBase;
-}
-
-/*
-* supQueryResourceData
-*
-* Purpose:
-*
-* Load resource by given id.
-*
-* N.B. Use supHeapFree to release memory allocated for the decompressed buffer.
-*
-*/
-PBYTE supQueryResourceData(
-    _In_ ULONG_PTR ResourceId,
-    _In_ PVOID DllHandle,
-    _In_ PULONG DataSize
-)
-{
-    NTSTATUS                   status;
-    ULONG_PTR                  IdPath[3];
-    IMAGE_RESOURCE_DATA_ENTRY* DataEntry;
-    PBYTE                      Data = NULL;
-    ULONG                      SizeOfData = 0;
-
-    if (DllHandle != NULL) {
-
-        IdPath[0] = (ULONG_PTR)RT_RCDATA; //type
-        IdPath[1] = ResourceId;           //id
-        IdPath[2] = 0;                    //lang
-
-        status = LdrFindResource_U(DllHandle, (ULONG_PTR*)&IdPath, 3, &DataEntry);
-        if (NT_SUCCESS(status)) {
-            status = LdrAccessResource(DllHandle, DataEntry, (PVOID*)&Data, &SizeOfData);
-            if (NT_SUCCESS(status)) {
-                if (DataSize) {
-                    *DataSize = (ULONG)SizeOfData;
-                }
-            }
-        }
-    }
-    return Data;
-}
-
-/*
-* supWriteBufferToFile
-*
-* Purpose:
-*
-* Create new file (or open existing) and write (append) buffer to it.
-*
-*/
-SIZE_T supWriteBufferToFile(
-    _In_ PCWSTR lpFileName,
-    _In_ PVOID Buffer,
-    _In_ SIZE_T Size,
-    _In_ BOOL Flush,
-    _In_ BOOL Append,
-    _Out_opt_ NTSTATUS* Result
-)
-{
-    NTSTATUS           Status = STATUS_UNSUCCESSFUL;
-    DWORD              dwFlag;
-    HANDLE             hFile = NULL;
-    OBJECT_ATTRIBUTES  attr;
-    UNICODE_STRING     NtFileName;
-    IO_STATUS_BLOCK    IoStatus;
-    LARGE_INTEGER      Position;
-    ACCESS_MASK        DesiredAccess;
-    PLARGE_INTEGER     pPosition = NULL;
-    ULONG_PTR          nBlocks, BlockIndex;
-    ULONG              BlockSize, RemainingSize;
-    PBYTE              ptr = (PBYTE)Buffer;
-    SIZE_T             BytesWritten = 0;
-
-    if (Result)
-        *Result = STATUS_UNSUCCESSFUL;
-
-    if (RtlDosPathNameToNtPathName_U(lpFileName, &NtFileName, NULL, NULL) == FALSE) {
-        if (Result)
-            *Result = STATUS_INVALID_PARAMETER_1;
-        return 0;
-    }
-
-    DesiredAccess = FILE_WRITE_ACCESS | SYNCHRONIZE;
-    dwFlag = FILE_OVERWRITE_IF;
-
-    if (Append != FALSE) {
-        DesiredAccess |= FILE_READ_ACCESS;
-        dwFlag = FILE_OPEN_IF;
-    }
-
-    InitializeObjectAttributes(&attr, &NtFileName, OBJ_CASE_INSENSITIVE, 0, NULL);
-
-    __try {
-        Status = NtCreateFile(&hFile, DesiredAccess, &attr,
-            &IoStatus, NULL, FILE_ATTRIBUTE_NORMAL, 0, dwFlag,
-            FILE_SYNCHRONOUS_IO_NONALERT | FILE_NON_DIRECTORY_FILE, NULL, 0);
-
-        if (!NT_SUCCESS(Status))
-            __leave;
-
-        pPosition = NULL;
-
-        if (Append != FALSE) {
-            Position.LowPart = FILE_WRITE_TO_END_OF_FILE;
-            Position.HighPart = -1;
-            pPosition = &Position;
-        }
-
-        if (Size < 0x80000000) {
-            BlockSize = (ULONG)Size;
-            Status = NtWriteFile(hFile, 0, NULL, NULL, &IoStatus, ptr, BlockSize, pPosition, NULL);
-            if (!NT_SUCCESS(Status))
-                __leave;
-
-            BytesWritten += IoStatus.Information;
-        }
-        else {
-            BlockSize = 0x7FFFFFFF;
-            nBlocks = (Size / BlockSize);
-            for (BlockIndex = 0; BlockIndex < nBlocks; BlockIndex++) {
-
-                Status = NtWriteFile(hFile, 0, NULL, NULL, &IoStatus, ptr, BlockSize, pPosition, NULL);
-                if (!NT_SUCCESS(Status))
-                    __leave;
-
-                ptr += BlockSize;
-                BytesWritten += IoStatus.Information;
-            }
-            RemainingSize = (ULONG)(Size % BlockSize);
-            if (RemainingSize != 0) {
-                Status = NtWriteFile(hFile, 0, NULL, NULL, &IoStatus, ptr, RemainingSize, pPosition, NULL);
-                if (!NT_SUCCESS(Status))
-                    __leave;
-                BytesWritten += IoStatus.Information;
-            }
-        }
-    }
-    __finally {
-        if (hFile != NULL) {
-            if (Flush != FALSE) NtFlushBuffersFile(hFile, &IoStatus);
-            NtClose(hFile);
-        }
-        RtlFreeUnicodeString(&NtFileName);
-        if (Result) *Result = Status;
-    }
-    return BytesWritten;
 }
 
 /*
@@ -1380,157 +1089,6 @@ VOID supResolveKernelImport(
 }
 
 /*
-* supDetectObjectCallback
-*
-* Purpose:
-*
-* Comparer callback routine used in objects enumeration.
-*
-*/
-NTSTATUS NTAPI supDetectObjectCallback(
-    _In_ POBJECT_DIRECTORY_INFORMATION Entry,
-    _In_ PVOID CallbackParam
-)
-{
-    POBJSCANPARAM Param = (POBJSCANPARAM)CallbackParam;
-
-    if (Entry == NULL) {
-        return STATUS_INVALID_PARAMETER_1;
-    }
-
-    if (CallbackParam == NULL) {
-        return STATUS_INVALID_PARAMETER_2;
-    }
-
-    if (Param->Buffer == NULL || Param->BufferSize == 0) {
-        return STATUS_MEMORY_NOT_ALLOCATED;
-    }
-
-    if (Entry->Name.Buffer) {
-        if (_strcmpi_w(Entry->Name.Buffer, Param->Buffer) == 0) {
-            return STATUS_SUCCESS;
-        }
-    }
-    return STATUS_UNSUCCESSFUL;
-}
-
-/*
-* supEnumSystemObjects
-*
-* Purpose:
-*
-* Lookup object by name in given directory.
-*
-*/
-NTSTATUS NTAPI supEnumSystemObjects(
-    _In_opt_ LPCWSTR pwszRootDirectory,
-    _In_opt_ HANDLE hRootDirectory,
-    _In_ PENUMOBJECTSCALLBACK CallbackProc,
-    _In_opt_ PVOID CallbackParam
-)
-{
-    ULONG               ctx, rlen;
-    HANDLE              hDirectory = NULL;
-    NTSTATUS            status;
-    NTSTATUS            CallbackStatus;
-    OBJECT_ATTRIBUTES   attr;
-    UNICODE_STRING      sname;
-
-    POBJECT_DIRECTORY_INFORMATION    objinf;
-
-    if (CallbackProc == NULL) {
-        return STATUS_INVALID_PARAMETER_4;
-    }
-
-    status = STATUS_UNSUCCESSFUL;
-
-    __try {
-
-        // We can use root directory.
-        if (pwszRootDirectory != NULL) {
-            RtlSecureZeroMemory(&sname, sizeof(sname));
-            RtlInitUnicodeString(&sname, pwszRootDirectory);
-            InitializeObjectAttributes(&attr, &sname, OBJ_CASE_INSENSITIVE, NULL, NULL);
-            status = NtOpenDirectoryObject(&hDirectory, DIRECTORY_QUERY, &attr);
-            if (!NT_SUCCESS(status)) {
-                return status;
-            }
-        }
-        else {
-            if (hRootDirectory == NULL) {
-                return STATUS_INVALID_PARAMETER_2;
-            }
-            hDirectory = hRootDirectory;
-        }
-
-        // Enumerate objects in directory.
-        ctx = 0;
-        do {
-
-            rlen = 0;
-            status = NtQueryDirectoryObject(hDirectory, NULL, 0, TRUE, FALSE, &ctx, &rlen);
-            if (status != STATUS_BUFFER_TOO_SMALL)
-                break;
-
-            objinf = (POBJECT_DIRECTORY_INFORMATION)supHeapAlloc(rlen);
-            if (objinf == NULL)
-                break;
-
-            status = NtQueryDirectoryObject(hDirectory, objinf, rlen, TRUE, FALSE, &ctx, &rlen);
-            if (!NT_SUCCESS(status)) {
-                supHeapFree(objinf);
-                break;
-            }
-
-            CallbackStatus = CallbackProc(objinf, CallbackParam);
-
-            supHeapFree(objinf);
-
-            if (NT_SUCCESS(CallbackStatus)) {
-                status = STATUS_SUCCESS;
-                break;
-            }
-
-        } while (TRUE);
-
-        if (hDirectory != NULL) {
-            NtClose(hDirectory);
-        }
-
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        status = STATUS_ACCESS_VIOLATION;
-    }
-
-    return status;
-}
-
-/*
-* supIsObjectExists
-*
-* Purpose:
-*
-* Return TRUE if the given object exists, FALSE otherwise.
-*
-*/
-BOOLEAN supIsObjectExists(
-    _In_ LPCWSTR RootDirectory,
-    _In_ LPCWSTR ObjectName
-)
-{
-    OBJSCANPARAM Param;
-
-    if (ObjectName == NULL) {
-        return FALSE;
-    }
-
-    Param.Buffer = ObjectName;
-    Param.BufferSize = (ULONG)_strlen(ObjectName);
-
-    return NT_SUCCESS(supEnumSystemObjects(RootDirectory, NULL, supDetectObjectCallback, &Param));
-}
-
-/*
 * supQueryObjectFromHandle
 *
 * Purpose:
@@ -1570,8 +1128,6 @@ BOOL supQueryObjectFromHandle(
     return bFound;
 }
 
-
-
 /*
 * supGetCommandLineOption
 *
@@ -1589,10 +1145,10 @@ BOOL supGetCommandLineOption(
 )
 {
     BOOL    bResult;
-    LPTSTR	cmdline = GetCommandLine();
+    LPTSTR  cmdline = GetCommandLine();
     TCHAR   Param[MAX_PATH + 1];
     ULONG   rlen;
-    int		i = 0;
+    int     i = 0;
 
     if (ParamLength)
         *ParamLength = 0;
@@ -1618,101 +1174,6 @@ BOOL supGetCommandLineOption(
     }
 
     return FALSE;
-}
-
-/*
-* supQueryHVCIState
-*
-* Purpose:
-*
-* Query HVCI/IUM state.
-*
-*/
-BOOLEAN supQueryHVCIState(
-    _Out_ PBOOLEAN pbHVCIEnabled,
-    _Out_ PBOOLEAN pbHVCIStrictMode,
-    _Out_ PBOOLEAN pbHVCIIUMEnabled
-)
-{
-    BOOLEAN hvciEnabled;
-    ULONG returnLength;
-    NTSTATUS ntStatus;
-    SYSTEM_CODEINTEGRITY_INFORMATION ci;
-
-    if (pbHVCIEnabled) *pbHVCIEnabled = FALSE;
-    if (pbHVCIStrictMode) *pbHVCIStrictMode = FALSE;
-    if (pbHVCIIUMEnabled) *pbHVCIIUMEnabled = FALSE;
-
-    ci.Length = sizeof(ci);
-
-    ntStatus = NtQuerySystemInformation(
-        SystemCodeIntegrityInformation,
-        &ci,
-        sizeof(ci),
-        &returnLength);
-
-    if (NT_SUCCESS(ntStatus)) {
-
-        hvciEnabled = ((ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_ENABLED) &&
-            (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED));
-
-        if (pbHVCIEnabled)
-            *pbHVCIEnabled = hvciEnabled;
-
-        if (pbHVCIStrictMode)
-            *pbHVCIStrictMode = hvciEnabled &&
-            (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_STRICTMODE_ENABLED);
-
-        if (pbHVCIIUMEnabled)
-            *pbHVCIIUMEnabled = (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_IUM_ENABLED) > 0;
-
-        return TRUE;
-    }
-    else {
-        RtlSetLastWin32Error(RtlNtStatusToDosError(ntStatus));
-    }
-
-    return FALSE;
-}
-
-/*
-* supExpandEnvironmentStrings
-*
-* Purpose:
-*
-* Reimplemented ExpandEnvironmentStrings.
-*
-*/
-DWORD supExpandEnvironmentStrings(
-    _In_ LPCWSTR lpSrc,
-    _Out_writes_to_opt_(nSize, return) LPWSTR lpDst,
-    _In_ DWORD nSize
-)
-{
-    NTSTATUS Status;
-    SIZE_T SrcLength = 0, ReturnLength = 0, DstLength = (SIZE_T)nSize;
-
-    if (lpSrc) {
-        SrcLength = _strlen(lpSrc);
-    }
-
-    Status = RtlExpandEnvironmentStrings(
-        NULL,
-        (PWSTR)lpSrc,
-        SrcLength,
-        (PWSTR)lpDst,
-        DstLength,
-        &ReturnLength);
-
-    if ((NT_SUCCESS(Status)) || (Status == STATUS_BUFFER_TOO_SMALL)) {
-
-        if (ReturnLength <= MAXDWORD32)
-            return (DWORD)ReturnLength;
-
-        Status = STATUS_UNSUCCESSFUL;
-    }
-    RtlSetLastWin32Error(RtlNtStatusToDosError(Status));
-    return 0;
 }
 
 /*
@@ -2399,120 +1860,6 @@ NTSTATUS supQueryImageSize(
 }
 
 /*
-* supConvertToAnsi
-*
-* Purpose:
-*
-* Convert UNICODE string to ANSI string.
-*
-* N.B.
-* If function succeeded - use RtlFreeAnsiString to release allocated string.
-*
-*/
-NTSTATUS supConvertToAnsi(
-    _In_ LPCWSTR UnicodeString,
-    _Inout_ PANSI_STRING AnsiString)
-{
-    UNICODE_STRING unicodeString;
-
-    RtlInitUnicodeString(&unicodeString, UnicodeString);
-    return RtlUnicodeStringToAnsiString(AnsiString, &unicodeString, TRUE);
-}
-
-/*
-* supQuerySystemObjectInformationVariableSize
-*
-* Purpose:
-*
-* Generic object information query routine.
-*
-* Use FreeMem to release allocated buffer.
-*
-*/
-NTSTATUS supQuerySystemObjectInformationVariableSize(
-    _In_ PFN_NTQUERYROUTINE QueryRoutine,
-    _In_ HANDLE ObjectHandle,
-    _In_ DWORD InformationClass,
-    _Out_ PVOID * Buffer,
-    _Out_opt_ PULONG ReturnLength,
-    _In_ PNTSUPMEMALLOC AllocMem,
-    _In_ PNTSUPMEMFREE FreeMem
-)
-{
-    NTSTATUS ntStatus;
-    PVOID queryBuffer;
-    ULONG returnLength = 0;
-
-    *Buffer = NULL;
-    if (ReturnLength) *ReturnLength = 0;
-
-    ntStatus = QueryRoutine(ObjectHandle,
-        InformationClass,
-        NULL,
-        0,
-        &returnLength);
-
-    //
-    // Test all possible acceptable failures.
-    //
-    if (ntStatus != STATUS_BUFFER_OVERFLOW &&
-        ntStatus != STATUS_BUFFER_TOO_SMALL &&
-        ntStatus != STATUS_INFO_LENGTH_MISMATCH)
-    {
-        return ntStatus;
-    }
-
-    queryBuffer = AllocMem(returnLength);
-    if (queryBuffer == NULL)
-        return STATUS_INSUFFICIENT_RESOURCES;
-
-    ntStatus = QueryRoutine(ObjectHandle,
-        InformationClass,
-        queryBuffer,
-        returnLength,
-        &returnLength);
-
-    if (NT_SUCCESS(ntStatus)) {
-        *Buffer = queryBuffer;
-        if (ReturnLength) *ReturnLength = returnLength;
-    }
-    else {
-        FreeMem(queryBuffer);
-    }
-
-    return ntStatus;
-}
-
-/*
-* supQueryObjectInformation
-*
-* Purpose:
-*
-* Query object information with variable size.
-*
-* Returned buffer must be freed with FreeMem after usage.
-*
-*/
-NTSTATUS supQueryObjectInformation(
-    _In_ HANDLE ObjectHandle,
-    _In_ OBJECT_INFORMATION_CLASS ObjectInformationClass,
-    _Out_ PVOID * Buffer,
-    _Out_opt_ PULONG ReturnLength,
-    _In_ PNTSUPMEMALLOC AllocMem,
-    _In_ PNTSUPMEMFREE FreeMem
-)
-{
-    return supQuerySystemObjectInformationVariableSize(
-        (PFN_NTQUERYROUTINE)NtQueryObject,
-        ObjectHandle,
-        (DWORD)ObjectInformationClass,
-        Buffer,
-        ReturnLength,
-        AllocMem,
-        FreeMem);
-}
-
-/*
 * supxBinTextEncode
 *
 * Purpose:
@@ -3100,6 +2447,71 @@ NTSTATUS supInjectPayload(
 
     if (processInfo.hThread != NULL)
         CloseHandle(processInfo.hThread);
+
+    return ntStatus;
+}
+
+/*
+* supFilterDeviceIoControl
+*
+* Purpose:
+*
+* Call filter driver.
+*
+* Simplified fltlib!FilterpDeviceIoControl
+*
+*/
+NTSTATUS supFilterDeviceIoControl(
+    _In_ HANDLE Handle,
+    _In_ ULONG IoControlCode,
+    _In_reads_bytes_(InBufferSize) PVOID InBuffer,
+    _In_ ULONG InBufferSize,
+    _Out_writes_bytes_to_opt_(OutBufferSize, *BytesReturned) PVOID OutBuffer,
+    _In_ ULONG OutBufferSize,
+    _Out_opt_ PULONG BytesReturned
+)
+{
+    NTSTATUS ntStatus;
+
+    if (BytesReturned)
+        *BytesReturned = 0;
+
+    IO_STATUS_BLOCK ioStatusBlock;
+
+    if (DEVICE_TYPE_FROM_CTL_CODE(IoControlCode) == FILE_DEVICE_FILE_SYSTEM) {
+        ntStatus = NtFsControlFile(Handle,
+            NULL,
+            NULL,
+            NULL,
+            &ioStatusBlock,
+            IoControlCode,
+            InBuffer,
+            InBufferSize,
+            OutBuffer,
+            OutBufferSize);
+    }
+    else {
+
+        ntStatus = NtDeviceIoControlFile(Handle,
+            NULL,
+            NULL,
+            NULL,
+            &ioStatusBlock,
+            IoControlCode,
+            InBuffer,
+            InBufferSize,
+            OutBuffer,
+            OutBufferSize);
+    }
+
+    if (ntStatus == STATUS_PENDING) {
+        ntStatus = NtWaitForSingleObject(Handle, FALSE, NULL);
+        if (NT_SUCCESS(ntStatus))
+            ntStatus = ioStatusBlock.Status;
+    }
+
+    if (BytesReturned)
+        *BytesReturned = (ULONG)ioStatusBlock.Information;
 
     return ntStatus;
 }

@@ -1,13 +1,13 @@
 /************************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2015 - 2021 
+*  (C) COPYRIGHT AUTHORS, 2015 - 2022 
 *  Translated from Microsoft sources/debugger or mentioned elsewhere.
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.189
+*  VERSION:     1.201
 *
-*  DATE:        10 Feb 2022
+*  DATE:        17 Aug 2022
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -36,7 +36,6 @@
 
 #ifndef NTOS_RTL
 #define NTOS_RTL
-
 
 //
 // NTOS_RTL HEADER BEGIN
@@ -104,6 +103,7 @@ typedef PVOID PHEAD;
 typedef PVOID PEJOB;
 typedef struct _IO_TIMER* PIO_TIMER;
 typedef LARGE_INTEGER PHYSICAL_ADDRESS;
+typedef struct _EJOB* PESILO;
 
 #ifndef _WIN32_WINNT_WIN10
 #define _WIN32_WINNT_WIN10 0x0A00
@@ -341,21 +341,40 @@ char _RTL_CONSTANT_STRING_type_check(const void *s);
 //
 // Semaphore Object Access Rights
 //
+#ifndef SEMAPHORE_QUERY_STATE       //SDK compatibility
 #define SEMAPHORE_QUERY_STATE       0x0001
+#endif
 
 #ifndef SEMAPHORE_MODIFY_STATE      //SDK compatibility
 #define SEMAPHORE_MODIFY_STATE      0x0002 
 #endif
 
 #ifndef SEMAPHORE_ALL_ACCESS //SDK compatibility
-#define SEMAPHORE_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED|SYNCHRONIZE|0x3)
+#define SEMAPHORE_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED|SYNCHRONIZE|SEMAPHORE_QUERY_STATE|SEMAPHORE_MODIFY_STATE)
+#endif
+
+//
+// Time Object Access rights
+//
+#ifndef TIMER_QUERY_STATE
+#define TIMER_QUERY_STATE 0x0001
+#endif
+
+#ifndef TIMER_MODIFY_STATE
+#define TIMER_MODIFY_STATE 0x0002
+#endif
+
+#ifndef TIMER_ALL_ACCESS
+#define TIMER_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED|SYNCHRONIZE|TIMER_QUERY_STATE|TIMER_MODIFY_STATE)
 #endif
 
 //
 // SymbolicLink Object Access Rights
 //
 #define SYMBOLIC_LINK_QUERY 0x0001
+#define SYMBOLIC_LINK_SET   0x0002
 #define SYMBOLIC_LINK_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYMBOLIC_LINK_QUERY)
+#define SYMBOLIC_LINK_ALL_ACCESS_EX (STANDARD_RIGHTS_REQUIRED | 0xFFFF)
 
 //
 // Thread Object Access Rights
@@ -656,6 +675,7 @@ typedef enum _KWAIT_REASON {
     WrDeferredPreempt,
     WrPhysicalFault,
     WrIoRing,
+    WrMdlCache,
     MaximumWaitReason
 } KWAIT_REASON;
 
@@ -942,6 +962,22 @@ typedef struct _SYSTEM_BIGPOOL_INFORMATION {
     SYSTEM_BIGPOOL_ENTRY AllocatedInfo[1];
 } SYSTEM_BIGPOOL_INFORMATION, * PSYSTEM_BIGPOOL_INFORMATION;
 
+typedef struct _RTL_PROCESS_BACKTRACE_INFORMATION {
+    PCHAR SymbolicBackTrace;
+    ULONG TraceCount;
+    USHORT Index;
+    USHORT Depth;
+    PVOID BackTrace[32];
+} RTL_PROCESS_BACKTRACE_INFORMATION, * PRTL_PROCESS_BACKTRACE_INFORMATION;
+
+typedef struct _RTL_PROCESS_BACKTRACES {
+    ULONG CommittedMemory;
+    ULONG ReservedMemory;
+    ULONG NumberOfBackTraceLookups;
+    ULONG NumberOfBackTraces;
+    RTL_PROCESS_BACKTRACE_INFORMATION BackTraces[1];
+} RTL_PROCESS_BACKTRACES, * PRTL_PROCESS_BACKTRACES;
+
 typedef enum _PROCESSINFOCLASS {
     ProcessBasicInformation = 0,
     ProcessQuotaLimits = 1,
@@ -1046,6 +1082,15 @@ typedef enum _PROCESSINFOCLASS {
     ProcessAltSystemCallInformation = 100,
     ProcessDynamicEHContinuationTargets = 101,
     ProcessDynamicEnforcedCetCompatibleRanges = 102,
+    ProcessCreateStateChange = 103,
+    ProcessApplyStateChange = 104,
+    ProcessEnableOptionalXStateFeatures = 105,
+    ProcessAltPrefetchParam = 106,
+    ProcessAssignCpuPartitions = 107,
+    ProcessPriorityClassEx = 108,
+    ProcessMembershipInformation = 109,
+    ProcessEffectiveIoPriority = 110,
+    ProcessEffectivePagePriority = 111,
     MaxProcessInfoClass
 } PROCESSINFOCLASS;
 
@@ -1103,6 +1148,9 @@ typedef enum _THREADINFOCLASS {
     ThreadWorkloadClass,
     ThreadCreateStateChange,
     ThreadApplyStateChange,
+    ThreadStrongerBadHandleChecks,
+    ThreadEffectiveIoPriority,
+    ThreadEffectivePagePriority,
     MaxThreadInfoClass
 } THREADINFOCLASS;
 
@@ -1123,6 +1171,10 @@ typedef struct _THREAD_BASIC_INFORMATION {
     KPRIORITY Priority;
     LONG BasePriority;
 } THREAD_BASIC_INFORMATION, *PTHREAD_BASIC_INFORMATION;
+
+typedef struct _THREAD_NAME_INFORMATION {
+    UNICODE_STRING ThreadName;
+} THREAD_NAME_INFORMATION, * PTHREAD_NAME_INFORMATION;
 
 typedef struct _PROCESS_EXTENDED_BASIC_INFORMATION {
     SIZE_T Size;
@@ -1223,7 +1275,11 @@ typedef enum _PS_MITIGATION_OPTION {
     PS_MITIGATION_OPTION_RESTRICT_INDIRECT_BRANCH_PREDICTION,
     PS_MITIGATION_OPTION_SPECULATIVE_STORE_BYPASS_DISABLE,
     PS_MITIGATION_OPTION_ALLOW_DOWNGRADE_DYNAMIC_CODE_POLICY,
-    PS_MITIGATION_OPTION_CET_SHADOW_STACKS
+    PS_MITIGATION_OPTION_CET_SHADOW_STACKS,
+    PS_MITIGATION_OPTION_USER_CET_SET_CONTEXT_IP_VALIDATION,
+    PS_MITIGATION_OPTION_BLOCK_NON_CET_BINARIES,
+    PS_MITIGATION_OPTION_CET_DYNAMIC_APIS_OUT_OF_PROC_ONLY,
+    PS_MITIGATION_OPTION_REDIRECTION_TRUST
 } PS_MITIGATION_OPTION;
 
 typedef enum _PS_CREATE_STATE {
@@ -1342,6 +1398,23 @@ typedef enum _PS_PROTECTED_SIGNER {
     PsProtectedSignerMax
 } PS_PROTECTED_SIGNER;
 
+#define PS_PROTECTED_SIGNER_MASK 0xFF
+#define PS_PROTECTED_AUDIT_MASK 0x08
+#define PS_PROTECTED_TYPE_MASK 0x07
+
+// from ph2
+#define PsProtectedValue(aSigner, aAudit, aType) ( \
+    (((aSigner) & PS_PROTECTED_SIGNER_MASK) << 4) | \
+    (((aAudit) & PS_PROTECTED_AUDIT_MASK) << 3) | \
+    ((aType) & PS_PROTECTED_TYPE_MASK)\
+    )
+
+#define InitializePsProtection(aProtectionLevelPtr, aSigner, aAudit, aType) { \
+    (aProtectionLevelPtr)->Signer = aSigner; \
+    (aProtectionLevelPtr)->Audit = aAudit; \
+    (aProtectionLevelPtr)->Type = aType; \
+    }
+
 typedef struct _PS_PROTECTION {
     union
     {
@@ -1390,6 +1463,10 @@ typedef enum _PS_ATTRIBUTE_NUM {
     PsAttributeBnoIsolation,
     PsAttributeDesktopAppPolicy,
     PsAttributeChpe,
+    PsAttributeMitigationAuditOptions,
+    PsAttributeMachineType,
+    PsAttributeComponentFilter,
+    PsAttributeEnableOptionalXStateFeatures,
     PsAttributeMax
 } PS_ATTRIBUTE_NUM;
 
@@ -1401,8 +1478,8 @@ typedef enum _PS_ATTRIBUTE_NUM {
 
 #define PS_ATTRIBUTE_PARENT_PROCESS \
     PsAttributeValue(PsAttributeParentProcess, FALSE, TRUE, TRUE)
-#define PS_ATTRIBUTE_DEBUG_PORT \
-    PsAttributeValue(PsAttributeDebugPort, FALSE, TRUE, TRUE)
+#define PS_ATTRIBUTE_DEBUG_OBJECT \
+    PsAttributeValue(PsAttributeDebugObject, FALSE, TRUE, TRUE)
 #define PS_ATTRIBUTE_TOKEN \
     PsAttributeValue(PsAttributeToken, FALSE, TRUE, TRUE)
 #define PS_ATTRIBUTE_CLIENT_ID \
@@ -1432,7 +1509,7 @@ typedef enum _PS_ATTRIBUTE_NUM {
 #define PS_ATTRIBUTE_UMS_THREAD \
     PsAttributeValue(PsAttributeUmsThread, TRUE, TRUE, FALSE)
 #define PS_ATTRIBUTE_MITIGATION_OPTIONS \
-    PsAttributeValue(PsAttributeMitigationOptions, FALSE, TRUE, TRUE)
+    PsAttributeValue(PsAttributeMitigationOptions, FALSE, TRUE, FALSE)
 #define PS_ATTRIBUTE_PROTECTION_LEVEL \
     PsAttributeValue(PsAttributeProtectionLevel, FALSE, TRUE, TRUE)
 #define PS_ATTRIBUTE_SECURE_PROCESS \
@@ -1451,6 +1528,16 @@ typedef enum _PS_ATTRIBUTE_NUM {
     PsAttributeValue(PsAttributeBnoIsolation, FALSE, TRUE, FALSE)
 #define PS_ATTRIBUTE_DESKTOP_APP_POLICY \
     PsAttributeValue(PsAttributeDesktopAppPolicy, FALSE, TRUE, FALSE)
+#define PS_ATTRIBUTE_CHPE \
+    PsAttributeValue(PsAttributeChpe, FALSE, TRUE, TRUE)
+#define PS_ATTRIBUTE_MITIGATION_AUDIT_OPTIONS \
+    PsAttributeValue(PsAttributeMitigationAuditOptions, FALSE, TRUE, FALSE)
+#define PS_ATTRIBUTE_MACHINE_TYPE \
+    PsAttributeValue(PsAttributeMachineType, FALSE, TRUE, TRUE)
+#define PS_ATTRIBUTE_COMPONENT_FILTER \
+    PsAttributeValue(PsAttributeComponentFilter, FALSE, TRUE, FALSE)
+#define PS_ATTRIBUTE_ENABLE_OPTIONAL_XSTATE_FEATURES \
+    PsAttributeValue(PsAttributeEnableOptionalXStateFeatures, TRUE, TRUE, FALSE)
 
 #define RTL_USER_PROC_PARAMS_NORMALIZED     0x00000001
 #define RTL_USER_PROC_PROFILE_USER          0x00000002
@@ -1464,6 +1551,47 @@ typedef enum _PS_ATTRIBUTE_NUM {
 #define RTL_USER_PROC_APP_MANIFEST_PRESENT  0x00002000
 #define RTL_USER_PROC_IMAGE_KEY_MISSING     0x00004000
 #define RTL_USER_PROC_OPTIN_PROCESS         0x00020000
+
+typedef struct _PROCESS_HANDLE_TRACING_ENABLE {
+    ULONG Flags;
+} PROCESS_HANDLE_TRACING_ENABLE, * PPROCESS_HANDLE_TRACING_ENABLE;
+
+#define PROCESS_HANDLE_TRACING_MAX_SLOTS 0x20000
+
+typedef struct _PROCESS_HANDLE_TRACING_ENABLE_EX {
+    ULONG Flags;
+    ULONG TotalSlots;
+} PROCESS_HANDLE_TRACING_ENABLE_EX, * PPROCESS_HANDLE_TRACING_ENABLE_EX;
+
+#define PROCESS_HANDLE_TRACING_MAX_STACKS 16
+
+#define PROCESS_HANDLE_TRACE_TYPE_OPEN      1
+#define PROCESS_HANDLE_TRACE_TYPE_CLOSE     2
+#define PROCESS_HANDLE_TRACE_TYPE_BADREF    3
+
+typedef struct _PROCESS_HANDLE_TRACING_ENTRY {
+    HANDLE Handle;
+    CLIENT_ID ClientId;
+    ULONG Type;
+    PVOID Stacks[PROCESS_HANDLE_TRACING_MAX_STACKS];
+} PROCESS_HANDLE_TRACING_ENTRY, * PPROCESS_HANDLE_TRACING_ENTRY;
+
+typedef struct _PROCESS_HANDLE_TRACING_QUERY {
+    HANDLE Handle;
+    ULONG TotalTraces;
+    PROCESS_HANDLE_TRACING_ENTRY HandleTrace[1];
+} PROCESS_HANDLE_TRACING_QUERY, * PPROCESS_HANDLE_TRACING_QUERY;
+
+typedef struct _PROCESS_WS_WATCH_INFORMATION {
+    PVOID FaultingPc;
+    PVOID FaultingVa;
+} PROCESS_WS_WATCH_INFORMATION, * PPROCESS_WS_WATCH_INFORMATION;
+
+typedef struct _PROCESS_WS_WATCH_INFORMATION_EX {
+    PROCESS_WS_WATCH_INFORMATION BasicInfo;
+    ULONG_PTR FaultingThreadId;
+    ULONG_PTR Flags;
+} PROCESS_WS_WATCH_INFORMATION_EX, * PPROCESS_WS_WATCH_INFORMATION_EX;
 
 /*
 ** Processes END
@@ -1703,6 +1831,12 @@ typedef enum _SYSTEM_INFORMATION_CLASS {
     SystemSupportedProcessorArchitectures2 = 230,
     SystemSingleProcessorRelationshipInformation = 231,
     SystemXfgCheckFailureInformation = 232,
+    SystemIommuStateInformation = 233,
+    SystemHypervisorMinrootInformation = 234,
+    SystemHypervisorBootPagesInformation = 235,
+    SystemPointerAuthInformation = 236,
+    SystemSecureKernelDebuggerInformation = 237,
+    SystemOriginalImageFeatureInformation = 238,
     MaxSystemInfoClass
 } SYSTEM_INFORMATION_CLASS, * PSYSTEM_INFORMATION_CLASS;
 
@@ -1753,6 +1887,56 @@ typedef struct _SYSTEM_SPECULATION_CONTROL_INFORMATION {
     };
 } SYSTEM_SPECULATION_CONTROL_INFORMATION, *PSYSTEM_SPECULATION_CONTROL_INFORMATION;
 
+typedef struct _SYSTEM_SPECULATION_CONTROL_INFORMATION_V2 {
+    union {
+        ULONG Flags;
+        struct {
+            ULONG BpbEnabled : 1;
+            ULONG BpbDisabledSystemPolicy : 1;
+            ULONG BpbDisabledNoHardwareSupport : 1;
+            ULONG SpecCtrlEnumerated : 1;
+            ULONG SpecCmdEnumerated : 1;
+            ULONG IbrsPresent : 1;
+            ULONG StibpPresent : 1;
+            ULONG SmepPresent : 1;
+            ULONG SpeculativeStoreBypassDisableAvailable : 1;
+            ULONG SpeculativeStoreBypassDisableSupported : 1;
+            ULONG SpeculativeStoreBypassDisabledSystemWide : 1;
+            ULONG SpeculativeStoreBypassDisabledKernel : 1;
+            ULONG SpeculativeStoreBypassDisableRequired : 1;
+            ULONG BpbDisabledKernelToUser : 1;
+            ULONG SpecCtrlRetpolineEnabled : 1;
+            ULONG SpecCtrlImportOptimizationEnabled : 1;
+            ULONG EnhancedIbrs : 1;
+            ULONG HvL1tfStatusAvailable : 1;
+            ULONG HvL1tfProcessorNotAffected : 1;
+            ULONG HvL1tfMigitationEnabled : 1;
+            ULONG HvL1tfMigitationNotEnabled_Hardware : 1;
+            ULONG HvL1tfMigitationNotEnabled_LoadOption : 1;
+            ULONG HvL1tfMigitationNotEnabled_CoreScheduler : 1;
+            ULONG EnhancedIbrsReported : 1;
+            ULONG MdsHardwareProtected : 1;
+            ULONG MbClearEnabled : 1;
+            ULONG MbClearReported : 1;
+            ULONG TsxCtrlStatus : 2;
+            ULONG TsxCtrlReported : 1;
+            ULONG TaaHardwareImmune : 1;
+            ULONG Reserved : 1;
+        } SpeculationControlFlags;
+    };
+    union {
+        ULONG Flags2;
+        struct {
+            ULONG SbdrSsdpHardwareProtected : 1;
+            ULONG FbsdpHardwareProtected : 1;
+            ULONG PsdpHardwareProtected : 1;
+            ULONG FbClearEnabled : 1;
+            ULONG FbClearReported : 1;
+            ULONG Reserved : 27;
+        } SpeculationControlFlags2;
+    };
+} SYSTEM_SPECULATION_CONTROL_INFORMATION_V2, * PSYSTEM_SPECULATION_CONTROL_INFORMATION_V2;
+
 typedef struct _SYSTEM_KERNEL_VA_SHADOW_INFORMATION {
     union {
         ULONG Flags;
@@ -1790,6 +1974,8 @@ typedef struct _SYSTEM_CODEINTEGRITY_INFORMATION {
 #define CODEINTEGRITY_OPTION_HVCI_KMCI_AUDITMODE_ENABLED  0x800
 #define CODEINTEGRITY_OPTION_HVCI_KMCI_STRICTMODE_ENABLED 0x1000
 #define CODEINTEGRITY_OPTION_HVCI_IUM_ENABLED             0x2000
+#define CODEINTEGRITY_OPTION_WHQL_ENFORCEMENT_ENABLED     0x4000
+#define CODEINTEGRITY_OPTION_WHQL_AUDITMODE_ENABLED       0x8000
 
 typedef VOID(NTAPI *PIO_APC_ROUTINE)(
     _In_ PVOID ApcContext,
@@ -4929,8 +5115,38 @@ typedef struct _SECTION_COMPAT {
 */
 
 /*
+*  Configuration Manager control vector
+*/
+typedef struct _CM_SYSTEM_CONTROL_VECTOR_V1 {
+    PWSTR  KeyPath;
+    PWSTR  ValueName;
+    PVOID  Buffer;
+    PULONG BufferLength;
+    PULONG Type;
+} CM_SYSTEM_CONTROL_VECTOR_V1, * PCM_SYSTEM_CONTROL_VECTOR_V1;
+
+//
+// Since Windows 10 RS4
+//
+typedef struct _CM_SYSTEM_CONTROL_VECTOR_V2 {
+    PWSTR  KeyPath;
+    PWSTR  ValueName;
+    PVOID  Buffer;
+    PULONG BufferLength;
+    PULONG Type;
+    ULONG Flags; //0 or 1 depends on flag from LOADER_PARAMETER_BLOCK attached hives
+    ULONG Spare0;
+} CM_SYSTEM_CONTROL_VECTOR_V2, * PCM_SYSTEM_CONTROL_VECTOR_V2;
+
+/*
 ** Callbacks START
 */
+
+typedef NTSTATUS(*PEX_CALLBACK_FUNCTION) (
+    IN PVOID CallbackContext,
+    IN PVOID Argument1,
+    IN PVOID Argument2
+    );
 
 typedef VOID(NTAPI* PEX_HOST_NOTIFICATION) (
     _In_ ULONG NotificationType,
@@ -5009,9 +5225,10 @@ typedef struct _KBUGCHECK_REASON_CALLBACK_RECORD {
 
 typedef struct _CM_CALLBACK_CONTEXT_BLOCK {
     LIST_ENTRY CallbackListEntry;
-    LIST_ENTRY PreCallListHead;
-    PVOID Unknown1;
-    PVOID Function; //PEX_CALLBACK_FUNCTION
+    LONG PreCallListHead;
+    LARGE_INTEGER Cookie;
+    PVOID CallerContext; 
+    PEX_CALLBACK_FUNCTION Function;
     UNICODE_STRING Altitude;
     LIST_ENTRY ObjectContextListHead;
 } CM_CALLBACK_CONTEXT_BLOCK, *PCM_CALLBACK_CONTEXT_BLOCK;
@@ -5062,31 +5279,27 @@ typedef struct _CALLBACK_REGISTRATION {
 
 typedef ULONG OB_OPERATION;
 
+#define OB_OPERATION_HANDLE_CREATE              0x00000001
+#define OB_OPERATION_HANDLE_DUPLICATE           0x00000002
+
 typedef struct _OB_CALLBACK_CONTEXT_BLOCK {
     LIST_ENTRY CallbackListEntry;
     OB_OPERATION Operations;
     ULONG Flags;
-    PVOID Registration; //POB_CALLBACK_REGISTRATION
+    struct _OB_REGISTRATION* Registration;
     POBJECT_TYPE ObjectType;
-    PVOID PreCallback; //POB_PRE_OPERATION_CALLBACK
-    PVOID PostCallback; //POB_POST_OPERATION_CALLBACK
+    PVOID PreCallback;
+    PVOID PostCallback;
     EX_RUNDOWN_REF RundownReference;
 } OB_CALLBACK_CONTEXT_BLOCK, *POB_CALLBACK_CONTEXT_BLOCK;
 
-typedef struct _OB_OPERATION_REGISTRATION {
-    PVOID *ObjectType;
-    OB_OPERATION Operations;
-    PVOID  PreOperation;
-    PVOID PostOperation;
-} OB_OPERATION_REGISTRATION, *POB_OPERATION_REGISTRATION;
-
-typedef struct _OB_CALLBACK_REGISTRATION {
-    USHORT                    Version;
-    USHORT                    OperationRegistrationCount;
-    UNICODE_STRING            Altitude;
-    PVOID                     RegistrationContext;
-    OB_OPERATION_REGISTRATION *OperationRegistration;
-} OB_CALLBACK_REGISTRATION, *POB_CALLBACK_REGISTRATION;
+typedef struct _OB_REGISTRATION {
+    USHORT Version;
+    USHORT RegistrationCount;
+    PVOID  RegistrationContext;
+    UNICODE_STRING Altitude;
+    OB_CALLBACK_CONTEXT_BLOCK* CallbackContext;
+} OB_REGISTRATION, * POB_REGISTRATION;
 
 #define PO_POWER_SETTINGS_REGISTRATION_TAG 'teSP'
 
@@ -5169,6 +5382,55 @@ typedef struct _KNMI_HANDLER_CALLBACK {
     PVOID Handle;
 } KNMI_HANDLER_CALLBACK, * PKNMI_HANDLER_CALLBACK;
 
+typedef
+NTSTATUS
+(NTAPI* SILO_MONITOR_CREATE_CALLBACK)(
+    _In_ PESILO Silo
+    );
+
+typedef
+VOID
+(NTAPI* SILO_MONITOR_TERMINATE_CALLBACK)(
+    _In_ PESILO Silo
+    );
+
+#define SILO_MONITOR_REGISTRATION_VERSION (1)
+
+typedef struct _SERVER_SILO_MONITOR {
+    LIST_ENTRY ListEntry;
+    UCHAR Version;
+    BOOLEAN MonitorHost;
+    BOOLEAN MonitorExistingSilos;
+    UCHAR Reserved[5];
+    SILO_MONITOR_CREATE_CALLBACK CreateCallback;
+    SILO_MONITOR_TERMINATE_CALLBACK TerminateCallback;
+    union {
+        PUNICODE_STRING DriverObjectName;
+        PUNICODE_STRING ComponentName;
+    };
+} SERVER_SILO_MONITOR, * PSERVER_SILO_MONITOR;
+
+//
+// Errata Manager
+//
+typedef struct _EMP_CALLBACK_DB_RECORD {
+    GUID CallbackId;
+    PVOID CallbackFunc;
+    LONG_PTR CallbackFuncReference;
+    PVOID Context;
+    SINGLE_LIST_ENTRY List;
+    SINGLE_LIST_ENTRY CallbackDependencyListHead;
+    ULONG NumberOfStrings;
+    ULONG NumberOfNumerics;
+    ULONG NumberOfEntries;
+    struct _EMP_ENTRY_DB_RECORD* EntryList[1];
+} EMP_CALLBACK_DB_RECORD, * PEMP_CALLBACK_DB_RECORD;
+
+typedef struct _EMP_CALLBACK_LIST_ENTRY {
+    EMP_CALLBACK_DB_RECORD* CallbackRecord;
+    SINGLE_LIST_ENTRY CallbackListEntry;
+} EMP_CALLBACK_LIST_ENTRY, * PEMP_CALLBACK_LIST_ENTRY;
+
 /*
 ** Callbacks END
 */
@@ -5225,6 +5487,7 @@ typedef enum _MEMORY_INFORMATION_CLASS {
     MemoryBasicInformationCapped,
     MemoryPhysicalContiguityInformation,
     MemoryBadInformation,
+    MemoryBadInformationAllProcesses,
     MaxMemoryInfoClass
 } MEMORY_INFORMATION_CLASS, *PMEMORY_INFORMATION_CLASS;
 
@@ -5299,7 +5562,11 @@ typedef struct _MEMORY_REGION_INFORMATION_V3 {
             ULONG SoftwareEnclave : 1; // RS3
             ULONG PageSize64K : 1;
             ULONG PlaceholderReservation : 1; // RS4
-            ULONG Reserved : 23;
+            ULONG MappedAwe : 1; // 21H1
+            ULONG MappedWriteWatch : 1;
+            ULONG PageSizeLarge : 1;
+            ULONG PageSizeHuge : 1;
+            ULONG Reserved : 19;
         };
     };
     SIZE_T RegionSize;
@@ -6224,7 +6491,9 @@ typedef struct tagPROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY_W10 {
             DWORD EnableControlFlowGuard : 1;
             DWORD EnableExportSuppression : 1;
             DWORD StrictMode : 1;
-            DWORD ReservedFlags : 29;
+            DWORD EnableXfg : 1;
+            DWORD EnableXfgAuditMode : 1;
+            DWORD ReservedFlags : 27;
         } DUMMYSTRUCTNAME;
     } DUMMYUNIONNAME;
 } PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY_W10, *PPROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY_W10;
@@ -7532,7 +7801,8 @@ typedef struct _LDR_DATA_TABLE_ENTRY_FULL
             ULONG DontRelocate : 1;
             ULONG CorILOnly : 1;
             ULONG ChpeImage : 1;
-            ULONG ReservedFlags5 : 2;
+            ULONG ChpeEmulatorImage : 1;
+            ULONG ReservedFlags5 : 1;
             ULONG Redirected : 1;
             ULONG ReservedFlags6 : 2;
             ULONG CompatDatabaseProcessed : 1;
@@ -8826,6 +9096,25 @@ NtRaiseException(
     _In_ PCONTEXT ContextRecord,
     _In_ BOOLEAN FirstChance);
 
+__analysis_noreturn
+NTSYSCALLAPI
+VOID
+NTAPI
+RtlAssert(
+    _In_ PVOID VoidFailedAssertion,
+    _In_ PVOID VoidFileName,
+    _In_ ULONG LineNumber,
+    _In_opt_ PSTR MutableMessage);
+
+#define RTL_ASSERT(exp) \
+    ((!(exp)) ? (RtlAssert((PVOID)#exp, (PVOID)__FILE__, __LINE__, NULL), FALSE) : TRUE)
+#define RTL_ASSERTMSG(msg, exp) \
+    ((!(exp)) ? (RtlAssert((PVOID)#exp, (PVOID)__FILE__, __LINE__, msg), FALSE) : TRUE)
+#define RTL_SOFT_ASSERT(_exp) \
+    ((!(_exp)) ? (DbgPrint("%s(%d): Soft assertion failed\n   Expression: %s\n", __FILE__, __LINE__, #_exp), FALSE) : TRUE)
+#define RTL_SOFT_ASSERTMSG(_msg, _exp) \
+    ((!(_exp)) ? (DbgPrint("%s(%d): Soft assertion failed\n   Expression: %s\n   Message: %s\n", __FILE__, __LINE__, #_exp, (_msg)), FALSE) : TRUE)
+
 /************************************************************************************
 *
 * RTL Security API.
@@ -8909,7 +9198,7 @@ RtlSetDaclSecurityDescriptor(
     _Inout_ PSECURITY_DESCRIPTOR SecurityDescriptor,
     _In_ BOOLEAN DaclPresent,
     _In_opt_ PACL Dacl,
-    _In_opt_ BOOLEAN DaclDefaulted);
+    _In_ BOOLEAN DaclDefaulted);
 
 NTSYSAPI
 NTSTATUS
@@ -8927,7 +9216,7 @@ RtlSetSaclSecurityDescriptor(
     _Inout_ PSECURITY_DESCRIPTOR SecurityDescriptor,
     _In_ BOOLEAN SaclPresent,
     _In_opt_ PACL Sacl,
-    _In_opt_ BOOLEAN SaclDefaulted);
+    _In_ BOOLEAN SaclDefaulted);
 
 NTSYSAPI
 NTSTATUS
@@ -9541,14 +9830,15 @@ typedef struct _RTL_HEAP_PARAMETERS {
     SIZE_T Reserved[2];
 } RTL_HEAP_PARAMETERS, *PRTL_HEAP_PARAMETERS;
 
+_Must_inspect_result_
 NTSYSAPI
 PVOID
 NTAPI
 RtlCreateHeap(
     _In_ ULONG Flags,
     _In_opt_ PVOID HeapBase,
-    _In_opt_ SIZE_T ReserveSize,
-    _In_opt_ SIZE_T CommitSize,
+    _In_ SIZE_T ReserveSize,
+    _In_ SIZE_T CommitSize,
     _In_opt_ PVOID Lock,
     _In_opt_ PRTL_HEAP_PARAMETERS Parameters);
 
@@ -9562,10 +9852,10 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlSetHeapInformation(
-    _In_ PVOID HeapHandle,
+    _In_opt_ PVOID HeapHandle,
     _In_ HEAP_INFORMATION_CLASS HeapInformationClass,
     _In_opt_ PVOID HeapInformation,
-    _In_opt_ SIZE_T HeapInformationLength);
+    _In_ SIZE_T HeapInformationLength);
 
 NTSYSAPI
 NTSTATUS
@@ -9577,6 +9867,7 @@ RtlQueryHeapInformation(
     _In_opt_ SIZE_T HeapInformationLength,
     _Out_opt_ PSIZE_T ReturnLength);
 
+_Must_inspect_result_
 NTSYSAPI
 PVOID
 NTAPI
@@ -9591,7 +9882,7 @@ NTAPI
 RtlFreeHeap(
     _In_ PVOID HeapHandle,
     _In_ ULONG Flags,
-    _In_ PVOID BaseAddress);
+    _Frees_ptr_opt_ PVOID BaseAddress);
 
 NTSYSAPI
 NTSTATUS
@@ -10315,7 +10606,7 @@ NTSYSAPI
 VOID
 NTAPI
 RtlDeleteBoundaryDescriptor(
-    _In_ PVOID BoundaryDescriptor);
+    _In_ _Post_invalid_ PVOID BoundaryDescriptor);
 
 NTSYSAPI
 NTSTATUS
@@ -10681,6 +10972,16 @@ NtCreateTimer(
 NTSYSAPI
 NTSTATUS
 NTAPI
+NtCreateTimer2(
+    _Out_ PHANDLE TimerHandle,
+    _In_opt_ PVOID Reserved1,
+    _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
+    _In_ ULONG Attributes,
+    _In_ ACCESS_MASK DesiredAccess);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
 NtSetTimer(
     _In_ HANDLE TimerHandle,
     _In_ PLARGE_INTEGER DueTime,
@@ -10689,6 +10990,15 @@ NtSetTimer(
     _In_ BOOLEAN WakeTimer,
     _In_opt_ LONG Period,
     _Out_opt_ PBOOLEAN PreviousState);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtSetTimer2(
+    _In_ HANDLE TimerHandle,
+    _In_ PLARGE_INTEGER DueTime,
+    _In_opt_ PLARGE_INTEGER Period,
+    _In_ PVOID Parameters);
 
 NTSYSAPI
 NTSTATUS
@@ -10724,6 +11034,13 @@ NtCancelTimer(
     _In_ HANDLE TimerHandle,
     _Out_opt_ PBOOLEAN CurrentState);
 
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtCancelTimer2(
+    _In_ HANDLE TimerHandle,
+    _In_ PVOID Parameters);
+
 //ref from ph2
 
 NTSYSAPI
@@ -10740,15 +11057,6 @@ NtSetIRTimer(
     _In_ HANDLE TimerHandle,
     _In_opt_ PLARGE_INTEGER DueTime);
 
-NTSYSAPI
-NTSTATUS
-NTAPI
-NtCreateTimer2(
-    _Out_ PHANDLE TimerHandle,
-    _In_opt_ PVOID Reserved1,
-    _In_opt_ PVOID Reserved2,
-    _In_ ULONG Attributes,
-    _In_ ACCESS_MASK DesiredAccess);
 
 /************************************************************************************
 *
@@ -11003,6 +11311,41 @@ NtWaitForMultipleObjects(
     _In_ WAIT_TYPE WaitType,
     _In_ BOOLEAN Alertable,
     _In_opt_ PLARGE_INTEGER Timeout);
+
+/************************************************************************************
+*
+* Time.
+*
+************************************************************************************/
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtQuerySystemTime(
+    _Out_ PLARGE_INTEGER SystemTime);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtSetSystemTime(
+    _In_opt_ PLARGE_INTEGER SystemTime,
+    _Out_opt_ PLARGE_INTEGER PreviousTime);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtQueryTimerResolution(
+    _Out_ PULONG MaximumTime,
+    _Out_ PULONG MinimumTime,
+    _Out_ PULONG CurrentTime);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtSetTimerResolution(
+    _In_ ULONG DesiredTime,
+    _In_ BOOLEAN SetResolution,
+    _Out_ PULONG ActualTime);
 
 /************************************************************************************
 *
@@ -11544,8 +11887,8 @@ NtManageHotPatch(
 *
 ************************************************************************************/
 
-#define MEM_EXECUTE_OPTION_DISABLE 0x1
-#define MEM_EXECUTE_OPTION_ENABLE 0x2
+#define MEM_EXECUTE_OPTION_ENABLE 0x1
+#define MEM_EXECUTE_OPTION_DISABLE 0x2
 #define MEM_EXECUTE_OPTION_DISABLE_THUNK_EMULATION 0x4
 #define MEM_EXECUTE_OPTION_PERMANENT 0x8
 #define MEM_EXECUTE_OPTION_EXECUTE_DISPATCH_ENABLE 0x10
@@ -11566,6 +11909,7 @@ typedef enum _MEMORY_PARTITION_INFORMATION_CLASS {
     SystemMemoryPartitionOpenDedicatedMemory,
     SystemMemoryPartitionMemoryChargeAttributes,
     SystemMemoryPartitionClearAttributes,
+    SystemMemoryPartitionSetMemoryThresholds,
     SystemMemoryPartitionMax
 } MEMORY_PARTITION_INFORMATION_CLASS;
 
@@ -12579,7 +12923,7 @@ typedef enum _IO_SESSION_EVENT {
 } IO_SESSION_EVENT;
 
 typedef enum _IO_SESSION_STATE {
-    IoSessionStateCreated,
+    IoSessionStateCreated = 1,
     IoSessionStateInitialized,
     IoSessionStateConnected,
     IoSessionStateDisconnected,
@@ -12632,7 +12976,7 @@ NtCreateIoCompletion(
     _Out_ PHANDLE IoCompletionHandle,
     _In_ ACCESS_MASK DesiredAccess,
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
-    _In_opt_ ULONG Count);
+    _In_ ULONG Count);
 
 NTSYSAPI
 NTSTATUS
@@ -12699,9 +13043,9 @@ NtCreateTransaction(
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_opt_ LPGUID Uow,
     _In_opt_ HANDLE TmHandle,
-    _In_opt_ ULONG CreateOptions,
-    _In_opt_ ULONG IsolationLevel,
-    _In_opt_ ULONG IsolationFlags,
+    _In_ ULONG CreateOptions,
+    _In_ ULONG IsolationLevel,
+    _In_ ULONG IsolationFlags,
     _In_opt_ PLARGE_INTEGER Timeout,
     _In_opt_ PUNICODE_STRING Description);
 
@@ -12711,8 +13055,8 @@ NTAPI
 NtOpenTransaction(
     _Out_ PHANDLE TransactionHandle,
     _In_ ACCESS_MASK DesiredAccess,
-    _In_ POBJECT_ATTRIBUTES ObjectAttributes,
-    _In_ LPGUID Uow,
+    _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
+    _In_opt_ LPGUID Uow,
     _In_opt_ HANDLE TmHandle);
 
 NTSYSAPI
@@ -12752,7 +13096,7 @@ NtCreateResourceManager(
     _In_ HANDLE TmHandle,
     _In_opt_ LPGUID ResourceManagerGuid,
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
-    _In_opt_ ULONG CreateOptions,
+    _In_ ULONG CreateOptions,
     _In_opt_ PUNICODE_STRING Description);
 
 NTSYSAPI
@@ -12798,8 +13142,8 @@ NtCreateTransactionManager(
     _In_ ACCESS_MASK DesiredAccess,
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_opt_ PUNICODE_STRING LogFileName,
-    _In_opt_ ULONG CreateOptions,
-    _In_opt_ ULONG CommitStrength);
+    _In_ ULONG CreateOptions,
+    _In_ ULONG CommitStrength);
 
 NTSYSAPI
 NTSTATUS
@@ -12810,7 +13154,20 @@ NtOpenTransactionManager(
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_opt_ PUNICODE_STRING LogFileName,
     _In_opt_ LPGUID TmIdentity,
-    _In_opt_ ULONG OpenOptions);
+    _In_ ULONG OpenOptions);
+
+/************************************************************************************
+*
+* Performance Counter.
+*
+************************************************************************************/
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtQueryPerformanceCounter(
+    _Out_ PLARGE_INTEGER PerformanceCounter,
+    _Out_opt_ PLARGE_INTEGER PerformanceFrequency);
 
 /************************************************************************************
 *
@@ -13278,6 +13635,17 @@ NtReadVirtualMemory(
 NTSYSAPI
 NTSTATUS
 NTAPI
+NtReadVirtualMemoryEx(
+    _In_ HANDLE ProcessHandle,
+    _In_opt_ PVOID BaseAddress,
+    _Out_writes_bytes_(BufferSize) PVOID Buffer,
+    _In_ SIZE_T BufferSize,
+    _Out_opt_ PSIZE_T NumberOfBytesRead,
+    _In_ ULONG Flags);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
 NtWriteVirtualMemory(
     _In_ HANDLE ProcessHandle,
     _In_opt_ PVOID BaseAddress,
@@ -13294,6 +13662,9 @@ NtProtectVirtualMemory(
     _Inout_ PSIZE_T RegionSize,
     _In_ ULONG NewProtect,
     _Out_ PULONG OldProtect);
+
+#define MAP_PROCESS 1L
+#define MAP_SYSTEM  2L
 
 NTSYSAPI
 NTSTATUS
@@ -14098,7 +14469,8 @@ typedef enum _SYSDBG_COMMAND {
     SysDbgGetUmAttachPid,
     SysDbgClearUmAttachPid,
     SysDbgGetLiveKernelDump,
-    SysDbgKdPullRemoteFile
+    SysDbgKdPullRemoteFile,
+    SysDbgMaxInfoClass
 } SYSDBG_COMMAND, *PSYSDBG_COMMAND;
 
 typedef struct _SYSDBG_VIRTUAL {
