@@ -196,7 +196,6 @@
     <None Include="drv\msio64.bin" />
     <None Include="drv\phymemx64.bin" />
     <None Include="drv\procexp.bin" />
-    <None Include="drv\rcdata1.bin" />
     <None Include="drv\RTCore64.bin" />
     <None Include="drv\rtkio64.bin" />
     <None Include="drv\WinRing0x64.bin" />
