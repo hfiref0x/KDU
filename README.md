@@ -20,11 +20,13 @@ It features:
 #### Usage
 
 ###### KDU -list
+###### KDU -diag
 ###### KDU -prv ProviderID
 ###### KDU -ps ProcessID
 ###### KDU -dse value
 ###### KDU -map filename
 * -list - list currently available providers;
+* -diag - run system diagnostic for troubleshooting;
 * -prv  - optional, select vulnerability driver provider;
 * -ps 	- modify process object of given ProcessID;
 * -dse  - write user defined value to the system DSE state flags;
