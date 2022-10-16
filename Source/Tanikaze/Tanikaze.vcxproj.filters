@@ -112,5 +112,8 @@
     <None Include="drv\HW64.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\SysDrv3S.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

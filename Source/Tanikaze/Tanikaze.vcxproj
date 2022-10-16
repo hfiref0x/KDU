@@ -198,6 +198,7 @@
     <None Include="drv\procexp.bin" />
     <None Include="drv\RTCore64.bin" />
     <None Include="drv\rtkio64.bin" />
+    <None Include="drv\SysDrv3S.bin" />
     <None Include="drv\WinRing0x64.bin" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

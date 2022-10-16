@@ -20,11 +20,13 @@ It features:
 #### Usage
 
 ###### KDU -list
+###### KDU -diag
 ###### KDU -prv ProviderID
 ###### KDU -ps ProcessID
 ###### KDU -dse value
 ###### KDU -map filename
 * -list - list currently available providers;
+* -diag - run system diagnostic for troubleshooting;
 * -prv  - optional, select vulnerability driver provider;
 * -ps 	- modify process object of given ProcessID;
 * -dse  - write user defined value to the system DSE state flags;
@@ -97,32 +99,35 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 
 # Currently Supported Providers
 
-| Provider Id | Product Vendor | Driver      | Software package                   | Code base         | Version                     |
-|-------------|----------------|-------------|------------------------------------|-------------------|-----------------------------|
-| 0           | Intel          | IQVM64/Nal  | Network Adapter Diagnostic Driver  | Original          | 1.03.0.7                    |
-| 1           | MSI            | RTCore64    | MSI Afterburner                    | Semi-original     | 4.6.2 build 15658 and below |
-| 2           | Gigabyte       | Gdrv        | Gigabyte TOOLS                     | MAPMEM NTDDK 3.51 | Undefined                   |
-| 3           | ASUSTeK        | ATSZIO64    | ASUSTeK WinFlash utility           | Semi-original     | Undefined                   |
-| 4           | Patriot        | MsIo64      | Patriot Viper RGB utility          | WINIO             | 1.0                         |
-| 5           | ASRock         | GLCKIO2     | ASRock Polychrome RGB              | WINIO             | 1.0.4                       |
-| 6           | G.SKILL        | EneIo64     | G.SKILL Trident Z Lighting Control | WINIO             | 1.00.08                     |
-| 7           | EVGA           | WinRing0x64 | EVGA Precision X1                  | WINRING0          | 1.0.2.0                     |
-| 8           | Thermaltake    | EneTechIo64 | Thermaltake TOUGHRAM software      | WINIO             | 1.0.3                       |
-| 9           | Huawei         | PhyMemx64   | Huawei MateBook Manager software   | WINIO             | Undefined                   |
-| 10          | Realtek        | RtkIo64     | Realtek Dash Client Utility        | PHYMEM            | Various                     |
-| 11          | MSI            | EneTechIo64 | MSI Dragon Center                  | WINIO             | Various                     |
-| 12          | LG             | LHA         | LG Device Manager                  | Semi-original     | 1.6.0.2                     |
-| 13          | ASUSTeK        | AsIO2       | ASUS GPU Tweak                     | WINIO             | 2.1.7.1 and below           |
-| 14          | PassMark       | DirectIo64  | PassMark Performance Test          | Original          | 10.1 and below              |
-| 15          | GMER           | GmerDrv     | Gmer "Antirootkit"                 | Original          | 2.2 and below               |
-| 16          | Dell           | DBUtil_2_3  | Dell BIOS Utility                  | Original          | 2.3 and below               |
-| 17          | Benjamin Delpy | Mimidrv     | Mimikatz                           | Original          | 2.2 and below               |
-| 18          | Wen Jia Liu    | KProcessHacker2  | Process Hacker                | Original          | 2.38 and below              |
-| 19          | Microsoft      | ProcExp152  | Process Explorer                   | Original          | 1.5.2 and below             |
-| 20          | Dell           | DBUtilDrv2  | Dell BIOS Utility                  | Original          | 2.7 and below               |
-| 21          | DarkByte       | Dbk64       | Cheat Engine                       | Original          | 7.4 and below               |
-| 22          | ASUSTeK        | AsIO3       | ASUS GPU TweakII                   | WINIO             | 2.3.0.3                     |
-| 23          | Marvin         | Hw          | Marvin Hardware Access Driver      | Original          | 4.9 and below               |
+| Provider Id | Product Vendor | Driver      | Software package                   | Code base         | Version                     | MSFT blacklisted by* |
+|-------------|----------------|-------------|------------------------------------|-------------------|-----------------------------|----------------------|
+| 0           | Intel          | IQVM64/Nal  | Network Adapter Diagnostic Driver  | Original          | 1.03.0.7                    | Cert                 |
+| 1           | MSI            | RTCore64    | MSI Afterburner                    | Semi-original     | 4.6.2 build 15658 and below |                      |
+| 2           | Gigabyte       | Gdrv        | Gigabyte TOOLS                     | MAPMEM            | Undefined                   | Name                 |
+| 3           | ASUSTeK        | ATSZIO64    | ASUSTeK WinFlash utility           | Semi-original     | Undefined                   | Name                 |
+| 4           | Patriot        | MsIo64      | Patriot Viper RGB utility          | WINIO             | 1.0                         | Page hash            |
+| 5           | ASRock         | GLCKIO2     | ASRock Polychrome RGB              | WINIO             | 1.0.4                       | Page hash            |
+| 6           | G.SKILL        | EneIo64     | G.SKILL Trident Z Lighting Control | WINIO             | 1.00.08                     | Cert                 |
+| 7           | EVGA           | WinRing0x64 | EVGA Precision X1                  | WINRING0          | 1.0.2.0                     | Name                 |
+| 8           | Thermaltake    | EneTechIo64 | Thermaltake TOUGHRAM software      | WINIO             | 1.0.3                       | Page hash            |
+| 9           | Huawei         | PhyMemx64   | Huawei MateBook Manager software   | WINIO             | Undefined                   | Name, Page hash      |
+| 10          | Realtek        | RtkIo64     | Realtek Dash Client Utility        | PHYMEM            | Various                     | Name                 |
+| 11          | MSI            | EneTechIo64 | MSI Dragon Center                  | WINIO             | Various                     |                      |
+| 12          | LG             | LHA         | LG Device Manager                  | Semi-original     | 1.6.0.2                     | Name                 |
+| 13          | ASUSTeK        | AsIO2       | ASUS GPU Tweak                     | WINIO             | 2.1.7.1 and below           |                      |
+| 14          | PassMark       | DirectIo64  | PassMark Performance Test          | Original          | 10.1 and below              | Page hash            |
+| 15          | GMER           | GmerDrv     | Gmer "Antirootkit"                 | Original          | 2.2 and below               |                      |
+| 16          | Dell           | DBUtil_2_3  | Dell BIOS Utility                  | Original          | 2.3 and below               | Page hash            |
+| 17          | Benjamin Delpy | Mimidrv     | Mimikatz                           | Original          | 2.2 and below               | Cert                 |
+| 18          | Wen Jia Liu    | KProcessHacker2  | Process Hacker                | Original          | 2.38 and below              | Name                 |
+| 19          | Microsoft      | ProcExp152  | Process Explorer                   | Original          | 1.5.2 and below             |                      |
+| 20          | Dell           | DBUtilDrv2  | Dell BIOS Utility                  | Original          | 2.7 and below               |                      |
+| 21          | DarkByte       | Dbk64       | Cheat Engine                       | Original          | 7.4 and below               | Cert, Name           |
+| 22          | ASUSTeK        | AsIO3       | ASUS GPU TweakII                   | WINIO             | 2.3.0.3                     |                      |
+| 23          | Marvin         | Hw          | Marvin Hardware Access Driver      | Original          | 4.9 and below               | Name                 |
+| 24          | CODESYS        | SysDrv3S    | CODESYS SysDrv3S                   | MAPMEM            | 3.5.6 and below             |                      |
+
+###### *At commit time, data maybe inaccurate.
 
 More providers maybe added in the future.
 

@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.25
+*  VERSION:     1.26
 *
-*  DATE:        17 Aug 2022
+*  DATE:        15 Oct 2022
 *
 *  Providers global list.
 *
@@ -124,13 +124,13 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provMapDriver)KDUMapDriver,
         (provControlDSE)KDUControlDSE,
 
-        (provReadKernelVM)GioReadKernelVirtualMemory,
-        (provWriteKernelVM)GioWriteKernelVirtualMemory,
+        (provReadKernelVM)MapMemReadKernelVirtualMemory,
+        (provWriteKernelVM)MapMemWriteKernelVirtualMemory,
 
-        (provVirtualToPhysical)GioVirtualToPhysical,
-        (provQueryPML4)GioQueryPML4Value,
-        (provReadPhysicalMemory)GioReadPhysicalMemory,
-        (provWritePhysicalMemory)GioWritePhysicalMemory
+        (provVirtualToPhysical)MapMemVirtualToPhysical,
+        (provQueryPML4)MapMemQueryPML4Value,
+        (provReadPhysicalMemory)MapMemReadPhysicalMemory,
+        (provWritePhysicalMemory)MapMemWritePhysicalMemory
     },
 
     {
@@ -782,6 +782,37 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)HwQueryPML4Value,
         (provReadPhysicalMemory)HwReadPhysicalMemory,
         (provWritePhysicalMemory)HwWritePhysicalMemory
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_SYSDRV3S,
+        SourceBaseMapMem,
+        KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_NO_UNLOAD_SUP,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"CODESYS SysDrv3S (CVE-2022-22516)",
+        (LPWSTR)L"SysDrv3S",
+        (LPWSTR)L"SysDrv3S",
+        (LPWSTR)L"3S-Smart Software Solutions GmbH.",
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)MapMemRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)MapMemReadKernelVirtualMemory,
+        (provWriteKernelVM)MapMemWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)MapMemVirtualToPhysical,
+        (provQueryPML4)MapMemQueryPML4Value,
+        (provReadPhysicalMemory)MapMemReadPhysicalMemory,
+        (provWritePhysicalMemory)MapMemWritePhysicalMemory
     }
 
 };
