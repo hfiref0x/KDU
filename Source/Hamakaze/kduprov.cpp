@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.25
+*  VERSION:     1.26
 *
-*  DATE:        17 Aug 2022
+*  DATE:        15 Oct 2022
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -814,6 +814,8 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
     HINSTANCE moduleBase;
     KDU_CONTEXT* Context = NULL;
     KDU_PROVIDER* prov;
+    NTSTATUS ntStatus;
+
     FIRMWARE_TYPE fmwType;
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
@@ -834,12 +836,16 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             }
         }
 
-        NTSTATUS ntStatus = supGetFirmwareType(&fmwType);
+        ntStatus = supGetFirmwareType(&fmwType);
         if (!NT_SUCCESS(ntStatus)) {
             printf_s("[!] Could not query firmware type, NTSTATUS (0x%lX)\r\n", ntStatus);
         }
         else {
-            if (prov->PML4FromLowStub)
+
+            supPrintfEvent(kduEventNone, "[+] Firmware type (%s)\r\n",
+                KDUFirmwareToString(fmwType));
+
+            /*if (prov->PML4FromLowStub)
                 if (fmwType != FirmwareTypeUefi) {
 
                     supPrintfEvent(kduEventError, "[!] Unsupported PC firmware type for this provider (req: %s, got: %s)\r\n",
@@ -847,7 +853,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
                         KDUFirmwareToString(fmwType));
 
                     break;
-                }
+                }*/
         }
 
         //

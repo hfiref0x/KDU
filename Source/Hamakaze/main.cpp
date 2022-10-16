@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.25
+*  VERSION:     1.26
 *
-*  DATE:        17 Aug 2022
+*  DATE:        15 Oct 2022
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -535,6 +535,31 @@ int KDUMain()
             if (hvciEnabled) {
                 printf_s("[*] Windows HVCI mode detected\r\n");
             }
+
+        }
+
+        SYSTEM_CODEINTEGRITY_INFORMATION ciPolicy;
+        ULONG dummy = 0;
+
+        ciPolicy.Length = sizeof(ciPolicy);
+        ciPolicy.CodeIntegrityOptions = 0;
+        if (NT_SUCCESS(NtQuerySystemInformation(
+            SystemCodeIntegrityInformation,
+            &ciPolicy,
+            sizeof(ciPolicy),
+            &dummy)))
+        {
+            if (ciPolicy.CodeIntegrityOptions & CODEINTEGRITY_OPTION_TESTSIGN)
+                printf_s("[*] Test Mode ENABLED\r\n");
+
+            if (ciPolicy.CodeIntegrityOptions & CODEINTEGRITY_OPTION_DEBUGMODE_ENABLED)
+                printf_s("[*] Debug Mode ENABLED\r\n");
+
+            if (ciPolicy.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED)
+                printf_s("[*] HVCI KMCI ENABLED\r\n");
+
+            if (ciPolicy.CodeIntegrityOptions & CODEINTEGRITY_OPTION_WHQL_ENFORCEMENT_ENABLED)
+                printf_s("[*] WHQL enforcement ENABLED\r\n");
 
         }
 

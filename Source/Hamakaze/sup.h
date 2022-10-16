@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.25
+*  VERSION:     1.26
 *
-*  DATE:        17 Aug 2022
+*  DATE:        15 Oct 2022
 *
 *  Support routines header file.
 *
@@ -96,6 +96,15 @@ BOOL WINAPI supOpenPhysicalMemory(
     _In_ pfnOpenProcessCallback OpenProcessCallback,
     _In_ pfnDuplicateHandleCallback DuplicateHandleCallback,
     _Out_ PHANDLE PhysicalMemoryHandle);
+
+NTSTATUS supCallDriverEx(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG IoControlCode,
+    _In_ PVOID InputBuffer,
+    _In_ ULONG InputBufferLength,
+    _In_opt_ PVOID OutputBuffer,
+    _In_opt_ ULONG OutputBufferLength,
+    _Out_opt_ PIO_STATUS_BLOCK IoStatus);
 
 BOOL supCallDriver(
     _In_ HANDLE DeviceHandle,

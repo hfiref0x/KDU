@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2022
 *
 *  TITLE:       MAPMEM.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.26
 *
-*  DATE:        19 Apr 2021
+*  DATE:        15 Oct 2022
 *
 *  MAPMEM driver routines.
 *
@@ -21,7 +21,7 @@
 #include "idrv/mapmem.h"
 
 //
-// Gigabyte driver based on MAPMEM.SYS Microsoft Windows NT 3.51 DDK example from 1993.
+// Gigabyte/CODESYS/SuperBMC/etc drivers are based on MAPMEM.SYS Microsoft Windows NT 3.51 DDK example from 1993.
 //
 
 ULONG g_MapMem_MapIoctl;
@@ -42,10 +42,16 @@ PVOID MapMemMapMemory(
 {
     PVOID pMapSection = NULL;
     MAPMEM_PHYSICAL_MEMORY_INFO request;
+    ULONG_PTR offset;
+    ULONG mapSize;
 
     RtlSecureZeroMemory(&request, sizeof(request));
-    request.BusAddress.QuadPart = PhysicalAddress;
-    request.Length = NumberOfBytes;
+
+    offset = PhysicalAddress & ~(PAGE_SIZE - 1);
+    mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
+
+    request.BusAddress.QuadPart = offset;
+    request.Length = mapSize;
 
     if (supCallDriver(DeviceHandle,
         g_MapMem_MapIoctl,
@@ -129,14 +135,14 @@ BOOL WINAPI GioVirtualToPhysicalEx(
 }
 
 /*
-* GioQueryPML4Value
+* MapMemQueryPML4Value
 *
 * Purpose:
 *
 * Locate PML4.
 *
 */
-BOOL WINAPI GioQueryPML4Value(
+BOOL WINAPI MapMemQueryPML4Value(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
@@ -165,34 +171,34 @@ BOOL WINAPI GioQueryPML4Value(
 }
 
 /*
-* GioVirtualToPhysical
+* MapMemVirtualToPhysical
 *
 * Purpose:
 *
 * Translate virtual address to the physical.
 *
 */
-BOOL WINAPI GioVirtualToPhysical(
+BOOL WINAPI MapMemVirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
     return PwVirtualToPhysical(DeviceHandle,
-        GioQueryPML4Value,
-        GioReadPhysicalMemory,
+        MapMemQueryPML4Value,
+        MapMemReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);
 }
 
 /*
-* GioReadWritePhysicalMemory
+* MapMemReadWritePhysicalMemory
 *
 * Purpose:
 *
 * Read/Write physical memory.
 *
 */
-BOOL WINAPI GioReadWritePhysicalMemory(
+BOOL WINAPI MapMemReadWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
@@ -203,6 +209,8 @@ BOOL WINAPI GioReadWritePhysicalMemory(
     DWORD dwError = ERROR_SUCCESS;
     PVOID mappedSection = NULL;
 
+    ULONG_PTR offset;
+
     //
     // Map physical memory section.
     //
@@ -212,13 +220,15 @@ BOOL WINAPI GioReadWritePhysicalMemory(
 
     if (mappedSection) {
 
+        offset = PhysicalAddress - (PhysicalAddress & ~(PAGE_SIZE - 1));
+
         __try {
 
             if (DoWrite) {
-                RtlCopyMemory(mappedSection, Buffer, NumberOfBytes);
+                RtlCopyMemory(RtlOffsetToPointer(mappedSection, offset), Buffer, NumberOfBytes);
             }
             else {
-                RtlCopyMemory(Buffer, mappedSection, NumberOfBytes);
+                RtlCopyMemory(Buffer, RtlOffsetToPointer(mappedSection, offset), NumberOfBytes);
             }
 
             bResult = TRUE;
@@ -245,20 +255,20 @@ BOOL WINAPI GioReadWritePhysicalMemory(
 }
 
 /*
-* GioReadPhysicalMemory
+* MapMemReadPhysicalMemory
 *
 * Purpose:
 *
 * Read from physical memory.
 *
 */
-BOOL WINAPI GioReadPhysicalMemory(
+BOOL WINAPI MapMemReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
-    return GioReadWritePhysicalMemory(DeviceHandle,
+    return MapMemReadWritePhysicalMemory(DeviceHandle,
         PhysicalAddress,
         Buffer,
         NumberOfBytes,
@@ -266,20 +276,20 @@ BOOL WINAPI GioReadPhysicalMemory(
 }
 
 /*
-* GioWritePhysicalMemory
+* MapMemWritePhysicalMemory
 *
 * Purpose:
 *
 * Write to physical memory.
 *
 */
-BOOL WINAPI GioWritePhysicalMemory(
+BOOL WINAPI MapMemWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
-    return GioReadWritePhysicalMemory(DeviceHandle,
+    return MapMemReadWritePhysicalMemory(DeviceHandle,
         PhysicalAddress,
         Buffer,
         NumberOfBytes,
@@ -287,14 +297,14 @@ BOOL WINAPI GioWritePhysicalMemory(
 }
 
 /*
-* GioWriteKernelVirtualMemory
+* MapMemWriteKernelVirtualMemory
 *
 * Purpose:
 *
 * Write virtual memory via GDRV.
 *
 */
-BOOL WINAPI GioWriteKernelVirtualMemory(
+BOOL WINAPI MapMemWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -305,13 +315,13 @@ BOOL WINAPI GioWriteKernelVirtualMemory(
 
     SetLastError(ERROR_SUCCESS);
 
-    bResult = GioVirtualToPhysical(DeviceHandle,
+    bResult = MapMemVirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
 
     if (bResult) {
 
-        bResult = GioReadWritePhysicalMemory(DeviceHandle,
+        bResult = MapMemReadWritePhysicalMemory(DeviceHandle,
             physicalAddress,
             Buffer,
             NumberOfBytes,
@@ -323,14 +333,14 @@ BOOL WINAPI GioWriteKernelVirtualMemory(
 }
 
 /*
-* GioReadKernelVirtualMemory
+* MapMemReadKernelVirtualMemory
 *
 * Purpose:
 *
 * Read virtual memory via GDRV.
 *
 */
-BOOL WINAPI GioReadKernelVirtualMemory(
+BOOL WINAPI MapMemReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -341,13 +351,13 @@ BOOL WINAPI GioReadKernelVirtualMemory(
 
     SetLastError(ERROR_SUCCESS);
 
-    bResult = GioVirtualToPhysical(DeviceHandle,
+    bResult = MapMemVirtualToPhysical(DeviceHandle,
         Address,
         &physicalAddress);
 
     if (bResult) {
 
-        bResult = GioReadWritePhysicalMemory(DeviceHandle,
+        bResult = MapMemReadWritePhysicalMemory(DeviceHandle,
             physicalAddress,
             Buffer,
             NumberOfBytes,
@@ -375,6 +385,12 @@ BOOL WINAPI MapMemRegisterDriver(
     UNREFERENCED_PARAMETER(DeviceHandle);
 
     switch (DriverId) {
+
+    case IDR_SYSDRV3S:
+        g_MapMem_MapIoctl = IOCTL_MAPMEM_MAP_USER_PHYSICAL_MEMORY;
+        g_MapMem_UnmapIoctl = IOCTL_MAPMEM_UNMAP_USER_PHYSICAL_MEMORY;
+        break;
+
     case IDR_GDRV:
     default:
         g_MapMem_MapIoctl = IOCTL_GDRV_MAP_USER_PHYSICAL_MEMORY;

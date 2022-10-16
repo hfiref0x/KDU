@@ -3,6 +3,7 @@ branches:
   only:
   - master
 image: Visual Studio 2022
+configuration: Release
 platform: x64
 clone_folder: c:\projects\kdu
 build:

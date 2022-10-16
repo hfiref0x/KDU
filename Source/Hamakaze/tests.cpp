@@ -4,9 +4,9 @@
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.25
+*  VERSION:     1.26
 *
-*  DATE:        18 Aug 2022
+*  DATE:        15 Oct 2022
 *
 *  KDU tests.
 *
@@ -49,7 +49,7 @@ VOID KDUTestLoad()
 
 VOID KDUTestDSE(PKDU_CONTEXT Context)
 {
-    ULONG_PTR g_CiOptions = 0xfffff806161f6d18;
+    ULONG_PTR g_CiOptions = 0xfffff8030dc3a438;
     ULONG_PTR oldValue = 0, newValue = 0x1337, testValue = 0;
     KDU_PROVIDER* prov = Context->Provider;
 
@@ -72,10 +72,10 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(23, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
+    Context = KDUProviderCreate(24, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
     if (Context) {
 
-        //KDUTestDSE(Context);
+        KDUTestDSE(Context);
 
         //ULONG64 dummy = 0;
 

@@ -48,6 +48,51 @@ BOOL FORCEINLINE supHeapFree(
 }
 
 /*
+* supCallDriverEx
+*
+* Purpose:
+*
+* Call driver.
+*
+*/
+NTSTATUS supCallDriverEx(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG IoControlCode,
+    _In_ PVOID InputBuffer,
+    _In_ ULONG InputBufferLength,
+    _In_opt_ PVOID OutputBuffer,
+    _In_opt_ ULONG OutputBufferLength,
+    _Out_opt_ PIO_STATUS_BLOCK IoStatus)
+{
+    IO_STATUS_BLOCK ioStatus;
+
+    NTSTATUS ntStatus = NtDeviceIoControlFile(DeviceHandle,
+        NULL,
+        NULL,
+        NULL,
+        &ioStatus,
+        IoControlCode,
+        InputBuffer,
+        InputBufferLength,
+        OutputBuffer,
+        OutputBufferLength);
+
+    if (ntStatus == STATUS_PENDING) {
+
+        ntStatus = NtWaitForSingleObject(DeviceHandle,
+            FALSE,
+            NULL);
+
+    }
+
+
+    if (IoStatus)
+        *IoStatus = ioStatus;
+
+    return ntStatus;
+}
+
+/*
 * supCallDriver
 *
 * Purpose:
@@ -63,19 +108,17 @@ BOOL supCallDriver(
     _In_opt_ PVOID OutputBuffer,
     _In_opt_ ULONG OutputBufferLength)
 {
-    BOOL bResult = FALSE;
+    BOOL bResult;
     IO_STATUS_BLOCK ioStatus;
 
-    NTSTATUS ntStatus = NtDeviceIoControlFile(DeviceHandle,
-        NULL,
-        NULL,
-        NULL,
-        &ioStatus,
+    NTSTATUS ntStatus = supCallDriverEx(
+        DeviceHandle,
         IoControlCode,
         InputBuffer,
         InputBufferLength,
         OutputBuffer,
-        OutputBufferLength);
+        OutputBufferLength,
+        &ioStatus);
 
     bResult = NT_SUCCESS(ntStatus);
     SetLastError(RtlNtStatusToDosError(ntStatus));
