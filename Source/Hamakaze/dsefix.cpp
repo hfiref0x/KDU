@@ -311,7 +311,7 @@ ULONG_PTR KDUQueryCodeIntegrityVariableAddress(
 
     WCHAR szFullModuleName[MAX_PATH * 2];
 
-    if (NtBuildNumber < NT_WIN8_BLUE) {
+    if (NtBuildNumber < NT_WIN8_RTM) {
         lpModuleName = (LPWSTR)NTOSKRNL_EXE;
     }
     else {
@@ -342,7 +342,7 @@ ULONG_PTR KDUQueryCodeIntegrityVariableAddress(
 
         printf_s("[+] Module \"%ws\" loaded for pattern search\r\n", lpModuleName);
 
-        if (NtBuildNumber < NT_WIN8_BLUE) {
+        if (NtBuildNumber < NT_WIN8_RTM) {
 
             ntStatus = supQueryImageSize(mappedImageBase,
                 &sizeOfImage);
