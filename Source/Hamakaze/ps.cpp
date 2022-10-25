@@ -177,7 +177,7 @@ BOOL KDUControlProcess(
 
                 Buffer = 0;               
 
-                if (Context->Provider->Callbacks.ReadKernelVM(Context, 
+                if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle, 
                     VirtualAddress, 
                     &Buffer, 
                     sizeof(ULONG))) 
@@ -204,7 +204,7 @@ BOOL KDUControlProcess(
                     PsProtection->Type = PsProtectedTypeNone;
                     PsProtection->Audit = 0;
 
-                    bResult = Context->Provider->Callbacks.WriteKernelVM(Context, 
+                    bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle, 
                         VirtualAddress, 
                         &Buffer, 
                         sizeof(ULONG));
