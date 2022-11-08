@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.26
+*  VERSION:     1.27
 *
-*  DATE:        15 Oct 2022
+*  DATE:        08 Nov 2022
 *
 *  Providers global list.
 *
@@ -813,6 +813,36 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)MapMemQueryPML4Value,
         (provReadPhysicalMemory)MapMemReadPhysicalMemory,
         (provWritePhysicalMemory)MapMemWritePhysicalMemory
-    }
+    },
 
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ZEMANA,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL,
+        KDUPROV_SC_V4,
+        (LPWSTR)L"Zemana (CVE-2021-31728, CVE-2022-42045)",
+        (LPWSTR)L"ZemanaAntimalware",
+        (LPWSTR)L"amsdk",
+        (LPWSTR)L"WATCHDOGDEVELOPMENT.COM, LLC",
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)ZmRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)ZmMapDriver,
+        (provControlDSE)ZmControlDSE,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL
+    }
 };

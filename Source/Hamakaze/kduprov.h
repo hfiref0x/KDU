@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.25
+*  VERSION:     1.27
 *
-*  DATE:        17 Aug 2022
+*  DATE:        01 Nov 2022
 *
 *  Provider support routines.
 *
@@ -46,6 +46,8 @@
 #define KDU_PROVIDER_DBK64              21
 #define KDU_PROVIDER_ASUSIO3            22
 #define KDU_PROVIDER_HW64               23
+#define KDU_PROVIDER_SYSDRV3S           24
+#define KDU_PROVIDER_ZEMANA             25
 
 //
 // Victim providers id
@@ -231,6 +233,7 @@ typedef enum _KDU_ACTION_TYPE {
 #define KDUPROV_SC_ALL_DEFAULT (KDUPROV_SC_V1 | KDUPROV_SC_V2 | KDUPROV_SC_V3)
 
 #define KDUPROV_SC_V4   (0x008)
+#define KDUPROV_SC_V5   (0x010)
 
 typedef enum _KDU_SOURCEBASE {
     SourceBaseNone = 0,
@@ -240,6 +243,12 @@ typedef enum _KDU_SOURCEBASE {
     SourceBaseMapMem,
     SourceBaseMax
 } KDU_SOURCEBASE;
+
+typedef enum _KDU_PROVIDER_STATE {
+    StateUnloaded = 0,
+    StateLoaded,
+    StateMax
+} KDU_PROVIDER_STATE;
 
 typedef struct _KDU_PROVIDER {
     ULONG MinNtBuildNumberSupport;
@@ -307,6 +316,7 @@ typedef struct _KDU_CONTEXT {
     ULONG_PTR MaximumUserModeAddress;
     PKDU_PROVIDER Provider;
     PKDU_VICTIM_PROVIDER Victim;
+    KDU_PROVIDER_STATE ProviderState;
 
     //fields used by shellcode v3 only
     FIXED_UNICODE_STRING DriverObjectName;

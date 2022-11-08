@@ -4,9 +4,9 @@
 *
 *  TITLE:       WINRING0.CPP
 *
-*  VERSION:     1.12
+*  VERSION:     1.27
 *
-*  DATE:        25 Jan 2022
+*  DATE:        08 Nov 2022
 *
 *  WinRing0 based drivers routines.
 *
@@ -65,12 +65,10 @@ BOOL WINAPI WRZeroWritePhysicalMemory(
 {
     BOOL bResult = FALSE;
     SIZE_T size;
-    ULONG value;
     DWORD dwError = ERROR_SUCCESS;
     OLS_WRITE_MEMORY_INPUT* pRequest;
 
-    value = FIELD_OFFSET(OLS_WRITE_MEMORY_INPUT, Data) + NumberOfBytes;
-    size = ALIGN_UP_BY(value, PAGE_SIZE);
+    size = (SIZE_T)FIELD_OFFSET(OLS_WRITE_MEMORY_INPUT, Data) + NumberOfBytes;
 
     pRequest = (OLS_WRITE_MEMORY_INPUT*)VirtualAlloc(NULL, size, 
         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);

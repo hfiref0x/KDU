@@ -171,6 +171,9 @@
     <ClCompile Include="idrv\marvinhw.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\zemana.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -311,6 +314,9 @@
     <ClInclude Include="idrv\marvinhw.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
+    <ClInclude Include="idrv\zemana.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc">
@@ -329,5 +335,10 @@
     <None Include="res\Taigei32.bin">
       <Filter>Resource Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="shellmasm.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

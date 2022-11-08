@@ -4,9 +4,9 @@
 *
 *  TITLE:       DBK.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.27
 *
-*  DATE:        16 Feb 2022
+*  DATE:        27 Oct 2022
 *
 *  Cheat Engine's DBK driver routines.
 *
@@ -707,15 +707,12 @@ BOOL DbkMapDriver(
 {
     BOOL bSuccess = FALSE;
     PVOID pvShellCode;
-    KDU_PROVIDER* prov;
     HANDLE deviceHandle;
+    HANDLE sectionHandle = NULL;
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
-    prov = Context->Provider;
     deviceHandle = Context->DeviceHandle;
-
-    HANDLE sectionHandle = NULL;
 
     pvShellCode = KDUSetupShellCode(Context, ImageBase, &sectionHandle);
     if (pvShellCode) {

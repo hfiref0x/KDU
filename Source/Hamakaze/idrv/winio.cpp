@@ -4,9 +4,9 @@
 *
 *  TITLE:       WINIO.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.27
 *
-*  DATE:        10 Feb 2022
+*  DATE:        26 Oct 2022
 *
 *  WINIO based drivers routines.
 *

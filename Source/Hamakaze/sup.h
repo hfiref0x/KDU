@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.26
+*  VERSION:     1.27
 *
-*  DATE:        15 Oct 2022
+*  DATE:        25 Oct 2022
 *
 *  Support routines header file.
 *
@@ -290,3 +290,7 @@ NTSTATUS supFilterDeviceIoControl(
     _Out_writes_bytes_to_opt_(OutBufferSize, *BytesReturned) PVOID OutBuffer,
     _In_ ULONG OutBufferSize,
     _Out_opt_ PULONG BytesReturned);
+
+ULONG_PTR supGetHalQuerySystemInformation(
+    _In_ ULONG_PTR NtOsLoadedBase,
+    _In_ ULONG_PTR NtOsMappedBase);

@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.26
+*  VERSION:     1.27
 *
-*  DATE:        15 Oct 2022
+*  DATE:        08 Nov 2022
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -34,6 +34,7 @@
 #include "idrv/procexp.h"
 #include "idrv/dbk.h"
 #include "idrv/marvinhw.h"
+#include "idrv/zemana.h"
 #include "kduplist.h"
 
 /*
@@ -277,15 +278,15 @@ BOOL KDUProvLoadVulnerableDriver(
     //
     ntStatus = supLoadDriver(lpDriverName, lpFullFileName, FALSE);
     if (NT_SUCCESS(ntStatus)) {
-        supPrintfEvent(kduEventInformation, 
+        supPrintfEvent(kduEventInformation,
             "[+] Vulnerable driver \"%ws\" loaded\r\n", lpDriverName);
         bLoaded = TRUE;
     }
     else {
-        
-        supPrintfEvent(kduEventError, 
+
+        supPrintfEvent(kduEventError,
             "[!] Unable to load vulnerable driver, NTSTATUS (0x%lX)\r\n", ntStatus);
-        
+
         DeleteFile(lpFullFileName);
     }
 
@@ -311,10 +312,10 @@ BOOL KDUProvStartVulnerableDriver(
     // Check if driver already loaded.
     //
     if (supIsObjectExists((LPWSTR)L"\\Device", lpDeviceName)) {
-        
-        supPrintfEvent(kduEventError, 
+
+        supPrintfEvent(kduEventError,
             "[!] Vulnerable driver is already loaded\r\n");
-        
+
         bLoaded = TRUE;
     }
     else {
@@ -330,7 +331,7 @@ BOOL KDUProvStartVulnerableDriver(
     // If driver loaded then open handle for it and run optional callbacks.
     //
     if (bLoaded) {
-       KDUProvOpenVulnerableDriverAndRunCallbacks(Context);
+        KDUProvOpenVulnerableDriverAndRunCallbacks(Context);
     }
 
     return (Context->DeviceHandle != NULL);
@@ -347,7 +348,7 @@ BOOL KDUProvStartVulnerableDriver(
 void KDUProvOpenVulnerableDriverAndRunCallbacks(
     _In_ KDU_CONTEXT* Context
 )
-{   
+{
     HANDLE deviceHandle = NULL;
 
     //
@@ -358,8 +359,8 @@ void KDUProvOpenVulnerableDriverAndRunCallbacks(
         Context->Provider->Callbacks.PreOpenDriver((PVOID)Context);
     }
 
-    NTSTATUS ntStatus = supOpenDriver(Context->Provider->DeviceName, 
-        WRITE_DAC | GENERIC_WRITE | GENERIC_READ, 
+    NTSTATUS ntStatus = supOpenDriver(Context->Provider->DeviceName,
+        WRITE_DAC | GENERIC_WRITE | GENERIC_READ,
         &deviceHandle);
 
     if (!NT_SUCCESS(ntStatus)) {
@@ -370,7 +371,7 @@ void KDUProvOpenVulnerableDriverAndRunCallbacks(
     }
     else {
 
-        supPrintfEvent(kduEventInformation, 
+        supPrintfEvent(kduEventInformation,
             "[+] Vulnerable driver \"%ws\" opened\r\n",
             Context->Provider->DriverName);
 
@@ -408,19 +409,21 @@ void KDUProvStopVulnerableDriver(
 
     ntStatus = supUnloadDriver(lpDriverName, TRUE);
     if (!NT_SUCCESS(ntStatus)) {
-        
-        supPrintfEvent(kduEventError, 
+
+        supPrintfEvent(kduEventError,
             "[!] Unable to unload vulnerable driver, NTSTATUS (0x%lX)\r\n", ntStatus);
 
     }
     else {
 
         supPrintfEvent(kduEventInformation,
-            "[+] Vulnerable driver \"%ws\" unloaded\r\n", 
+            "[+] Vulnerable driver \"%ws\" unloaded\r\n",
             lpDriverName);
 
         if (supDeleteFileWithWait(1000, 5, lpFullFileName))
             printf_s("[+] Vulnerable driver file removed\r\n");
+
+        Context->ProviderState = StateUnloaded;
 
     }
 }
@@ -646,7 +649,7 @@ HINSTANCE KDUProviderLoadDB(
     }
     else {
 
-        supPrintfEvent(kduEventError, 
+        supPrintfEvent(kduEventError,
             "[!] Could not load drivers database, GetLastError %lu\r\n", GetLastError());
 
     }
@@ -665,7 +668,7 @@ HINSTANCE KDUProviderLoadDB(
 *
 */
 BOOL KDUProviderVerifyActionType(
-    _In_ KDU_PROVIDER* Provider,
+    _In_ KDU_PROVIDER * Provider,
     _In_ KDU_ACTION_TYPE ActionType)
 {
     BOOL bResult = TRUE;
@@ -753,19 +756,19 @@ BOOL KDUProviderVerifyActionType(
 }
 
 VOID KDUFallBackOnLoad(
-    _Inout_ PKDU_CONTEXT *Context
+    _Inout_ PKDU_CONTEXT * Context
 )
 {
     PKDU_CONTEXT ctx = *Context;
-    
+
     if (ctx->DeviceHandle)
         NtClose(ctx->DeviceHandle);
-    
+
     ctx->Provider->Callbacks.StopVulnerableDriver(ctx);
-    
+
     if (ctx->DriverFileName)
         supHeapFree(ctx->DriverFileName);
-    
+
     supHeapFree(ctx);
     *Context = NULL;
 }
@@ -787,6 +790,9 @@ BOOL KDUIsSupportedShell(
         break;
     case KDU_SHELLCODE_V4:
         value = KDUPROV_SC_V4;
+        break;
+    case KDU_SHELLCODE_V5:
+        value = KDUPROV_SC_V5;
         break;
     default:
         return FALSE;
@@ -829,8 +835,8 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
         if (ShellCodeVersion != KDU_SHELLCODE_NONE) {
             if (!KDUIsSupportedShell(ShellCodeVersion, prov->SupportedShellFlags)) {
-                supPrintfEvent(kduEventError, 
-                    "[!] Selected shellcode %lu is not supported by this provider (supported mask: 0x%08x), abort\r\n", 
+                supPrintfEvent(kduEventError,
+                    "[!] Selected shellcode %lu is not supported by this provider (supported mask: 0x%08x), abort\r\n",
                     ShellCodeVersion, prov->SupportedShellFlags);
                 break;
             }
@@ -867,10 +873,10 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         // Check HVCI support.
         //
         if (HvciEnabled && prov->SupportHVCI == 0) {
-            
-            supPrintfEvent(kduEventError, 
+
+            supPrintfEvent(kduEventError,
                 "[!] Abort: selected provider does not support HVCI\r\n");
-            
+
             break;
         }
 
@@ -879,10 +885,10 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         //
 
         if (NtBuildNumber < prov->MinNtBuildNumberSupport) {
-            
-            supPrintfEvent(kduEventError, 
+
+            supPrintfEvent(kduEventError,
                 "[!] Abort: selected provider require newer Windows NT version\r\n");
-            
+
             break;
         }
 
@@ -892,10 +898,10 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
         if (prov->MaxNtBuildNumberSupport != KDU_MAX_NTBUILDNUMBER) {
             if (NtBuildNumber > prov->MaxNtBuildNumberSupport) {
-                
-                supPrintfEvent(kduEventError, 
+
+                supPrintfEvent(kduEventError,
                     "[!] Warning: selected provider may not work on this Windows NT version\r\n");
-                
+
             }
         }
 
@@ -912,19 +918,19 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
         ntStatus = supEnablePrivilege(SE_DEBUG_PRIVILEGE, TRUE);
         if (!NT_SUCCESS(ntStatus)) {
-            
-            supPrintfEvent(kduEventError, 
+
+            supPrintfEvent(kduEventError,
                 "[!] Abort: SeDebugPrivilege is not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);
-            
+
             break;
         }
 
         ntStatus = supEnablePrivilege(SE_LOAD_DRIVER_PRIVILEGE, TRUE);
         if (!NT_SUCCESS(ntStatus)) {
-            
-            supPrintfEvent(kduEventError, 
+
+            supPrintfEvent(kduEventError,
                 "[!] Abort: SeLoadDriverPrivilege is not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);
-            
+
             break;
         }
 
@@ -933,10 +939,10 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         //
         Context = (KDU_CONTEXT*)supHeapAlloc(sizeof(KDU_CONTEXT));
         if (Context == NULL) {
-            
-            supPrintfEvent(kduEventError, 
+
+            supPrintfEvent(kduEventError,
                 "[!] Abort: could not allocate provider context\r\n");
-            
+
             break;
         }
 
@@ -978,8 +984,10 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             _strcat(Context->DriverFileName, TEXT("\\"));
             _strcat(Context->DriverFileName, Context->Provider->DriverName);
             _strcat(Context->DriverFileName, TEXT(".sys"));
-           
+
             if (Context->Provider->Callbacks.StartVulnerableDriver(Context)) {
+
+                Context->ProviderState = StateLoaded;
 
                 //
                 // Register (unlock, send love letter, whatever this provider want first) driver.
@@ -1000,7 +1008,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
                         regParam))
                     {
 
-                        supPrintfEvent(kduEventError, 
+                        supPrintfEvent(kduEventError,
                             "[!] Could not register provider driver, GetLastError %lu\r\n", GetLastError());
 
                         //
@@ -1042,33 +1050,42 @@ VOID WINAPI KDUProviderRelease(
 
     if (Context) {
 
-        //
-        // Unregister driver if supported.
-        //
-        if ((PVOID)Context->Provider->Callbacks.UnregisterDriver) {
-            Context->Provider->Callbacks.UnregisterDriver(
-                Context->DeviceHandle, 
-                (PVOID)Context);
-        }
-
-        if (Context->DeviceHandle)
-            NtClose(Context->DeviceHandle);
-
-        if (Context->Provider->NoUnloadSupported) {
-            supPrintfEvent(kduEventInformation,
-                "[~] This driver does not support unload procedure, reboot PC to get rid of it\r\n");
-        }
-        else {
+        if (Context->ProviderState == StateLoaded) {
 
             //
-            // Unload driver.
+            // Unregister driver if supported.
             //
-            Context->Provider->Callbacks.StopVulnerableDriver(Context);
+            if ((PVOID)Context->Provider->Callbacks.UnregisterDriver) {
+                Context->Provider->Callbacks.UnregisterDriver(
+                    Context->DeviceHandle,
+                    (PVOID)Context);
+            }
 
+            if (Context->DeviceHandle) {
+                NtClose(Context->DeviceHandle);
+                Context->DeviceHandle = NULL;
+            }
+
+            if (Context->Provider->NoUnloadSupported) {
+                supPrintfEvent(kduEventInformation,
+                    "[~] This driver does not support unload procedure, reboot PC to get rid of it\r\n");
+            }
+            else {
+
+                //
+                // Unload driver.
+                //
+                Context->Provider->Callbacks.StopVulnerableDriver(Context);
+
+            }
+
+            Context->ProviderState = StateUnloaded;
         }
 
-        if (Context->DriverFileName)
+        if (Context->DriverFileName) {
             supHeapFree(Context->DriverFileName);
+            Context->DriverFileName = NULL;
+        }
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);

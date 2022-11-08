@@ -4,9 +4,9 @@
 *
 *  TITLE:       WDKSUP.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.27
 *
-*  DATE:        15 Feb 2022
+*  DATE:        01 Nov 2022
 *
 *  Header file for NT WDK definitions.
 *
@@ -19,6 +19,8 @@
 *
 ************************************************************************************/
 #pragma once
+
+#define IO_NO_INCREMENT 0
 
 //
 // Processor modes.
@@ -126,6 +128,9 @@ typedef PVOID(NTAPI* pfnExAllocatePoolWithTag)(
 typedef VOID(NTAPI* pfnExFreePoolWithTag)(
     _In_ PVOID P,
     _In_ ULONG Tag);
+
+typedef PVOID (NTAPI* pfnMmGetSystemRoutineAddress)(
+    _In_ PUNICODE_STRING SystemRoutineName);
 
 typedef NTSTATUS(NTAPI* pfnPsCreateSystemThread)(
     _Out_ PHANDLE ThreadHandle,

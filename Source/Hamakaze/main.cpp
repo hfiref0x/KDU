@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.26
+*  VERSION:     1.27
 *
-*  DATE:        15 Oct 2022
+*  DATE:        01 Nov 2022
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -280,7 +280,6 @@ INT KDUProcessCommandLine(
         }
 
 #endif
-
         //
         // List providers.
         //
