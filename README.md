@@ -126,6 +126,8 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 22          | ASUSTeK        | AsIO3       | ASUS GPU TweakII                   | WINIO             | 2.3.0.3                     |                      |
 | 23          | Marvin         | Hw          | Marvin Hardware Access Driver      | Original          | 4.9 and below               | Name                 |
 | 24          | CODESYS        | SysDrv3S    | CODESYS SysDrv3S                   | MAPMEM            | 3.5.6 and below             |                      |
+| 25          | Zemana         | amsdk       | WatchDog/MalwareFox/Zemana AM      | Original          | 3.0.0 and below             |                      |
+| 26          | HiRes Ent.     | inpoutx64   | Various                            | WINIO             | 1.2.0 and below             |                      |
 
 ###### *At commit time, data maybe inaccurate.
 

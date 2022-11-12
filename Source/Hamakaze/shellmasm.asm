@@ -18,8 +18,8 @@
 ;*******************************************************************************/
 _TEXT$00 segment para 'CODE'
 
-	ALIGN 16
-	PUBLIC ZmShellStager
+    ALIGN 16
+    PUBLIC ZmShellStager
     PUBLIC ZmShellStagerEnd
     PUBLIC ZmShellDSEFix
     PUBLIC ZmShellDSEFixEnd
@@ -41,7 +41,7 @@ ZmShellStager PROC
     rep movsb
     pop rsi
     pop rdi
-	ret
+    ret
 ZmShellStager ENDP
 
 ZmShellStagerEnd PROC

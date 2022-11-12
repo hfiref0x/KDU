@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.27
 *
-*  DATE:        07 Nov 2022
+*  DATE:        10 Nov 2022
 *
 *  Dell BIOS Utility driver routines.
 *
@@ -49,15 +49,17 @@ BOOL DbUtilManageFiles(
         ((_strlen(DBUTILCAT_FILE) + _strlen(DBUTILINF_FILE)) * sizeof(WCHAR)) +
         CurrentDirectory->Length;
 
-    ULONG length;
+    ULONG length, lastError = ERROR_SUCCESS;
 
     if (DoInstall) {
 
         //
         // Drop DbUtilDrv2.
         //
-        if (!KDUProvExtractVulnerableDriver(Context))
+        if (!KDUProvExtractVulnerableDriver(Context)) {
+            lastError = ERROR_INTERNAL_ERROR;
             return FALSE;
+        }
 
         //
         // Drop cat and inf files.
@@ -86,6 +88,9 @@ BOOL DbUtilManageFiles(
                         sizeof(g_DbUtilHardwareId),
                         &g_DbUtilDevInfo,
                         &g_DbUtilDevInfoData);
+
+                    if (!bResult) 
+                        lastError = GetLastError();
 
                 }
             }
@@ -119,6 +124,8 @@ BOOL DbUtilManageFiles(
         }
 
     }
+
+    SetLastError(lastError);
     return bResult;
 }
 
@@ -134,8 +141,9 @@ BOOL DbUtilStartVulnerableDriver(
     _In_ KDU_CONTEXT* Context
 )
 {
-    BOOL     bLoaded = FALSE;
-    LPWSTR   lpDeviceName = Context->Provider->DeviceName;
+    BOOL          bLoaded = FALSE;
+    PKDU_DB_ENTRY provLoadData = Context->Provider->LoadData;
+    LPWSTR        lpDeviceName = provLoadData->DeviceName;
 
     //
     // Check if driver already loaded.
@@ -165,7 +173,7 @@ BOOL DbUtilStartVulnerableDriver(
     }
     else {
         supPrintfEvent(kduEventError,
-            "[!] Vulnerable driver is not loaded\r\n");
+            "[!] Vulnerable driver is not loaded, GetLastError 0x%lX\r\n", GetLastError());
     }
 
     return (Context->DeviceHandle != NULL);

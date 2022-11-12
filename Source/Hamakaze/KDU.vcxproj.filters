@@ -200,9 +200,6 @@
     <ClInclude Include="victim.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="consts.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="idrv\nal.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
@@ -316,6 +313,9 @@
     </ClInclude>
     <ClInclude Include="idrv\zemana.h">
       <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\consts.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

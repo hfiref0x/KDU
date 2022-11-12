@@ -163,6 +163,7 @@
     <ClCompile Include="victim.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Shared\consts.h" />
     <ClInclude Include="..\Shared\ldr\ldr.h" />
     <ClInclude Include="..\Shared\minirtl\cmdline.h" />
     <ClInclude Include="..\Shared\minirtl\minirtl.h" />
@@ -175,7 +176,6 @@
     <ClInclude Include="..\Shared\ntos\ntsup.h" />
     <ClInclude Include="..\Shared\tinyaes\aes.h" />
     <ClInclude Include="compress.h" />
-    <ClInclude Include="consts.h" />
     <ClInclude Include="drvmap.h" />
     <ClInclude Include="dsefix.h" />
     <ClInclude Include="global.h" />

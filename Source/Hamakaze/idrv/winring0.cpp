@@ -65,12 +65,14 @@ BOOL WINAPI WRZeroWritePhysicalMemory(
 {
     BOOL bResult = FALSE;
     SIZE_T size;
+    ULONG value;
     DWORD dwError = ERROR_SUCCESS;
     OLS_WRITE_MEMORY_INPUT* pRequest;
 
-    size = (SIZE_T)FIELD_OFFSET(OLS_WRITE_MEMORY_INPUT, Data) + NumberOfBytes;
+    value = FIELD_OFFSET(OLS_WRITE_MEMORY_INPUT, Data) + NumberOfBytes;
+    size = ALIGN_UP_BY(value, PAGE_SIZE);
 
-    pRequest = (OLS_WRITE_MEMORY_INPUT*)VirtualAlloc(NULL, size, 
+    pRequest = (OLS_WRITE_MEMORY_INPUT*)VirtualAlloc(NULL, size,
         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
     if (pRequest) {

@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.27
 *
-*  DATE:        08 Nov 2022
+*  DATE:        11 Nov 2022
 *
 *  Providers global list.
 *
@@ -36,21 +36,12 @@ static KDU_VICTIM_PROVIDER g_KDUVictims[] = {
 };
 
 //
-// Providers public array, unsupported methods must be set to provider stub and cannot be NULL.
+// Providers public array, unsupported methods must be set to NULL.
 //
 static KDU_PROVIDER g_KDUProviders[] =
 {
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_iQVM64,
-        SourceBaseNone,
-        KDUPROV_FLAGS_NONE,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"CVE-2015-2291",
-        (LPWSTR)L"NalDrv",
-        (LPWSTR)L"Nal",
-        (LPWSTR)L"Intel Corporation",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -72,16 +63,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_RTCORE64,
-        SourceBaseNone,
-        KDUPROV_FLAGS_NONE,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"CVE-2019-16098",
-        (LPWSTR)L"RTCore64",
-        (LPWSTR)L"RTCore64",
-        (LPWSTR)L"MICRO-STAR INTERNATIONAL CO., LTD.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -103,16 +85,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_GDRV,
-        SourceBaseMapMem,
-        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"CVE-2018-19320",
-        (LPWSTR)L"Gdrv",
-        (LPWSTR)L"GIO",
-        (LPWSTR)L"Giga-Byte Technology",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -134,16 +107,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_ATSZIO64,
-        SourceBaseNone,
-        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"ASUSTeK WinFlash",
-        (LPWSTR)L"ATSZIO",
-        (LPWSTR)L"ATSZIO",
-        (LPWSTR)L"ASUSTeK Computer Inc.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -165,16 +129,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_MSIO64,
-        SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"CVE-2019-18845",
-        (LPWSTR)L"MsIo64",
-        (LPWSTR)L"MsIo",
-        (LPWSTR)L"MICSYS Technology Co., Ltd.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -196,16 +151,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_GLCKIO2,
-        SourceBaseWinIo,
-        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"ASRock Polychrome RGB, multiple CVE ids",
-        (LPWSTR)L"GLCKIo2",
-        (LPWSTR)L"GLCKIo2",
-        (LPWSTR)L"ASUSTeK Computer Inc.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -227,16 +173,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_ENEIO64,
-        SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"G.SKILL Trident Z Lighting Control",
-        (LPWSTR)L"EneIo64",
-        (LPWSTR)L"EneIo",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -258,16 +195,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        NT_WIN10_REDSTONE3,
-        IDR_WINRING0,
-        SourceBaseWinRing0,
-        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"EVGA Precision X1",
-        (LPWSTR)L"WinRing0x64",
-        (LPWSTR)L"WinRing0_1_2_0",
-        (LPWSTR)L"EVGA",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -289,16 +217,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_ENETECHIO64,
-        SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"Thermaltake TOUGHRAM Software",
-        (LPWSTR)L"EneTechIo64",
-        (LPWSTR)L"EneTechIo",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -320,16 +239,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_PHYMEMX64,
-        SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"Huawei MateBook Manager",
-        (LPWSTR)L"phymemx64",
-        (LPWSTR)L"PhyMem",
-        (LPWSTR)L"Huawei Technologies Co.,Ltd.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -351,16 +261,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        NT_WIN10_REDSTONE3,
-        IDR_RTKIO64,
-        SourceBasePhyMem,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"Realtek Dash Client Utility",
-        (LPWSTR)L"rtkio64",
-        (LPWSTR)L"rtkio",
-        (LPWSTR)L"Realtek Semiconductor Corp.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -382,16 +283,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_ENETECHIO64B,
-        SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"MSI Dragon Center",
-        (LPWSTR)L"EneTechIo64",
-        (LPWSTR)L"EneTechIo",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -413,16 +305,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        NT_WIN10_REDSTONE3,
-        IDR_LHA,
-        SourceBaseNone,
-        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"CVE-2019-8372",
-        (LPWSTR)L"lha",
-        (LPWSTR)L"{E8F2FF20-6AF7-4914-9398-CE2132FE170F}",
-        (LPWSTR)L"LG Electronics Inc.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -444,16 +327,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_ASUSIO2,
-        SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"ASUS GPU Tweak",
-        (LPWSTR)L"AsIO2",
-        (LPWSTR)L"Asusgio2",
-        (LPWSTR)L"ASUSTeK Computer Inc.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -475,16 +349,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_DIRECTIO64,
-        SourceBaseNone,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"PassMark DirectIO",
-        (LPWSTR)L"DirectIo64",
-        (LPWSTR)L"DIRECTIO64",
-        (LPWSTR)L"PassMark Software Pty Ltd",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -506,16 +371,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_GMERDRV,
-        SourceBaseNone,
-        KDUPROV_FLAGS_NO_FORCED_SD,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"Gmer 'Antirootkit'",
-        (LPWSTR)L"gmerdrv",
-        (LPWSTR)L"gmerdrv",
-        (LPWSTR)L"GMEREK Systemy Komputerowe Przemyslaw Gmerek",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -537,16 +393,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_DBUTIL23,
-        SourceBaseNone,
-        KDUPROV_FLAGS_NO_UNLOAD_SUP,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"CVE-2021-21551",
-        (LPWSTR)L"DBUtil23",
-        (LPWSTR)L"DBUtil_2_3",
-        (LPWSTR)L"Dell Inc.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -568,16 +415,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_MIMIDRV,
-        SourceBaseNone,
-        KDUPROV_FLAGS_NONE,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"Mimikatz mimidrv",
-        (LPWSTR)L"mimidrv",
-        (LPWSTR)L"mimidrv",
-        (LPWSTR)L"Benjamin Delpy",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -599,16 +437,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        NT_WIN10_21H2,
-        IDR_KPH,
-        SourceBaseNone,
-        KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"KProcessHacker",
-        (LPWSTR)L"KProcessHacker",
-        (LPWSTR)L"KProcessHacker2",
-        (LPWSTR)L"Wen Jia Liu",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -630,16 +459,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        NT_WIN10_21H2,
-        IDR_PROCEXP,
-        SourceBaseNone,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_NO_VICTIM,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)PROCEXP_DESC,
-        (LPWSTR)PROCEXP152,
-        (LPWSTR)PROCEXP152,
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -661,16 +481,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_DBUTILDRV2,
-        SourceBaseNone,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"CVE-2021-36276",
-        (LPWSTR)L"DBUtilDrv2",
-        (LPWSTR)L"DBUtil_2_5",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher",
+        NULL,
 
         (provStartVulnerableDriver)DbUtilStartVulnerableDriver,
         (provStopVulnerableDriver)DbUtilStopVulnerableDriver,
@@ -692,16 +503,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_DBK64,
-        SourceBaseNone,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_NO_VICTIM,
-        KDUPROV_SC_V4,
-        (LPWSTR)L"Cheat Engine Dbk64",
-        (LPWSTR)L"CEDRIVER73",
-        (LPWSTR)L"CEDRIVER73",
-        (LPWSTR)L"Cheat Engine",
+        NULL,
 
         (provStartVulnerableDriver)DbkStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -723,16 +525,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_ASUSIO3,
-        SourceBaseWinIo,
-        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"ASUS GPU Tweak II",
-        (LPWSTR)L"AsIO3",
-        (LPWSTR)L"Asusgio3",
-        (LPWSTR)L"ASUSTeK Computer Inc.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -754,16 +547,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_HW64,
-        SourceBaseNone,
-        KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"Marvin Hardware Access Driver for Windows",
-        (LPWSTR)L"hw64",
-        (LPWSTR)L"hw",
-        (LPWSTR)L"Marvin Test Solutions, Inc.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -785,16 +569,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_SYSDRV3S,
-        SourceBaseMapMem,
-        KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_NO_UNLOAD_SUP,
-        KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"CODESYS SysDrv3S (CVE-2022-22516)",
-        (LPWSTR)L"SysDrv3S",
-        (LPWSTR)L"SysDrv3S",
-        (LPWSTR)L"3S-Smart Software Solutions GmbH.",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -816,16 +591,7 @@ static KDU_PROVIDER g_KDUProviders[] =
     },
 
     {
-        KDU_MIN_NTBUILDNUMBER,
-        KDU_MAX_NTBUILDNUMBER,
-        IDR_ZEMANA,
-        SourceBaseNone,
-        KDUPROV_FLAGS_SIGNATURE_WHQL,
-        KDUPROV_SC_V4,
-        (LPWSTR)L"Zemana (CVE-2021-31728, CVE-2022-42045)",
-        (LPWSTR)L"ZemanaAntimalware",
-        (LPWSTR)L"amsdk",
-        (LPWSTR)L"WATCHDOGDEVELOPMENT.COM, LLC",
+        NULL,
 
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
@@ -844,5 +610,27 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL
-    }
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)WinIoReadKernelVirtualMemory,
+        (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)WinIoVirtualToPhysical,
+        (provQueryPML4)WinIoQueryPML4Value,
+        (provReadPhysicalMemory)WinIoReadPhysicalMemory,
+        (provWritePhysicalMemory)WinIoWritePhysicalMemory
+    },
 };

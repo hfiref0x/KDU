@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.27
 *
-*  DATE:        30 Oct 2022
+*  DATE:        10 Nov 2022
 *
 *  Common include header file.
 *
@@ -74,6 +74,7 @@ extern "C" {
 #pragma comment(lib, "Newdev.lib")
 
 #include "consts.h"
+#include "kdubase.h"
 #include "sup.h"
 #include "compress.h"
 #include "victim.h"

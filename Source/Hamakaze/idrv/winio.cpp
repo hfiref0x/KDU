@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.27
 *
-*  DATE:        26 Oct 2022
+*  DATE:        11 Nov 2022
 *
 *  WINIO based drivers routines.
 *
@@ -62,7 +62,9 @@ typedef VOID(WINAPI* pfnWinIoGenericUnmapMemory)(
 PUCHAR g_pvAESKey;
 pfnWinIoGenericMapMemory g_WinIoMapMemoryRoutine;
 pfnWinIoGenericUnmapMemory g_WinIoUnmapMemoryRoutine;
+
 BOOL g_PhysAddress64bit = FALSE;
+BOOL g_SpecifyOffset = FALSE;
 
 /*
 * MsIoMapMemory
@@ -309,6 +311,81 @@ VOID WinIoUnmapMemory2(
 }
 
 /*
+* RedFoxMapMemory
+*
+* Purpose:
+*
+* Map physical memory through \Device\PhysicalMemory.
+*
+*/
+PVOID RedFoxMapMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ ULONG NumberOfBytes,
+    _Out_ HANDLE* SectionHandle,
+    _Out_ PVOID* ReferencedObject)
+{
+    WINIO_REDFOX request;
+    ULONG_PTR offset;
+    ULONG mapSize;
+
+    *SectionHandle = NULL;
+    *ReferencedObject = NULL;
+
+    RtlSecureZeroMemory(&request, sizeof(request));
+
+    offset = PhysicalAddress & ~(PAGE_SIZE - 1);
+    mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
+
+    request.BusAddress = offset;
+    request.ViewSize = mapSize;
+
+    if (supCallDriver(DeviceHandle,
+        g_WinIoMapIOCTL,
+        &request,
+        sizeof(request),
+        &request,
+        sizeof(request)))
+    {
+        *SectionHandle = request.SectionHandle;
+        return request.BaseAddress;
+    }
+
+    return NULL;
+}
+
+/*
+* RedFoxUnmapMemory
+*
+* Purpose:
+*
+* Unmap previously mapped physical memory.
+*
+*/
+VOID RedFoxUnmapMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ PVOID SectionToUnmap,
+    _In_ HANDLE SectionHandle,
+    _In_ PVOID ReferencedObject
+)
+{
+    WINIO_REDFOX request;
+
+    UNREFERENCED_PARAMETER(ReferencedObject);
+
+    RtlSecureZeroMemory(&request, sizeof(request));
+    request.BaseAddress = SectionToUnmap;
+    request.SectionHandle = SectionHandle;
+
+    supCallDriver(DeviceHandle,
+        g_WinIoUnmapIOCTL,
+        &request,
+        sizeof(request),
+        &request,
+        sizeof(request));
+}
+
+/*
 * WinIoQueryPML4Value
 *
 * Purpose:
@@ -385,7 +462,10 @@ BOOL WINAPI WinIoReadWritePhysicalMemory(
 
     if (mappedSection) {
 
-        offset = PhysicalAddress;
+        if (g_SpecifyOffset)
+            offset = PhysicalAddress - (PhysicalAddress & ~(PAGE_SIZE - 1));
+        else
+            offset = PhysicalAddress;
 
         __try {
 
@@ -828,6 +908,14 @@ BOOL WINAPI WinIoRegisterDriver(
         g_WinIoUnmapIOCTL = IOCTL_ASUSIO_UNMAP_USER_PHYSICAL_MEMORY;
         break;
 
+    case IDR_INPOUTX64:
+        g_WinIoMapMemoryRoutine = RedFoxMapMemory;
+        g_WinIoUnmapMemoryRoutine = RedFoxUnmapMemory;
+        g_WinIoMapIOCTL = IOCTL_REDFOX_MAP_USER_PHYSICAL_MEMORY;
+        g_WinIoUnmapIOCTL = IOCTL_REDFOX_UNMAP_USER_PHYSICAL_MEMORY;
+        g_SpecifyOffset = TRUE;
+        break;
+
     default:
         g_WinIoMapMemoryRoutine = WinIoMapMemory;
         g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;
@@ -856,7 +944,7 @@ BOOL WINAPI WinIoUnregisterDriver(
 
     if (Context) {
 
-        if (Context->Provider->ResourceId == IDR_ENETECHIO64B) {
+        if (Context->Provider->LoadData->ResourceId == IDR_ENETECHIO64B) {
 
             return supManageDummyDll(DUMMYDLL, TRUE);
 
