@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.27
 *
-*  DATE:        08 Nov 2022
+*  DATE:        12 Nov 2022
 *
 *  Global consts.
 *
@@ -94,7 +94,7 @@
 #define IDR_SYSDRV3S                    127
 #define IDR_ZEMANA                      128
 #define IDR_INPOUTX64                   129
-#define IDR_RESERVED2                   130
+#define IDR_PASSMARK_OSF                130
 
 //
 // Vulnerable drivers providers id
@@ -126,6 +126,7 @@
 #define KDU_PROVIDER_SYSDRV3S           24
 #define KDU_PROVIDER_ZEMANA             25
 #define KDU_PROVIDER_INPOUTX64          26
+#define KDU_PROVIDER_PASSMARK_OSF       27
 
 //
 // KDU provider flags

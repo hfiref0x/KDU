@@ -114,6 +114,8 @@ IDR_ZEMANA              RCDATA                  "drv\\amsdk.bin"
 
 IDR_INPOUTX64           RCDATA                  "drv\\inpoutx64.bin"
 
+IDR_PASSMARK_OSF        RCDATA                  "drv\\DirectIo64_2.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

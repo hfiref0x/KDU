@@ -128,6 +128,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 24          | CODESYS        | SysDrv3S    | CODESYS SysDrv3S                   | MAPMEM            | 3.5.6 and below             |                      |
 | 25          | Zemana         | amsdk       | WatchDog/MalwareFox/Zemana AM      | Original          | 3.0.0 and below             |                      |
 | 26          | HiRes Ent.     | inpoutx64   | Various                            | WINIO             | 1.2.0 and below             |                      |
+| 27          | PassMark       | DirectIo64  | PassMark OSForensics               | Original          | Any                         |                      |
 
 ###### *At commit time, data maybe inaccurate.
 

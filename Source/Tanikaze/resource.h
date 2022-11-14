@@ -29,6 +29,7 @@
 #define IDR_SYSDRV3S                    127
 #define IDR_ZEMANA                      128
 #define IDR_INPOUTX64                   129
+#define IDR_PASSMARK_OSF                130
 #define IDR_DATA_DBUTILCAT              1000
 #define IDR_DATA_DBUTILINF              1001
 #define IDR_DATA_KMUEXE                 1002

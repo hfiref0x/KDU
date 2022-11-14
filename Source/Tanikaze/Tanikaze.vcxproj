@@ -112,7 +112,6 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;TANIKAZE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -147,15 +146,13 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;TANIKAZE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <Optimization>MinSpace</Optimization>
-      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <ExceptionHandling>false</ExceptionHandling>
+      <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -194,6 +191,7 @@
     <None Include="drv\DbUtil2_3.bin" />
     <None Include="drv\dbutildrv2.bin" />
     <None Include="drv\DirectIo64.bin" />
+    <None Include="drv\DirectIo64_2.bin" />
     <None Include="drv\ene2.bin" />
     <None Include="drv\eneio64.bin" />
     <None Include="drv\enetechio64.bin" />
@@ -206,6 +204,7 @@
     <None Include="drv\kprocesshacker.bin" />
     <None Include="drv\lha.bin" />
     <None Include="drv\mimidrv.bin" />
+    <None Include="drv\mktoolsx64.bin" />
     <None Include="drv\msio64.bin" />
     <None Include="drv\phymemx64.bin" />
     <None Include="drv\procexp.bin" />

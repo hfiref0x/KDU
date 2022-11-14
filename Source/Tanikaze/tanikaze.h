@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.10
 *
-*  DATE:        08 Nov 2022
+*  DATE:        11 Nov 2022
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -403,6 +403,19 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"Red Fox UK Limited",
      },
 
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_PASSMARK_OSF,
+        KDU_PROVIDER_PASSMARK_OSF,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"PassMark OSForensics DirectIO",
+        (LPWSTR)L"DirectIo64",
+        (LPWSTR)L"DIRECTIO64",
+        (LPWSTR)L"PassMark Software Pty Ltd", 
+     }
 };
 
 #if defined(__cplusplus)

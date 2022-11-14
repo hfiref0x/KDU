@@ -130,6 +130,12 @@
     <None Include="drv\inpoutx64.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\mktoolsx64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\DirectIo64_2.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
