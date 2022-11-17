@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.27
 *
-*  DATE:        10 Nov 2022
+*  DATE:        14 Nov 2022
 *
 *  Dell BIOS Utility driver routines.
 *
@@ -57,7 +57,7 @@ BOOL DbUtilManageFiles(
         // Drop DbUtilDrv2.
         //
         if (!KDUProvExtractVulnerableDriver(Context)) {
-            lastError = ERROR_INTERNAL_ERROR;
+            SetLastError(ERROR_INTERNAL_ERROR);
             return FALSE;
         }
 

@@ -146,14 +146,23 @@ When in -map mode KDU for most available providers will by default use 3rd party
 
 KDU uses shellcode to map input drivers and execute their DriverEntry. There are few shellcode variants embedded into KDU. Shellcode V1, V2 and V3 used together with 3rd party victim driver (Process Explorer, by default). They are implemented as fake driver dispatch entry and their differences are: V1 uses newly created system thread to execute code, V2 uses system work items, V3 manually builds driver object and runs DriverEntry as if this driver was loaded normally. Shellcode V4 is simplified version of previous variants intended to be run not like an driver dispatch entry. While theoretically all "providers" can support all variants this implementation is limited per provider. You can view it by typing -list command and looking for shellcode support mask. Currently all providers except N21 support V1, V2 and V3 variants.
 
-# Build 
+# Build and Notes
 
 KDU comes with full source code.
 In order to build from source you need Microsoft Visual Studio 2019 and later versions. For driver builds you need Microsoft Windows Driver Kit 10 and/or above.
 
+Complete working binaries include: kdu.exe (main executable) and drv64.dll (drivers database). They must reside in the same directory that must have R/W access enabled for kdu.exe. All binaries MUST BE compiled in "Release" configuration.
+
 # Utils and Notes
 
 GenAsIo2Unlock is a special utility used to generate "unlocking" resource which is required for working with AsIO2 driver. Full source of this utility included in Source\Utils\GenAsIo2Unlock. Compiled version located in Sources\Hamakaze\Utils\GenAsIo2Unlock.exe. **Warning this utility is set on execution at post-build-event for both Debug/Release configurations.** If you don't want to run precompiled version replace it with newly compiled from sources. If you remove this post-build-event newly compiled KDU will NOT BE ABLE to use AsIO2 driver (provider #13).
+
+# Reporting bugs and incompatibilities
+
+If you expirienced bug or incompatibility while using KDU with 3rd party software or OS feel free to fill the issue. However if this incompatibility is caused by your own actions such reports will be ignored. Any BSOD reports should include minidump attached or your own dump analysis (windbg !analyze -v), issues without these information will be ignored.
+
+Anticheat, antimalware incompatibilities will be ignored, that's your own fault.
+
 
 # Disclaimer
 
