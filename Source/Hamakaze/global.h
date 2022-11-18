@@ -73,8 +73,8 @@ extern "C" {
 #pragma comment(lib, "Setupapi.lib")
 #pragma comment(lib, "Newdev.lib")
 
-#include "consts.h"
-#include "kdubase.h"
+#include "shared/consts.h"
+#include "shared/kdubase.h"
 #include "sup.h"
 #include "compress.h"
 #include "victim.h"
