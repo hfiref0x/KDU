@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.27
 *
-*  DATE:        14 Feb 2022
+*  DATE:        25 Oct 2022
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3

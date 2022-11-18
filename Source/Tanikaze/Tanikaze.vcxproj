@@ -112,7 +112,6 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;TANIKAZE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -132,6 +131,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;TANIKAZE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -139,34 +139,42 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <NoEntryPoint>true</NoEntryPoint>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;TANIKAZE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <ExceptionHandling>false</ExceptionHandling>
+      <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <NoEntryPoint>true</NoEntryPoint>
       <SetChecksum>true</SetChecksum>
       <MinimumRequiredVersion>
       </MinimumRequiredVersion>
-      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+      <NoEntryPoint>true</NoEntryPoint>
+      <AdditionalOptions>/NOCOFFGRPINFO %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Shared\consts.h" />
+    <ClInclude Include="..\Shared\kdubase.h" />
+    <ClInclude Include="tanikaze.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +183,7 @@
     <None Include="data\dbutilinf.bin" />
     <None Include="data\KMUEXE.bin" />
     <None Include="data\KMUSIG.bin" />
+    <None Include="drv\amsdk.bin" />
     <None Include="drv\asio2.bin" />
     <None Include="drv\AsIO3.bin" />
     <None Include="drv\ATSZIO64.bin" />
@@ -182,6 +191,7 @@
     <None Include="drv\DbUtil2_3.bin" />
     <None Include="drv\dbutildrv2.bin" />
     <None Include="drv\DirectIo64.bin" />
+    <None Include="drv\DirectIo64_2.bin" />
     <None Include="drv\ene2.bin" />
     <None Include="drv\eneio64.bin" />
     <None Include="drv\enetechio64.bin" />
@@ -189,10 +199,12 @@
     <None Include="drv\glckio2.bin" />
     <None Include="drv\gmerdrv.bin" />
     <None Include="drv\HW64.bin" />
+    <None Include="drv\inpoutx64.bin" />
     <None Include="drv\iQVM64.bin" />
     <None Include="drv\kprocesshacker.bin" />
     <None Include="drv\lha.bin" />
     <None Include="drv\mimidrv.bin" />
+    <None Include="drv\mktoolsx64.bin" />
     <None Include="drv\msio64.bin" />
     <None Include="drv\phymemx64.bin" />
     <None Include="drv\procexp.bin" />
@@ -200,6 +212,9 @@
     <None Include="drv\rtkio64.bin" />
     <None Include="drv\SysDrv3S.bin" />
     <None Include="drv\WinRing0x64.bin" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

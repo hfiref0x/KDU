@@ -35,6 +35,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -65,7 +66,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Shared;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)\Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -74,6 +75,9 @@
     <PostBuildEvent>
       <Command>$(ProjectDir)Utils\GenAsIo2Unlock .\output\$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
     </PostBuildEvent>
+    <MASM>
+      <AssembledCodeListingFile>shellstager.lst</AssembledCodeListingFile>
+    </MASM>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -89,15 +93,14 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Shared;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)\Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SetChecksum>true</SetChecksum>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
       <AdditionalOptions>/NOCOFFGRPINFO %(AdditionalOptions)</AdditionalOptions>
@@ -106,6 +109,9 @@
     <PostBuildEvent>
       <Command>$(ProjectDir)Utils\GenAsIo2Unlock .\output\$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
     </PostBuildEvent>
+    <MASM>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </MASM>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Shared\ldr\ldr.cpp" />
@@ -144,6 +150,7 @@
     <ClCompile Include="idrv\nal.cpp" />
     <ClCompile Include="idrv\rtcore.cpp" />
     <ClCompile Include="idrv\winring0.cpp" />
+    <ClCompile Include="idrv\zemana.cpp" />
     <ClCompile Include="ipcsvc.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="kduprov.cpp" />
@@ -156,6 +163,8 @@
     <ClCompile Include="victim.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Shared\consts.h" />
+    <ClInclude Include="..\Shared\kdubase.h" />
     <ClInclude Include="..\Shared\ldr\ldr.h" />
     <ClInclude Include="..\Shared\minirtl\cmdline.h" />
     <ClInclude Include="..\Shared\minirtl\minirtl.h" />
@@ -168,7 +177,6 @@
     <ClInclude Include="..\Shared\ntos\ntsup.h" />
     <ClInclude Include="..\Shared\tinyaes\aes.h" />
     <ClInclude Include="compress.h" />
-    <ClInclude Include="consts.h" />
     <ClInclude Include="drvmap.h" />
     <ClInclude Include="dsefix.h" />
     <ClInclude Include="global.h" />
@@ -190,6 +198,7 @@
     <ClInclude Include="idrv\nal.h" />
     <ClInclude Include="idrv\rtcore.h" />
     <ClInclude Include="idrv\winring0.h" />
+    <ClInclude Include="idrv\zemana.h" />
     <ClInclude Include="ipcsvc.h" />
     <ClInclude Include="shellcode.h" />
     <ClInclude Include="diag.h" />
@@ -213,7 +222,11 @@
     <None Include="res\SB_SMBUS_SDK.bin" />
     <None Include="res\Taigei32.bin" />
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="shellmasm.asm" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>

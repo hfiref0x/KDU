@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.26
+*  VERSION:     1.27
 *
-*  DATE:        16 Oct 2022
+*  DATE:        08 Nov 2022
 *
 *  Global consts.
 *
@@ -21,8 +21,8 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       2
-#define KDU_VERSION_REVISION    6
-#define KDU_VERSION_BUILD       2210
+#define KDU_VERSION_REVISION    7
+#define KDU_VERSION_BUILD       2211
 
 #define KDU_BASE_ID             0xff123456
 #define KDU_SYNC_MUTANT         0xabcd
@@ -48,7 +48,9 @@
 
 #define PROVIDER_RES_KEY        ' owo' // Giving you enough uwu's.
 
-#define SYSTEM_PID_MAGIC             4
+#define SYSTEM_PID_MAGIC           4
+
+#define PROCEXP152_DISPATCH_OFFSET 0x2220 // Valid only for 1.5.2
 
 //
 // Data id table
@@ -87,3 +89,6 @@
 #define IDR_ASUSIO3                     125
 #define IDR_HW64                        126
 #define IDR_SYSDRV3S                    127
+#define IDR_ZEMANA                      128
+#define IDR_RESERVED1                   129
+#define IDR_RESERVED2                   130

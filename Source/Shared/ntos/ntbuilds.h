@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTBUILDS.H
 *
-*  VERSION:     1.12
+*  VERSION:     1.13
 *
-*  DATE:        12 Oct 2022
+*  DATE:        16 Oct 2022
 *
 *  Windows NT builds definition file.
 *
@@ -72,6 +72,9 @@
 
 // Windows 10 21H2
 #define NT_WIN10_21H2           19044
+
+// Windows 10 22H2
+#define NT_WIN10_22H2           19045
 
 // Windows Server 2022
 #define NT_WINSRV_21H1          20348

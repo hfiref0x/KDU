@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.26
+*  VERSION:     1.27
 *
-*  DATE:        15 Oct 2022
+*  DATE:        25 Oct 2022
 *
 *  Processes DKOM related routines.
 *
@@ -153,6 +153,7 @@ BOOL KDUControlProcess(
             case NT_WIN10_20H2:
             case NT_WIN10_21H1:
             case NT_WIN10_21H2:
+            case NT_WIN10_22H2:
             case NT_WIN11_21H2:
             case NT_WIN11_22H2:
             case NTX_WIN11_ADB:

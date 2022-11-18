@@ -4,9 +4,9 @@
 *
 *  TITLE:       GLOBAL.H
 *
-*  VERSION:     1.25
+*  VERSION:     1.27
 *
-*  DATE:        17 Aug 2022
+*  DATE:        10 Nov 2022
 *
 *  Common include header file.
 *
@@ -36,7 +36,8 @@
 #define KDU_SHELLCODE_V2    (2)
 #define KDU_SHELLCODE_V3    (3)
 #define KDU_SHELLCODE_V4    (4)
-#define KDU_SHELLCODE_VMAX  KDU_SHELLCODE_V4
+#define KDU_SHELLCODE_V5    (5)
+#define KDU_SHELLCODE_VMAX  KDU_SHELLCODE_V5
 
 #include <Windows.h>
 #include <strsafe.h>
@@ -72,7 +73,8 @@ extern "C" {
 #pragma comment(lib, "Setupapi.lib")
 #pragma comment(lib, "Newdev.lib")
 
-#include "consts.h"
+#include "shared/consts.h"
+#include "shared/kdubase.h"
 #include "sup.h"
 #include "compress.h"
 #include "victim.h"

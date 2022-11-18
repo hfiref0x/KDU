@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.25
+*  VERSION:     1.27
 *
-*  DATE:        17 Aug 2022
+*  DATE:        10 Nov 2022
 *
 *  Provider support routines.
 *
@@ -20,43 +20,12 @@
 #pragma once
 
 //
-// Vulnerable drivers providers id
-//
-#define KDU_PROVIDER_INTEL_NAL          0
-#define KDU_PROVIDER_UNWINDER_RTCORE    1
-#define KDU_PROVIDER_GIGABYTE_GDRV      2
-#define KDU_PROVIDER_ASUSTEK_ATSZIO     3
-#define KDU_PROVIDER_PATRIOT_MSIO64     4
-#define KDU_PROVIDER_GLCKIO2            5
-#define KDU_PROVIDER_ENEIO64            6
-#define KDU_PROVIDER_WINRING0           7
-#define KDU_PROVIDER_ENETECHIO64        8
-#define KDU_PROVIDER_PHYMEM64           9
-#define KDU_PROVIDER_RTKIO64            10
-#define KDU_PROVIDER_ENETECHIO64B       11
-#define KDU_PROVIDER_LHA                12
-#define KDU_PROVIDER_ASUSIO2            13
-#define KDU_PROVIDER_DIRECTIO64         14
-#define KDU_PROVIDER_GMER               15
-#define KDU_PROVIDER_DBUTIL23           16
-#define KDU_PROVIDER_MIMIDRV            17
-#define KDU_PROVIDER_KPH                18
-#define KDU_PROVIDER_PROCEXP            19
-#define KDU_PROVIDER_DBUTILDRV2         20
-#define KDU_PROVIDER_DBK64              21
-#define KDU_PROVIDER_ASUSIO3            22
-#define KDU_PROVIDER_HW64               23
-
-//
 // Victim providers id
 //
 #define KDU_VICTIM_PROCEXP          0
 
 #define KDU_PROVIDER_DEFAULT        KDU_PROVIDER_INTEL_NAL
 #define KDU_VICTIM_DEFAULT          KDU_VICTIM_PROCEXP
-
-#define KDU_MIN_NTBUILDNUMBER       0x1DB1      //Windows 7 SP1
-#define KDU_MAX_NTBUILDNUMBER       0xFFFFFFFF  //Undefined
 
 //
 // Providers abstraction interface.
@@ -176,94 +145,14 @@ typedef enum _KDU_ACTION_TYPE {
     ActionTypeMax
 } KDU_ACTION_TYPE;
 
-//
-// No optional provider flags specified, this is default value.
-//
-#define KDUPROV_FLAGS_NONE                  0x00000000
-
-//
-// Provider does support HVCI security measures.
-//
-#define KDUPROV_FLAGS_SUPPORT_HVCI          0x00000001
-
-//
-// Provider is WHQL signed.
-//
-#define KDUPROV_FLAGS_SIGNATURE_WHQL        0x00000002 
-
-//
-// Provider has invalid checksum, so do not forceble check it.
-// 
-// Several valid signed Realtek drivers has invalid checksum set in their PE header.
-// This flag will tell KDU to skip it checksum verification at loading stage.
-// Note: Windows 7 does check driver checksum to be valid thus such drivers will fail to load here.
-//
-#define KDUPROV_FLAGS_IGNORE_CHECKSUM       0x00000004
-
-//
-// Do not set System/Admin-only security descriptor to the provider driver device.
-//
-#define KDUPROV_FLAGS_NO_FORCED_SD          0x00000008
-
-//
-// Do not unload, driver does not support this.
-//
-#define KDUPROV_FLAGS_NO_UNLOAD_SUP         0x00000010
-
-//
-// Virtual-to-physical addresses translation require low stub for PML4 query.
-//
-#define KDUPROV_FLAGS_PML4_FROM_LOWSTUB     0x00000020
-
-//
-// Does not need victim
-//
-#define KDUPROV_FLAGS_NO_VICTIM             0x00000040
-
-//
-// KDU shellcode support flags
-//
-#define KDUPROV_SC_NONE (0x000)
-#define KDUPROV_SC_V1   (0x001)
-#define KDUPROV_SC_V2   (0x002)
-#define KDUPROV_SC_V3   (0x004)
-
-#define KDUPROV_SC_ALL_DEFAULT (KDUPROV_SC_V1 | KDUPROV_SC_V2 | KDUPROV_SC_V3)
-
-#define KDUPROV_SC_V4   (0x008)
-
-typedef enum _KDU_SOURCEBASE {
-    SourceBaseNone = 0,
-    SourceBaseWinIo,
-    SourceBaseWinRing0,
-    SourceBasePhyMem,
-    SourceBaseMapMem,
-    SourceBaseMax
-} KDU_SOURCEBASE;
+typedef enum _KDU_PROVIDER_STATE {
+    StateUnloaded = 0,
+    StateLoaded,
+    StateMax
+} KDU_PROVIDER_STATE;
 
 typedef struct _KDU_PROVIDER {
-    ULONG MinNtBuildNumberSupport;
-    ULONG MaxNtBuildNumberSupport;
-    ULONG ResourceId;
-    KDU_SOURCEBASE DrvSourceBase;
-    union {
-        ULONG Flags;
-        struct {
-            ULONG SupportHVCI : 1;
-            ULONG SignatureWHQL : 1;
-            ULONG IgnoreChecksum : 1;
-            ULONG NoForcedSD : 1;
-            ULONG NoUnloadSupported : 1;
-            ULONG PML4FromLowStub : 1;
-            ULONG NoVictim : 1;
-            ULONG Reserved : 25;
-        };
-    };
-    ULONG SupportedShellFlags;
-    LPWSTR Desciption;
-    LPWSTR DriverName; //only file name, e.g. PROCEXP152
-    LPWSTR DeviceName; //device name, e.g. PROCEXP152
-    LPWSTR SignerName;
+    PKDU_DB_ENTRY LoadData;
     struct {
         provStartVulnerableDriver StartVulnerableDriver;
         provStopVulnerableDriver StopVulnerableDriver;
@@ -307,6 +196,7 @@ typedef struct _KDU_CONTEXT {
     ULONG_PTR MaximumUserModeAddress;
     PKDU_PROVIDER Provider;
     PKDU_VICTIM_PROVIDER Victim;
+    KDU_PROVIDER_STATE ProviderState;
 
     //fields used by shellcode v3 only
     FIXED_UNICODE_STRING DriverObjectName;
@@ -318,11 +208,8 @@ typedef struct _KDU_CONTEXT {
 } KDU_CONTEXT, * PKDU_CONTEXT;
 
 ULONG KDUProvGetCount();
-PKDU_PROVIDER KDUProvGetReference();
+PKDU_DB KDUReferenceLoadDB();
 VOID KDUProvList();
-
-BOOL WINAPI KDUProviderStub(
-    VOID);
 
 BOOL WINAPI KDUProviderPostOpen(
     _In_ PVOID Param);

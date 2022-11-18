@@ -4,9 +4,9 @@
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.26
+*  VERSION:     1.27
 *
-*  DATE:        15 Oct 2022
+*  DATE:        11 Nov 2022
 *
 *  KDU tests.
 *
@@ -21,26 +21,34 @@
 
 VOID KDUTestLoad()
 {
-    ULONG i, c = KDUProvGetCount();
-    PKDU_PROVIDER refProv = KDUProvGetReference();
-    HINSTANCE hProv = KDUProviderLoadDB();
+    ULONG i;
+    HINSTANCE hProv;
+    PKDU_DB provLoadData;
     ULONG dataSize = 0;
     PVOID pvData;
 
-    for (i = 0; i < c; i++) {
+    hProv = KDUProviderLoadDB();
+    if (hProv == NULL)
+        return;
 
-        pvData = KDULoadResource(refProv[i].ResourceId,
+    provLoadData = KDUReferenceLoadDB();
+    if (provLoadData == NULL)
+        return;
+
+    for (i = 0; i < provLoadData->NumberOfEntries; i++) {
+
+        pvData = KDULoadResource(provLoadData->Entries[i].ResourceId,
             hProv,
             &dataSize,
             PROVIDER_RES_KEY,
             TRUE);
 
         if (pvData) {
-            printf_s("[+] Provider[%lu] loaded\r\n", refProv[i].ResourceId);
+            printf_s("[+] Provider[%lu] loaded\r\n", provLoadData->Entries[i].ResourceId);
             supHeapFree(pvData);
         }
         else {
-            printf_s("[+] Provider[%lu] failed to load\r\n", refProv[i].ResourceId);
+            printf_s("[+] Provider[%lu] failed to load\r\n", provLoadData->Entries[i].ResourceId);
         }
 
 
@@ -49,7 +57,7 @@ VOID KDUTestLoad()
 
 VOID KDUTestDSE(PKDU_CONTEXT Context)
 {
-    ULONG_PTR g_CiOptions = 0xfffff8030dc3a438;
+    ULONG_PTR g_CiOptions = 0xfffff8047c03a438;//need update
     ULONG_PTR oldValue = 0, newValue = 0x1337, testValue = 0;
     KDU_PROVIDER* prov = Context->Provider;
 
@@ -72,7 +80,7 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(24, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
+    Context = KDUProviderCreate(26, FALSE, 7601, KDU_SHELLCODE_V1, ActionTypeMapDriver);
     if (Context) {
 
         KDUTestDSE(Context);

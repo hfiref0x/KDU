@@ -4,9 +4,9 @@
 *
 *  TITLE:       DBK.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.27
 *
-*  DATE:        16 Feb 2022
+*  DATE:        10 Nov 2022
 *
 *  Cheat Engine's DBK driver routines.
 *
@@ -343,9 +343,10 @@ BOOL DbkStartVulnerableDriver(
 {
     BOOL bLoaded = FALSE;
     NTSTATUS ntStatus;
-    LPWSTR lpDeviceName = Context->Provider->DeviceName;
+    KDU_DB_ENTRY* provLoadData = Context->Provider->LoadData;
+    LPWSTR lpDeviceName = provLoadData->DeviceName;
+    LPWSTR lpDriverName = provLoadData->DriverName;
     LPWSTR lpFullFileName = Context->DriverFileName;
-    LPWSTR lpDriverName = Context->Provider->DriverName;
 
     //
     // Check if driver already loaded.
@@ -391,13 +392,13 @@ BOOL DbkStartVulnerableDriver(
     if (bLoaded) {
 
         printf_s("[+] Acquiring handle for driver device \"%ws\" -> please wait, this can take a few seconds\r\n",
-            Context->Provider->DeviceName);
+            provLoadData->DeviceName);
 
         if (DbkOpenCheatEngineDriver(Context)) {
 
             supPrintfEvent(kduEventInformation,
                 "[+] Successfully acquired handle for driver device \"%ws\"\r\n",
-                Context->Provider->DeviceName);
+                provLoadData->DeviceName);
 
         }
     }
@@ -707,15 +708,12 @@ BOOL DbkMapDriver(
 {
     BOOL bSuccess = FALSE;
     PVOID pvShellCode;
-    KDU_PROVIDER* prov;
     HANDLE deviceHandle;
+    HANDLE sectionHandle = NULL;
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
-    prov = Context->Provider;
     deviceHandle = Context->DeviceHandle;
-
-    HANDLE sectionHandle = NULL;
 
     pvShellCode = KDUSetupShellCode(Context, ImageBase, &sectionHandle);
     if (pvShellCode) {

@@ -4,9 +4,9 @@
 *
 *  TITLE:       DIRECTIO64.CPP
 *
-*  VERSION:     1.13
+*  VERSION:     1.27
 *
-*  DATE:        05 Feb 2022
+*  DATE:        12 Nov 2022
 *
 *  PassMark DIRECTIO driver routines.
 *

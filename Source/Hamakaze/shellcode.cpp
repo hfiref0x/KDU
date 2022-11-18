@@ -4,9 +4,9 @@
 *
 *  TITLE:       SHELLCODE.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.27
 *
-*  DATE:        16 Feb 2022
+*  DATE:        16 Oct 2022
 *
 *  Default driver mapping shellcode(s) implementation.
 *
@@ -35,7 +35,7 @@
 #define OB_DRIVER_PREFIX_SIZE       sizeof(OB_DRIVER_PREFIX) - sizeof(WCHAR)
 #define OB_DRIVER_PREFIX_MAXSIZE    sizeof(OB_DRIVER_PREFIX)
 
-#define MAX_BASE_SCIMPORTS 8
+#define MAX_BASE_SCIMPORTS 7
 
 //
 // Import functions for shellcode.
@@ -45,7 +45,6 @@ typedef struct _FUNC_TABLE {
     pfnDbgPrint DbgPrint;
 #endif
     pfnExAllocatePoolWithTag ExAllocatePoolWithTag;
-    pfnExFreePoolWithTag ExFreePoolWithTag;
     pfnIofCompleteRequest IofCompleteRequest;
     pfnZwMapViewOfSection ZwMapViewOfSection;
     pfnZwUnmapViewOfSection ZwUnmapViewOfSection;
@@ -301,6 +300,16 @@ VOID NTAPI ExFreePoolWithTagTest(
     OutputDebugStringA("Inside ExFreePoolWithTagTest\r\n");
 
     VirtualFree(P, 0, MEM_RELEASE);
+}
+
+PVOID NTAPI MmGetSystemRoutineAddressTest(
+    PUNICODE_STRING SystemRoutineName
+)
+{
+    UNREFERENCED_PARAMETER(SystemRoutineName);
+
+    OutputDebugStringA("Inside MmGetSystemRoutineAddressTest\r\n");
+    return NULL;
 }
 
 VOID IofCompleteRequestTest(
@@ -900,7 +909,7 @@ NTSTATUS NTAPI ScDispatchRoutineV3(
         } // ObReferenceObjectByHandle success
 
     }
-    ShellCode->Import.IofCompleteRequest(Irp, 0);
+    ShellCode->Import.IofCompleteRequest(Irp, IO_NO_INCREMENT);
     return STATUS_SUCCESS;
 }
 
@@ -1102,7 +1111,7 @@ NTSTATUS NTAPI ScDispatchRoutineV2(
         } // ObReferenceObjectByHandle success
 
     }
-    ShellCode->Import.IofCompleteRequest(Irp, 0);
+    ShellCode->Import.IofCompleteRequest(Irp, IO_NO_INCREMENT);
     return STATUS_SUCCESS;
 }
 
@@ -1298,7 +1307,7 @@ NTSTATUS NTAPI ScDispatchRoutineV1(
         } // ObReferenceObjectByHandle success
 
     }
-    ShellCode->Import.IofCompleteRequest(Irp, 0);
+    ShellCode->Import.IofCompleteRequest(Irp, IO_NO_INCREMENT);
     return STATUS_SUCCESS;
 }
 
@@ -1503,7 +1512,6 @@ BOOL ScBuildShellImportDebug(
         ShellCode->Import.DbgPrint = DbgPrintTest;
 #endif
         ShellCode->Import.ExAllocatePoolWithTag = &ExAllocatePoolWithTagTest;
-        ShellCode->Import.ExFreePoolWithTag = &ExFreePoolWithTagTest;
         ShellCode->Import.ZwMapViewOfSection = &NtMapViewOfSection;
         ShellCode->Import.ZwUnmapViewOfSection = &NtUnmapViewOfSection;
         ShellCode->Import.IofCompleteRequest = &IofCompleteRequestTest;
@@ -1548,7 +1556,6 @@ BOOL ScBuildShellImport(
     PVOID funcPtrs[MAX_BASE_SCIMPORTS];
     LPCSTR funcNames[MAX_BASE_SCIMPORTS] = {
         "ExAllocatePoolWithTag",
-        "ExFreePoolWithTag",
         "IofCompleteRequest",
         "ZwMapViewOfSection",
         "ZwUnmapViewOfSection",
