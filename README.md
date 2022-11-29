@@ -23,6 +23,7 @@ It features:
 ###### KDU -diag
 ###### KDU -prv ProviderID
 ###### KDU -ps ProcessID
+###### KDU -pse Commandline
 ###### KDU -dse value
 ###### KDU -map filename
 * -list - list currently available providers;
