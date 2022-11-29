@@ -24,6 +24,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <SpectreMitigation>false</SpectreMitigation>
     <UseDebugLibraries>true</UseDebugLibraries>
+    <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -32,6 +33,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <SpectreMitigation>false</SpectreMitigation>
+    <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -71,6 +73,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Advapi32.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>$(ProjectDir)Utils\GenAsIo2Unlock .\output\$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
@@ -105,6 +108,7 @@
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
       <AdditionalOptions>/NOCOFFGRPINFO %(AdditionalOptions)</AdditionalOptions>
       <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
+      <AdditionalDependencies>Advapi32.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>$(ProjectDir)Utils\GenAsIo2Unlock .\output\$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>

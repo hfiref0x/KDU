@@ -422,7 +422,7 @@ KDU_DB_ENTRY gProvEntry[] = {
 extern "C" {
 #endif
 
-    KDU_DB gProvTable = {
+    __declspec(dllexport) KDU_DB gProvTable = {
         RTL_NUMBER_OF(gProvEntry),
         gProvEntry
     };
