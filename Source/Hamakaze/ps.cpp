@@ -94,8 +94,7 @@ LPSTR KDUGetProtectionSignerAsString(
 * Start a Process as PPL-Antimalware
 *
 */
-#pragma warning(disable:6335)
-BOOL KDUUnprotectProcess(
+BOOL KDURunCommandPPL(
     _In_ PKDU_CONTEXT Context,
     _In_ LPWSTR CommandLine)
 {
@@ -117,7 +116,8 @@ BOOL KDUUnprotectProcess(
         NULL,               // Process handle not inheritable
         NULL,               // Thread handle not inheritable
         FALSE,              // Set handle inheritance to FALSE
-        CREATE_SUSPENDED,   // Create Process suspended
+        CREATE_SUSPENDED,   // Create Process suspended so we can edit
+                            // its protection level prior to starting
         NULL,               // Use parent's environment block
         NULL,               // Use parent's starting directory 
         &si,                // Pointer to STARTUPINFO structure
@@ -140,9 +140,15 @@ BOOL KDUUnprotectProcess(
         return bResult;
     }
 
+    // Wait until child process exits.
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    // Close process and thread handles.
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
     return bResult;
 }
-#pragma warning(default:6335)
 
 /*
 * KDUControlProcess
@@ -152,7 +158,7 @@ BOOL KDUUnprotectProcess(
 * Modify process object to remove PsProtectedProcess access restrictions.
 *
 */
-BOOL KDUControlProcess(
+BOOL KDUUnprotectProcess(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId)
 {
