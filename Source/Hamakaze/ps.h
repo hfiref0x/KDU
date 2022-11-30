@@ -30,6 +30,17 @@
 
 #define EPROCESS_TO_PROTECTION(Object, PsProtectionOffset) ((ULONG_PTR)Object + (ULONG_PTR)PsProtectionOffset)
 
-BOOL KDUControlProcess(
+BOOL KDUUnprotectProcess(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId);
+
+BOOL KDURunCommandPPL(
+    _In_ PKDU_CONTEXT Context,
+    _In_ LPWSTR CommandLine);
+
+BOOL KDUControlProcess(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG_PTR ProcessId,
+    _In_ PS_PROTECTED_SIGNER PsProtectionSigner,
+    _In_ PS_PROTECTED_TYPE PsProtectionType);
+

@@ -23,12 +23,14 @@ It features:
 ###### KDU -diag
 ###### KDU -prv ProviderID
 ###### KDU -ps ProcessID
+###### KDU -pse Commandline
 ###### KDU -dse value
 ###### KDU -map filename
 * -list - list currently available providers;
 * -diag - run system diagnostic for troubleshooting;
 * -prv  - optional, select vulnerability driver provider;
-* -ps 	- modify process object of given ProcessID;
+* -ps   - modify process object of given ProcessID, downgrading any protections;
+* -pse  - launch program as ProtectedProcessLight-AntiMalware (PPL);
 * -dse  - write user defined value to the system DSE state flags;
 * -map  - map driver to the kernel and execute it entry point, this command have dependencies listed below;
   * -scv version - optional, select shellcode version, default 1;
@@ -44,6 +46,7 @@ Example:
 + kdu -prv 6 -scv 3 -drvn edrv -drvr e3600bl -map c:\install\e3600bl.sys
 + kdu -dse 0
 + kdu -dse 6
++ kdu -pse "C:\Windows\System32\notepad.exe C:\TEMP\words.txt"
 
 Run on Windows 10 20H2*
 

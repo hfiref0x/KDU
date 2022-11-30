@@ -23,6 +23,7 @@
 #define CMD_MAP         L"-map"
 #define CMD_SCV         L"-scv"
 #define CMD_PS          L"-ps"
+#define CMD_PSE         L"-pse"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
 #define CMD_SI          L"-diag"
@@ -37,6 +38,7 @@
                      "kdu -list         - list available providers\r\n"\
                      "kdu -diag         - run system diagnostic for troubleshooting\r\n"\
                      "kdu -prv id       - optional, sets provider id to be used with rest of commands, default 0\r\n"\
+                     "kdu -pse cmdline  - Launch program as PPL\r\n"\
                      "kdu -ps pid       - disable ProtectedProcess for given pid\r\n"\
                      "kdu -dse value    - write user defined value to the system DSE state flags\r\n"\
                      "kdu -map filename - map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
@@ -45,6 +47,38 @@
                      "-drvr name        - optional, driver registry key name (only valid for shellcode version 3)\r\n"
 
 #define T_PRNTDEFAULT   "%s\r\n"
+
+/*
+* KDUProcessPSEObjectSwitch
+*
+* Purpose:
+*
+* Handle -pse switch.
+*
+*/
+INT KDUProcessPSEObjectSwitch(
+    _In_ ULONG HvciEnabled,
+    _In_ ULONG NtBuildNumber,
+    _In_ ULONG ProviderId,
+    _In_ LPWSTR CommandLine
+)
+{
+    INT retVal = 0;
+    KDU_CONTEXT* provContext;
+
+    provContext = KDUProviderCreate(ProviderId,
+        HvciEnabled,
+        NtBuildNumber,
+        KDU_SHELLCODE_NONE,
+        ActionTypeDKOM);
+
+    if (provContext) {
+        retVal = KDURunCommandPPL(provContext, CommandLine);
+        KDUProviderRelease(provContext);
+    }
+
+    return retVal;
+}
 
 /*
 * KDUProcessPSObjectSwitch
@@ -71,7 +105,7 @@ INT KDUProcessPSObjectSwitch(
         ActionTypeDKOM);
 
     if (provContext) {
-        retVal = KDUControlProcess(provContext, ProcessId);
+        retVal = KDUUnprotectProcess(provContext, ProcessId);
         KDUProviderRelease(provContext);
     }
 
@@ -429,9 +463,19 @@ INT KDUProcessCommandLine(
 
                 }
             }
+            else if (supGetCommandLineOption(CMD_PSE,
+                        TRUE,
+                        szParameter,
+                        sizeof(szParameter) / sizeof(WCHAR),
+                        NULL))
+            {
+                retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
+                    NtBuildNumber,
+                    providerId,
+                    szParameter);
+            }
 
-            else
-
+            else {
                 //
                 // Check if -ps specified.
                 //
@@ -455,6 +499,7 @@ INT KDUProcessCommandLine(
                     //
                     printf_s(T_PRNTDEFAULT, T_KDUUSAGE);
                 }
+            }
 
     } while (FALSE);
 
