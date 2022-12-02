@@ -116,6 +116,8 @@ IDR_INPOUTX64           RCDATA                  "drv\\inpoutx64.bin"
 
 IDR_PASSMARK_OSF        RCDATA                  "drv\\DirectIo64_2.bin"
 
+IDR_ASROCKDRV           RCDATA                  "drv\\AsrDrv106.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -123,8 +125,8 @@ IDR_PASSMARK_OSF        RCDATA                  "drv\\DirectIo64_2.bin"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,0,2211
- PRODUCTVERSION 1,1,0,2211
+ FILEVERSION 1,1,1,2212
+ PRODUCTVERSION 1,1,1,2212
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -141,12 +143,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility Database"
-            VALUE "FileVersion", "1.1.0.2211"
+            VALUE "FileVersion", "1.1.1.2212"
             VALUE "InternalName", "Tanikaze.dll"
             VALUE "LegalCopyright", "Copyright (C) 2020 - 2022 KDU Project"
             VALUE "OriginalFilename", "Tanikaze.dll"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.1.0.2211"
+            VALUE "ProductVersion", "1.1.1.2212"
         END
     END
     BLOCK "VarFileInfo"

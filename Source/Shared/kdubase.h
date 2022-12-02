@@ -27,6 +27,7 @@ typedef enum _KDU_SOURCEBASE {
     SourceBaseWinRing0,
     SourceBasePhyMem,
     SourceBaseMapMem,
+    SourceBaseRwEverything,
     SourceBaseMax
 } KDU_SOURCEBASE;
 
@@ -46,7 +47,8 @@ typedef struct _KDU_DB_ENTRY {
             ULONG NoUnloadSupported : 1;
             ULONG PML4FromLowStub : 1;
             ULONG NoVictim : 1;
-            ULONG Reserved : 25;
+            ULONG PhysMemoryBruteForce : 1;
+            ULONG Reserved : 24;
         };
     };
     ULONG SupportedShellFlags;

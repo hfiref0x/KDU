@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        12 Nov 2022
+*  DATE:        22 Nov 2022
 *
 *  Global consts.
 *
@@ -21,8 +21,8 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       2
-#define KDU_VERSION_REVISION    7
-#define KDU_VERSION_BUILD       2211
+#define KDU_VERSION_REVISION    8
+#define KDU_VERSION_BUILD       2212
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
 #define KDU_MAX_NTBUILDNUMBER   0xFFFFFFFF  //Undefined
@@ -46,6 +46,7 @@
 #define WINRING0_BASE_DESC      "WinRing0 by Noriyuki Miyazaki"
 #define MAPMEM_BASE_DESC        "MapMem from NTDDK 3.51"
 #define PHYMEM_BASE_DESC        "PhyMem by akui"
+#define RWEVERYTHING_BASE_DESC  "RwEverything"
 
 #define SHELL_POOL_TAG          '  oI'
 
@@ -53,7 +54,8 @@
 
 #define SYSTEM_PID_MAGIC           4
 
-#define PROCEXP152_DISPATCH_OFFSET 0x2220 // Valid only for 1.5.2
+#define PE152_DISPATCH_OFFSET      0x2220 // Valid only for 1.5.2
+#define PE152_DISPATCH_PAGE_OFFSET 0x0220
 
 //
 // Data id table
@@ -127,6 +129,7 @@
 #define KDU_PROVIDER_ZEMANA             25
 #define KDU_PROVIDER_INPOUTX64          26
 #define KDU_PROVIDER_PASSMARK_OSF       27
+#define KDU_PROVIDER_ASROCK             28
 
 //
 // KDU provider flags
@@ -173,6 +176,11 @@
 // Does not need victim
 //
 #define KDUPROV_FLAGS_NO_VICTIM             0x00000040
+
+//
+// Provider supports only memory brute-force.
+//
+#define KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE  0x00000080
 
 //
 // KDU shellcode support flags

@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        08 Nov 2022
+*  DATE:        21 Nov 2022
 *
 *  Program global support routines.
 *
@@ -2584,4 +2584,161 @@ ULONG_PTR supGetHalQuerySystemInformation(
     }
 
     return result;
+}
+
+/*
+* supQueryPhysicalMemoryLayout
+*
+* Purpose:
+*
+* Read physical memory layout from registry.
+*
+*/
+PCM_RESOURCE_LIST supQueryPhysicalMemoryLayout(
+    VOID
+)
+{
+    LPCWSTR lpKey = L"HARDWARE\\RESOURCEMAP\\System Resources\\Physical Memory";
+    LPCWSTR lpValue = L".Translated";
+    HKEY hKey;
+    DWORD dwType = REG_RESOURCE_LIST, cbData = 0;
+    PCM_RESOURCE_LIST pList = NULL;
+
+    LRESULT result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, lpKey, 0, KEY_READ, &hKey);
+    if (result == ERROR_SUCCESS) {
+
+        result = RegQueryValueExW(hKey, lpValue, 0, &dwType, NULL, &cbData);
+
+        if (result == ERROR_SUCCESS) {
+
+            pList = (PCM_RESOURCE_LIST)supHeapAlloc((SIZE_T)cbData);
+            if (pList) {
+                RegQueryValueExW(hKey, lpValue, 0, &dwType, (LPBYTE)pList, &cbData);
+            }
+        }
+
+        RegCloseKey(hKey);
+    }
+
+    return pList;
+}
+
+/*
+* supEnumeratePhysicalMemory
+*
+* Purpose:
+*
+* Enumerate physical memory and run callback for each page.
+*
+*/
+BOOL supEnumeratePhysicalMemory(
+    _In_ pfnPhysMemEnumCallback Callback,
+    _In_ PVOID UserContext
+)
+{
+    PCM_PARTIAL_RESOURCE_DESCRIPTOR pPartialDesc;
+    PCM_FULL_RESOURCE_DESCRIPTOR pDesc;
+    PCM_RESOURCE_LIST pList = supQueryPhysicalMemoryLayout();
+
+    if (pList == NULL) {
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
+
+    for (ULONG i = 0; i < pList->Count; i++) {
+
+        pDesc = &pList->List[i];
+
+        for (ULONG j = 0; j < pDesc->PartialResourceList.Count; j++) {
+
+            pPartialDesc = &pDesc->PartialResourceList.PartialDescriptors[j];
+            if (pPartialDesc->Type == CmResourceTypeMemory ||
+                pPartialDesc->Type == CmResourceTypeMemoryLarge)
+            {
+                ULONGLONG length = pPartialDesc->u.Memory.Length;
+
+                switch (pPartialDesc->Flags & CM_RESOURCE_MEMORY_LARGE)
+                {
+                case CM_RESOURCE_MEMORY_LARGE_40:
+                    length <<= 8;
+                    break;
+                case CM_RESOURCE_MEMORY_LARGE_48:
+                    length <<= 16;
+                    break;
+                case CM_RESOURCE_MEMORY_LARGE_64:
+                    length <<= 32;
+                    break;
+                }
+
+                ULONG_PTR endAddress, queryAddress;
+                ULONG x = 0;
+
+                queryAddress = pPartialDesc->u.Memory.Start.QuadPart;
+                endAddress = queryAddress + length;
+
+                supPrintfEvent(kduEventInformation, 
+                    "[+] Enumerating memory range 0x%llX -> 0x%llX\r\n", queryAddress, endAddress);
+
+                do {
+
+                    if (x == 0) {
+                        printf_s("\r\tProbing memory at 0x%llX with size 0x%llX", queryAddress, PAGE_SIZE * 16);
+                        x = 16;
+                    }
+
+                    if (Callback(queryAddress, UserContext)) {
+                        break;
+                    }
+
+                    queryAddress += PAGE_SIZE;
+                    --x;
+
+                } while (queryAddress < endAddress);
+
+                printf_s("\33[2K\r\tRange probed successfully\r\n");
+            }
+        }
+    }
+
+    return TRUE;
+}
+
+/*
+* supDetectMsftBlockList
+*
+* Purpose:
+*
+* Return state of CI variable enabling/disabling msft block list.
+*
+*/
+BOOL supDetectMsftBlockList(
+    _In_ PBOOL Enabled,
+    _In_ BOOL Disable
+)
+{
+    LPCWSTR lpKey = L"System\\CurrentControlSet\\Control\\CI\\Config";
+    LPCWSTR lpValue = L"VulnerableDriverBlocklistEnable";
+
+    HKEY hKey;
+    DWORD dwType = REG_DWORD, cbData = sizeof(DWORD), dwEnabled = 0;
+
+    LRESULT result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, lpKey, 0, KEY_ALL_ACCESS, &hKey);
+    if (result == ERROR_SUCCESS) {
+
+        result = RegQueryValueExW(hKey, lpValue, 0, &dwType, (LPBYTE)&dwEnabled, &cbData);
+
+        if (result == ERROR_SUCCESS && dwType == REG_DWORD) {
+            *Enabled = (dwEnabled > 0);
+        }
+
+        if (Disable) {
+            cbData = sizeof(DWORD);
+            dwEnabled = 0;
+            result = RegSetValueEx(hKey, lpValue, 0, REG_DWORD, (LPBYTE)&dwEnabled, cbData);
+        }
+
+        RegCloseKey(hKey);
+    }
+
+    return (result == ERROR_SUCCESS);
 }

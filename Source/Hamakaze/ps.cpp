@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        25 Oct 2022
+*  DATE:        01 Dec 2022
 *
 *  Processes DKOM related routines.
 *
@@ -117,7 +117,7 @@ BOOL KDURunCommandPPL(
         NULL,               // Thread handle not inheritable
         FALSE,              // Set handle inheritance to FALSE
         CREATE_SUSPENDED,   // Create Process suspended so we can edit
-                            // its protection level prior to starting
+        // its protection level prior to starting
         NULL,               // Use parent's environment block
         NULL,               // Use parent's starting directory 
         &si,                // Pointer to STARTUPINFO structure
@@ -130,13 +130,13 @@ BOOL KDURunCommandPPL(
 
     bResult = KDUControlProcess(Context, pi.dwProcessId, PsProtectedSignerAntimalware, PsProtectedTypeProtectedLight);
     if (!bResult) {
-        printf("[!] Failed to set process as PPL: 0x%x\n", GetLastError());
+        printf_s("[!] Failed to set process as PPL: 0x%x\n", GetLastError());
         return bResult;
     }
 
     dwThreadResumeCount = ResumeThread(pi.hThread);
     if (dwThreadResumeCount != 1) {
-        printf("[!] Failed to resume process: %d | 0x%x\n", dwThreadResumeCount, GetLastError());
+        printf_s("[!] Failed to resume process: %d | 0x%x\n", dwThreadResumeCount, GetLastError());
         return bResult;
     }
 
@@ -257,12 +257,12 @@ BOOL KDUControlProcess(
 
                 printf_s("[+] EPROCESS->PS_PROTECTION, 0x%llX\r\n", VirtualAddress);
 
-                Buffer = 0;               
+                Buffer = 0;
 
-                if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle, 
-                    VirtualAddress, 
-                    &Buffer, 
-                    sizeof(ULONG))) 
+                if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                    VirtualAddress,
+                    &Buffer,
+                    sizeof(ULONG)))
                 {
                     PsProtection = (PS_PROTECTION*)&Buffer;
 
@@ -286,9 +286,9 @@ BOOL KDUControlProcess(
                     PsProtection->Type = PsProtectionType;
                     PsProtection->Audit = 0;
 
-                    bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle, 
-                        VirtualAddress, 
-                        &Buffer, 
+                    bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
+                        VirtualAddress,
+                        &Buffer,
                         sizeof(ULONG));
 
                     if (bResult) {

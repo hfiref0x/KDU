@@ -132,6 +132,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 25          | Zemana         | amsdk       | WatchDog/MalwareFox/Zemana AM      | Original          | 3.0.0 and below             |                      |
 | 26          | HiRes Ent.     | inpoutx64   | Various                            | WINIO             | 1.2.0 and below             |                      |
 | 27          | PassMark       | DirectIo64  | PassMark OSForensics               | Original          | Any                         |                      |
+| 28          | ASRock         | AsrDrv106   | Phantom Gaming Tuning              | RwEverything      | 1.0.6 and below             |                      |
 
 ###### *At commit time, data maybe inaccurate.
 
@@ -193,6 +194,7 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 * KDU v1.1 release and bonus (AsIO3.sys unlock), https://swapcontext.blogspot.com/2021/04/kdu-v11-release-and-bonus-asio3sys.html
 * GhostEmperor: From ProxyLogon to kernel mode, https://securelist.com/ghostemperor-from-proxylogon-to-kernel-mode/104407/
 * KDU v1.2 release and the wonderful world of Microsoft incoherency, https://swapcontext.blogspot.com/2022/02/kdu-v12-release-and-wonderful-world-of.html
+* How to exploit a vulnerable windows driver, https://github.com/stong/CVE-2020-15368
 
 # Wormhole drivers code
 

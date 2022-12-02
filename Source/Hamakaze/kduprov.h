@@ -207,6 +207,18 @@ typedef struct _KDU_CONTEXT {
 
 } KDU_CONTEXT, * PKDU_CONTEXT;
 
+typedef struct _KDU_PHYSMEM_ENUM_PARAMS {
+    _In_ BOOL bWrite;
+
+    _In_opt_ PVOID pvPayload;
+    _In_opt_ ULONG cbPayload;
+
+    _Out_ SIZE_T cbPagesFound;
+    _Out_ SIZE_T cbPagesModified;
+
+    _In_ PKDU_CONTEXT Context;
+} KDU_PHYSMEM_ENUM_PARAMS, * PKDU_PHYSMEM_ENUM_PARAMS;
+
 ULONG KDUProvGetCount();
 PKDU_DB KDUReferenceLoadDB();
 VOID KDUProvList();

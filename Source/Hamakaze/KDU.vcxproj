@@ -134,6 +134,7 @@
     <ClCompile Include="drvmap.cpp" />
     <ClCompile Include="dsefix.cpp" />
     <ClCompile Include="hde\hde64.c" />
+    <ClCompile Include="idrv\asrdrv.cpp" />
     <ClCompile Include="idrv\atszio.cpp" />
     <ClCompile Include="idrv\dbk.cpp" />
     <ClCompile Include="idrv\dbutil.cpp" />
@@ -181,6 +182,7 @@
     <ClInclude Include="dsefix.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="hde\hde64.h" />
+    <ClInclude Include="idrv\asrdrv.h" />
     <ClInclude Include="idrv\atszio.h" />
     <ClInclude Include="idrv\dbk.h" />
     <ClInclude Include="idrv\ldrsc.h" />
@@ -202,6 +204,7 @@
     <ClInclude Include="ipcsvc.h" />
     <ClInclude Include="shellcode.h" />
     <ClInclude Include="diag.h" />
+    <ClInclude Include="sig.h" />
     <ClInclude Include="wdksup.h" />
     <ClInclude Include="kduplist.h" />
     <ClInclude Include="kduprov.h" />

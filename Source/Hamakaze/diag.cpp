@@ -4,9 +4,9 @@
 *
 *  TITLE:       DIAG.CPP
 *
-*  VERSION:     1.25
+*  VERSION:     1.28
 *
-*  DATE:        17 Aug 2022
+*  DATE:        21 Nov 2022
 *
 *  Hamakaze system diagnostics component.
 *
@@ -766,6 +766,62 @@ VOID KDUListDrivers(
 
 }
 
+VOID KDUListMemoryLayout()
+{
+    PCM_FULL_RESOURCE_DESCRIPTOR pDesc;
+    PCM_RESOURCE_LIST pList = supQueryPhysicalMemoryLayout();
+    PCM_PARTIAL_RESOURCE_DESCRIPTOR pPartialDesc;
+    if (pList == NULL)
+        return;
+
+    printf_s("ResourceList Count %lx\r\n", pList->Count);
+    for (ULONG i = 0; i < pList->Count; i++) {
+        pDesc = &pList->List[i];
+
+        printf_s("pDesc[%lu].PartialResourceList.Count %lu\r\n",
+            i,
+            pDesc->PartialResourceList.Count);
+
+        for (ULONG j = 0; j < pDesc->PartialResourceList.Count; j++) {
+
+            pPartialDesc = &pDesc->PartialResourceList.PartialDescriptors[j];
+
+            if (pPartialDesc->Type == CmResourceTypeMemory ||
+                pPartialDesc->Type == CmResourceTypeMemoryLarge)
+            {
+                ULONGLONG length = pPartialDesc->u.Memory.Length;
+                
+                switch (pPartialDesc->Flags & CM_RESOURCE_MEMORY_LARGE)
+                {
+                case CM_RESOURCE_MEMORY_LARGE_40:
+                    length <<= 8;
+                    break;
+                case CM_RESOURCE_MEMORY_LARGE_48:
+                    length <<= 16;
+                    break;
+                case CM_RESOURCE_MEMORY_LARGE_64:
+                    length <<= 32;
+                    break;
+                }
+
+                printf_s("#%lu Flags 0x%04lX 0x%016llX::0x%016llX (length 0x%016llX, %llu Mb)\r\n",
+                    j,
+                    pPartialDesc->Flags,
+                    pPartialDesc->u.Memory.Start.QuadPart,
+                    pPartialDesc->u.Memory.Start.QuadPart + length,
+                    length,
+                    length / 1024 / 1024);
+
+            }
+            else {
+                printf_s("#%lu Type 0x%04lX, Flags 0x%04lX\r\n", j, pPartialDesc->Type, pPartialDesc->Flags);
+            }
+        }
+
+    }
+    supHeapFree(pList);
+}
+
 VOID KDUDiagStart()
 {
     PRTL_PROCESS_MODULES pvModules;
@@ -811,6 +867,9 @@ VOID KDUDiagStart()
 
         printf_s("> List of registered minifilters\r\n");
         KDUListFilters();
+
+        printf_s("> Physical memory layout\r\n");
+        KDUListMemoryLayout();
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
         supPrintfEvent(kduEventError, "Exception (0x%lX) during diagnostics\r\n", GetExceptionCode());
