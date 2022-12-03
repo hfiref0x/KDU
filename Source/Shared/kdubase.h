@@ -27,7 +27,7 @@ typedef enum _KDU_SOURCEBASE {
     SourceBaseWinRing0,
     SourceBasePhyMem,
     SourceBaseMapMem,
-    SourceBaseRwEverything,
+    SourceBaseRWEverything,
     SourceBaseMax
 } KDU_SOURCEBASE;
 

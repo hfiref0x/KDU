@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.28
 *
-*  DATE:        22 Nov 2022
+*  DATE:        01 Dec 2022
 *
 *  Global consts.
 *
@@ -46,7 +46,7 @@
 #define WINRING0_BASE_DESC      "WinRing0 by Noriyuki Miyazaki"
 #define MAPMEM_BASE_DESC        "MapMem from NTDDK 3.51"
 #define PHYMEM_BASE_DESC        "PhyMem by akui"
-#define RWEVERYTHING_BASE_DESC  "RwEverything"
+#define RWEVERYTHING_BASE_DESC  "RWEverything by ckimchan.tw"
 
 #define SHELL_POOL_TAG          '  oI'
 
@@ -56,6 +56,8 @@
 
 #define PE152_DISPATCH_OFFSET      0x2220 // Valid only for 1.5.2
 #define PE152_DISPATCH_PAGE_OFFSET 0x0220
+
+#define SHELLCODE_SMALL            0x200
 
 //
 // Data id table
@@ -97,6 +99,8 @@
 #define IDR_ZEMANA                      128
 #define IDR_INPOUTX64                   129
 #define IDR_PASSMARK_OSF                130
+#define IDR_ASROCKDRV                   131
+#define IDR_ALSYSIO64                   132
 
 //
 // Vulnerable drivers providers id
@@ -130,6 +134,7 @@
 #define KDU_PROVIDER_INPOUTX64          26
 #define KDU_PROVIDER_PASSMARK_OSF       27
 #define KDU_PROVIDER_ASROCK             28
+#define KDU_PROVIDER_ALCPU              29
 
 //
 // KDU provider flags
@@ -193,4 +198,3 @@
 #define KDUPROV_SC_ALL_DEFAULT (KDUPROV_SC_V1 | KDUPROV_SC_V2 | KDUPROV_SC_V3)
 
 #define KDUPROV_SC_V4   (0x008)
-#define KDUPROV_SC_V5   (0x010)
