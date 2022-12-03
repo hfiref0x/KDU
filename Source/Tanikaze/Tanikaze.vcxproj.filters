@@ -136,6 +136,12 @@
     <None Include="drv\DirectIo64_2.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\AsrDrv106.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\ALSysIO64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

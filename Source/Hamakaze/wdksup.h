@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.27
 *
-*  DATE:        11 Nov 2022
+*  DATE:        12 Nov 2022
 *
 *  Header file for NT WDK definitions.
 *
@@ -53,6 +53,57 @@ typedef _Enum_is_bitflag_ enum _WORK_QUEUE_TYPE {
     MaximumWorkQueue,
     CustomPriorityWorkQueue = 32
 } WORK_QUEUE_TYPE;
+
+typedef int CM_RESOURCE_TYPE;
+
+// CmResourceTypeNull is reserved
+
+#define CmResourceTypeNull                0   // ResType_All or ResType_None (0x0000)
+#define CmResourceTypePort                1   // ResType_IO (0x0002)
+#define CmResourceTypeInterrupt           2   // ResType_IRQ (0x0004)
+#define CmResourceTypeMemory              3   // ResType_Mem (0x0001)
+#define CmResourceTypeDma                 4   // ResType_DMA (0x0003)
+#define CmResourceTypeDeviceSpecific      5   // ResType_ClassSpecific (0xFFFF)
+#define CmResourceTypeBusNumber           6   // ResType_BusNumber (0x0006)
+#define CmResourceTypeMemoryLarge         7   // ResType_MemLarge (0x0007)
+#define CmResourceTypeNonArbitrated     128   // Not arbitrated if 0x80 bit set
+#define CmResourceTypeConfigData        128   // ResType_Reserved (0x8000)
+#define CmResourceTypeDevicePrivate     129   // ResType_DevicePrivate (0x8001)
+#define CmResourceTypePcCardConfig      130   // ResType_PcCardConfig (0x8002)
+#define CmResourceTypeMfCardConfig      131   // ResType_MfCardConfig (0x8003)
+#define CmResourceTypeConnection        132   // ResType_Connection (0x8004)
+
+#define CM_RESOURCE_MEMORY_LARGE_40  0x0200
+#define CM_RESOURCE_MEMORY_LARGE_48  0x0400
+#define CM_RESOURCE_MEMORY_LARGE_64  0x0800
+#define CM_RESOURCE_MEMORY_LARGE     (CM_RESOURCE_MEMORY_LARGE_40 | CM_RESOURCE_MEMORY_LARGE_48 | CM_RESOURCE_MEMORY_LARGE_64)
+
+//
+// Define the bit masks for Flags when type is CmResourceTypeMemory
+// or CmResourceTypeMemoryLarge
+//
+
+#define CM_RESOURCE_MEMORY_READ_WRITE                       0x0000
+#define CM_RESOURCE_MEMORY_READ_ONLY                        0x0001
+#define CM_RESOURCE_MEMORY_WRITE_ONLY                       0x0002
+#define CM_RESOURCE_MEMORY_WRITEABILITY_MASK                0x0003
+#define CM_RESOURCE_MEMORY_PREFETCHABLE                     0x0004
+
+#define CM_RESOURCE_MEMORY_COMBINEDWRITE                    0x0008
+#define CM_RESOURCE_MEMORY_24                               0x0010
+#define CM_RESOURCE_MEMORY_CACHEABLE                        0x0020
+#define CM_RESOURCE_MEMORY_WINDOW_DECODE                    0x0040
+#define CM_RESOURCE_MEMORY_BAR                              0x0080
+
+#define CM_RESOURCE_MEMORY_COMPAT_FOR_INACCESSIBLE_RANGE    0x0100
+
+//
+// Define limits for large memory resources
+//
+
+#define CM_RESOURCE_MEMORY_LARGE_40_MAXLEN          0x000000FFFFFFFF00
+#define CM_RESOURCE_MEMORY_LARGE_48_MAXLEN          0x0000FFFFFFFF0000
+#define CM_RESOURCE_MEMORY_LARGE_64_MAXLEN          0xFFFFFFFF00000000
 
 #include "pshpack4.h"
 typedef struct _CM_PARTIAL_RESOURCE_DESCRIPTOR {

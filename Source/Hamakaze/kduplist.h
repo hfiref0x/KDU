@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        12 Nov 2022
+*  DATE:        01 Dec 2022
 *
 *  Providers global list.
 *
@@ -18,6 +18,26 @@
 *******************************************************************************/
 
 #pragma once
+
+#include "idrv/nal.h"
+#include "idrv/rtcore.h"
+#include "idrv/mapmem.h"
+#include "idrv/atszio.h"
+#include "idrv/winio.h"
+#include "idrv/winring0.h"
+#include "idrv/phymem.h"
+#include "idrv/lha.h"
+#include "idrv/directio64.h"
+#include "idrv/gmer.h"
+#include "idrv/dbutil.h"
+#include "idrv/mimidrv.h"
+#include "idrv/kph.h"
+#include "idrv/procexp.h"
+#include "idrv/dbk.h"
+#include "idrv/marvinhw.h"
+#include "idrv/zemana.h"
+#include "idrv/asrdrv.h"
+#include "idrv/alcpu.h"
 
 //
 // Victims public array.
@@ -654,6 +674,50 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)DI64QueryPML4Value,
         (provReadPhysicalMemory)DI64ReadPhysicalMemory,
         (provWritePhysicalMemory)DI64WritePhysicalMemory
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver2,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)AsrReadPhysicalMemory,
+        (provWritePhysicalMemory)AsrWritePhysicalMemory
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver2,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)AlcReadPhysicalMemory,
+        (provWritePhysicalMemory)AlcWritePhysicalMemory
     }
 
 };

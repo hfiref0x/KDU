@@ -4,9 +4,9 @@
 *
 *  TITLE:       ZEMANA.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        08 Nov 2022
+*  DATE:        01 Dec 2022
 *
 *  Zemana driver routines.
 *
@@ -383,7 +383,7 @@ BOOL ZmMapDriver(
             break;
         }
 
-        dispatchAddress += PROCEXP152_DISPATCH_OFFSET;
+        dispatchAddress += PE152_DISPATCH_OFFSET;
 
         printf_s("[+] Victim target 0x%llX\r\n", dispatchAddress);
 
@@ -440,7 +440,9 @@ BOOL ZmMapDriver(
 
     if (bLocked) VirtualUnlock(pvPayload, cbPayload);
     if (pvPayload) ntsupVirtualFree(pvPayload);
-
+    if (sectionHandle) {
+        NtClose(sectionHandle);
+    }
     if (VpRelease(victimProv, &victimDeviceHandle)) {
         printf_s("[+] Victim released\r\n");
     }

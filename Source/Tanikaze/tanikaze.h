@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.11
 *
-*  DATE:        11 Nov 2022
+*  DATE:        01 Dec 2022
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -415,6 +415,34 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"DirectIo64",
         (LPWSTR)L"DIRECTIO64",
         (LPWSTR)L"PassMark Software Pty Ltd", 
+     },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ASROCKDRV,
+        KDU_PROVIDER_ASROCK,
+        SourceBaseRWEverything,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"ASRock IO Driver",
+        (LPWSTR)L"AsrDrv106",
+        (LPWSTR)L"AsrDrv106",
+        (LPWSTR)L"ASROCK Incorporation",
+     },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ALSYSIO64,
+        KDU_PROVIDER_ALCPU,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Core Temp",
+        (LPWSTR)L"ALSysIO64",
+        (LPWSTR)L"ALSysIO",
+        (LPWSTR)L"ALCPU (Arthur Liberman)",
      }
 };
 

@@ -23,12 +23,14 @@ It features:
 ###### KDU -diag
 ###### KDU -prv ProviderID
 ###### KDU -ps ProcessID
+###### KDU -pse Commandline
 ###### KDU -dse value
 ###### KDU -map filename
 * -list - list currently available providers;
 * -diag - run system diagnostic for troubleshooting;
 * -prv  - optional, select vulnerability driver provider;
-* -ps 	- modify process object of given ProcessID;
+* -ps   - modify process object of given ProcessID, downgrading any protections;
+* -pse  - launch program as ProtectedProcessLight-AntiMalware (PPL);
 * -dse  - write user defined value to the system DSE state flags;
 * -map  - map driver to the kernel and execute it entry point, this command have dependencies listed below;
   * -scv version - optional, select shellcode version, default 1;
@@ -44,6 +46,7 @@ Example:
 + kdu -prv 6 -scv 3 -drvn edrv -drvr e3600bl -map c:\install\e3600bl.sys
 + kdu -dse 0
 + kdu -dse 6
++ kdu -pse "C:\Windows\System32\notepad.exe C:\TEMP\words.txt"
 
 Run on Windows 10 20H2*
 
@@ -129,6 +132,8 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 25          | Zemana         | amsdk       | WatchDog/MalwareFox/Zemana AM      | Original          | 3.0.0 and below             |                      |
 | 26          | HiRes Ent.     | inpoutx64   | Various                            | WINIO             | 1.2.0 and below             |                      |
 | 27          | PassMark       | DirectIo64  | PassMark OSForensics               | Original          | Any                         |                      |
+| 28          | ASRock         | AsrDrv106   | Phantom Gaming Tuning              | RwEverything      | 1.0.6 and below             |                      |
+| 29          | Arthur Liberman| ALSysIO64   | Core Temp                          | Original          | 2.0.11 and below            |                      |
 
 ###### *At commit time, data maybe inaccurate.
 
@@ -190,6 +195,7 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 * KDU v1.1 release and bonus (AsIO3.sys unlock), https://swapcontext.blogspot.com/2021/04/kdu-v11-release-and-bonus-asio3sys.html
 * GhostEmperor: From ProxyLogon to kernel mode, https://securelist.com/ghostemperor-from-proxylogon-to-kernel-mode/104407/
 * KDU v1.2 release and the wonderful world of Microsoft incoherency, https://swapcontext.blogspot.com/2022/02/kdu-v12-release-and-wonderful-world-of.html
+* How to exploit a vulnerable windows driver, https://github.com/stong/CVE-2020-15368
 
 # Wormhole drivers code
 

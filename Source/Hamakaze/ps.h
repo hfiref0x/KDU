@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.H
 *
-*  VERSION:     1.12
+*  VERSION:     1.28
 *
-*  DATE:        25 Jan 2022
+*  DATE:        01 Dec 2022
 *
 *  Processes support prototypes and definitions.
 *
@@ -26,10 +26,20 @@
 #define PsProtectionOffset_15063 (ULONG_PTR)0x6CA //same for 16299, 17134, 17763
 #define PsProtectionOffset_18362 (ULONG_PTR)0x6FA
 #define PsProtectionOffset_18363 (ULONG_PTR)0x6FA
-#define PsProtectionOffset_19041 (ULONG_PTR)0x87A //same for 19042..19044
+#define PsProtectionOffset_19041 (ULONG_PTR)0x87A //same for 19042..19045
 
 #define EPROCESS_TO_PROTECTION(Object, PsProtectionOffset) ((ULONG_PTR)Object + (ULONG_PTR)PsProtectionOffset)
 
-BOOL KDUControlProcess(
+BOOL KDUUnprotectProcess(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId);
+
+BOOL KDURunCommandPPL(
+    _In_ PKDU_CONTEXT Context,
+    _In_ LPWSTR CommandLine);
+
+BOOL KDUControlProcess(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG_PTR ProcessId,
+    _In_ PS_PROTECTED_SIGNER PsProtectionSigner,
+    _In_ PS_PROTECTED_TYPE PsProtectionType);

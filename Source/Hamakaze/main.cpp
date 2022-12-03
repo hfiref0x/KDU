@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        01 Nov 2022
+*  DATE:        01 Dec 2022
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -23,6 +23,7 @@
 #define CMD_MAP         L"-map"
 #define CMD_SCV         L"-scv"
 #define CMD_PS          L"-ps"
+#define CMD_PSE         L"-pse"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
 #define CMD_SI          L"-diag"
@@ -34,17 +35,50 @@
 #define T_KDUUSAGE   "[?] No valid parameters combination specified or command is not recognized, see Usage for help\r\n"\
                      "[?] Usage: kdu [Provider][Command]\r\n\n"\
                      "Parameters: \r\n"\
-                     "kdu -list         - list available providers\r\n"\
-                     "kdu -diag         - run system diagnostic for troubleshooting\r\n"\
-                     "kdu -prv id       - optional, sets provider id to be used with rest of commands, default 0\r\n"\
-                     "kdu -ps pid       - disable ProtectedProcess for given pid\r\n"\
-                     "kdu -dse value    - write user defined value to the system DSE state flags\r\n"\
-                     "kdu -map filename - map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
-                     "-scv version      - optional, select shellcode version, default 1\r\n"\
-                     "-drvn name        - driver object name (only valid for shellcode version 3)\r\n"\
-                     "-drvr name        - optional, driver registry key name (only valid for shellcode version 3)\r\n"
+                     "kdu -list         - List available providers\r\n"\
+                     "kdu -diag         - Run system diagnostic for troubleshooting\r\n"\
+                     "kdu -prv id       - Optional, sets provider id to be used with rest of commands, default 0\r\n"\
+                     "kdu -pse cmdline  - Launch program as PPL\r\n"\
+                     "kdu -ps pid       - Disable ProtectedProcess for given pid\r\n"\
+                     "kdu -dse value    - Write user defined value to the system DSE state flags\r\n"\
+                     "kdu -map filename - Map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
+                     "-scv version      - Optional, select shellcode version, default 1\r\n"\
+                     "-drvn name        - Driver object name (only valid for shellcode version 3)\r\n"\
+                     "-drvr name        - Optional, driver registry key name (only valid for shellcode version 3)\r\n"
 
 #define T_PRNTDEFAULT   "%s\r\n"
+
+/*
+* KDUProcessPSEObjectSwitch
+*
+* Purpose:
+*
+* Handle -pse switch.
+*
+*/
+INT KDUProcessPSEObjectSwitch(
+    _In_ ULONG HvciEnabled,
+    _In_ ULONG NtBuildNumber,
+    _In_ ULONG ProviderId,
+    _In_ LPWSTR CommandLine
+)
+{
+    INT retVal = 0;
+    KDU_CONTEXT* provContext;
+
+    provContext = KDUProviderCreate(ProviderId,
+        HvciEnabled,
+        NtBuildNumber,
+        KDU_SHELLCODE_NONE,
+        ActionTypeDKOM);
+
+    if (provContext) {
+        retVal = KDURunCommandPPL(provContext, CommandLine);
+        KDUProviderRelease(provContext);
+    }
+
+    return retVal;
+}
 
 /*
 * KDUProcessPSObjectSwitch
@@ -71,7 +105,7 @@ INT KDUProcessPSObjectSwitch(
         ActionTypeDKOM);
 
     if (provContext) {
-        retVal = KDUControlProcess(provContext, ProcessId);
+        retVal = KDUUnprotectProcess(provContext, ProcessId);
         KDUProviderRelease(provContext);
     }
 
@@ -277,7 +311,7 @@ INT KDUProcessCommandLine(
             KDUTest();
             retVal = 1;
             break;
-        }
+}
 
 #endif
         //
@@ -449,6 +483,18 @@ INT KDUProcessCommandLine(
                         processId);
                 }
 
+                else if (supGetCommandLineOption(CMD_PSE,
+                    TRUE,
+                    szParameter,
+                    sizeof(szParameter) / sizeof(WCHAR),
+                    NULL))
+                {
+                    retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        szParameter);
+                }
+
                 else {
                     //
                     // Nothing set, show help.
@@ -501,7 +547,7 @@ int KDUMain()
 
         if (!ntsupUserIsFullAdmin()) {
             printf_s("[!] Administrator privileges are required to continue.\r\n"\
-                     "Verify that you have sufficient privileges and you are not running program under compatibility layer.\r\n");
+                "Verify that you have sufficient privileges and you are not running program under compatibility layer.\r\n");
             iResult = ERROR_PRIVILEGE_NOT_HELD;
             break;
         }
@@ -560,6 +606,11 @@ int KDUMain()
             if (ciPolicy.CodeIntegrityOptions & CODEINTEGRITY_OPTION_WHQL_ENFORCEMENT_ENABLED)
                 printf_s("[*] WHQL enforcement ENABLED\r\n");
 
+        }
+
+        BOOL bEnabled = FALSE;
+        if (supDetectMsftBlockList(&bEnabled, FALSE)) {
+            printf_s("[+] MSFT Driver block list is %sbled\r\n", (bEnabled) ? "ena" : "disa");
         }
 
         iResult = KDUProcessCommandLine(hvciEnabled, osv.dwBuildNumber);

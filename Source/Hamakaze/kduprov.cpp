@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        11 Nov 2022
+*  DATE:        01 Dec 2022
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -18,23 +18,6 @@
 *******************************************************************************/
 
 #include "global.h"
-#include "idrv/nal.h"
-#include "idrv/rtcore.h"
-#include "idrv/mapmem.h"
-#include "idrv/atszio.h"
-#include "idrv/winio.h"
-#include "idrv/winring0.h"
-#include "idrv/phymem.h"
-#include "idrv/lha.h"
-#include "idrv/directio64.h"
-#include "idrv/gmer.h"
-#include "idrv/dbutil.h"
-#include "idrv/mimidrv.h"
-#include "idrv/kph.h"
-#include "idrv/procexp.h"
-#include "idrv/dbk.h"
-#include "idrv/marvinhw.h"
-#include "idrv/zemana.h"
 #include "kduplist.h"
 
 PKDU_DB gProvTable = NULL;
@@ -170,6 +153,9 @@ VOID KDUProvList()
         if (provData->NoVictim)
             printf_s("\tNo victim required\r\n");
 
+        if (provData->PhysMemoryBruteForce)
+            printf_s("\tProvider supports only physical memory brute-force.\r\n");
+
         //
         // List "based" flags.
         //
@@ -187,6 +173,9 @@ VOID KDUProvList()
                 break;
             case SourceBaseMapMem:
                 pszDesc = MAPMEM_BASE_DESC;
+                break;
+            case SourceBaseRWEverything:
+                pszDesc = RWEVERYTHING_BASE_DESC;
                 break;
             default:
                 pszDesc = "Unknown";
@@ -723,7 +712,18 @@ BOOL KDUProviderVerifyActionType(
 
             return FALSE;
         }
+
+        if (Provider->LoadData->PhysMemoryBruteForce && 
+            (Provider->Callbacks.ReadPhysicalMemory == NULL || 
+             Provider->Callbacks.WritePhysicalMemory == NULL))
+        {
+            supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support physical memory read/write or\r\n"\
+                "\tKDU interface is not implemented for these methods.\r\n");
+            
+            return FALSE;
+        }
         break;
+
     default:
         break;
     }
@@ -821,9 +821,6 @@ BOOL KDUIsSupportedShell(
         break;
     case KDU_SHELLCODE_V4:
         value = KDUPROV_SC_V4;
-        break;
-    case KDU_SHELLCODE_V5:
-        value = KDUPROV_SC_V5;
         break;
     default:
         return FALSE;
