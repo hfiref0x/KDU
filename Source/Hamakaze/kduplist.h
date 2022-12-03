@@ -37,6 +37,7 @@
 #include "idrv/marvinhw.h"
 #include "idrv/zemana.h"
 #include "idrv/asrdrv.h"
+#include "idrv/alcpu.h"
 
 //
 // Victims public array.
@@ -686,7 +687,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver2,
-        (provControlDSE)AsrControlDSE,
+        (provControlDSE)KDUControlDSE2,
 
         (provReadKernelVM)NULL,
         (provWriteKernelVM)NULL,
@@ -695,6 +696,28 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)NULL,
         (provReadPhysicalMemory)AsrReadPhysicalMemory,
         (provWritePhysicalMemory)AsrWritePhysicalMemory
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver2,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)AlcReadPhysicalMemory,
+        (provWritePhysicalMemory)AlcWritePhysicalMemory
     }
 
 };

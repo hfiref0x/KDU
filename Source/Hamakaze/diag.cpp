@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.28
 *
-*  DATE:        21 Nov 2022
+*  DATE:        01 Dec 2022
 *
 *  Hamakaze system diagnostics component.
 *
@@ -436,7 +436,6 @@ VOID TracePsHandle(
     HANDLE objectHandle = NULL;
     CLIENT_ID clientId;
     OBJECT_ATTRIBUTES obja;
-
 
     if (ClientId->UniqueProcess == NtCurrentTeb()->ClientId.UniqueProcess) {
         printf_s("> Process (self) handle trace\r\n");

@@ -4,9 +4,9 @@
 *
 *  TITLE:       VICTIM.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.28
 *
-*  DATE:        08 Feb 2022
+*  DATE:        01 Dec 2022
 *
 *  Victim support routines.
 *
@@ -229,11 +229,22 @@ BOOL VpCreateCallback(
             supHeapFree(drvBuffer);
 
             if (resourceSize != writeBytes) {
+
+                //
+                // Driver is in use.
+                //
+                if (ntStatus == STATUS_SHARING_VIOLATION) {
+                    supPrintfEvent(kduEventError, 
+                        "[!] Sharing violation, driver maybe in use, please close all application(s) that are using this driver\r\n");
+                }
+                else {
+
+                    supPrintfEvent(kduEventError,
+                        "[!] Could not extract victim driver, NTSTATUS(0x%lX) abort\r\n",
+                        ntStatus);                 
                 
-                supPrintfEvent(kduEventError, 
-                    "[!] Could not extract victim driver, NTSTATUS(0x%lX) abort\r\n", 
-                    ntStatus);
-                
+                }
+
                 SetLastError(RtlNtStatusToDosError(ntStatus));
                 break;
             }

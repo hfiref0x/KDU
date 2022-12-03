@@ -32,7 +32,6 @@
 #define IOCTL_ASRDRV_EXEC_DISPATCH \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, ASRDRV_EXEC_DISPATCH, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 
-
 //
 // Based on CVE-2020-15368
 //
@@ -70,11 +69,6 @@ typedef struct _ASRDRV_COMMAND {
     ASRDRV_ARGS Arguments;
 } ASRDRV_COMMAND, * PASRDRV_COMMAND;
 #pragma pack(pop)
-
-BOOL AsrControlDSE(
-    _In_ PKDU_CONTEXT Context,
-    _In_ ULONG DSEValue,
-    _In_ ULONG_PTR Address);
 
 BOOL WINAPI AsrReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,

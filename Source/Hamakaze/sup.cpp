@@ -2592,6 +2592,8 @@ ULONG_PTR supGetHalQuerySystemInformation(
 * Purpose:
 *
 * Read physical memory layout from registry.
+* 
+* Use supHeapFree to release allocated memory.
 *
 */
 PCM_RESOURCE_LIST supQueryPhysicalMemoryLayout(
@@ -2604,16 +2606,16 @@ PCM_RESOURCE_LIST supQueryPhysicalMemoryLayout(
     DWORD dwType = REG_RESOURCE_LIST, cbData = 0;
     PCM_RESOURCE_LIST pList = NULL;
 
-    LRESULT result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, lpKey, 0, KEY_READ, &hKey);
+    LRESULT result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpKey, 0, KEY_READ, &hKey);
     if (result == ERROR_SUCCESS) {
 
-        result = RegQueryValueExW(hKey, lpValue, 0, &dwType, NULL, &cbData);
+        result = RegQueryValueEx(hKey, lpValue, 0, &dwType, NULL, &cbData);
 
         if (result == ERROR_SUCCESS) {
 
             pList = (PCM_RESOURCE_LIST)supHeapAlloc((SIZE_T)cbData);
             if (pList) {
-                RegQueryValueExW(hKey, lpValue, 0, &dwType, (LPBYTE)pList, &cbData);
+                RegQueryValueEx(hKey, lpValue, 0, &dwType, (LPBYTE)pList, &cbData);
             }
         }
 
@@ -2677,7 +2679,7 @@ BOOL supEnumeratePhysicalMemory(
                 endAddress = queryAddress + length;
 
                 supPrintfEvent(kduEventInformation, 
-                    "[+] Enumerating memory range 0x%llX -> 0x%llX\r\n", queryAddress, endAddress);
+                    "[+] Enumerating memory address range 0x%llX -> 0x%llX\r\n", queryAddress, endAddress);
 
                 do {
 
@@ -2695,10 +2697,12 @@ BOOL supEnumeratePhysicalMemory(
 
                 } while (queryAddress < endAddress);
 
-                printf_s("\33[2K\r\tRange probed successfully\r\n");
+                printf_s("\33[2K\r\tAddress range probed successfully\r\n");
             }
         }
     }
+
+    supHeapFree(pList);
 
     return TRUE;
 }
@@ -2722,10 +2726,10 @@ BOOL supDetectMsftBlockList(
     HKEY hKey;
     DWORD dwType = REG_DWORD, cbData = sizeof(DWORD), dwEnabled = 0;
 
-    LRESULT result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, lpKey, 0, KEY_ALL_ACCESS, &hKey);
+    LRESULT result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpKey, 0, KEY_ALL_ACCESS, &hKey);
     if (result == ERROR_SUCCESS) {
 
-        result = RegQueryValueExW(hKey, lpValue, 0, &dwType, (LPBYTE)&dwEnabled, &cbData);
+        result = RegQueryValueEx(hKey, lpValue, 0, &dwType, (LPBYTE)&dwEnabled, &cbData);
 
         if (result == ERROR_SUCCESS && dwType == REG_DWORD) {
             *Enabled = (dwEnabled > 0);

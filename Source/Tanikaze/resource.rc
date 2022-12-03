@@ -118,6 +118,8 @@ IDR_PASSMARK_OSF        RCDATA                  "drv\\DirectIo64_2.bin"
 
 IDR_ASROCKDRV           RCDATA                  "drv\\AsrDrv106.bin"
 
+IDR_ALSYSIO64           RCDATA                  "drv\\ALSysIO64.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

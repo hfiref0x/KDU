@@ -134,6 +134,7 @@
     <ClCompile Include="drvmap.cpp" />
     <ClCompile Include="dsefix.cpp" />
     <ClCompile Include="hde\hde64.c" />
+    <ClCompile Include="idrv\alcpu.cpp" />
     <ClCompile Include="idrv\asrdrv.cpp" />
     <ClCompile Include="idrv\atszio.cpp" />
     <ClCompile Include="idrv\dbk.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="dsefix.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="hde\hde64.h" />
+    <ClInclude Include="idrv\alcpu.h" />
     <ClInclude Include="idrv\asrdrv.h" />
     <ClInclude Include="idrv\atszio.h" />
     <ClInclude Include="idrv\dbk.h" />

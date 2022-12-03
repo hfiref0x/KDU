@@ -141,7 +141,7 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(KDU_PROVIDER_ASROCK, 
+    Context = KDUProviderCreate(KDU_PROVIDER_ALCPU, 
         FALSE, 
         NT_WIN7_SP1, 
         KDU_SHELLCODE_V1, 

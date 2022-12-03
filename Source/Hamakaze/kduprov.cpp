@@ -174,7 +174,7 @@ VOID KDUProvList()
             case SourceBaseMapMem:
                 pszDesc = MAPMEM_BASE_DESC;
                 break;
-            case SourceBaseRwEverything:
+            case SourceBaseRWEverything:
                 pszDesc = RWEVERYTHING_BASE_DESC;
                 break;
             default:
@@ -821,9 +821,6 @@ BOOL KDUIsSupportedShell(
         break;
     case KDU_SHELLCODE_V4:
         value = KDUPROV_SC_V4;
-        break;
-    case KDU_SHELLCODE_V5:
-        value = KDUPROV_SC_V5;
         break;
     default:
         return FALSE;

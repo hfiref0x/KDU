@@ -177,6 +177,9 @@
     <ClCompile Include="idrv\asrdrv.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\alcpu.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -328,6 +331,9 @@
     </ClInclude>
     <ClInclude Include="sig.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\alcpu.h">
+      <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

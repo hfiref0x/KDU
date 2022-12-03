@@ -36,8 +36,7 @@
 #define KDU_SHELLCODE_V2    (2)
 #define KDU_SHELLCODE_V3    (3)
 #define KDU_SHELLCODE_V4    (4)
-#define KDU_SHELLCODE_V5    (5)
-#define KDU_SHELLCODE_VMAX  KDU_SHELLCODE_V5
+#define KDU_SHELLCODE_VMAX  KDU_SHELLCODE_V4
 
 #include <Windows.h>
 #include <strsafe.h>

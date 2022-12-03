@@ -133,6 +133,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 26          | HiRes Ent.     | inpoutx64   | Various                            | WINIO             | 1.2.0 and below             |                      |
 | 27          | PassMark       | DirectIo64  | PassMark OSForensics               | Original          | Any                         |                      |
 | 28          | ASRock         | AsrDrv106   | Phantom Gaming Tuning              | RwEverything      | 1.0.6 and below             |                      |
+| 29          | Arthur Liberman| ALSysIO64   | Core Temp                          | Original          | 2.0.11 and below            |                      |
 
 ###### *At commit time, data maybe inaccurate.
 

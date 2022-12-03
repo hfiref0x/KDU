@@ -67,8 +67,8 @@ ZmShellDSEFixEnd PROC
 ZmShellDSEFixEnd ENDP
 
 BaseShellDSEFix PROC
-    mov rax, 01122334455667788h
-    mov rcx, 08877665544332211h
+    mov rax, 01122334455667788h ;Address
+    mov rcx, 08877665544332211h ;Value
     mov qword ptr[rax], rcx
     ret
 BaseShellDSEFix ENDP
