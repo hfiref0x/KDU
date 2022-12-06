@@ -530,6 +530,12 @@ int KDUMain()
 
     do {
 
+        CHAR vendorString[0x20];
+
+        RtlFillMemory(vendorString, sizeof(vendorString), 0);
+        GET_CPU_VENDOR_STRING(vendorString);
+        printf_s("[*] CPU vendor string: %s\r\n", vendorString);
+
         RtlSecureZeroMemory(&osv, sizeof(osv));
         osv.dwOSVersionInfoSize = sizeof(osv);
         RtlGetVersion((PRTL_OSVERSIONINFOW)&osv);

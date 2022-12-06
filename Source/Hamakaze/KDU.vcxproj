@@ -148,6 +148,7 @@
     <ClCompile Include="idrv\mimidrv.cpp" />
     <ClCompile Include="idrv\phymem.cpp" />
     <ClCompile Include="idrv\procexp.cpp" />
+    <ClCompile Include="idrv\ryzen.cpp" />
     <ClCompile Include="idrv\winio.cpp" />
     <ClCompile Include="idrv\nal.cpp" />
     <ClCompile Include="idrv\rtcore.cpp" />
@@ -198,6 +199,7 @@
     <ClInclude Include="idrv\mimidrv.h" />
     <ClInclude Include="idrv\phymem.h" />
     <ClInclude Include="idrv\procexp.h" />
+    <ClInclude Include="idrv\ryzen.h" />
     <ClInclude Include="idrv\winio.h" />
     <ClInclude Include="idrv\nal.h" />
     <ClInclude Include="idrv\rtcore.h" />

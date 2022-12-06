@@ -73,6 +73,18 @@ typedef BOOL(WINAPI* pfnPhysMemEnumCallback)(
     _In_ ULONG_PTR Address,
     _In_ PVOID UserContext);
 
+#define GET_CPU_VENDOR_STRING(VendorString) \
+    INT cpuInfo[4]; \
+    RtlFillMemory(cpuInfo, sizeof(cpuInfo), 0); \
+    __cpuid((INT*)cpuInfo, 0); \
+    *(DWORD*)(VendorString) = cpuInfo[1]; \
+    *(DWORD*)(VendorString + 4) = cpuInfo[3]; \
+    *(DWORD*)(VendorString + 8) = cpuInfo[2]; \
+
+BOOL supIsSupportedCpuVendor(
+    _In_ LPCSTR Vendor,
+    _In_ ULONG Length);
+
 PVOID FORCEINLINE supHeapAlloc(
     _In_ SIZE_T Size);
 

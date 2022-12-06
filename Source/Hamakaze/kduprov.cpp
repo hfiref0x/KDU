@@ -986,6 +986,18 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
         Context->Provider = prov;
 
+        if (Context->Provider->Callbacks.ValidatePrerequisites)
+            if (!Context->Provider->Callbacks.ValidatePrerequisites(Context))
+            {
+                supHeapFree(Context);
+                Context = NULL;
+
+                supPrintfEvent(kduEventError,
+                    "[!] Abort: provider prerequisites are not meet\r\n");
+
+                break;
+            }
+
         if (provLoadData->NoVictim) {
             Context->Victim = NULL;
         }

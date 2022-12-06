@@ -106,7 +106,7 @@ BOOL WINAPI TestPhysMemEnumCallback(
             signatureSize))
         {
             printf_s("\t Found code at address 0x%llX\r\n", Address);
-            Params->cbPagesFound += 1;
+            Params->ccPagesFound += 1;
         }
     }
 
@@ -121,12 +121,12 @@ VOID TestBrute(PKDU_CONTEXT Context)
     params.cbPayload = 0;
     params.pvPayload = NULL;
     params.Context = Context;
-    params.cbPagesFound = 0;
-    params.cbPagesModified = 0;
+    params.ccPagesFound = 0;
+    params.ccPagesModified = 0;
 
     if (supEnumeratePhysicalMemory(TestPhysMemEnumCallback, &params)) {
 
-        printf_s("[+] Number of pages found: %llu\r\n", params.cbPagesFound);
+        printf_s("[+] Number of pages found: %llu\r\n", params.ccPagesFound);
 
     }
    
@@ -141,7 +141,7 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(KDU_PROVIDER_ALCPU, 
+    Context = KDUProviderCreate(KDU_PROVIDER_AMD_RYZENMASTER, 
         FALSE, 
         NT_WIN7_SP1, 
         KDU_SHELLCODE_V1, 
@@ -149,6 +149,11 @@ VOID KDUTest()
 
     if (Context) {
  
+        /*Context->Provider->Callbacks.ReadPhysicalMemory(Context->DeviceHandle,
+            0x0000000072a3a000,
+            Buffer,
+            sizeof(Buffer));*/
+
         TestBrute(Context);
         KDUTestDSE(Context);
 

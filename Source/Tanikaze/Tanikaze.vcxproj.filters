@@ -142,6 +142,9 @@
     <None Include="drv\ALSysIO64.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\AMDRyzenMasterDriver.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.27
+*  VERSION:     1.28
 *
-*  DATE:        10 Nov 2022
+*  DATE:        02 Dec 2022
 *
 *  Provider support routines.
 *
@@ -137,6 +137,13 @@ typedef BOOL(WINAPI* provMapDriver)(
     _In_ PVOID ImageBase
     );
 
+//
+// Prototype for driver prerequisites validator.
+//
+typedef BOOL(WINAPI* provValidatePrerequisites)(
+    _In_ struct _KDU_CONTEXT* Context
+    );
+
 typedef enum _KDU_ACTION_TYPE {
     ActionTypeMapDriver = 0,
     ActionTypeDKOM = 1,
@@ -171,6 +178,9 @@ typedef struct _KDU_PROVIDER {
         provQueryPML4 QueryPML4Value; //optional
         provReadPhysicalMemory ReadPhysicalMemory; //optional
         provWritePhysicalMemory WritePhysicalMemory; //optional
+
+        provValidatePrerequisites ValidatePrerequisites; //optional
+
     } Callbacks;
 } KDU_PROVIDER, * PKDU_PROVIDER;
 
@@ -213,8 +223,8 @@ typedef struct _KDU_PHYSMEM_ENUM_PARAMS {
     _In_opt_ PVOID pvPayload;
     _In_opt_ ULONG cbPayload;
 
-    _Out_ SIZE_T cbPagesFound;
-    _Out_ SIZE_T cbPagesModified;
+    _Out_ SIZE_T ccPagesFound;
+    _Out_ SIZE_T ccPagesModified;
 
     _In_ PKDU_CONTEXT Context;
 } KDU_PHYSMEM_ENUM_PARAMS, * PKDU_PHYSMEM_ENUM_PARAMS;

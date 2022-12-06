@@ -120,6 +120,8 @@ IDR_ASROCKDRV           RCDATA                  "drv\\AsrDrv106.bin"
 
 IDR_ALSYSIO64           RCDATA                  "drv\\ALSysIO64.bin"
 
+IDR_AMD_RYZENMASTER     RCDATA                  "drv\\AMDRyzenMasterDriver.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
