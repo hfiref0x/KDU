@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.11
 *
-*  DATE:        01 Dec 2022
+*  DATE:        02 Dec 2022
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -443,6 +443,20 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"ALSysIO64",
         (LPWSTR)L"ALSysIO",
         (LPWSTR)L"ALCPU (Arthur Liberman)",
+     },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_AMD_RYZENMASTER,
+        KDU_PROVIDER_AMD_RYZENMASTER,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"AMD Ryzen Master Service Driver",
+        (LPWSTR)L"AMDRyzenMasterDriver",
+        (LPWSTR)L"AMDRyzenMasterDriverV20",
+        (LPWSTR)L"Advanced Micro Devices Inc.",
      }
 };
 

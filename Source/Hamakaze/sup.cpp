@@ -2746,3 +2746,24 @@ BOOL supDetectMsftBlockList(
 
     return (result == ERROR_SUCCESS);
 }
+
+/*
+* supIsSupportedCpuVendor
+*
+* Purpose:
+*
+* Check if the current CPU vendor is match to supplied.
+*
+*/
+BOOL supIsSupportedCpuVendor(
+    _In_ LPCSTR Vendor,
+    _In_ ULONG Length
+)
+{
+    CHAR vendorString[0x20];
+
+    RtlFillMemory(vendorString, sizeof(vendorString), 0);
+    GET_CPU_VENDOR_STRING(vendorString);
+
+    return (_strncmp_a(vendorString, Vendor, Length) == 0);
+}

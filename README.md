@@ -134,6 +134,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 27          | PassMark       | DirectIo64  | PassMark OSForensics               | Original          | Any                         |                      |
 | 28          | ASRock         | AsrDrv106   | Phantom Gaming Tuning              | RwEverything      | 1.0.6 and below             |                      |
 | 29          | Arthur Liberman| ALSysIO64   | Core Temp                          | Original          | 2.0.11 and below            |                      |
+| 30          | AMD            | AMDRyzenMasterDriver  | Multiple software packages | Original          | 2.0.0.0 and below           |                      |
 
 ###### *At commit time, data maybe inaccurate.
 

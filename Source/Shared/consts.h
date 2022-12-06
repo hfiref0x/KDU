@@ -48,6 +48,11 @@
 #define PHYMEM_BASE_DESC        "PhyMem by akui"
 #define RWEVERYTHING_BASE_DESC  "RWEverything by ckimchan.tw"
 
+#define CPU_VENDOR_INTEL        "GenuineIntel"
+#define CPU_VENDOR_INTEL_LENGTH sizeof(CPU_VENDOR_INTEL) - sizeof(CHAR)
+#define CPU_VENDOR_AMD          "AuthenticAMD"
+#define CPU_VENDOR_AMD_LENGTH sizeof(CPU_VENDOR_AMD) - sizeof(CHAR)
+
 #define SHELL_POOL_TAG          '  oI'
 
 #define PROVIDER_RES_KEY        ' owo' // Giving you enough uwu's.
@@ -101,6 +106,13 @@
 #define IDR_PASSMARK_OSF                130
 #define IDR_ASROCKDRV                   131
 #define IDR_ALSYSIO64                   132
+#define IDR_AMD_RYZENMASTER             133
+#define IDR_RESERVED0                   134
+#define IDR_RESERVED1                   135
+#define IDR_RESERVED2                   136
+#define IDR_RESERVED3                   137
+#define IDR_RESERVED4                   138
+#define IDR_RESERVED6                   140
 
 //
 // Vulnerable drivers providers id
@@ -135,6 +147,7 @@
 #define KDU_PROVIDER_PASSMARK_OSF       27
 #define KDU_PROVIDER_ASROCK             28
 #define KDU_PROVIDER_ALCPU              29
+#define KDU_PROVIDER_AMD_RYZENMASTER    30
 
 //
 // KDU provider flags
