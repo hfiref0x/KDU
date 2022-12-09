@@ -171,8 +171,8 @@ typedef struct _KDU_PROVIDER {
         provMapDriver MapDriver;
         provControlDSE ControlDSE;
 
-        provReadKernelVM ReadKernelVM;
-        provWriteKernelVM WriteKernelVM;
+        provReadKernelVM ReadKernelVM; //optional
+        provWriteKernelVM WriteKernelVM; //optional
 
         provVirtualToPhysical VirtualToPhysical; //optional
         provQueryPML4 QueryPML4Value; //optional

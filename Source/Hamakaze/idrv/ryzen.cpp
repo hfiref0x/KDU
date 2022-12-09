@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.28
 *
-*  DATE:        02 Dec 2022
+*  DATE:        07 Dec 2022
 *
 *  AMD Ryzen Master Service Driver routines.
 *
@@ -33,9 +33,15 @@ BOOL RmValidatePrerequisites(
     _In_ KDU_CONTEXT* Context
 )
 {
+    BOOL bResult;
     UNREFERENCED_PARAMETER(Context);
 
-    return supIsSupportedCpuVendor(CPU_VENDOR_AMD, CPU_VENDOR_AMD_LENGTH);
+    bResult = supIsSupportedCpuVendor(CPU_VENDOR_AMD, CPU_VENDOR_AMD_LENGTH);
+
+    if (!bResult)
+        supPrintfEvent(kduEventError, "[!] Abort, AMD CPU is required.\r\n");
+
+    return bResult;
 }
 
 

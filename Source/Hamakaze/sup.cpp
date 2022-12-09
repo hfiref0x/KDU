@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.28
 *
-*  DATE:        21 Nov 2022
+*  DATE:        07 Dec 2022
 *
 *  Program global support routines.
 *
@@ -84,7 +84,6 @@ NTSTATUS supCallDriverEx(
             NULL);
 
     }
-
 
     if (IoStatus)
         *IoStatus = ioStatus;
@@ -1679,7 +1678,6 @@ BOOL supManageDummyDll(
         return FALSE;
     }
 
-
     if (fRemove) {
 
         HMODULE hModule = GetModuleHandle(lpDllName);
@@ -2611,7 +2609,7 @@ PCM_RESOURCE_LIST supQueryPhysicalMemoryLayout(
 
         result = RegQueryValueEx(hKey, lpValue, 0, &dwType, NULL, &cbData);
 
-        if (result == ERROR_SUCCESS) {
+        if (result == ERROR_SUCCESS && dwType == REG_RESOURCE_LIST) {
 
             pList = (PCM_RESOURCE_LIST)supHeapAlloc((SIZE_T)cbData);
             if (pList) {
