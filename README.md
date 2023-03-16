@@ -105,7 +105,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | Provider Id | Product Vendor | Driver      | Software package                   | Code base         | Version                     | MSFT blacklisted by* |
 |-------------|----------------|-------------|------------------------------------|-------------------|-----------------------------|----------------------|
 | 0           | Intel          | IQVM64/Nal  | Network Adapter Diagnostic Driver  | Original          | 1.03.0.7                    | Cert                 |
-| 1           | MSI            | RTCore64    | MSI Afterburner                    | Semi-original     | 4.6.2 build 15658 and below |                      |
+| 1           | MSI            | RTCore64    | MSI Afterburner                    | Semi-original     | 4.6.2 build 15658 and below | Page hash            |
 | 2           | Gigabyte       | Gdrv        | Gigabyte TOOLS                     | MAPMEM            | Undefined                   | Name                 |
 | 3           | ASUSTeK        | ATSZIO64    | ASUSTeK WinFlash utility           | Semi-original     | Undefined                   | Name                 |
 | 4           | Patriot        | MsIo64      | Patriot Viper RGB utility          | WINIO             | 1.0                         | Page hash            |
@@ -119,11 +119,11 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 12          | LG             | LHA         | LG Device Manager                  | Semi-original     | 1.6.0.2                     | Name                 |
 | 13          | ASUSTeK        | AsIO2       | ASUS GPU Tweak                     | WINIO             | 2.1.7.1 and below           |                      |
 | 14          | PassMark       | DirectIo64  | PassMark Performance Test          | Original          | 10.1 and below              | Page hash            |
-| 15          | GMER           | GmerDrv     | Gmer "Antirootkit"                 | Original          | 2.2 and below               |                      |
+| 15          | GMER           | GmerDrv     | Gmer "Antirootkit"                 | Original          | 2.2 and below               | Name, Page hash, Cert|
 | 16          | Dell           | DBUtil_2_3  | Dell BIOS Utility                  | Original          | 2.3 and below               | Page hash            |
 | 17          | Benjamin Delpy | Mimidrv     | Mimikatz                           | Original          | 2.2 and below               | Cert                 |
 | 18          | Wen Jia Liu    | KProcessHacker2  | Process Hacker                | Original          | 2.38 and below              | Name                 |
-| 19          | Microsoft      | ProcExp152  | Process Explorer                   | Original          | 1.5.2 and below             |                      |
+| 19          | Microsoft      | ProcExp152  | Process Explorer                   | Original          | 1.5.2 and below             | Name, Cert           |
 | 20          | Dell           | DBUtilDrv2  | Dell BIOS Utility                  | Original          | 2.7 and below               |                      |
 | 21          | DarkByte       | Dbk64       | Cheat Engine                       | Original          | 7.4 and below               | Cert, Name           |
 | 22          | ASUSTeK        | AsIO3       | ASUS GPU TweakII                   | WINIO             | 2.3.0.3                     |                      |
