@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       PROCEXP.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.30
 *
-*  DATE:        08 Feb 2022
+*  DATE:        20 Mar 2023
 *
 *  Process Explorer driver routines.
 *
@@ -24,13 +24,16 @@ HANDLE g_PexPhysicalMemorySection = NULL;
 
 static KDU_VICTIM_PROVIDER g_ProcExpVictimSelf{
         (LPCWSTR)PROCEXP152,              // Device and driver name
-        (LPCWSTR)PROCEXP_DESC,            // Description
-        IDR_PROCEXP,                      // Resource id in drivers database
-        GENERIC_READ | GENERIC_WRITE,     // Desired access flags used for acquiring victim handle
+        (LPCWSTR)PROCEXP1627_DESC,        // Description
+        IDR_PROCEXP1627,                  // Resource id in drivers database
+        KDU_VICTIM_PE1627,                // Victim id
+        SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE,     // Desired access flags used for acquiring victim handle
         KDU_VICTIM_FLAGS_NONE,            // Victim flags, target dependent
         VpCreateFromExistingCallback,     // Victim create callback
         VpReleaseCallbackStub,            // Victim release callback
-        VpExecuteFromExistingCallback     // Victim execute payload callback
+        VpExecuteFromExistingCallback,    // Victim execute payload callback
+        &g_ProcExpSig,                    // Victim dispatch bytes
+        sizeof(g_ProcExpSig)              // Victim dispatch bytes size
 };
 
 /*

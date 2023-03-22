@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       SHELLCODE.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.30
 *
-*  DATE:        15 Feb 2022
+*  DATE:        20 Mar 2023
 *
 *  Default driver mapping shellcode(s) prototypes and definitions.
 *
@@ -64,11 +64,11 @@ typedef struct _PAYLOAD_HEADER_V3 {
 } PAYLOAD_HEADER_V3, * PPAYLOAD_HEADER_V3;
 
 SIZE_T ScGetViewSize(
-    _In_ ULONG ShellVersion,
-    _In_ PVOID ShellCodePtr);
+    _In_ ULONG ScVersion,
+    _In_ PVOID ScBuffer);
 
 DWORD ScSizeOf(
-    _In_ ULONG ShellVersion,
+    _In_ ULONG ScVersion,
     _Out_opt_ PULONG PayloadSize);
 
 ULONG ScSizeOfProc(
@@ -79,8 +79,8 @@ BOOLEAN ScCreateFixedUnicodeString(
     _In_ PCWSTR SourceString);
 
 HANDLE ScCreateReadyEvent(
-    _In_ ULONG ShellVersion,
-    _In_ PVOID ShellPtr);
+    _In_ ULONG ScVersion,
+    _In_ PVOID ScBuffer);
 
 BOOLEAN ScStoreVersionSpecificData(
     _In_ PKDU_CONTEXT Context,
@@ -102,7 +102,8 @@ PVOID ScGetBootstrapLdr(
     _Out_opt_ PULONG Size);
 
 VOID ScFree(
-    _In_ PVOID ShellPtr);
+    _In_ PVOID ScBuffer,
+    _In_ ULONG ScSize);
 
 PVOID ScAllocate(
     _In_ ULONG ShellVersion,

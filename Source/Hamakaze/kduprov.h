@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2022
+*  (C) COPYRIGHT AUTHORS, 2014 - 2023
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        02 Dec 2022
+*  DATE:        20 Mar 2023
 *
 *  Provider support routines.
 *
@@ -18,14 +18,6 @@
 *******************************************************************************/
 
 #pragma once
-
-//
-// Victim providers id
-//
-#define KDU_VICTIM_PROCEXP          0
-
-#define KDU_PROVIDER_DEFAULT        KDU_PROVIDER_INTEL_NAL
-#define KDU_VICTIM_DEFAULT          KDU_VICTIM_PROCEXP
 
 //
 // Providers abstraction interface.
@@ -220,13 +212,22 @@ typedef struct _KDU_CONTEXT {
 typedef struct _KDU_PHYSMEM_ENUM_PARAMS {
     _In_ BOOL bWrite;
 
+    _In_ HANDLE DeviceHandle;
+    _In_ provReadPhysicalMemory ReadPhysicalMemory;
+    _In_ provWritePhysicalMemory WritePhysicalMemory;
+
     _In_opt_ PVOID pvPayload;
     _In_opt_ ULONG cbPayload;
 
     _Out_ SIZE_T ccPagesFound;
     _Out_ SIZE_T ccPagesModified;
 
-    _In_ PKDU_CONTEXT Context;
+    _In_ ULONG DispatchHandlerOffset;
+    _In_ ULONG DispatchHandlerPageOffset;
+    _In_ PVOID DispatchSignature;
+    _In_ ULONG DispatchSignatureLength;
+    _In_ ULONG JmpAddress;
+
 } KDU_PHYSMEM_ENUM_PARAMS, * PKDU_PHYSMEM_ENUM_PARAMS;
 
 ULONG KDUProvGetCount();

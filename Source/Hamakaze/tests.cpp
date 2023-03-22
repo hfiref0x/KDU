@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        01 Dec 2022
+*  DATE:        20 Mar 2023
 *
 *  KDU tests.
 *
@@ -89,20 +89,19 @@ BOOL WINAPI TestPhysMemEnumCallback(
 {
    
     PKDU_PHYSMEM_ENUM_PARAMS Params = (PKDU_PHYSMEM_ENUM_PARAMS)UserContext;
-    PKDU_CONTEXT Context = Params->Context;
    
-    ULONG signatureSize = sizeof(ProcExpSignature);
+    ULONG signatureSize = Params->DispatchSignatureLength;
 
     BYTE buffer[PAGE_SIZE];
     RtlSecureZeroMemory(&buffer, sizeof(buffer));
 
-    if (Context->Provider->Callbacks.ReadPhysicalMemory(Context->DeviceHandle,
+    if (Params->ReadPhysicalMemory(Params->DeviceHandle,
         Address,
         &buffer,
         PAGE_SIZE))
     {
-        if (signatureSize == RtlCompareMemory(ProcExpSignature,
-            RtlOffsetToPointer(buffer, PE152_DISPATCH_PAGE_OFFSET), 
+        if (signatureSize == RtlCompareMemory(Params->DispatchSignature,
+            RtlOffsetToPointer(buffer, Params->DispatchHandlerPageOffset),
             signatureSize))
         {
             printf_s("\t Found code at address 0x%llX\r\n", Address);
@@ -117,10 +116,16 @@ VOID TestBrute(PKDU_CONTEXT Context)
 {
     KDU_PHYSMEM_ENUM_PARAMS params;
 
+    params.DeviceHandle = Context->DeviceHandle;
+    params.ReadPhysicalMemory = Context->Provider->Callbacks.ReadPhysicalMemory;
+    params.WritePhysicalMemory = Context->Provider->Callbacks.WritePhysicalMemory;
+
+    params.DispatchSignature = Context->Victim->Data.DispatchSignature;
+    params.DispatchSignatureLength = Context->Victim->Data.DispatchSignatureLength;
+
     params.bWrite = FALSE;
     params.cbPayload = 0;
     params.pvPayload = NULL;
-    params.Context = Context;
     params.ccPagesFound = 0;
     params.ccPagesModified = 0;
 
@@ -141,7 +146,7 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(KDU_PROVIDER_AMD_RYZENMASTER, 
+    Context = KDUProviderCreate(KDU_PROVIDER_HR_PHYSMEM, 
         FALSE, 
         NT_WIN7_SP1, 
         KDU_SHELLCODE_V1, 

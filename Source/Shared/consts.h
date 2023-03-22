@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        01 Dec 2022
+*  DATE:        20 Mar 2023
 *
 *  Global consts.
 *
@@ -20,9 +20,9 @@
 #pragma once
 
 #define KDU_VERSION_MAJOR       1
-#define KDU_VERSION_MINOR       2
-#define KDU_VERSION_REVISION    8
-#define KDU_VERSION_BUILD       2212
+#define KDU_VERSION_MINOR       3
+#define KDU_VERSION_REVISION    0
+#define KDU_VERSION_BUILD       2303
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
 #define KDU_MAX_NTBUILDNUMBER   0xFFFFFFFF  //Undefined
@@ -34,7 +34,8 @@
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
 
 #define PROCEXP152              L"PROCEXP152"
-#define PROCEXP_DESC            L"Process Explorer"
+#define PROCEXP1627_DESC        L"Process Explorer v16"
+#define PROCEXP1702_DESC        L"Process Explorer v17"
 
 #define NTOSKRNL_EXE            L"ntoskrnl.exe"
 #define CI_DLL                  L"CI.dll"
@@ -59,10 +60,18 @@
 
 #define SYSTEM_PID_MAGIC           4
 
-#define PE152_DISPATCH_OFFSET      0x2220 // Valid only for 1.5.2
-#define PE152_DISPATCH_PAGE_OFFSET 0x0220
+#define TEXT_SECTION ".text"
+#define TEXT_SECTION_LEGNTH sizeof(TEXT_SECTION)
 
 #define SHELLCODE_SMALL            0x200
+
+//
+// Victim providers id table
+//
+#define KDU_VICTIM_PE1627  0
+#define KDU_VICTIM_PE1702  1
+#define KDU_VICTIM_MAX     2
+#define KDU_VICTIM_DEFAULT KDU_VICTIM_PE1702
 
 //
 // Data id table
@@ -76,7 +85,8 @@
 //
 // Driver id table
 //
-#define IDR_PROCEXP                     100
+#define IDR_PROCEXP1627                 2000
+#define IDR_PROCEXP1702                 2001
 #define IDR_INTEL_NAL                   103
 #define IDR_RTCORE64                    105
 #define IDR_GDRV                        106
@@ -107,7 +117,7 @@
 #define IDR_ASROCKDRV                   131
 #define IDR_ALSYSIO64                   132
 #define IDR_AMD_RYZENMASTER             133
-#define IDR_RESERVED0                   134
+#define IDR_PHYSMEM                     134
 #define IDR_RESERVED1                   135
 #define IDR_RESERVED2                   136
 #define IDR_RESERVED3                   137
@@ -148,6 +158,9 @@
 #define KDU_PROVIDER_ASROCK             28
 #define KDU_PROVIDER_ALCPU              29
 #define KDU_PROVIDER_AMD_RYZENMASTER    30
+#define KDU_PROVIDER_HR_PHYSMEM         31 
+
+#define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
 //
 // KDU provider flags
@@ -199,6 +212,12 @@
 // Provider supports only memory brute-force.
 //
 #define KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE  0x00000080
+
+//
+// When provider support both virtual/physical memory acccess.
+//
+#define KDUPROV_FLAGS_PREFER_PHYSICAL       0x00000100
+#define KDUPROV_FLAGS_PREFER_VIRTUAL        0x00000200
 
 //
 // KDU shellcode support flags

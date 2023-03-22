@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       WINRING0.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.30
 *
-*  DATE:        08 Nov 2022
+*  DATE:        20 Mar 2023
 *
 *  WinRing0 based drivers routines.
 *

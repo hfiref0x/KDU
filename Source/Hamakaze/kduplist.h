@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        02 Dec 2022
+*  DATE:        20 Mar 2023
 *
 *  Providers global list.
 *
@@ -39,6 +39,7 @@
 #include "idrv/asrdrv.h"
 #include "idrv/alcpu.h"
 #include "idrv/ryzen.h"
+#include "idrv/hilscher.h"
 
 //
 // Victims public array.
@@ -46,14 +47,32 @@
 static KDU_VICTIM_PROVIDER g_KDUVictims[] = {
     {
         (LPCWSTR)PROCEXP152,              // Device and driver name,
-        (LPCWSTR)PROCEXP_DESC,            // Description
-        IDR_PROCEXP,                      // Resource id in drivers database
-        GENERIC_READ | GENERIC_WRITE,     // Desired access flags used for acquiring victim handle
+        (LPCWSTR)PROCEXP1627_DESC,        // Description
+        IDR_PROCEXP1627,                  // Resource id in drivers database
+        KDU_VICTIM_PE1627,                // Victim id
+        SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE,     // Desired access flags used for acquiring victim handle
         KDU_VICTIM_FLAGS_SUPPORT_RELOAD,  // Victim flags, target dependent
         VpCreateCallback,                 // Victim create callback
         VpReleaseCallback,                // Victim release callback
-        VpExecuteCallback                 // Victim execute payload callback
+        VpExecuteCallback,                // Victim execute payload callback
+        & g_ProcExpSig,                   // Victim dispatch bytes
+        sizeof(g_ProcExpSig)              // Victim dispatch bytes size
+    },
+
+    {
+        (LPCWSTR)PROCEXP152,              // Device and driver name,
+        (LPCWSTR)PROCEXP1702_DESC,        // Description
+        IDR_PROCEXP1702,                  // Resource id in drivers database
+        KDU_VICTIM_PE1702,                // Victim id
+        SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE,     // Desired access flags used for acquiring victim handle
+        KDU_VICTIM_FLAGS_SUPPORT_RELOAD,  // Victim flags, target dependent
+        VpCreateCallback,                 // Victim create callback
+        VpReleaseCallback,                // Victim release callback
+        VpExecuteCallback,                // Victim execute payload callback
+        & g_ProcExpSig,                   // Victim dispatch bytes
+        sizeof(g_ProcExpSig)              // Victim dispatch bytes size
     }
+
 };
 
 //
@@ -743,7 +762,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provUnregisterDriver)NULL,
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
-        (provMapDriver)KDUMapDriver2,
+        (provMapDriver)KDUMapDriver,
         (provControlDSE)KDUControlDSE2,
 
         (provReadKernelVM)NULL,
@@ -767,7 +786,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provUnregisterDriver)NULL,
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
-        (provMapDriver)KDUMapDriver2,
+        (provMapDriver)KDUMapDriver,
         (provControlDSE)KDUControlDSE2,
 
         (provReadKernelVM)NULL,
@@ -791,7 +810,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provUnregisterDriver)NULL,
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
-        (provMapDriver)KDUMapDriver2,
+        (provMapDriver)KDUMapDriver,
         (provControlDSE)KDUControlDSE2,
 
         (provReadKernelVM)NULL,
@@ -803,6 +822,30 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWritePhysicalMemory)RmWritePhysicalMemory,
 
         (provValidatePrerequisites)RmValidatePrerequisites
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)PhmRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)PhmReadPhysicalMemory,
+        (provWritePhysicalMemory)PhmWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL
     }
 
 };

@@ -1,12 +1,12 @@
 ﻿/*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        01 Dec 2022
+*  DATE:        20 Mar 2023
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -373,8 +373,8 @@ void KDUProvOpenVulnerableDriverAndRunCallbacks(
     }
 
     NTSTATUS ntStatus = supOpenDriver(Context->Provider->LoadData->DeviceName,
-        WRITE_DAC | GENERIC_WRITE | GENERIC_READ,
-        &deviceHandle);
+            SYNCHRONIZE | WRITE_DAC | GENERIC_WRITE | GENERIC_READ,
+            &deviceHandle);
 
     if (!NT_SUCCESS(ntStatus)) {
 
@@ -512,7 +512,7 @@ BOOL WINAPI KDUProviderPostOpen(
         deviceHandle,
         NtCurrentProcess(),
         &strHandle,
-        GENERIC_WRITE | GENERIC_READ,
+        SYNCHRONIZE | GENERIC_WRITE | GENERIC_READ,
         0,
         0)))
     {
@@ -1002,7 +1002,9 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             Context->Victim = NULL;
         }
         else {
-            Context->Victim = &g_KDUVictims[KDU_VICTIM_DEFAULT];
+            if (prov->LoadData->VictimId >= KDU_VICTIM_MAX)
+                prov->LoadData->VictimId = KDU_VICTIM_DEFAULT;
+            Context->Victim = &g_KDUVictims[prov->LoadData->VictimId];
         }
 
         PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;

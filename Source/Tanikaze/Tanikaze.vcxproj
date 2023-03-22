@@ -210,7 +210,10 @@
     <None Include="drv\mktoolsx64.bin" />
     <None Include="drv\msio64.bin" />
     <None Include="drv\phymemx64.bin" />
+    <None Include="drv\physmem.bin" />
     <None Include="drv\procexp.bin" />
+    <None Include="drv\procexp1627.bin" />
+    <None Include="drv\procexp1702.bin" />
     <None Include="drv\RTCore64.bin" />
     <None Include="drv\rtkio64.bin" />
     <None Include="drv\SysDrv3S.bin" />

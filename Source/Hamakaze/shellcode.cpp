@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       SHELLCODE.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.30
 *
-*  DATE:        16 Oct 2022
+*  DATE:        20 Mar 2023
 *
 *  Default driver mapping shellcode(s) implementation.
 *
@@ -1328,8 +1328,8 @@ typedef VOID(NTAPI* pfnScLoaderRoutine)(
 *
 */
 NTSTATUS NTAPI ScDispatchRoutineDebugSelector(
-    _In_ ULONG ShellVersion,
-    _In_ PVOID ShellPtr,
+    _In_ ULONG ScVersion,
+    _In_ PVOID ScBuffer,
     _In_ struct _DEVICE_OBJECT* DeviceObject,
     _Inout_ struct _IRP* Irp)
 {
@@ -1338,7 +1338,7 @@ NTSTATUS NTAPI ScDispatchRoutineDebugSelector(
         pfnScLoaderRoutine LoaderRoutine;
     } Routine;
 
-    switch (ShellVersion) {
+    switch (ScVersion) {
     case KDU_SHELLCODE_V4:
         Routine.LoaderRoutine = (pfnScLoaderRoutine)ScLoaderRoutineV1;
         break;
@@ -1354,12 +1354,12 @@ NTSTATUS NTAPI ScDispatchRoutineDebugSelector(
         break;
     }
 
-    switch (ShellVersion) {
+    switch (ScVersion) {
     case KDU_SHELLCODE_V4:
-        Routine.LoaderRoutine(ShellPtr);
+        Routine.LoaderRoutine(ScBuffer);
         return STATUS_SUCCESS;
     default:
-        return Routine.DispatchRoutine(DeviceObject, Irp, ShellPtr);
+        return Routine.DispatchRoutine(DeviceObject, Irp, ScBuffer);
     }
 }
 
@@ -1431,14 +1431,14 @@ ULONG_PTR ScResolveFunctionByName(
 *
 */
 SIZE_T ScGetViewSize(
-    _In_ ULONG ShellVersion,
-    _In_ PVOID ShellCodePtr
+    _In_ ULONG ScVersion,
+    _In_ PVOID ScBuffer
 )
 {
     SIZE_T viewSize;
-    PSHELLCODE pvShellCode = (PSHELLCODE)ShellCodePtr;
+    PSHELLCODE pvShellCode = (PSHELLCODE)ScBuffer;
 
-    switch (ShellVersion) {
+    switch (ScVersion) {
     case KDU_SHELLCODE_V4:
     case KDU_SHELLCODE_V3:
     case KDU_SHELLCODE_V2:
@@ -1460,28 +1460,28 @@ SIZE_T ScGetViewSize(
 *
 */
 DWORD ScSizeOf(
-    _In_ ULONG ShellVersion,
+    _In_ ULONG ScVersion,
     _Out_opt_ PULONG PayloadSize
 )
 {
     ULONG payloadSize;
 
-    switch (ShellVersion) {
-    case KDU_SHELLCODE_V3:
-        payloadSize = sizeof(PAYLOAD_HEADER_V3);
-        break;
-    case KDU_SHELLCODE_V2:
-        payloadSize = sizeof(PAYLOAD_HEADER_V2);
-        break;
-    case KDU_SHELLCODE_V4:
-    case KDU_SHELLCODE_V1:
-    default:
-        payloadSize = sizeof(PAYLOAD_HEADER_V1);
-        break;
-    }
-
-    if (PayloadSize) 
+    if (PayloadSize) {
+        switch (ScVersion) {
+        case KDU_SHELLCODE_V3:
+            payloadSize = sizeof(PAYLOAD_HEADER_V3);
+            break;
+        case KDU_SHELLCODE_V2:
+            payloadSize = sizeof(PAYLOAD_HEADER_V2);
+            break;
+        case KDU_SHELLCODE_V4:
+        case KDU_SHELLCODE_V1:
+        default:
+            payloadSize = sizeof(PAYLOAD_HEADER_V1);
+            break;
+        }
         *PayloadSize = payloadSize;
+    }
 
     return sizeof(SHELLCODE);
 }
@@ -1495,13 +1495,13 @@ DWORD ScSizeOf(
 *
 */
 BOOL ScBuildShellImportDebug(
-    _In_ ULONG ShellVersion,
-    _In_ PVOID ShellPtr
+    _In_ ULONG ScVersion,
+    _In_ PVOID ScBuffer
 )
 {
-    SHELLCODE* ShellCode = (SHELLCODE*)ShellPtr;
+    SHELLCODE* ShellCode = (SHELLCODE*)ScBuffer;
 
-    switch (ShellVersion) {
+    switch (ScVersion) {
 
     case KDU_SHELLCODE_V4:
     case KDU_SHELLCODE_V3:
@@ -1535,8 +1535,8 @@ BOOL ScBuildShellImportDebug(
 *
 */
 BOOL ScBuildShellImport(
-    _In_ ULONG ShellVersion,
-    _In_ PVOID ShellPtr,
+    _In_ ULONG ScVersion,
+    _In_ PVOID ScBuffer,
     _In_ ULONG_PTR KernelBase,
     _In_ ULONG_PTR KernelImage
 )
@@ -1545,7 +1545,7 @@ BOOL ScBuildShellImport(
 
     ULONG i;
 
-    SHELLCODE* ShellCode = (SHELLCODE*)ShellPtr;
+    SHELLCODE* ShellCode = (SHELLCODE*)ScBuffer;
 
 #ifdef ENABLE_DBGPRINT
     pfnDbgPrint DbgPrintPtr;
@@ -1564,7 +1564,7 @@ BOOL ScBuildShellImport(
         "KeSetEvent"
     };
 
-    UNREFERENCED_PARAMETER(ShellVersion);
+    UNREFERENCED_PARAMETER(ScVersion);
 
     do {
 
@@ -1619,16 +1619,16 @@ BOOL ScBuildShellImport(
 *
 */
 HANDLE ScCreateReadyEvent(
-    _In_ ULONG ShellVersion,
-    _In_ PVOID ShellPtr
+    _In_ ULONG ScVersion,
+    _In_ PVOID ScBuffer
 )
 {
     HANDLE hReadyEvent;
-    SHELLCODE* ShellCode = (SHELLCODE*)ShellPtr;
+    SHELLCODE* ShellCode = (SHELLCODE*)ScBuffer;
 
     hReadyEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-    switch (ShellVersion) {
+    switch (ScVersion) {
     case KDU_SHELLCODE_V4:
     case KDU_SHELLCODE_V3:
     case KDU_SHELLCODE_V2:
@@ -1748,10 +1748,12 @@ BOOLEAN ScStoreVersionSpecificData(
 *
 */
 VOID ScFree(
-    _In_ PVOID ShellPtr
+    _In_ PVOID ScBuffer,
+    _In_ ULONG ScSize
 )
 {
-    VirtualFree(ShellPtr, 0, MEM_RELEASE);
+    VirtualUnlock(ScBuffer, ScSize);
+    VirtualFree(ScBuffer, 0, MEM_RELEASE);
 }
 
 /*
@@ -1806,7 +1808,7 @@ PVOID ScAllocate(
     _Out_ PULONG ShellSize
 )
 {
-    SIZE_T scSize;
+    DWORD scSize;
     PSHELLCODE pvShellCode = NULL;
     PVOID pvBootstrap;
 
@@ -1855,6 +1857,11 @@ PVOID ScAllocate(
     if (pvShellCode == NULL)
         return NULL;
 
+    if (!VirtualLock(pvShellCode, scSize)) {
+        VirtualFree(pvShellCode, 0, MEM_RELEASE);
+        return NULL;
+    }
+
     pvBootstrap = pvShellCode->BootstrapCode;
 
     switch (ShellVersion) {
@@ -1873,7 +1880,7 @@ PVOID ScAllocate(
     // Build initial loader code part.
     //
     if (!ScBuildInitCodeForVersion(ShellVersion, pvShellCode)) {
-        VirtualFree(pvShellCode, 0, MEM_RELEASE);
+        ScFree(pvShellCode, scSize);
         return NULL;
     }
 
@@ -1914,7 +1921,7 @@ PVOID ScAllocate(
         KernelBase,
         KernelImage))
     {
-        VirtualFree(pvShellCode, 0, MEM_RELEASE);
+        ScFree(pvShellCode, scSize);
         
         supPrintfEvent(kduEventError, 
             "[!] Failed to resolve base shellcode import\r\n");
