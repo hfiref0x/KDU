@@ -694,14 +694,12 @@ BOOL KDUpMapDriverPhysicalSection(
             supPrintfEvent(kduEventError,
                 "[!] Shellcode did not trigger the event within two seconds.\r\n");
 
-            bSuccess = FALSE;
         }
         else
         {
             KDUShowPayloadResult(Context, ScSectionHandle);
+            bSuccess = TRUE;
         }
-
-        bSuccess = TRUE;
 
     } while (FALSE);
 
@@ -766,11 +764,11 @@ BOOL KDUpMapDriverPhysicalBruteForce(
             supPrintfEvent(kduEventError,
                 "[!] Shellcode did not trigger the event within two seconds.\r\n");
 
-            bSuccess = FALSE;
         }
         else
         {
             KDUShowPayloadResult(Context, ScSectionHandle);
+            bSuccess = TRUE;
         }
 
     }
@@ -778,7 +776,6 @@ BOOL KDUpMapDriverPhysicalBruteForce(
         supPrintfEvent(kduEventError,
             "[!] Failed to enumerate physical memory.\r\n");
 
-        bSuccess = FALSE;
     }
 
     //
@@ -826,7 +823,6 @@ BOOL KDUpMapDriverDirectVM(
         supPrintfEvent(kduEventError,
             "[!] Error writing shellcode to the target driver, abort\r\n");
 
-        bSuccess = FALSE;
     }
     else {
 
@@ -846,11 +842,11 @@ BOOL KDUpMapDriverDirectVM(
             supPrintfEvent(kduEventError,
                 "[!] Shellcode did not trigger the event within two seconds.\r\n");
 
-            bSuccess = FALSE;
         }
         else
         {
             KDUShowPayloadResult(Context, ScSectionHandle);
+            bSuccess = TRUE;
         }
     }
 
@@ -937,13 +933,11 @@ BOOL KDUMapDriver(
 
             printf_s("[+] Query victim loaded driver layout\r\n");
 
-            bSuccess = VpQueryInformation(
+            if (VpQueryInformation(
                 Context->Victim,
                 VictimDriverInformation,
                 &vdi,
-                sizeof(vdi));
-
-            if (bSuccess)
+                sizeof(vdi)))
             {
 
                 targetAddress = vdi.LoadedImageBase + dispatchOffset;

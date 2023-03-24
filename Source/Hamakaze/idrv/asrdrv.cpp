@@ -133,7 +133,7 @@ BOOL AsrEncryptDriverRequest(
     if (hAlgAes != NULL)
         BCryptCloseAlgorithmProvider(hAlgAes, 0);
 
-    if (bResult && cbResult) {
+    if (bResult && cbResult && pbCipherData) {
 
         ULONG outSize = sizeof(ASRDRV_REQUEST) +
             cbResult +

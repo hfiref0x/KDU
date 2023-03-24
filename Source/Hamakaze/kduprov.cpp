@@ -679,6 +679,25 @@ HINSTANCE KDUProviderLoadDB(
     return hInstance;
 }
 
+BOOL KDUpRwHandlersAreSet(
+    _In_ PVOID ReadHandler,
+    _In_ PVOID WriteHandler
+)
+{
+    if (ReadHandler == NULL ||
+        WriteHandler == NULL)
+    {
+
+        supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support arbitrary kernel read/write or\r\n"\
+            "\tKDU interface is not implemented for these methods.\r\n");
+
+        return FALSE;
+
+    }
+
+    return TRUE;
+}
+
 /*
 * KDUProviderVerifyActionType
 *
@@ -688,11 +707,11 @@ HINSTANCE KDUProviderLoadDB(
 *
 */
 BOOL KDUProviderVerifyActionType(
-    _In_ KDU_PROVIDER * Provider,
+    _In_ KDU_PROVIDER* Provider,
     _In_ KDU_ACTION_TYPE ActionType)
 {
     BOOL bResult = TRUE;
-
+    
 #ifdef _DEBUG
     return TRUE;
 #endif
@@ -713,15 +732,33 @@ BOOL KDUProviderVerifyActionType(
             return FALSE;
         }
 
-        if (Provider->LoadData->PhysMemoryBruteForce && 
-            (Provider->Callbacks.ReadPhysicalMemory == NULL || 
-             Provider->Callbacks.WritePhysicalMemory == NULL))
-        {
-            supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support physical memory read/write or\r\n"\
-                "\tKDU interface is not implemented for these methods.\r\n");
-            
-            return FALSE;
+        if (Provider->LoadData->PreferPhysical || Provider->LoadData->PhysMemoryBruteForce) {
+
+            //
+            // Driver must have at least something defined.
+            //
+            BOOL bFirstTry = TRUE, bSecondTry = TRUE;
+
+            if (Provider->Callbacks.ReadPhysicalMemory == NULL ||
+                Provider->Callbacks.WritePhysicalMemory == NULL)
+            {
+                bFirstTry = FALSE;
+            }
+
+            if (Provider->Callbacks.ReadKernelVM == NULL ||
+                Provider->Callbacks.WriteKernelVM == NULL)
+            {
+                bSecondTry = FALSE;
+            }
+
+            if (bFirstTry == NULL && bSecondTry == NULL) {
+                supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support arbitrary kernel read/write or\r\n"\
+                    "\tKDU interface is not implemented for these methods.\r\n");
+                return FALSE;
+            }
+
         }
+
         break;
 
     default:
@@ -735,16 +772,28 @@ BOOL KDUProviderVerifyActionType(
         //
         // Check if we can read/write.
         //
-        if (Provider->Callbacks.ReadKernelVM == NULL ||
-            Provider->Callbacks.WriteKernelVM == NULL)
-        {
 
-            supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support arbitrary kernel read/write or\r\n"\
-                "\tKDU interface is not implemented for these methods.\r\n");
+        if (Provider->LoadData->PreferPhysical) {
 
-            bResult = FALSE;
+            if (!KDUpRwHandlersAreSet(
+                (PVOID)Provider->Callbacks.ReadPhysicalMemory,
+                (PVOID)Provider->Callbacks.WritePhysicalMemory))
+            {
+                bResult = FALSE;
+            }
 
         }
+        else {
+
+            if (!KDUpRwHandlersAreSet(
+                (PVOID)Provider->Callbacks.ReadKernelVM,
+                (PVOID)Provider->Callbacks.WriteKernelVM))
+            {
+                bResult = FALSE;
+            }
+
+        }
+
         break;
 
     case ActionTypeMapDriver:

@@ -44,7 +44,7 @@ BOOL WRZeroReadPhysicalMemory(
     return supCallDriver(DeviceHandle,
         IOCTL_OLS_READ_MEMORY,
         &request,
-        sizeof(request),
+        sizeof(OLS_READ_MEMORY_INPUT),
         Buffer,
         NumberOfBytes);
 }
