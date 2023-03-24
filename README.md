@@ -135,6 +135,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 28          | ASRock         | AsrDrv106   | Phantom Gaming Tuning              | RWEverything      | 1.0.6 and below             |                      |
 | 29          | Arthur Liberman| ALSysIO64   | Core Temp                          | Original          | 2.0.11 and below            |                      |
 | 30          | AMD            | AMDRyzenMasterDriver  | Multiple software packages | Original          | 2.0.0.0 and below           |                      |
+| 31          | Hilscher       | physmem     | Physical Memory Viewer for Windows | Original          | 1.0.0.0                     |  Cert, Name          |
 
 ###### *At commit time, data maybe inaccurate.
 
@@ -209,4 +210,4 @@ They are used in multiple products from hardware vendors mostly in unmodified st
 
 # Authors
 
-(c) 2020 - 2022 KDU Project
+(c) 2020 - 2023 KDU Project

@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       SIG.H
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        01 Dec 2022
+*  DATE:        20 Mar 2023
 *
-*  Signatures header file.
+*  Signatures definition header file.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -21,7 +21,8 @@
 //
 // Process Explorer dispatch signature.
 //
-static unsigned char ProcExpSignature[] = {
+
+static unsigned char g_ProcExpSig[] = {
     0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x81, 0xEC, 0x90, 0x00,
     0x00, 0x00, 0x48, 0x8B, 0xFA, 0x33, 0xDB, 0x48, 0x8B, 0xD1, 0x48,
     0x8B, 0x8F, 0xB8, 0x00, 0x00, 0x00, 0x4C, 0x8B, 0x47, 0x18, 0x48,

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        01 Dec 2022
+*  DATE:        20 Mar 2023
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -523,7 +523,7 @@ int KDUMain()
     OSVERSIONINFO osv;
 
 #ifdef _DEBUG
-    printf_s("[*] Debug Mode Run\r\n");
+    printf_s("[*] Debug Mode Run, several features (like a shellcode proper generation) will be unavailable\r\n");
 #endif
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
@@ -640,7 +640,7 @@ VOID KDUIntroBanner()
 {
     IMAGE_NT_HEADERS* ntHeaders = RtlImageNtHeader(NtCurrentPeb()->ImageBaseAddress);
 
-    printf_s("[#] Kernel Driver Utility v%lu.%lu.%lu (build %lu) started, (c)2020 - 2022 KDU Project\r\n"\
+    printf_s("[#] Kernel Driver Utility v%lu.%lu.%lu (build %lu) started, (c)2020 - 2023 KDU Project\r\n"\
         "[#] Build at %s, header checksum 0x%lX\r\n"\
         "[#] Supported x64 OS : Windows 7 and above\r\n",
         KDU_VERSION_MAJOR,

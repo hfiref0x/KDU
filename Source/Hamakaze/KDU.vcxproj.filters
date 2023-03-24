@@ -183,6 +183,9 @@
     <ClCompile Include="idrv\ryzen.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\hilscher.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -339,6 +342,9 @@
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
     <ClInclude Include="idrv\ryzen.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\hilscher.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>

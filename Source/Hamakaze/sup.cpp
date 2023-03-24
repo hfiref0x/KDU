@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        07 Dec 2022
+*  DATE:        20 Mar 2023
 *
 *  Program global support routines.
 *
@@ -598,6 +598,27 @@ BOOL supRegDeleteKeyRecursive(
 }
 
 /*
+* supRegWriteValueDWORD
+*
+* Purpose:
+*
+* Write DWORD value to the registry.
+*
+*/
+NTSTATUS supRegWriteValueDWORD(
+    _In_ HANDLE RegistryHandle,
+    _In_ LPCWSTR ValueName,
+    _In_ DWORD ValueData
+)
+{
+    UNICODE_STRING valueName;
+
+    RtlInitUnicodeString(&valueName, ValueName);
+    return NtSetValueKey(RegistryHandle, &valueName, 0, REG_DWORD,
+        (PVOID)&ValueData, sizeof(DWORD));
+}
+
+/*
 * supRegWriteValueString
 *
 * Purpose:
@@ -913,7 +934,7 @@ NTSTATUS supOpenDriverEx(
         0,
         0,
         FILE_OPEN,
-        0,
+        FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
         NULL,
         0);
 
@@ -2320,7 +2341,7 @@ PVOID supGetEntryPointForMappedFile(
 */
 NTSTATUS supInjectPayload(
     _In_ PVOID pvTargetImage,
-    _In_ PVOID pvShellCode,
+    _In_ PVOID pbShellCode,
     _In_ ULONG cbShellCode,
     _In_ LPWSTR lpTargetModule,
     _Out_ PHANDLE phZombieProcess
@@ -2467,7 +2488,7 @@ NTSTATUS supInjectPayload(
         }
 
         RtlCopyMemory(RtlOffsetToPointer(pvLocalBase, optHeader->AddressOfEntryPoint),
-            pvShellCode,
+            pbShellCode,
             cbShellCode);
 
         ResumeThread(processInfo.hThread);

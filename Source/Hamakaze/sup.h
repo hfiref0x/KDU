@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        21 Nov 2022
+*  DATE:        20 Mar 2023
 *
 *  Support routines header file.
 *
@@ -235,6 +235,11 @@ BOOL supManageDummyDll(
 ULONG supSelectNonPagedPoolTag(
     VOID);
 
+NTSTATUS supRegWriteValueDWORD(
+    _In_ HANDLE RegistryHandle,
+    _In_ LPCWSTR ValueName,
+    _In_ DWORD ValueData);
+
 NTSTATUS supRegWriteValueString(
     _In_ HANDLE RegistryHandle,
     _In_ LPCWSTR ValueName,
@@ -293,7 +298,7 @@ PVOID supGetEntryPointForMappedFile(
 
 NTSTATUS supInjectPayload(
     _In_ PVOID pvTargetImage,
-    _In_ PVOID pvShellCode,
+    _In_ PVOID pbShellCode,
     _In_ ULONG cbShellCode,
     _In_ LPWSTR lpTargetModule,
     _Out_ PHANDLE phZombieProcess);

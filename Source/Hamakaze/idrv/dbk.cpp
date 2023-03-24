@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       DBK.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.30
 *
-*  DATE:        01 Dec 2022
+*  DATE:        20 Mar 2023
 *
 *  Cheat Engine's DBK driver routines.
 *
@@ -667,6 +667,9 @@ BOOL DbkMapDriver(
 
         bSuccess = FALSE;
     }
+
+    if (pvShellCode) 
+        ScFree(pvShellCode, ScSizeOf(Context->ShellVersion, NULL));
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);
 

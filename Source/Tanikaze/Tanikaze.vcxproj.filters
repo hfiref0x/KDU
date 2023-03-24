@@ -145,6 +145,15 @@
     <None Include="drv\AMDRyzenMasterDriver.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\physmem.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\procexp1627.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\procexp1702.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
