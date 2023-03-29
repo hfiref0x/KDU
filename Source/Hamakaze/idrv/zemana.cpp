@@ -284,9 +284,12 @@ BOOL ZmExploit_CVE2021_31728(
         drvFileName.Buffer = NULL;
         drvFileName.Length = drvFileName.MaximumLength = 0;
 
-        ntsupConvertToAnsi(Context->Provider->LoadData->DriverName, &drvFileName);
+        if (!NT_SUCCESS(supConvertToAnsi(Context->Provider->LoadData->DriverName, &drvFileName)))
+            break;
 
         StringCchPrintfA(MiniportFix.DriverName, MAX_PATH, "%s.sys", drvFileName.Buffer);
+
+        RtlFreeAnsiString(&drvFileName);
 
         MiniportFix.Offset_Func1 = 0xD553; //driver specific offset, correct it for another sample
 
