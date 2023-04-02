@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.30
 *
-*  DATE:        20 Mar 2023
+*  DATE:        24 Mar 2023
 *
 *  KDU tests.
 *
@@ -157,7 +157,7 @@ VOID KDUTest()
 
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(KDU_PROVIDER_WINRING0, 
+    Context = KDUProviderCreate(KDU_PROVIDER_HR_PHYSMEM, 
         FALSE, 
         NT_WIN7_SP1, 
         KDU_SHELLCODE_V1, 

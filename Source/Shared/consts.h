@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.30
 *
-*  DATE:        20 Mar 2023
+*  DATE:        24 Mar 2023
 *
 *  Global consts.
 *
@@ -158,7 +158,7 @@
 #define KDU_PROVIDER_ASROCK             28
 #define KDU_PROVIDER_ALCPU              29
 #define KDU_PROVIDER_AMD_RYZENMASTER    30
-#define KDU_PROVIDER_HR_PHYSMEM         31 
+#define KDU_PROVIDER_HR_PHYSMEM         31
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

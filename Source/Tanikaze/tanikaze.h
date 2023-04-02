@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.12
 *
-*  DATE:        20 Mar 2023
+*  DATE:        24 Mar 2023
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -504,6 +504,7 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"PHYSMEMVIEWER",
         (LPWSTR)L"Hilscher Gesellschaft fuer Systemautomation mbH"
      }
+
 };
 
 #if defined(__cplusplus)

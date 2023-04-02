@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       DBUTIL.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.31
 *
-*  DATE:        14 Nov 2022
+*  DATE:        24 Mar 2023
 *
 *  Dell BIOS Utility driver routines.
 *
@@ -21,113 +21,11 @@
 #include "idrv/dbutil.h"
 
 WCHAR g_DbUtilHardwareId[] = { L'R', L'O', L'O', L'T', L'\\', L'D', L'B', L'U', L't', L'i', L'l', L'D', L'r', L'v', L'2', 0, 0, 0, 0 };
-HDEVINFO g_DbUtilDevInfo = NULL;
-SP_DEVINFO_DATA g_DbUtilDevInfoData;
 
 #define DBUTILCAT_FILE TEXT("dbutildrv2.cat")
 #define DBUTILINF_FILE TEXT("dbutildrv2.inf")
 
-/*
-* DbUtilManageFiles
-*
-* Purpose:
-*
-* Drop or remove required files from disk in the current process directory.
-*
-*/
-BOOL DbUtilManageFiles(
-    _In_ KDU_CONTEXT* Context,
-    _In_ BOOLEAN DoInstall
-)
-{
-    BOOL bResult = FALSE;
-    LPWSTR lpEnd;
-    LPWSTR lpFileName;
-
-    PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
-    SIZE_T allocSize = 64 +
-        ((_strlen(DBUTILCAT_FILE) + _strlen(DBUTILINF_FILE)) * sizeof(WCHAR)) +
-        CurrentDirectory->Length;
-
-    ULONG length, lastError = ERROR_SUCCESS;
-
-    if (DoInstall) {
-
-        //
-        // Drop DbUtilDrv2.
-        //
-        if (!KDUProvExtractVulnerableDriver(Context)) {
-            SetLastError(ERROR_INTERNAL_ERROR);
-            return FALSE;
-        }
-
-        //
-        // Drop cat and inf files.
-        //
-        lpFileName = (LPWSTR)supHeapAlloc(allocSize);
-        if (lpFileName) {
-
-            length = CurrentDirectory->Length / sizeof(WCHAR);
-
-            _strncpy(lpFileName,
-                length,
-                CurrentDirectory->Buffer,
-                length);
-
-            lpEnd = _strcat(lpFileName, L"\\");
-            _strcat(lpFileName, DBUTILCAT_FILE);
-            if (supExtractFileFromDB(Context->ModuleBase, lpFileName, IDR_DATA_DBUTILCAT)) {
-                *lpEnd = 0;
-                _strcat(lpFileName, DBUTILINF_FILE);
-                if (supExtractFileFromDB(Context->ModuleBase, lpFileName, IDR_DATA_DBUTILINF)) {
-
-                    g_DbUtilDevInfo = NULL;
-
-                    bResult = supSetupInstallDriverFromInf(lpFileName,
-                        (PBYTE)&g_DbUtilHardwareId,
-                        sizeof(g_DbUtilHardwareId),
-                        &g_DbUtilDevInfo,
-                        &g_DbUtilDevInfoData);
-
-                    if (!bResult) 
-                        lastError = GetLastError();
-
-                }
-            }
-
-            supHeapFree(lpFileName);
-        }
-    }
-    else {
-
-        lpFileName = (LPWSTR)supHeapAlloc(allocSize);
-        if (lpFileName) {
-
-            length = CurrentDirectory->Length / sizeof(WCHAR);
-
-            _strncpy(lpFileName,
-                length,
-                CurrentDirectory->Buffer,
-                length);
-
-            lpEnd = _strcat(lpFileName, L"\\");
-            _strcat(lpFileName, DBUTILCAT_FILE);
-            DeleteFile(lpFileName);
-
-            *lpEnd = 0;
-
-            _strcat(lpFileName, DBUTILINF_FILE);
-            DeleteFile(lpFileName);
-
-            supHeapFree(lpFileName);
-            bResult = TRUE;
-        }
-
-    }
-
-    SetLastError(lastError);
-    return bResult;
-}
+SUP_SETUP_DRVPKG g_DbUtilPackage;
 
 /*
 * DbUtilStartVulnerableDriver
@@ -160,9 +58,20 @@ BOOL DbUtilStartVulnerableDriver(
         //
         // Driver is not loaded, load it.
         //
-        RtlSecureZeroMemory(&g_DbUtilDevInfoData, sizeof(g_DbUtilDevInfoData));
-        bLoaded = DbUtilManageFiles(Context, TRUE);
+        RtlSecureZeroMemory(&g_DbUtilPackage, sizeof(g_DbUtilPackage));
 
+        g_DbUtilPackage.CatalogFile = DBUTILCAT_FILE;
+        g_DbUtilPackage.CatalogFileResourceId = IDR_DATA_DBUTILCAT;
+
+        g_DbUtilPackage.InfFile = DBUTILINF_FILE;
+        g_DbUtilPackage.InfFileResourceId = IDR_DATA_DBUTILINF;
+
+        g_DbUtilPackage.Hwid = (BYTE*)&g_DbUtilHardwareId;
+        g_DbUtilPackage.HwidLength = sizeof(g_DbUtilHardwareId);
+
+        g_DbUtilPackage.InstallFlags = INSTALLFLAG_FORCE | INSTALLFLAG_NONINTERACTIVE;
+
+        bLoaded = supSetupManageDriverPackage(Context, TRUE, &g_DbUtilPackage);
     }
 
     //
@@ -194,8 +103,8 @@ VOID DbUtilStopVulnerableDriver(
 {
     LPWSTR lpFullFileName = Context->DriverFileName;
 
-    supSetupRemoveDriver(g_DbUtilDevInfo, &g_DbUtilDevInfoData);
-    DbUtilManageFiles(Context, FALSE);
+    supSetupRemoveDriver(g_DbUtilPackage.DeviceInfo, &g_DbUtilPackage.DeviceInfoData);
+    supSetupManageDriverPackage(Context, FALSE, &g_DbUtilPackage);
 
     if (supDeleteFileWithWait(1000, 5, lpFullFileName))
         printf_s("[+] Vulnerable driver file removed\r\n");

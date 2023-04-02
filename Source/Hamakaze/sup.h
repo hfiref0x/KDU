@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.30
 *
-*  DATE:        20 Mar 2023
+*  DATE:        24 Mar 2023
 *
 *  Support routines header file.
 *
@@ -21,6 +21,19 @@
 //#define VERBOSE_FUNCTION_LOG
 
 #define USER_TO_KERNEL_HANDLE(Handle) { Handle += 0xffffffff80000000; }
+
+typedef struct _SUP_SETUP_DRVPKG {
+    HDEVINFO DeviceInfo;
+    SP_DEVINFO_DATA DeviceInfoData;
+    LPCWSTR CatalogFile;
+    LPCWSTR InfFile;
+    ULONG CatalogFileResourceId;
+    ULONG InfFileResourceId;
+    BYTE* Hwid;
+    ULONG HwidLength;
+    ULONG InstallFlags;
+    WCHAR DeviceName[MAX_PATH];
+} SUP_SETUP_DRVPKG, * PSUP_SETUP_DRVPKG;
 
 typedef BOOL(CALLBACK* pfnOpenProcessCallback)(
     _In_ HANDLE DeviceHandle,
@@ -37,6 +50,12 @@ typedef BOOL(CALLBACK* pfnDuplicateHandleCallback)(
     _In_ ACCESS_MASK DesiredAccess,
     _In_ ULONG HandleAttributes,
     _In_ ULONG Options);
+
+typedef BOOL(CALLBACK* pfnSetupDeviceEnumCallback)(
+    _In_ HDEVINFO DeviceInfo,
+    _In_ PSP_DEVINFO_DATA DeviceInfoData,
+    _In_ PVOID Param
+    );
 
 typedef NTSTATUS(CALLBACK* pfnLoadDriverCallback)(
     _In_ PUNICODE_STRING RegistryPath,
@@ -262,16 +281,25 @@ VOID supGenerateSharedObjectName(
     _In_ WORD ObjectId,
     _Inout_ LPWSTR lpBuffer);
 
-BOOL supSetupInstallDriverFromInf(
-    _In_ LPCWSTR InfName,
-    _In_ BYTE * HardwareId,
-    _In_ ULONG HardwareIdLength,
-    _Out_ HDEVINFO * DeviceInfo,
-    _Inout_ SP_DEVINFO_DATA * DeviceInfoData);
+BOOL supSetupManageDriverPackage(
+    _In_ PVOID Context,
+    _In_ BOOLEAN DoInstall,
+    _In_ PSUP_SETUP_DRVPKG DriverPackage);
 
 BOOL supSetupRemoveDriver(
     _In_ HDEVINFO DeviceInfo,
     _In_ SP_DEVINFO_DATA * DeviceInfoData);
+
+BOOL supQueryDeviceProperty(
+    _In_ HDEVINFO hDevInfo,
+    _In_ SP_DEVINFO_DATA* pDevInfoData,
+    _In_ ULONG Property,
+    _Out_ LPWSTR* PropertyBuffer,
+    _Out_opt_ ULONG* PropertyBufferSize);
+
+BOOL supSetupEnumDevices(
+    _In_ pfnSetupDeviceEnumCallback Callback,
+    _In_ PVOID CallbackParam);
 
 BOOL supExtractFileFromDB(
     _In_ HMODULE ImageBase,

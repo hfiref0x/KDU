@@ -1985,24 +1985,25 @@ VOID supGenerateSharedObjectName(
 }
 
 /*
-* supSetupInstallDriverFromInf
+* supxSetupInstallDriverFromInf
 *
 * Purpose:
 *
 * Install and load device driver through SetupAPI.
 *
 */
-BOOL supSetupInstallDriverFromInf(
+BOOL supxSetupInstallDriverFromInf(
     _In_ LPCWSTR InfName,
     _In_ BYTE* HardwareId,
     _In_ ULONG HardwareIdLength,
     _Out_ HDEVINFO* DeviceInfo,
-    _Inout_ SP_DEVINFO_DATA* DeviceInfoData
+    _Inout_ SP_DEVINFO_DATA* DeviceInfoData,
+    _In_ ULONG InstallFlags
 )
 {
     BOOL bResult = FALSE;
-    GUID guid;
-    HDEVINFO devInfo = NULL;
+    GUID classGUID;
+    HDEVINFO devInfoSet = NULL;
 #define MAX_CLASS_NAME_LEN 256
     WCHAR className[MAX_CLASS_NAME_LEN];
 
@@ -2011,12 +2012,13 @@ BOOL supSetupInstallDriverFromInf(
     do {
 
         RtlSecureZeroMemory(&className, sizeof(className));
-        RtlSecureZeroMemory(DeviceInfoData, sizeof(SP_DEVINFO_DATA));
-        DeviceInfoData->cbSize = sizeof(SP_DEVINFO_DATA);
 
+        //
+        // Use the INF file to extract the class GUID.
+        //
         if (!SetupDiGetINFClass(
             InfName,
-            &guid,
+            &classGUID,
             (PWSTR)&className,
             MAX_CLASS_NAME_LEN,
             NULL))
@@ -2024,13 +2026,21 @@ BOOL supSetupInstallDriverFromInf(
             break;
         }
 
-        devInfo = SetupDiCreateDeviceInfoList(&guid, NULL);
-        if (devInfo == INVALID_HANDLE_VALUE)
+        //
+        // Create the container for class GUID.
+        //
+        devInfoSet = SetupDiCreateDeviceInfoList(&classGUID, NULL);
+        if (devInfoSet == INVALID_HANDLE_VALUE)
             break;
 
-        if (!SetupDiCreateDeviceInfo(devInfo,
+        DeviceInfoData->cbSize = sizeof(SP_DEVINFO_DATA);
+
+        //
+        // Create the element.
+        //
+        if (!SetupDiCreateDeviceInfo(devInfoSet,
             className,
-            &guid,
+            &classGUID,
             NULL,
             NULL,
             DICD_GENERATE_ID,
@@ -2039,7 +2049,10 @@ BOOL supSetupInstallDriverFromInf(
             break;
         }
 
-        if (!SetupDiSetDeviceRegistryProperty(devInfo,
+        //
+        // Add the HardwareID to the Device's HardwareID property.
+        //
+        if (!SetupDiSetDeviceRegistryProperty(devInfoSet,
             DeviceInfoData,
             SPDRP_HARDWAREID,
             HardwareId,
@@ -2048,8 +2061,11 @@ BOOL supSetupInstallDriverFromInf(
             break;
         }
 
+        //
+        // Transform the registry element into an actual devnode in the PnP HW tree.
+        //
         if (!SetupDiCallClassInstaller(DIF_REGISTERDEVICE,
-            devInfo,
+            devInfoSet,
             DeviceInfoData))
         {
             break;
@@ -2058,14 +2074,133 @@ BOOL supSetupInstallDriverFromInf(
         bResult = UpdateDriverForPlugAndPlayDevices(NULL,
             (LPCWSTR)HardwareId,
             InfName,
-            INSTALLFLAG_FORCE | INSTALLFLAG_NONINTERACTIVE,
+            InstallFlags,
             NULL);
 
     } while (FALSE);
 
-    if (bResult)
-        *DeviceInfo = devInfo;
+    if (bResult) {
+        *DeviceInfo = devInfoSet;
+    }
+    else {
+        if (devInfoSet && devInfoSet != INVALID_HANDLE_VALUE)
+            SetupDiDestroyDeviceInfoList(devInfoSet);
+    }
 
+    return bResult;
+}
+
+/*
+* supSetupManageDriverPackage
+*
+* Purpose:
+*
+* Drop or remove required driver package files from disk in the current process directory.
+*
+*/
+BOOL supSetupManageDriverPackage(
+    _In_ PVOID Context,
+    _In_ BOOLEAN DoInstall,
+    _In_ PSUP_SETUP_DRVPKG DriverPackage
+)
+{
+    BOOL bResult = FALSE;
+    LPWSTR lpEnd;
+    LPWSTR lpFileName;
+    KDU_CONTEXT* context = (KDU_CONTEXT*)Context;
+
+    PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
+    SIZE_T allocSize = 64 +
+        ((_strlen(DriverPackage->CatalogFile) + _strlen(DriverPackage->InfFile)) * sizeof(WCHAR)) +
+        CurrentDirectory->Length;
+
+    ULONG length, lastError = ERROR_SUCCESS;
+
+    if (DoInstall) {
+
+        //
+        // Drop target driver.
+        //
+        if (!KDUProvExtractVulnerableDriver(context)) {
+            SetLastError(ERROR_INTERNAL_ERROR);
+            return FALSE;
+        }
+
+        //
+        // Drop cat and inf files.
+        //
+        lpFileName = (LPWSTR)supHeapAlloc(allocSize);
+        if (lpFileName) {
+
+            length = CurrentDirectory->Length / sizeof(WCHAR);
+
+            //
+            // Drop catalog file.
+            //
+            _strncpy(lpFileName,
+                length,
+                CurrentDirectory->Buffer,
+                length);
+
+            lpEnd = _strcat(lpFileName, L"\\");
+            _strcat(lpFileName, DriverPackage->CatalogFile);
+            if (supExtractFileFromDB(context->ModuleBase, lpFileName, DriverPackage->CatalogFileResourceId)) {
+
+                //
+                // Drop inf file.
+                //
+                *lpEnd = 0;
+                _strcat(lpFileName, DriverPackage->InfFile);
+
+                if (supExtractFileFromDB(context->ModuleBase, lpFileName, DriverPackage->InfFileResourceId)) {
+
+                    //
+                    // Install driver package.
+                    //
+                    bResult = supxSetupInstallDriverFromInf(lpFileName,
+                        DriverPackage->Hwid,
+                        DriverPackage->HwidLength,
+                        &DriverPackage->DeviceInfo,
+                        &DriverPackage->DeviceInfoData,
+                        DriverPackage->InstallFlags);
+
+                    if (!bResult)
+                        lastError = GetLastError();
+
+                }
+            }
+
+            supHeapFree(lpFileName);
+        }
+    }
+    else {
+
+        lpFileName = (LPWSTR)supHeapAlloc(allocSize);
+        if (lpFileName) {
+
+            length = CurrentDirectory->Length / sizeof(WCHAR);
+
+            _strncpy(lpFileName,
+                length,
+                CurrentDirectory->Buffer,
+                length);
+
+            lpEnd = _strcat(lpFileName, L"\\");
+            _strcat(lpFileName, DriverPackage->CatalogFile);
+            DeleteFile(lpFileName);
+
+            *lpEnd = 0;
+
+            _strcat(lpFileName, DriverPackage->InfFile);
+            DeleteFile(lpFileName);
+
+            supHeapFree(lpFileName);
+            bResult = TRUE;
+        }
+
+    }
+
+    SetLastError(lastError);
     return bResult;
 }
 
@@ -2088,6 +2223,111 @@ BOOL supSetupRemoveDriver(
     }
 
     return FALSE;
+}
+
+/*
+* supQueryDeviceProperty
+*
+* Purpose:
+*
+* Allocate space and read device property.
+*
+*/
+BOOL supQueryDeviceProperty(
+    _In_ HDEVINFO hDevInfo,
+    _In_ SP_DEVINFO_DATA* pDevInfoData,
+    _In_ ULONG Property,
+    _Out_ LPWSTR* PropertyBuffer,
+    _Out_opt_ ULONG* PropertyBufferSize
+)
+{
+    BOOL   result = FALSE;
+    DWORD  dataType = 0, dataSize, returnLength = 0;
+    LPWSTR lpProperty = NULL;
+
+    dataSize = (MAX_PATH * sizeof(WCHAR)) + sizeof(UNICODE_NULL);
+    lpProperty = (LPWSTR)supHeapAlloc(dataSize);
+    if (lpProperty) {
+
+        result = SetupDiGetDeviceRegistryProperty(hDevInfo,
+            pDevInfoData,
+            Property,
+            &dataType,
+            (PBYTE)lpProperty,
+            dataSize,
+            &returnLength);
+
+        if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+
+            supHeapFree(lpProperty);
+            dataSize = returnLength;
+            lpProperty = (LPWSTR)supHeapAlloc(dataSize);
+            if (lpProperty) {
+
+                result = SetupDiGetDeviceRegistryProperty(hDevInfo,
+                    pDevInfoData,
+                    Property,
+                    &dataType,
+                    (PBYTE)lpProperty,
+                    dataSize,
+                    &returnLength);
+
+            }
+
+        }
+
+        if (!result) {
+            if (lpProperty) {
+                supHeapFree(lpProperty);
+                lpProperty = NULL;
+            }
+            dataSize = 0;
+        }
+
+    }
+
+    *PropertyBuffer = lpProperty;
+    if (PropertyBufferSize)
+        *PropertyBufferSize = returnLength;
+
+    return result;
+}
+
+/*
+* supSetupEnumDevices
+*
+* Purpose:
+*
+* Enumerate devices installed through SetupAPI.
+*
+*/
+BOOL supSetupEnumDevices(
+    _In_ pfnSetupDeviceEnumCallback Callback,
+    _In_ PVOID CallbackParam
+)
+{
+    BOOL bResult = FALSE;
+    HDEVINFO deviceInfo;
+    SP_DEVINFO_DATA deviceData;
+
+    deviceInfo = SetupDiGetClassDevs(NULL, NULL, NULL, DIGCF_PRESENT | DIGCF_ALLCLASSES);
+    if (deviceInfo == INVALID_HANDLE_VALUE)
+        return FALSE;
+
+    RtlSecureZeroMemory(&deviceData, sizeof(deviceData));
+    deviceData.cbSize = sizeof(SP_DEVINFO_DATA);
+
+    for (ULONG i = 0; SetupDiEnumDeviceInfo(deviceInfo, i, &deviceData); i++) {
+
+        bResult = Callback(deviceInfo, &deviceData, CallbackParam);
+        if (bResult) //found?
+            break;
+
+    }
+
+    SetupDiDestroyDeviceInfoList(deviceInfo);
+
+    return bResult;
 }
 
 /*
