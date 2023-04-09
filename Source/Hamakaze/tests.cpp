@@ -4,9 +4,9 @@
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        24 Mar 2023
+*  DATE:        08 Apr 2023
 *
 *  KDU tests.
 *
@@ -148,6 +148,36 @@ VOID TestBrute(PKDU_CONTEXT Context)
     }
 }
 
+VOID TestSymbols()
+{
+    if (symInit()) {
+
+        supResolveMiPteBaseAddress(0);
+
+        HMODULE hModule = LoadLibraryEx(NTOSKRNL_EXE, NULL, DONT_RESOLVE_DLL_REFERENCES);
+
+        if (hModule) {
+
+            ULONG_PTR ntosBase = supGetNtOsBase();
+
+            if (symLoadImageSymbols(NTOSKRNL_EXE, (PVOID)hModule, 0)) {
+
+                ULONG_PTR address = 0;
+
+                ///MmUnloadedDrivers
+                if (symLookupAddressBySymbol("MmUnloadedDrivers", &address)) {
+
+                    printf_s("[X] symbol address %llX\r\n\tkm address %llX\r\n",
+                        address,
+                        (ULONG_PTR)ntosBase + address - (ULONG_PTR)hModule);
+                }
+
+            }
+
+        }
+    }
+}
+
 VOID KDUTest()
 {
     PKDU_CONTEXT Context;
@@ -155,16 +185,19 @@ VOID KDUTest()
 
     UCHAR Buffer[4096];
 
+   // TestSymbols();
+
     RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
 
-    Context = KDUProviderCreate(KDU_PROVIDER_HR_PHYSMEM, 
+    Context = KDUProviderCreate(KDU_PROVIDER_LENOVO_DD, 
         FALSE, 
-        NT_WIN7_SP1, 
+        NT_WIN10_20H1, 
         KDU_SHELLCODE_V1, 
         ActionTypeMapDriver);
 
     if (Context) {
- 
+
+
         /*Context->Provider->Callbacks.ReadPhysicalMemory(Context->DeviceHandle,
             0x0000000072a3a000,
             Buffer,

@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.31
 *
-*  DATE:        24 Mar 2023
+*  DATE:        08 Apr 2023
 *
 *  Providers global list.
 *
@@ -40,6 +40,7 @@
 #include "idrv/alcpu.h"
 #include "idrv/ryzen.h"
 #include "idrv/hilscher.h"
+#include "idrv/lenovo.h"
 
 //
 // Victims public array.
@@ -844,6 +845,30 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)NULL,
         (provReadPhysicalMemory)PhmReadPhysicalMemory,
         (provWritePhysicalMemory)PhmWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)LddRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)LddControlDSE,
+
+        (provReadKernelVM)LddReadKernelVirtualMemory,
+        (provWriteKernelVM)LddWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)LddpVirtualToPhysical,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)LddReadPhysicalMemory,
+        (provWritePhysicalMemory)LddWritePhysicalMemory,
 
         (provValidatePrerequisites)NULL
     }

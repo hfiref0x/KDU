@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUBASE.H
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        20 Mar 2023
+*  DATE:        08 Apr 2023
 *
 *  Base KDU definitions.
 *
@@ -51,7 +51,9 @@ typedef struct _KDU_DB_ENTRY {
             ULONG PhysMemoryBruteForce : 1;
             ULONG PreferPhysical : 1;
             ULONG PreferVirtual : 1;
-            ULONG Reserved : 22;
+            ULONG CompanionRequired : 1;
+            ULONG UseSymbols : 1;
+            ULONG Reserved : 20;
         };
     };
     ULONG SupportedShellFlags;

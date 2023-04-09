@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        24 Mar 2023
+*  DATE:        08 Apr 2023
 *
 *  Support routines header file.
 *
@@ -354,3 +354,6 @@ BOOL supEnumeratePhysicalMemory(
 BOOL supDetectMsftBlockList(
     _In_ PBOOL Enabled,
     _In_ BOOL Disable);
+
+ULONG_PTR supResolveMiPteBaseAddress(
+    _In_opt_ PVOID NtOsBase);

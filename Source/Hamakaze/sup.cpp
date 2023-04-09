@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        20 Mar 2023
+*  DATE:        08 Apr 2023
 *
 *  Program global support routines.
 *
@@ -18,6 +18,7 @@
 *******************************************************************************/
 
 #include "global.h"
+
 
 /*
 * supHeapAlloc
@@ -632,13 +633,16 @@ NTSTATUS supRegWriteValueString(
     _In_ LPCWSTR ValueData
 )
 {
+    ULONG dataSize;
     UNICODE_STRING valueName;
     WCHAR szData[64];
 
     RtlInitUnicodeString(&valueName, ValueName);
     _strcpy(szData, ValueData);
+    dataSize = (ULONG)((1 + _strlen(szData)) * sizeof(WCHAR));
+
     return NtSetValueKey(RegistryHandle, &valueName, 0, REG_SZ,
-        (PVOID)&szData, (1 + (ULONG)_strlen(szData)) * sizeof(WCHAR));
+        (PVOID)&szData, dataSize);
 }
 
 /*
@@ -2004,7 +2008,6 @@ BOOL supxSetupInstallDriverFromInf(
     BOOL bResult = FALSE;
     GUID classGUID;
     HDEVINFO devInfoSet = NULL;
-#define MAX_CLASS_NAME_LEN 256
     WCHAR className[MAX_CLASS_NAME_LEN];
 
     *DeviceInfo = NULL;
@@ -3025,4 +3028,82 @@ BOOL supIsSupportedCpuVendor(
     GET_CPU_VENDOR_STRING(vendorString);
 
     return (_strncmp_a(vendorString, Vendor, Length) == 0);
+}
+
+/*
+* supResolveMiPteBaseAddress
+*
+* Purpose:
+*
+* Query MiPteBase address in kernel.
+*
+*/
+ULONG_PTR supResolveMiPteBaseAddress(
+    _In_opt_ PVOID NtOsBase
+)
+{
+    BOOL bFree = FALSE;
+    ULONG offset = 0;
+    PBYTE ptrCode;
+    PVOID ntosBase = NtOsBase;
+    ULONG_PTR pteBaseAddress = 0, ntosLoadedBase, address = 0;
+    hde64s hs;
+
+    WCHAR szNtos[MAX_PATH * 2];
+
+    do {
+
+        StringCchPrintf(szNtos, RTL_NUMBER_OF(szNtos), 
+            TEXT("%ws\\system32\\%ws"),
+            USER_SHARED_DATA->NtSystemRoot,
+            NTOSKRNL_EXE);       
+
+        if (ntosBase == NULL) {
+            ntosBase = LoadLibraryEx(szNtos, NULL, DONT_RESOLVE_DLL_REFERENCES);
+            bFree = (ntosBase != NULL);
+        }
+
+        if (ntosBase == NULL)
+            break;
+
+        ntosLoadedBase = supGetNtOsBase();
+        if (ntosLoadedBase == 0)
+            break;
+
+        if (!symLoadImageSymbols(szNtos, (PVOID)ntosBase, 0))
+            break;
+
+        if (!symLookupAddressBySymbol("MiFillPteHierarchy", &address))
+            break;
+
+        ptrCode = (PBYTE)address;
+
+        RtlSecureZeroMemory(&hs, sizeof(hs));
+
+        do {
+
+            hde64_disasm(&ptrCode[offset], &hs);
+            if (hs.flags & F_ERROR)
+                break;
+
+            if (hs.len == 10) {
+
+                // mov r8, MiPteBase
+                if (*(PUSHORT)(ptrCode + offset) == 0xb849) {
+                    ptrCode = ptrCode + offset + 2;
+                    pteBaseAddress = ntosLoadedBase + ptrCode - (PBYTE)ntosBase;
+                    break;
+                }
+
+            }
+
+            offset += hs.len;
+
+        } while (offset < 64);
+
+    } while (FALSE);
+
+    if (bFree) FreeLibrary((HMODULE)ntosBase);
+
+    return pteBaseAddress;
 }

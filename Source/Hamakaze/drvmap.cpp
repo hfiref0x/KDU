@@ -608,14 +608,14 @@ BOOL KDUDriverMapInit(
 }
 
 /*
-* KDUpMapDriverPhysicalSection
+* KDUpMapDriverPhysicalTranslate
 *
 * Purpose:
 *
-* Process shellcode write through physical memory section.
+* Process shellcode write through physical memory address translation.
 *
 */
-BOOL KDUpMapDriverPhysicalSection(
+BOOL KDUpMapDriverPhysicalTranslate(
     _In_ PKDU_CONTEXT Context,
     _In_ PVOID ScBuffer,
     _In_ ULONG ScSize,
@@ -1011,7 +1011,7 @@ BOOL KDUMapDriver(
                 //
                 // 2. Physical section access type driver with virt2phys translation available.
                 //
-                bSuccess = KDUpMapDriverPhysicalSection(Context,
+                bSuccess = KDUpMapDriverPhysicalTranslate(Context,
                     pvShellCode,
                     cbShellCode,
                     sectionHandle,

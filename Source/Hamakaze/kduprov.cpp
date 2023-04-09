@@ -156,6 +156,18 @@ VOID KDUProvList()
         if (provData->PhysMemoryBruteForce)
             printf_s("\tProvider supports only physical memory brute-force.\r\n");
 
+        if (provData->PreferPhysical)
+            printf_s("\tPhysical memory access is preferred.\r\n");
+
+        if (provData->PreferVirtual)
+            printf_s("\tVirtual memory access is preferred.\r\n");
+
+        if (provData->CompanionRequired)
+            printf_s("\tProvider expects companion to be loaded.\r\n");
+
+        if (provData->UseSymbols)
+            printf_s("\tMS symbols are required to query internal information.\r\n");
+
         //
         // List "based" flags.
         //
@@ -680,8 +692,8 @@ HINSTANCE KDUProviderLoadDB(
 }
 
 BOOL KDUpRwHandlersAreSet(
-    _In_ PVOID ReadHandler,
-    _In_ PVOID WriteHandler
+    _In_opt_ PVOID ReadHandler,
+    _In_opt_ PVOID WriteHandler
 )
 {
     if (ReadHandler == NULL ||
@@ -1019,6 +1031,12 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
                 "[!] Abort: SeLoadDriverPrivilege is not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);
 
             break;
+        }
+
+        if (provLoadData->UseSymbols) {
+            if (!symInit()) {
+                break;
+            }
         }
 
         //

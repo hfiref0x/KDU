@@ -1,12 +1,12 @@
 /************************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2022, translated from Microsoft sources/debugger
+*  (C) COPYRIGHT AUTHORS, 2018 - 2023, translated from Microsoft sources/debugger
 *
 *  TITLE:       WDKSUP.H
 *
-*  VERSION:     1.27
+*  VERSION:     1.31
 *
-*  DATE:        12 Nov 2022
+*  DATE:        08 Apr 2023
 *
 *  Header file for NT WDK definitions.
 *
@@ -295,6 +295,44 @@ typedef struct _CM_RESOURCE_LIST {
     ULONG Count;
     CM_FULL_RESOURCE_DESCRIPTOR List[1];
 } CM_RESOURCE_LIST, * PCM_RESOURCE_LIST;
+
+//x64
+typedef struct _MMPTE_HARDWARE {
+    union {
+        ULONGLONG Flags;
+        struct {
+            ULONGLONG Valid : 1;
+            ULONGLONG Dirty1 : 1;
+            ULONGLONG Owner : 1;
+            ULONGLONG WriteThrough : 1;
+            ULONGLONG CacheDisable : 1;
+            ULONGLONG Accessed : 1;
+            ULONGLONG Dirty : 1;
+            ULONGLONG LargePage : 1;
+            ULONGLONG Global : 1;
+            ULONGLONG CopyOnWrite : 1;
+            ULONGLONG Unused : 1;
+            ULONGLONG Write : 1;
+            ULONGLONG PageFrameNumber : 40;
+            ULONGLONG ReservedForSoftware : 4;
+            ULONGLONG WsleAge : 4;
+            ULONGLONG WsleProtection : 3;
+            ULONGLONG NoExecute : 1;
+        };
+    };
+} MMPTE_HARDWARE, * PMMPTE_HARDWARE;
+
+typedef union _tagMMPTE {
+    ULONGLONG Value;
+    MMPTE_HARDWARE HarwarePte;
+} MMPTE, *PMMPTE;
+
+typedef struct _MI_PTE_HIERARCHY {
+    ULONG_PTR PXE;
+    ULONG_PTR PPE;
+    ULONG_PTR PDE;
+    ULONG_PTR PTE;
+} MI_PTE_HIERARCHY, * PMI_PTE_HIERARCHY;
 
 typedef
 VOID

@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        24 Mar 2023
+*  DATE:        08 Apr 2023
 *
 *  Global consts.
 *
@@ -21,8 +21,8 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       3
-#define KDU_VERSION_REVISION    0
-#define KDU_VERSION_BUILD       2303
+#define KDU_VERSION_REVISION    1
+#define KDU_VERSION_BUILD       2304
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
 #define KDU_MAX_NTBUILDNUMBER   0xFFFFFFFF  //Undefined
@@ -65,6 +65,10 @@
 
 #define SHELLCODE_SMALL            0x200
 
+#ifndef MAX_CLASS_NAME_LEN
+#define MAX_CLASS_NAME_LEN 256
+#endif
+
 //
 // Victim providers id table
 //
@@ -72,6 +76,12 @@
 #define KDU_VICTIM_PE1702  1
 #define KDU_VICTIM_MAX     2
 #define KDU_VICTIM_DEFAULT KDU_VICTIM_PE1702
+
+//
+// Companion id table
+//
+#define KDU_COMPANION_UNDEFINED_PLACEHOLER 0
+#define KDU_COMPANION_DEFAULT KDU_COMPANION_UNDEFINED_PLACEHOLER 
 
 //
 // Data id table
@@ -118,7 +128,7 @@
 #define IDR_ALSYSIO64                   132
 #define IDR_AMD_RYZENMASTER             133
 #define IDR_PHYSMEM                     134
-#define IDR_RESERVED1                   135
+#define IDR_LDD                         135
 #define IDR_RESERVED2                   136
 #define IDR_RESERVED3                   137
 #define IDR_RESERVED4                   138
@@ -159,6 +169,7 @@
 #define KDU_PROVIDER_ALCPU              29
 #define KDU_PROVIDER_AMD_RYZENMASTER    30
 #define KDU_PROVIDER_HR_PHYSMEM         31
+#define KDU_PROVIDER_LENOVO_DD          32
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
@@ -218,6 +229,16 @@
 //
 #define KDUPROV_FLAGS_PREFER_PHYSICAL       0x00000100
 #define KDUPROV_FLAGS_PREFER_VIRTUAL        0x00000200
+
+//
+// Reserved for future use.
+//
+#define KDUPROV_FLAGS_COMPANION_REQUIRED    0x00000400
+
+//
+// Process with MSFT symbols.
+//
+#define KDUPROV_FLAGS_USE_SYMBOLS           0x00000800
 
 //
 // KDU shellcode support flags

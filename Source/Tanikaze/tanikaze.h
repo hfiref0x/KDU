@@ -503,6 +503,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"physmem",
         (LPWSTR)L"PHYSMEMVIEWER",
         (LPWSTR)L"Hilscher Gesellschaft fuer Systemautomation mbH"
+     },
+
+     {
+        NT_WIN10_REDSTONE4,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_LDD,
+        KDU_PROVIDER_LENOVO_DD,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SYMBOLS,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Lenovo Diagnostics Driver for Windows 10 and later (CVE-2022-3699)",
+        (LPWSTR)L"LenovoDiagnosticsDriver",
+        (LPWSTR)L"LenovoDiagnosticsDriver",
+        (LPWSTR)L"Lenovo"
      }
 
 };

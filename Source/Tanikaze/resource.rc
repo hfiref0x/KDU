@@ -126,6 +126,9 @@ IDR_PHYSMEM             RCDATA                  "drv\\physmem.bin"
 
 IDR_PROCEXP1702         RCDATA                  "drv\\procexp1702.bin"
 
+IDR_LDD                 RCDATA                  "drv\\LDD.bin"
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
