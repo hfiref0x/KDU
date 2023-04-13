@@ -4,9 +4,9 @@
 *
 *  TITLE:       VICTIM.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        20 Mar 2023
+*  DATE:        09 Apr 2023
 *
 *  Victim support routines.
 *
@@ -212,10 +212,7 @@ BOOL VpCreateCallback(
 
                 if (!NT_SUCCESS(ntStatus)) 
                 {
-                    supPrintfEvent(kduEventError,
-                        "[!] Could not force unload victim, NTSTATUS(0x%lX) abort\r\n",
-                        ntStatus);
-
+                    supShowHardError("[!] Could not force unload victim, abort", ntStatus);
                     break;
                 }
                 else {
@@ -278,9 +275,7 @@ BOOL VpCreateCallback(
                 }
                 else {
 
-                    supPrintfEvent(kduEventError,
-                        "[!] Could not extract victim driver, NTSTATUS(0x%lX) abort\r\n",
-                        ntStatus);
+                    supShowHardError("[!] Could not extract victim driver, abort", ntStatus);
 
                 }
 

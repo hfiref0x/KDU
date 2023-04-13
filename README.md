@@ -199,6 +199,7 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 * GhostEmperor: From ProxyLogon to kernel mode, https://securelist.com/ghostemperor-from-proxylogon-to-kernel-mode/104407/
 * KDU v1.2 release and the wonderful world of Microsoft incoherency, https://swapcontext.blogspot.com/2022/02/kdu-v12-release-and-wonderful-world-of.html
 * How to exploit a vulnerable windows driver, https://github.com/stong/CVE-2020-15368
+* CVE-2022-3699, https://github.com/alfarom256/CVE-2022-3699
 
 # Wormhole drivers code
 

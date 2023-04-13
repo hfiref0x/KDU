@@ -381,10 +381,7 @@ BOOL ZmMapDriver(
             printf_s("[+] Victim is loaded, handle 0x%p\r\n", victimDeviceHandle);
         }
         else {
-
-            supPrintfEvent(kduEventError,
-                "[!] Could not load victim target, GetLastError %lu\r\n", GetLastError());
-
+            supShowWin32Error("[!] Cannot load victim target", GetLastError());
         }
 
         VICTIM_DRIVER_INFORMATION vdi;
@@ -392,8 +389,7 @@ BOOL ZmMapDriver(
         RtlSecureZeroMemory(&vdi, sizeof(vdi));
 
         if (!VpQueryInformation(Context->Victim, VictimDriverInformation, &vdi, sizeof(vdi))) {
-            supPrintfEvent(kduEventError,
-                "[!] Could not query victim driver information, GetLastError %lu\r\n", GetLastError());
+            supShowWin32Error("[!] Cannot query victim driver information", GetLastError());
             break;
         }
 
@@ -412,8 +408,7 @@ BOOL ZmMapDriver(
         if (!VpQueryInformation(
             Context->Victim, VictimImageInformation, &vi, sizeof(vi)))
         {
-            supPrintfEvent(kduEventError,
-                "[!] Could not query victim image information, GetLastError %lu\r\n", GetLastError());
+            supShowWin32Error("[!] Cannot query victim image information", GetLastError());
             break;
         }
 

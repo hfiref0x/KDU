@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2022
+*  (C) COPYRIGHT AUTHORS, 2014 - 2023
 *
 *  TITLE:       DSEFIX.H
 *
-*  VERSION:     1.28
+*  VERSION:     1.31
 *
-*  DATE:        01 Dec 2022
+*  DATE:        08 Apr 2023
 *
 *  CI DSE corruption prototypes and definitions.
 *
@@ -20,6 +20,9 @@
 #pragma once
 
 ULONG_PTR KDUQueryCodeIntegrityVariableAddress(
+    _In_ ULONG NtBuildNumber);
+
+ULONG_PTR KDUQueryCodeIntegrityVariableSymbol(
     _In_ ULONG NtBuildNumber);
 
 BOOL KDUControlDSE(

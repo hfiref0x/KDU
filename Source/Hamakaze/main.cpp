@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        20 Mar 2023
+*  DATE:        09 Apr 2023
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -145,6 +145,12 @@ INT KDUProcessDSEFixSwitch(
 
             if (ciVarAddress == 0) {
 
+                ciVarAddress = KDUQueryCodeIntegrityVariableSymbol(NtBuildNumber);
+
+            }
+
+            if (ciVarAddress == 0) {
+
                 supPrintfEvent(kduEventError,
                     "[!] Could not query system variable address, abort.\r\n");
 
@@ -225,10 +231,7 @@ INT KDUProcessDrvMapSwitch(
     NTSTATUS ntStatus = supLoadFileForMapping(DriverFileName, &pvImage);
 
     if ((!NT_SUCCESS(ntStatus)) || (pvImage == NULL)) {
-
-        supPrintfEvent(kduEventError,
-            "[!] Error while loading input driver file, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+        supShowHardError("[!] Error while loading input driver file", ntStatus);
         return 0;
     }
     else {
@@ -311,7 +314,7 @@ INT KDUProcessCommandLine(
             KDUTest();
             retVal = 1;
             break;
-}
+        }
 
 #endif
         //
@@ -614,9 +617,11 @@ int KDUMain()
 
         }
 
-        BOOL bEnabled = FALSE;
-        if (supDetectMsftBlockList(&bEnabled, FALSE)) {
-            printf_s("[+] MSFT Driver block list is %sbled\r\n", (bEnabled) ? "ena" : "disa");
+        if (osv.dwBuildNumber >= NT_WIN10_REDSTONE5) {
+            BOOL bEnabled = FALSE;
+            if (supDetectMsftBlockList(&bEnabled, FALSE)) {
+                printf_s("[+] MSFT Driver block list is %sbled\r\n", (bEnabled) ? "ena" : "disa");
+            }
         }
 
         iResult = KDUProcessCommandLine(hvciEnabled, osv.dwBuildNumber);
@@ -641,7 +646,7 @@ VOID KDUIntroBanner()
     IMAGE_NT_HEADERS* ntHeaders = RtlImageNtHeader(NtCurrentPeb()->ImageBaseAddress);
 
     printf_s("[#] Kernel Driver Utility v%lu.%lu.%lu (build %lu) started, (c)2020 - 2023 KDU Project\r\n"\
-        "[#] Build at %s, header checksum 0x%lX\r\n"\
+        "[#] Built at %s, header checksum 0x%lX\r\n"\
         "[#] Supported x64 OS : Windows 7 and above\r\n",
         KDU_VERSION_MAJOR,
         KDU_VERSION_MINOR,

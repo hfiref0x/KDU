@@ -44,13 +44,7 @@ typedef struct _LDD_WRITE_REQUEST {
     ULONG_PTR Data; //pointer to data
 } LDD_WRITE_REQUEST, * PLDD_WRITE_REQUEST;
 
-BOOL WINAPI LddReadPhysicalMemory(
-    _In_ HANDLE DeviceHandle,
-    _In_ ULONG_PTR PhysicalAddress,
-    _In_ PVOID Buffer,
-    _In_ ULONG NumberOfBytes);
-
-BOOL WINAPI LddWritePhysicalMemory(
+BOOL WINAPI LddReadWritePhysicalMemoryStub(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,

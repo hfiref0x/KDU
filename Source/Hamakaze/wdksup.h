@@ -324,7 +324,7 @@ typedef struct _MMPTE_HARDWARE {
 
 typedef union _tagMMPTE {
     ULONGLONG Value;
-    MMPTE_HARDWARE HarwarePte;
+    MMPTE_HARDWARE HardwarePte;
 } MMPTE, *PMMPTE;
 
 typedef struct _MI_PTE_HIERARCHY {

@@ -29,7 +29,7 @@
 #include "idrv/lha.h"
 #include "idrv/directio64.h"
 #include "idrv/gmer.h"
-#include "idrv/dbutil.h"
+#include "idrv/dell.h"
 #include "idrv/mimidrv.h"
 #include "idrv/kph.h"
 #include "idrv/procexp.h"
@@ -867,8 +867,8 @@ static KDU_PROVIDER g_KDUProviders[] =
 
         (provVirtualToPhysical)LddpVirtualToPhysical,
         (provQueryPML4)NULL,
-        (provReadPhysicalMemory)LddReadPhysicalMemory,
-        (provWritePhysicalMemory)LddWritePhysicalMemory,
+        (provReadPhysicalMemory)LddReadWritePhysicalMemoryStub,
+        (provWritePhysicalMemory)LddReadWritePhysicalMemoryStub,
 
         (provValidatePrerequisites)NULL
     }

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2015 - 2022
+*  (C) COPYRIGHT AUTHORS, 2015 - 2023
 *
 *  TITLE:       COMPRESS.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.31
 *
-*  DATE:        08 Feb 2022
+*  DATE:        08 Apr 2023
 *
 *  Compression support routines.
 *
@@ -181,8 +181,7 @@ PVOID KDUDecompressResource(
         }
         else {
             
-            supPrintfEvent(kduEventError, 
-                "[!] Error decompressing resource, GetLastError %lu\r\n", GetLastError());
+            supShowWin32Error("[!] Error while decompressing resource", GetLastError());
 
         }
 

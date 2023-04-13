@@ -1965,6 +1965,47 @@ VOID supxBinTextEncode(
 }
 
 /*
+* supGenRandom
+*
+* Purpose:
+*
+* Generate pseudo-random value via CNG.
+*
+*/
+BOOL supGenRandom(
+    _Inout_ PBYTE pbBuffer,
+    _In_ DWORD cbBuffer
+)
+{
+    BOOL bResult = FALSE;
+    BCRYPT_ALG_HANDLE hAlgRng = NULL;
+
+    do {
+
+        if (!NT_SUCCESS(BCryptOpenAlgorithmProvider(
+            &hAlgRng,
+            BCRYPT_RNG_ALGORITHM,
+            NULL,
+            0)))
+        {
+            break;
+        }
+
+        bResult = (NT_SUCCESS(BCryptGenRandom(
+            hAlgRng,
+            pbBuffer,
+            cbBuffer,
+            0)));
+
+    } while (FALSE);
+
+    if (hAlgRng)
+        BCryptCloseAlgorithmProvider(hAlgRng, 0);
+
+    return bResult;
+}
+
+/*
 * supGenerateSharedObjectName
 *
 * Purpose:
@@ -1978,12 +2019,13 @@ VOID supGenerateSharedObjectName(
 )
 {
     ULARGE_INTEGER value;
+    PIMAGE_NT_HEADERS ntHeaders = RtlImageNtHeader(NtCurrentPeb()->ImageBaseAddress);
 
     value.LowPart = MAKELONG(
         MAKEWORD(KDU_VERSION_BUILD, KDU_VERSION_REVISION),
         MAKEWORD(KDU_VERSION_MINOR, KDU_VERSION_MAJOR));
 
-    value.HighPart = MAKELONG(KDU_BASE_ID, ObjectId);
+    value.HighPart = MAKELONG(ntHeaders->OptionalHeader.CheckSum, ObjectId);
 
     supxBinTextEncode(value.QuadPart, lpBuffer);
 }
@@ -2427,10 +2469,7 @@ BOOL supExtractFileFromDB(
     supHeapFree(fileBuffer);
 
     if (resourceSize != writeBytes) {
-
-        supPrintfEvent(kduEventError,
-            "[!] Unable to extract data, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+        supShowHardError("[!] Unable to extract data", ntStatus);
         return FALSE;
     }
 
@@ -3002,6 +3041,12 @@ BOOL supDetectMsftBlockList(
             dwEnabled = 0;
             result = RegSetValueEx(hKey, lpValue, 0, REG_DWORD, (LPBYTE)&dwEnabled, cbData);
         }
+        else {
+            if (result == ERROR_FILE_NOT_FOUND) {
+                result = ERROR_SUCCESS;
+                *Enabled = TRUE;
+            }
+        }
 
         RegCloseKey(hKey);
     }
@@ -3106,4 +3151,142 @@ ULONG_PTR supResolveMiPteBaseAddress(
     if (bFree) FreeLibrary((HMODULE)ntosBase);
 
     return pteBaseAddress;
+}
+
+/*
+* supCreatePteHierarchy
+*
+* Purpose:
+*
+* nt!MiCreatePteHierarchy rip-off.
+*
+*/
+VOID supCreatePteHierarchy(
+    _In_ ULONG_PTR VirtualAddress,
+    _Inout_ MI_PTE_HIERARCHY* PteHierarchy,
+    _In_ ULONG_PTR MiPteBase
+)
+{
+    ///
+    /// Resolve the PTE address.
+    /// 
+    VirtualAddress >>= 9;
+    VirtualAddress &= 0x7FFFFFFFF8;
+    VirtualAddress += MiPteBase;
+
+    PteHierarchy->PTE = VirtualAddress;
+
+    ///
+    /// Resolve the PDE address.
+    /// 
+    VirtualAddress >>= 9;
+    VirtualAddress &= 0x7FFFFFFFF8;
+    VirtualAddress += MiPteBase;
+
+    PteHierarchy->PDE = VirtualAddress;
+
+    ///
+    /// Resolve the PPE address.
+    /// 
+    VirtualAddress >>= 9;
+    VirtualAddress &= 0x7FFFFFFFF8;
+    VirtualAddress += MiPteBase;
+
+    PteHierarchy->PPE = VirtualAddress;
+
+    ///
+    /// Resolve the PXE address.
+    /// 
+    VirtualAddress >>= 9;
+    VirtualAddress &= 0x7FFFFFFFF8;
+    VirtualAddress += MiPteBase;
+
+    PteHierarchy->PXE = VirtualAddress;
+}
+
+/*
+* supShowHardError
+*
+* Purpose:
+*
+* Display hard error.
+*
+*/
+VOID supShowHardError(
+    _In_ LPCSTR Message,
+    _In_ NTSTATUS HardErrorStatus
+)
+{
+    ULONG dwFlags;
+    HMODULE hModule = NULL;
+    WCHAR errorBuffer[1024];
+
+    if (HRESULT_FACILITY(HardErrorStatus) == FACILITY_WIN32) {
+        dwFlags = FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM;
+    }
+    else {
+        dwFlags = FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_HMODULE;
+        hModule = GetModuleHandle(RtlNtdllName);
+    }
+
+    RtlSecureZeroMemory(errorBuffer, sizeof(errorBuffer));
+
+    if (FormatMessage(dwFlags,
+        hModule,
+        HardErrorStatus,
+        0,
+        errorBuffer,
+        RTL_NUMBER_OF(errorBuffer),
+        NULL))
+    {
+        supPrintfEvent(kduEventError, "%s, NTSTATUS (0x%lX): %ws",
+            Message,
+            HardErrorStatus,
+            errorBuffer);
+
+    }
+    else {
+        supPrintfEvent(kduEventError, "%s, NTSTATUS (0x%lX)\r\n",
+            Message,
+            HardErrorStatus);
+    }
+}
+
+/*
+* supShowWin32Error
+*
+* Purpose:
+*
+* Display win32 error.
+*
+*/
+VOID supShowWin32Error(
+    _In_ LPCSTR Message,
+    _In_ DWORD Win32Error
+)
+{
+    ULONG dwFlags = FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM;
+    WCHAR errorBuffer[1024];
+
+    RtlSecureZeroMemory(errorBuffer, sizeof(errorBuffer));
+
+    if (FormatMessage(dwFlags,
+        NULL,
+        Win32Error,
+        0,
+        errorBuffer,
+        RTL_NUMBER_OF(errorBuffer),
+        NULL))
+    {
+        supPrintfEvent(kduEventError, "%s, GetLastError %lu: %ws",
+            Message,
+            Win32Error,
+            errorBuffer);
+
+    }
+    else {
+        supPrintfEvent(kduEventError, "%s, GetLastError %lu\r\n",
+            Message,
+            Win32Error);
+    }
 }

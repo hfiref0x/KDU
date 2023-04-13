@@ -82,11 +82,7 @@ BOOL symLoadImageSymbols(
             0));
 
         if (!bResult) {
-
-            supPrintfEvent(kduEventError,
-                "[!] Failed to load symbols, GetLastError %lu\r\n",
-                GetLastError());
-
+            supShowWin32Error("[!] Failed to load symbols", GetLastError());
         }
 
     }
@@ -161,6 +157,10 @@ BOOL symInit()
 {
     DWORD cch;
     BOOL bInitSuccess = FALSE;
+
+    if (g_symInitialized)
+        return TRUE;
+
     SetDllDirectory(NULL);
 
     do {
@@ -170,9 +170,7 @@ BOOL symInit()
 
         cch = GetCurrentDirectory(MAX_PATH, szFileName);
         if (cch == 0 || cch > MAX_PATH) {
-            supPrintfEvent(kduEventError,
-                "[!] Cannot query current directory, GetLastError %lu\r\n",
-                GetLastError());
+            supShowWin32Error("[!] Cannot query current directory", GetLastError());
             break;
         }
 
@@ -184,11 +182,7 @@ BOOL symInit()
 
         g_hDbgHelp = LoadLibrary(szFileName);
         if (g_hDbgHelp == NULL) {
-
-            supPrintfEvent(kduEventError,
-                "[!] Cannot load dbghelp.dll, make sure it is in program directory, GetLastError %lu\r\n",
-                GetLastError());
-
+            supShowWin32Error("[!] Cannot load dbghelp.dll, make sure it is in program directory", GetLastError());
             break;
         }
         *lpEnd = 0;
@@ -196,8 +190,8 @@ BOOL symInit()
         g_hSymSrv = LoadLibrary(szFileName);
         if (g_hSymSrv == NULL) {
 
-            supPrintfEvent(kduEventError,
-                "[!] Cannot load symsrv.dll, make sure it is in program directory, GetLastError %lu\r\n",
+            supShowWin32Error(
+                "[!] Cannot load symsrv.dll, make sure it is in program directory",
                 GetLastError());
 
             break;
@@ -243,9 +237,7 @@ BOOL symInit()
         }
         else {
 
-            supPrintfEvent(kduEventError,
-                "[!] Cannot query temp directory, GetLastError %lu\r\n",
-                GetLastError());
+            supShowWin32Error("[!] Cannot query temp directory", GetLastError());
 
             break;
         }
@@ -255,9 +247,7 @@ BOOL symInit()
             FALSE);
 
         if (!bInitSuccess) {
-            supPrintfEvent(kduEventError,
-                "[!] SymInitialize failed, GetLastError %lu\r\n",
-                GetLastError());
+            supShowWin32Error("[!] SymInitialize failed", GetLastError());
         }
         else {
             supPrintfEvent(kduEventInformation, "[+] Symbols initialized\r\n");

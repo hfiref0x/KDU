@@ -4,9 +4,9 @@
 *
 *  TITLE:       SHELLCODE.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        20 Mar 2023
+*  DATE:        09 Apr 2023
 *
 *  Default driver mapping shellcode(s) implementation.
 *

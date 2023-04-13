@@ -4,9 +4,9 @@
 *
 *  TITLE:       DRVMAP.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        20 Mar 2023
+*  DATE:        09 Apr 2023
 *
 *  Driver mapping routines.
 *
@@ -173,10 +173,7 @@ BOOL KDUStorePayloadInSection(
         //
         ntStatus = supCreateSystemAdminAccessSD(&sectionSD, &defaultAcl);
         if (!NT_SUCCESS(ntStatus)) {
-
-            supPrintfEvent(kduEventError,
-                "[!] Error, shared section SD not allocated, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+            supShowHardError("[!] Error, shared section SD not allocated", ntStatus);
             break;
         }
 
@@ -184,10 +181,7 @@ BOOL KDUStorePayloadInSection(
         // Create UUID.
         //
         if (RPC_S_OK != UuidCreate(&secUuid)) {
-
-            supPrintfEvent(kduEventError,
-                "[!] Could not allocate shared section UUID, GetLastError %lu\r\n", GetLastError());
-
+            supShowWin32Error("[!] Cannot allocate shared section UUID", GetLastError());
             break;
         }
 
@@ -248,10 +242,7 @@ BOOL KDUStorePayloadInSection(
             NULL);
 
         if (!NT_SUCCESS(ntStatus)) {
-
-            supPrintfEvent(kduEventError,
-                "[!] Error, cannot create shared section, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+            supShowHardError("[!] Error, cannot create shared section", ntStatus);
             break;
         }
 
@@ -320,10 +311,7 @@ BOOL KDUStorePayloadInSection(
 
         }
         else {
-
-            supPrintfEvent(kduEventError,
-                "[!] Error, shared section not mapped, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+            supShowHardError("[!] Error, shared section not mapped", ntStatus);
         }
 
     } while (FALSE);
@@ -399,10 +387,7 @@ PVOID KDUSetupShellCode(
         ntStatus = LdrLoadDll(NULL, NULL, &ustr, (PVOID*)&KernelImage);
 
         if ((!NT_SUCCESS(ntStatus)) || (KernelImage == 0)) {
-
-            supPrintfEvent(kduEventError,
-                "[!] Error while loading ntoskrnl.exe, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+            supShowHardError("[!] Error while loading ntoskrnl.exe", ntStatus);
             break;
         }
 
@@ -906,12 +891,8 @@ BOOL KDUMapDriver(
             printf_s("[+] Successfully loaded victim driver\r\n");
         }
         else {
-
-            supPrintfEvent(kduEventError,
-                "[!] Could not load victim target, GetLastError %lu\r\n", GetLastError());
-
+            supShowWin32Error("[!] Cannot load victim target", GetLastError());
             break;
-
         }
 
         //
@@ -944,19 +925,14 @@ BOOL KDUMapDriver(
 
             }
             else {
-
-                supPrintfEvent(kduEventError,
-                    "[!] Could not query victim driver layout, GetLastError %lu\r\n", GetLastError());
-
+                supShowWin32Error("[!] Cannot query victim driver layout", GetLastError());
                 break;
             }
 
         }
         else
         {
-            supPrintfEvent(kduEventError,
-                "[!] Could not query victim image information, GetLastError %lu\r\n", GetLastError());
-
+            supShowWin32Error("[!] Cannot query victim image information", GetLastError());
             break;
         }
 

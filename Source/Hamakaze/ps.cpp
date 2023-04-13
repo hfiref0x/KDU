@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2022
+*  (C) COPYRIGHT AUTHORS, 2018 - 2023
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.31
 *
-*  DATE:        01 Dec 2022
+*  DATE:        09 Apr 2023
 *
 *  Processes DKOM related routines.
 *
@@ -123,20 +123,20 @@ BOOL KDURunCommandPPL(
         &si,                // Pointer to STARTUPINFO structure
         &pi);               // Pointer to PROCESS_INFORMATION structure
     if (!bResult) {
-        printf("[!] Failed to create process: 0x%x\n", GetLastError());
+        printf("[!] Failed to create process: 0x%lX\n", GetLastError());
         return bResult;
     }
-    printf_s("[+] Created Process with PID %d\r\n", pi.dwProcessId);
+    printf_s("[+] Created Process with PID %lu\r\n", pi.dwProcessId);
 
     bResult = KDUControlProcess(Context, pi.dwProcessId, PsProtectedSignerAntimalware, PsProtectedTypeProtectedLight);
     if (!bResult) {
-        printf_s("[!] Failed to set process as PPL: 0x%x\n", GetLastError());
+        printf_s("[!] Failed to set process as PPL: 0x%lX\n", GetLastError());
         return bResult;
     }
 
     dwThreadResumeCount = ResumeThread(pi.hThread);
     if (dwThreadResumeCount != 1) {
-        printf_s("[!] Failed to resume process: %d | 0x%x\n", dwThreadResumeCount, GetLastError());
+        printf_s("[!] Failed to resume process: %lu | 0x%lX\n", dwThreadResumeCount, GetLastError());
         return bResult;
     }
 
@@ -329,10 +329,7 @@ BOOL KDUControlProcess(
         NtClose(hProcess);
     }
     else {
-
-        supPrintfEvent(kduEventError,
-            "[!] Cannot open target process, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+        supShowHardError("[!] Cannot open target process", ntStatus);
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);

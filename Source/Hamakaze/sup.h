@@ -20,8 +20,6 @@
 
 //#define VERBOSE_FUNCTION_LOG
 
-#define USER_TO_KERNEL_HANDLE(Handle) { Handle += 0xffffffff80000000; }
-
 typedef struct _SUP_SETUP_DRVPKG {
     HDEVINFO DeviceInfo;
     SP_DEVINFO_DATA DeviceInfoData;
@@ -99,6 +97,11 @@ typedef BOOL(WINAPI* pfnPhysMemEnumCallback)(
     *(DWORD*)(VendorString) = cpuInfo[1]; \
     *(DWORD*)(VendorString + 4) = cpuInfo[3]; \
     *(DWORD*)(VendorString + 8) = cpuInfo[2]; \
+
+typedef enum _PAGE_TYPE {
+    PageTypePte,
+    PageTypePde
+} PAGE_TYPE;
 
 BOOL supIsSupportedCpuVendor(
     _In_ LPCSTR Vendor,
@@ -321,6 +324,10 @@ BOOL supDeleteFileWithWait(
 PVOID supMapFileAsImage(
     _In_ LPWSTR lpImagePath);
 
+BOOL supGenRandom(
+    _Inout_ PBYTE pbBuffer,
+    _In_ DWORD cbBuffer);
+
 PVOID supGetEntryPointForMappedFile(
     _In_ PVOID ImageBase);
 
@@ -357,3 +364,16 @@ BOOL supDetectMsftBlockList(
 
 ULONG_PTR supResolveMiPteBaseAddress(
     _In_opt_ PVOID NtOsBase);
+
+VOID supCreatePteHierarchy(
+    _In_ ULONG_PTR VirtualAddress,
+    _Inout_ MI_PTE_HIERARCHY* PteHierarchy,
+    _In_ ULONG_PTR MiPteBase);
+
+VOID supShowHardError(
+    _In_ LPCSTR Message,
+    _In_ NTSTATUS HardErrorStatus);
+
+VOID supShowWin32Error(
+    _In_ LPCSTR Message,
+    _In_ DWORD Win32Error);

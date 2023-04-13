@@ -138,7 +138,7 @@
     <ClCompile Include="idrv\gmer.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
-    <ClCompile Include="idrv\dbutil.cpp">
+    <ClCompile Include="idrv\dell.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
     <ClCompile Include="idrv\mimidrv.cpp">
@@ -290,7 +290,7 @@
     <ClInclude Include="idrv\gmer.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
-    <ClInclude Include="idrv\dbutil.h">
+    <ClInclude Include="idrv\dell.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
     <ClInclude Include="idrv\mimidrv.h">

@@ -27,8 +27,7 @@
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
 #define KDU_MAX_NTBUILDNUMBER   0xFFFFFFFF  //Undefined
 
-#define KDU_BASE_ID             0xff123456
-#define KDU_SYNC_MUTANT         0xabcd
+#define KDU_SYNC_MUTANT         0x2304
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
@@ -52,7 +51,7 @@
 #define CPU_VENDOR_INTEL        "GenuineIntel"
 #define CPU_VENDOR_INTEL_LENGTH sizeof(CPU_VENDOR_INTEL) - sizeof(CHAR)
 #define CPU_VENDOR_AMD          "AuthenticAMD"
-#define CPU_VENDOR_AMD_LENGTH sizeof(CPU_VENDOR_AMD) - sizeof(CHAR)
+#define CPU_VENDOR_AMD_LENGTH   sizeof(CPU_VENDOR_AMD) - sizeof(CHAR)
 
 #define SHELL_POOL_TAG          '  oI'
 
@@ -80,8 +79,8 @@
 //
 // Companion id table
 //
-#define KDU_COMPANION_UNDEFINED_PLACEHOLER 0
-#define KDU_COMPANION_DEFAULT KDU_COMPANION_UNDEFINED_PLACEHOLER 
+#define KDU_COMPANION_UNDEFINED_PLACEHOLDER 0
+#define KDU_COMPANION_DEFAULT KDU_COMPANION_UNDEFINED_PLACEHOLDER 
 
 //
 // Data id table
