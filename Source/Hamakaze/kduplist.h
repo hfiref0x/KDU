@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        21 Mar 2023
+*  DATE:        08 Apr 2023
 *
 *  Providers global list.
 *
@@ -29,7 +29,7 @@
 #include "idrv/lha.h"
 #include "idrv/directio64.h"
 #include "idrv/gmer.h"
-#include "idrv/dbutil.h"
+#include "idrv/dell.h"
 #include "idrv/mimidrv.h"
 #include "idrv/kph.h"
 #include "idrv/procexp.h"
@@ -40,6 +40,7 @@
 #include "idrv/alcpu.h"
 #include "idrv/ryzen.h"
 #include "idrv/hilscher.h"
+#include "idrv/lenovo.h"
 
 //
 // Victims public array.
@@ -844,6 +845,30 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)NULL,
         (provReadPhysicalMemory)PhmReadPhysicalMemory,
         (provWritePhysicalMemory)PhmWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)LddRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)LddControlDSE,
+
+        (provReadKernelVM)LddReadKernelVirtualMemory,
+        (provWriteKernelVM)LddWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)LddpVirtualToPhysical,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)LddReadWritePhysicalMemoryStub,
+        (provWritePhysicalMemory)LddReadWritePhysicalMemoryStub,
 
         (provValidatePrerequisites)NULL
     }

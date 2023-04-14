@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       GLOBAL.H
 *
-*  VERSION:     1.28
+*  VERSION:     1.31
 *
-*  DATE:        22 Nov 2022
+*  DATE:        08 Apr 2023
 *
 *  Common include header file.
 *
@@ -78,6 +78,7 @@ extern "C" {
 #include "shared/kdubase.h"
 #include "sig.h"
 #include "sup.h"
+#include "sym.h"
 #include "compress.h"
 #include "victim.h"
 #include "kduprov.h"

@@ -138,11 +138,12 @@
     <ClCompile Include="idrv\asrdrv.cpp" />
     <ClCompile Include="idrv\atszio.cpp" />
     <ClCompile Include="idrv\dbk.cpp" />
-    <ClCompile Include="idrv\dbutil.cpp" />
+    <ClCompile Include="idrv\dell.cpp" />
     <ClCompile Include="idrv\directio64.cpp" />
     <ClCompile Include="idrv\gmer.cpp" />
     <ClCompile Include="idrv\hilscher.cpp" />
     <ClCompile Include="idrv\kph.cpp" />
+    <ClCompile Include="idrv\lenovo.cpp" />
     <ClCompile Include="idrv\lha.cpp" />
     <ClCompile Include="idrv\mapmem.cpp" />
     <ClCompile Include="idrv\marvinhw.cpp" />
@@ -163,6 +164,7 @@
     <ClCompile Include="shellcode.cpp" />
     <ClCompile Include="sup.cpp" />
     <ClCompile Include="diag.cpp" />
+    <ClCompile Include="sym.cpp" />
     <ClCompile Include="tests.cpp" />
     <ClCompile Include="victim.cpp" />
   </ItemGroup>
@@ -191,10 +193,11 @@
     <ClInclude Include="idrv\dbk.h" />
     <ClInclude Include="idrv\hilscher.h" />
     <ClInclude Include="idrv\ldrsc.h" />
-    <ClInclude Include="idrv\dbutil.h" />
+    <ClInclude Include="idrv\dell.h" />
     <ClInclude Include="idrv\directio64.h" />
     <ClInclude Include="idrv\gmer.h" />
     <ClInclude Include="idrv\kph.h" />
+    <ClInclude Include="idrv\lenovo.h" />
     <ClInclude Include="idrv\lha.h" />
     <ClInclude Include="idrv\mapmem.h" />
     <ClInclude Include="idrv\marvinhw.h" />
@@ -211,6 +214,7 @@
     <ClInclude Include="shellcode.h" />
     <ClInclude Include="diag.h" />
     <ClInclude Include="sig.h" />
+    <ClInclude Include="sym.h" />
     <ClInclude Include="wdksup.h" />
     <ClInclude Include="kduplist.h" />
     <ClInclude Include="kduprov.h" />

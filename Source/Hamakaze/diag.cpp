@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       DIAG.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.31
 *
-*  DATE:        01 Dec 2022
+*  DATE:        09 Apr 2023
 *
 *  Hamakaze system diagnostics component.
 *
@@ -129,8 +129,7 @@ VOID KDUQuerySpecMitigationState()
 
     }
     else {
-        supPrintfEvent(kduEventError,
-            "Cannot query kernel va shadow information, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("Cannot query Kernel VA Shadow information", ntStatus);
     }
 
     RtlSecureZeroMemory(&SpecControlInfo, sizeof(SpecControlInfo));
@@ -141,12 +140,10 @@ VOID KDUQuerySpecMitigationState()
     if (ntStatus == STATUS_NOT_IMPLEMENTED ||
         ntStatus == STATUS_INVALID_INFO_CLASS)
     {
-        supPrintfEvent(kduEventError,
-            "Speculation control information class not present, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("Speculation control information class not present", ntStatus);
     }
     else if (ntStatus != STATUS_SUCCESS) {
-        supPrintfEvent(kduEventError,
-            "Cannot query speculation control information, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("Cannot query speculation control information", ntStatus);
     }
     else {
 
@@ -218,10 +215,7 @@ VOID KDUQueryProcessWorkingSet(
         0);
 
     if (!NT_SUCCESS(ntStatus)) {
-
-        supPrintfEvent(kduEventError,
-            "Cannot enable ws watch, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+        supShowHardError("Cannot enable ws watch", ntStatus);
         return;
     }
 
@@ -231,10 +225,7 @@ VOID KDUQueryProcessWorkingSet(
 
     ntStatus = EmptyWorkingSet();
     if (!NT_SUCCESS(ntStatus)) {
-
-        supPrintfEvent(kduEventError,
-            "Error at EmptyWorkingSet, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+        supShowHardError("Error at EmptyWorkingSet", ntStatus);
         return;
     }
 
@@ -246,10 +237,7 @@ VOID KDUQueryProcessWorkingSet(
         NULL);
 
     if (!NT_SUCCESS(ntStatus)) {
-
-        supPrintfEvent(kduEventError,
-            "Error at working set changes query, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+        supShowHardError("Error at working set changes query", ntStatus);
         return;
     }
 
@@ -342,7 +330,7 @@ VOID KDUQueryProcessWorkingSet(
         LdrUnlockLoaderLock(LDR_UNLOCK_LOADER_LOCK_FLAG_RAISE_ON_ERRORS, cookie);
     }
     else {
-        supPrintfEvent(kduEventError, "Cannot lock loaded, NTSTATUS(0x%lX)\r\n", ntStatus);
+        supShowHardError("Failed acquire loader lock", ntStatus);
     }
 }
 
@@ -410,7 +398,7 @@ VOID TraceHandle(
                             LdrUnlockLoaderLock(LDR_UNLOCK_LOADER_LOCK_FLAG_RAISE_ON_ERRORS, cookie);
                         }
                         else {
-                            supPrintfEvent(kduEventError, "Cannot lock loaded, NTSTATUS(0x%lX)\r\n", ntStatus);
+                            supShowHardError("Failed to acquire loader lock", ntStatus);
                         }
 
                     }
@@ -421,7 +409,7 @@ VOID TraceHandle(
 
     }
     else {
-        supPrintfEvent(kduEventError, "Cannot query trace, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("Cannot query trace", ntStatus);
     }
 }
 
@@ -457,7 +445,7 @@ VOID TracePsHandle(
         NtClose(objectHandle);
     }
     else {
-        supPrintfEvent(kduEventError, "Cannot open process, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("Cannot open process", ntStatus);
     }
 
     if (!TraceThread)
@@ -476,7 +464,7 @@ VOID TracePsHandle(
         NtClose(objectHandle);
     }
     else {
-        supPrintfEvent(kduEventError, "Cannot open thread, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("Cannot open thread", ntStatus);
     }
 }
 
@@ -502,7 +490,7 @@ VOID TraceSectionHandle(
         FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT);
 
     if (!NT_SUCCESS(ntStatus)) {
-        supPrintfEvent(kduEventError, "Cannot open test file, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("Cannot open test file", ntStatus);
         return;
     }
 
@@ -524,7 +512,7 @@ VOID TraceSectionHandle(
         NtClose(sectionHandle);
     }
     else {
-        supPrintfEvent(kduEventError, "Cannot create test section, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("Cannot create test section", ntStatus);
     }
 
     NtClose(fileHandle);
@@ -673,7 +661,7 @@ VOID KDUBacktraceByHandle(
         sizeof(traceEnable));
 
     if (!NT_SUCCESS(ntStatus)) {
-        supPrintfEvent(kduEventError, "Cannot enable backtrace, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("Cannot enable backtrace", ntStatus);
         return;
     }
 

@@ -154,6 +154,9 @@
     <None Include="drv\procexp1702.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\LDD.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

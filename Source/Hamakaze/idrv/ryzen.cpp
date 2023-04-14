@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       RYZEN.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.31
 *
-*  DATE:        07 Dec 2022
+*  DATE:        07 Apr 2023
 *
 *  AMD Ryzen Master Service Driver routines.
 *
@@ -43,7 +43,6 @@ BOOL RmValidatePrerequisites(
 
     return bResult;
 }
-
 
 /*
 * RmReadPhysicalMemory

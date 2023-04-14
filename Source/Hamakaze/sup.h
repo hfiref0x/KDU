@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        20 Mar 2023
+*  DATE:        08 Apr 2023
 *
 *  Support routines header file.
 *
@@ -20,7 +20,18 @@
 
 //#define VERBOSE_FUNCTION_LOG
 
-#define USER_TO_KERNEL_HANDLE(Handle) { Handle += 0xffffffff80000000; }
+typedef struct _SUP_SETUP_DRVPKG {
+    HDEVINFO DeviceInfo;
+    SP_DEVINFO_DATA DeviceInfoData;
+    LPCWSTR CatalogFile;
+    LPCWSTR InfFile;
+    ULONG CatalogFileResourceId;
+    ULONG InfFileResourceId;
+    BYTE* Hwid;
+    ULONG HwidLength;
+    ULONG InstallFlags;
+    WCHAR DeviceName[MAX_PATH];
+} SUP_SETUP_DRVPKG, * PSUP_SETUP_DRVPKG;
 
 typedef BOOL(CALLBACK* pfnOpenProcessCallback)(
     _In_ HANDLE DeviceHandle,
@@ -37,6 +48,12 @@ typedef BOOL(CALLBACK* pfnDuplicateHandleCallback)(
     _In_ ACCESS_MASK DesiredAccess,
     _In_ ULONG HandleAttributes,
     _In_ ULONG Options);
+
+typedef BOOL(CALLBACK* pfnSetupDeviceEnumCallback)(
+    _In_ HDEVINFO DeviceInfo,
+    _In_ PSP_DEVINFO_DATA DeviceInfoData,
+    _In_ PVOID Param
+    );
 
 typedef NTSTATUS(CALLBACK* pfnLoadDriverCallback)(
     _In_ PUNICODE_STRING RegistryPath,
@@ -80,6 +97,11 @@ typedef BOOL(WINAPI* pfnPhysMemEnumCallback)(
     *(DWORD*)(VendorString) = cpuInfo[1]; \
     *(DWORD*)(VendorString + 4) = cpuInfo[3]; \
     *(DWORD*)(VendorString + 8) = cpuInfo[2]; \
+
+typedef enum _PAGE_TYPE {
+    PageTypePte,
+    PageTypePde
+} PAGE_TYPE;
 
 BOOL supIsSupportedCpuVendor(
     _In_ LPCSTR Vendor,
@@ -262,16 +284,25 @@ VOID supGenerateSharedObjectName(
     _In_ WORD ObjectId,
     _Inout_ LPWSTR lpBuffer);
 
-BOOL supSetupInstallDriverFromInf(
-    _In_ LPCWSTR InfName,
-    _In_ BYTE * HardwareId,
-    _In_ ULONG HardwareIdLength,
-    _Out_ HDEVINFO * DeviceInfo,
-    _Inout_ SP_DEVINFO_DATA * DeviceInfoData);
+BOOL supSetupManageDriverPackage(
+    _In_ PVOID Context,
+    _In_ BOOLEAN DoInstall,
+    _In_ PSUP_SETUP_DRVPKG DriverPackage);
 
 BOOL supSetupRemoveDriver(
     _In_ HDEVINFO DeviceInfo,
     _In_ SP_DEVINFO_DATA * DeviceInfoData);
+
+BOOL supQueryDeviceProperty(
+    _In_ HDEVINFO hDevInfo,
+    _In_ SP_DEVINFO_DATA* pDevInfoData,
+    _In_ ULONG Property,
+    _Out_ LPWSTR* PropertyBuffer,
+    _Out_opt_ ULONG* PropertyBufferSize);
+
+BOOL supSetupEnumDevices(
+    _In_ pfnSetupDeviceEnumCallback Callback,
+    _In_ PVOID CallbackParam);
 
 BOOL supExtractFileFromDB(
     _In_ HMODULE ImageBase,
@@ -292,6 +323,10 @@ BOOL supDeleteFileWithWait(
 
 PVOID supMapFileAsImage(
     _In_ LPWSTR lpImagePath);
+
+BOOL supGenRandom(
+    _Inout_ PBYTE pbBuffer,
+    _In_ DWORD cbBuffer);
 
 PVOID supGetEntryPointForMappedFile(
     _In_ PVOID ImageBase);
@@ -326,3 +361,19 @@ BOOL supEnumeratePhysicalMemory(
 BOOL supDetectMsftBlockList(
     _In_ PBOOL Enabled,
     _In_ BOOL Disable);
+
+ULONG_PTR supResolveMiPteBaseAddress(
+    _In_opt_ PVOID NtOsBase);
+
+VOID supCreatePteHierarchy(
+    _In_ ULONG_PTR VirtualAddress,
+    _Inout_ MI_PTE_HIERARCHY* PteHierarchy,
+    _In_ ULONG_PTR MiPteBase);
+
+VOID supShowHardError(
+    _In_ LPCSTR Message,
+    _In_ NTSTATUS HardErrorStatus);
+
+VOID supShowWin32Error(
+    _In_ LPCSTR Message,
+    _In_ DWORD Win32Error);

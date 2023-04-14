@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        20 Mar 2023
+*  DATE:        08 Apr 2023
 *
 *  Program global support routines.
 *
@@ -18,6 +18,7 @@
 *******************************************************************************/
 
 #include "global.h"
+
 
 /*
 * supHeapAlloc
@@ -632,13 +633,16 @@ NTSTATUS supRegWriteValueString(
     _In_ LPCWSTR ValueData
 )
 {
+    ULONG dataSize;
     UNICODE_STRING valueName;
     WCHAR szData[64];
 
     RtlInitUnicodeString(&valueName, ValueName);
     _strcpy(szData, ValueData);
+    dataSize = (ULONG)((1 + _strlen(szData)) * sizeof(WCHAR));
+
     return NtSetValueKey(RegistryHandle, &valueName, 0, REG_SZ,
-        (PVOID)&szData, (1 + (ULONG)_strlen(szData)) * sizeof(WCHAR));
+        (PVOID)&szData, dataSize);
 }
 
 /*
@@ -1961,6 +1965,47 @@ VOID supxBinTextEncode(
 }
 
 /*
+* supGenRandom
+*
+* Purpose:
+*
+* Generate pseudo-random value via CNG.
+*
+*/
+BOOL supGenRandom(
+    _Inout_ PBYTE pbBuffer,
+    _In_ DWORD cbBuffer
+)
+{
+    BOOL bResult = FALSE;
+    BCRYPT_ALG_HANDLE hAlgRng = NULL;
+
+    do {
+
+        if (!NT_SUCCESS(BCryptOpenAlgorithmProvider(
+            &hAlgRng,
+            BCRYPT_RNG_ALGORITHM,
+            NULL,
+            0)))
+        {
+            break;
+        }
+
+        bResult = (NT_SUCCESS(BCryptGenRandom(
+            hAlgRng,
+            pbBuffer,
+            cbBuffer,
+            0)));
+
+    } while (FALSE);
+
+    if (hAlgRng)
+        BCryptCloseAlgorithmProvider(hAlgRng, 0);
+
+    return bResult;
+}
+
+/*
 * supGenerateSharedObjectName
 *
 * Purpose:
@@ -1974,36 +2019,37 @@ VOID supGenerateSharedObjectName(
 )
 {
     ULARGE_INTEGER value;
+    PIMAGE_NT_HEADERS ntHeaders = RtlImageNtHeader(NtCurrentPeb()->ImageBaseAddress);
 
     value.LowPart = MAKELONG(
         MAKEWORD(KDU_VERSION_BUILD, KDU_VERSION_REVISION),
         MAKEWORD(KDU_VERSION_MINOR, KDU_VERSION_MAJOR));
 
-    value.HighPart = MAKELONG(KDU_BASE_ID, ObjectId);
+    value.HighPart = MAKELONG(ntHeaders->OptionalHeader.CheckSum, ObjectId);
 
     supxBinTextEncode(value.QuadPart, lpBuffer);
 }
 
 /*
-* supSetupInstallDriverFromInf
+* supxSetupInstallDriverFromInf
 *
 * Purpose:
 *
 * Install and load device driver through SetupAPI.
 *
 */
-BOOL supSetupInstallDriverFromInf(
+BOOL supxSetupInstallDriverFromInf(
     _In_ LPCWSTR InfName,
     _In_ BYTE* HardwareId,
     _In_ ULONG HardwareIdLength,
     _Out_ HDEVINFO* DeviceInfo,
-    _Inout_ SP_DEVINFO_DATA* DeviceInfoData
+    _Inout_ SP_DEVINFO_DATA* DeviceInfoData,
+    _In_ ULONG InstallFlags
 )
 {
     BOOL bResult = FALSE;
-    GUID guid;
-    HDEVINFO devInfo = NULL;
-#define MAX_CLASS_NAME_LEN 256
+    GUID classGUID;
+    HDEVINFO devInfoSet = NULL;
     WCHAR className[MAX_CLASS_NAME_LEN];
 
     *DeviceInfo = NULL;
@@ -2011,12 +2057,13 @@ BOOL supSetupInstallDriverFromInf(
     do {
 
         RtlSecureZeroMemory(&className, sizeof(className));
-        RtlSecureZeroMemory(DeviceInfoData, sizeof(SP_DEVINFO_DATA));
-        DeviceInfoData->cbSize = sizeof(SP_DEVINFO_DATA);
 
+        //
+        // Use the INF file to extract the class GUID.
+        //
         if (!SetupDiGetINFClass(
             InfName,
-            &guid,
+            &classGUID,
             (PWSTR)&className,
             MAX_CLASS_NAME_LEN,
             NULL))
@@ -2024,13 +2071,21 @@ BOOL supSetupInstallDriverFromInf(
             break;
         }
 
-        devInfo = SetupDiCreateDeviceInfoList(&guid, NULL);
-        if (devInfo == INVALID_HANDLE_VALUE)
+        //
+        // Create the container for class GUID.
+        //
+        devInfoSet = SetupDiCreateDeviceInfoList(&classGUID, NULL);
+        if (devInfoSet == INVALID_HANDLE_VALUE)
             break;
 
-        if (!SetupDiCreateDeviceInfo(devInfo,
+        DeviceInfoData->cbSize = sizeof(SP_DEVINFO_DATA);
+
+        //
+        // Create the element.
+        //
+        if (!SetupDiCreateDeviceInfo(devInfoSet,
             className,
-            &guid,
+            &classGUID,
             NULL,
             NULL,
             DICD_GENERATE_ID,
@@ -2039,7 +2094,10 @@ BOOL supSetupInstallDriverFromInf(
             break;
         }
 
-        if (!SetupDiSetDeviceRegistryProperty(devInfo,
+        //
+        // Add the HardwareID to the Device's HardwareID property.
+        //
+        if (!SetupDiSetDeviceRegistryProperty(devInfoSet,
             DeviceInfoData,
             SPDRP_HARDWAREID,
             HardwareId,
@@ -2048,8 +2106,11 @@ BOOL supSetupInstallDriverFromInf(
             break;
         }
 
+        //
+        // Transform the registry element into an actual devnode in the PnP HW tree.
+        //
         if (!SetupDiCallClassInstaller(DIF_REGISTERDEVICE,
-            devInfo,
+            devInfoSet,
             DeviceInfoData))
         {
             break;
@@ -2058,14 +2119,133 @@ BOOL supSetupInstallDriverFromInf(
         bResult = UpdateDriverForPlugAndPlayDevices(NULL,
             (LPCWSTR)HardwareId,
             InfName,
-            INSTALLFLAG_FORCE | INSTALLFLAG_NONINTERACTIVE,
+            InstallFlags,
             NULL);
 
     } while (FALSE);
 
-    if (bResult)
-        *DeviceInfo = devInfo;
+    if (bResult) {
+        *DeviceInfo = devInfoSet;
+    }
+    else {
+        if (devInfoSet && devInfoSet != INVALID_HANDLE_VALUE)
+            SetupDiDestroyDeviceInfoList(devInfoSet);
+    }
 
+    return bResult;
+}
+
+/*
+* supSetupManageDriverPackage
+*
+* Purpose:
+*
+* Drop or remove required driver package files from disk in the current process directory.
+*
+*/
+BOOL supSetupManageDriverPackage(
+    _In_ PVOID Context,
+    _In_ BOOLEAN DoInstall,
+    _In_ PSUP_SETUP_DRVPKG DriverPackage
+)
+{
+    BOOL bResult = FALSE;
+    LPWSTR lpEnd;
+    LPWSTR lpFileName;
+    KDU_CONTEXT* context = (KDU_CONTEXT*)Context;
+
+    PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
+    SIZE_T allocSize = 64 +
+        ((_strlen(DriverPackage->CatalogFile) + _strlen(DriverPackage->InfFile)) * sizeof(WCHAR)) +
+        CurrentDirectory->Length;
+
+    ULONG length, lastError = ERROR_SUCCESS;
+
+    if (DoInstall) {
+
+        //
+        // Drop target driver.
+        //
+        if (!KDUProvExtractVulnerableDriver(context)) {
+            SetLastError(ERROR_INTERNAL_ERROR);
+            return FALSE;
+        }
+
+        //
+        // Drop cat and inf files.
+        //
+        lpFileName = (LPWSTR)supHeapAlloc(allocSize);
+        if (lpFileName) {
+
+            length = CurrentDirectory->Length / sizeof(WCHAR);
+
+            //
+            // Drop catalog file.
+            //
+            _strncpy(lpFileName,
+                length,
+                CurrentDirectory->Buffer,
+                length);
+
+            lpEnd = _strcat(lpFileName, L"\\");
+            _strcat(lpFileName, DriverPackage->CatalogFile);
+            if (supExtractFileFromDB(context->ModuleBase, lpFileName, DriverPackage->CatalogFileResourceId)) {
+
+                //
+                // Drop inf file.
+                //
+                *lpEnd = 0;
+                _strcat(lpFileName, DriverPackage->InfFile);
+
+                if (supExtractFileFromDB(context->ModuleBase, lpFileName, DriverPackage->InfFileResourceId)) {
+
+                    //
+                    // Install driver package.
+                    //
+                    bResult = supxSetupInstallDriverFromInf(lpFileName,
+                        DriverPackage->Hwid,
+                        DriverPackage->HwidLength,
+                        &DriverPackage->DeviceInfo,
+                        &DriverPackage->DeviceInfoData,
+                        DriverPackage->InstallFlags);
+
+                    if (!bResult)
+                        lastError = GetLastError();
+
+                }
+            }
+
+            supHeapFree(lpFileName);
+        }
+    }
+    else {
+
+        lpFileName = (LPWSTR)supHeapAlloc(allocSize);
+        if (lpFileName) {
+
+            length = CurrentDirectory->Length / sizeof(WCHAR);
+
+            _strncpy(lpFileName,
+                length,
+                CurrentDirectory->Buffer,
+                length);
+
+            lpEnd = _strcat(lpFileName, L"\\");
+            _strcat(lpFileName, DriverPackage->CatalogFile);
+            DeleteFile(lpFileName);
+
+            *lpEnd = 0;
+
+            _strcat(lpFileName, DriverPackage->InfFile);
+            DeleteFile(lpFileName);
+
+            supHeapFree(lpFileName);
+            bResult = TRUE;
+        }
+
+    }
+
+    SetLastError(lastError);
     return bResult;
 }
 
@@ -2088,6 +2268,111 @@ BOOL supSetupRemoveDriver(
     }
 
     return FALSE;
+}
+
+/*
+* supQueryDeviceProperty
+*
+* Purpose:
+*
+* Allocate space and read device property.
+*
+*/
+BOOL supQueryDeviceProperty(
+    _In_ HDEVINFO hDevInfo,
+    _In_ SP_DEVINFO_DATA* pDevInfoData,
+    _In_ ULONG Property,
+    _Out_ LPWSTR* PropertyBuffer,
+    _Out_opt_ ULONG* PropertyBufferSize
+)
+{
+    BOOL   result = FALSE;
+    DWORD  dataType = 0, dataSize, returnLength = 0;
+    LPWSTR lpProperty = NULL;
+
+    dataSize = (MAX_PATH * sizeof(WCHAR)) + sizeof(UNICODE_NULL);
+    lpProperty = (LPWSTR)supHeapAlloc(dataSize);
+    if (lpProperty) {
+
+        result = SetupDiGetDeviceRegistryProperty(hDevInfo,
+            pDevInfoData,
+            Property,
+            &dataType,
+            (PBYTE)lpProperty,
+            dataSize,
+            &returnLength);
+
+        if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+
+            supHeapFree(lpProperty);
+            dataSize = returnLength;
+            lpProperty = (LPWSTR)supHeapAlloc(dataSize);
+            if (lpProperty) {
+
+                result = SetupDiGetDeviceRegistryProperty(hDevInfo,
+                    pDevInfoData,
+                    Property,
+                    &dataType,
+                    (PBYTE)lpProperty,
+                    dataSize,
+                    &returnLength);
+
+            }
+
+        }
+
+        if (!result) {
+            if (lpProperty) {
+                supHeapFree(lpProperty);
+                lpProperty = NULL;
+            }
+            dataSize = 0;
+        }
+
+    }
+
+    *PropertyBuffer = lpProperty;
+    if (PropertyBufferSize)
+        *PropertyBufferSize = returnLength;
+
+    return result;
+}
+
+/*
+* supSetupEnumDevices
+*
+* Purpose:
+*
+* Enumerate devices installed through SetupAPI.
+*
+*/
+BOOL supSetupEnumDevices(
+    _In_ pfnSetupDeviceEnumCallback Callback,
+    _In_ PVOID CallbackParam
+)
+{
+    BOOL bResult = FALSE;
+    HDEVINFO deviceInfo;
+    SP_DEVINFO_DATA deviceData;
+
+    deviceInfo = SetupDiGetClassDevs(NULL, NULL, NULL, DIGCF_PRESENT | DIGCF_ALLCLASSES);
+    if (deviceInfo == INVALID_HANDLE_VALUE)
+        return FALSE;
+
+    RtlSecureZeroMemory(&deviceData, sizeof(deviceData));
+    deviceData.cbSize = sizeof(SP_DEVINFO_DATA);
+
+    for (ULONG i = 0; SetupDiEnumDeviceInfo(deviceInfo, i, &deviceData); i++) {
+
+        bResult = Callback(deviceInfo, &deviceData, CallbackParam);
+        if (bResult) //found?
+            break;
+
+    }
+
+    SetupDiDestroyDeviceInfoList(deviceInfo);
+
+    return bResult;
 }
 
 /*
@@ -2184,10 +2469,7 @@ BOOL supExtractFileFromDB(
     supHeapFree(fileBuffer);
 
     if (resourceSize != writeBytes) {
-
-        supPrintfEvent(kduEventError,
-            "[!] Unable to extract data, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+        supShowHardError("[!] Unable to extract data", ntStatus);
         return FALSE;
     }
 
@@ -2759,6 +3041,12 @@ BOOL supDetectMsftBlockList(
             dwEnabled = 0;
             result = RegSetValueEx(hKey, lpValue, 0, REG_DWORD, (LPBYTE)&dwEnabled, cbData);
         }
+        else {
+            if (result == ERROR_FILE_NOT_FOUND) {
+                result = ERROR_SUCCESS;
+                *Enabled = TRUE;
+            }
+        }
 
         RegCloseKey(hKey);
     }
@@ -2785,4 +3073,220 @@ BOOL supIsSupportedCpuVendor(
     GET_CPU_VENDOR_STRING(vendorString);
 
     return (_strncmp_a(vendorString, Vendor, Length) == 0);
+}
+
+/*
+* supResolveMiPteBaseAddress
+*
+* Purpose:
+*
+* Query MiPteBase address in kernel.
+*
+*/
+ULONG_PTR supResolveMiPteBaseAddress(
+    _In_opt_ PVOID NtOsBase
+)
+{
+    BOOL bFree = FALSE;
+    ULONG offset = 0;
+    PBYTE ptrCode;
+    PVOID ntosBase = NtOsBase;
+    ULONG_PTR pteBaseAddress = 0, ntosLoadedBase, address = 0;
+    hde64s hs;
+
+    WCHAR szNtos[MAX_PATH * 2];
+
+    do {
+
+        StringCchPrintf(szNtos, RTL_NUMBER_OF(szNtos), 
+            TEXT("%ws\\system32\\%ws"),
+            USER_SHARED_DATA->NtSystemRoot,
+            NTOSKRNL_EXE);       
+
+        if (ntosBase == NULL) {
+            ntosBase = LoadLibraryEx(szNtos, NULL, DONT_RESOLVE_DLL_REFERENCES);
+            bFree = (ntosBase != NULL);
+        }
+
+        if (ntosBase == NULL)
+            break;
+
+        ntosLoadedBase = supGetNtOsBase();
+        if (ntosLoadedBase == 0)
+            break;
+
+        if (!symLoadImageSymbols(szNtos, (PVOID)ntosBase, 0))
+            break;
+
+        if (!symLookupAddressBySymbol("MiFillPteHierarchy", &address))
+            break;
+
+        ptrCode = (PBYTE)address;
+
+        RtlSecureZeroMemory(&hs, sizeof(hs));
+
+        do {
+
+            hde64_disasm(&ptrCode[offset], &hs);
+            if (hs.flags & F_ERROR)
+                break;
+
+            if (hs.len == 10) {
+
+                // mov r8, MiPteBase
+                if (*(PUSHORT)(ptrCode + offset) == 0xb849) {
+                    ptrCode = ptrCode + offset + 2;
+                    pteBaseAddress = ntosLoadedBase + ptrCode - (PBYTE)ntosBase;
+                    break;
+                }
+
+            }
+
+            offset += hs.len;
+
+        } while (offset < 64);
+
+    } while (FALSE);
+
+    if (bFree) FreeLibrary((HMODULE)ntosBase);
+
+    return pteBaseAddress;
+}
+
+/*
+* supCreatePteHierarchy
+*
+* Purpose:
+*
+* nt!MiCreatePteHierarchy rip-off.
+*
+*/
+VOID supCreatePteHierarchy(
+    _In_ ULONG_PTR VirtualAddress,
+    _Inout_ MI_PTE_HIERARCHY* PteHierarchy,
+    _In_ ULONG_PTR MiPteBase
+)
+{
+    ///
+    /// Resolve the PTE address.
+    /// 
+    VirtualAddress >>= 9;
+    VirtualAddress &= 0x7FFFFFFFF8;
+    VirtualAddress += MiPteBase;
+
+    PteHierarchy->PTE = VirtualAddress;
+
+    ///
+    /// Resolve the PDE address.
+    /// 
+    VirtualAddress >>= 9;
+    VirtualAddress &= 0x7FFFFFFFF8;
+    VirtualAddress += MiPteBase;
+
+    PteHierarchy->PDE = VirtualAddress;
+
+    ///
+    /// Resolve the PPE address.
+    /// 
+    VirtualAddress >>= 9;
+    VirtualAddress &= 0x7FFFFFFFF8;
+    VirtualAddress += MiPteBase;
+
+    PteHierarchy->PPE = VirtualAddress;
+
+    ///
+    /// Resolve the PXE address.
+    /// 
+    VirtualAddress >>= 9;
+    VirtualAddress &= 0x7FFFFFFFF8;
+    VirtualAddress += MiPteBase;
+
+    PteHierarchy->PXE = VirtualAddress;
+}
+
+/*
+* supShowHardError
+*
+* Purpose:
+*
+* Display hard error.
+*
+*/
+VOID supShowHardError(
+    _In_ LPCSTR Message,
+    _In_ NTSTATUS HardErrorStatus
+)
+{
+    ULONG dwFlags;
+    HMODULE hModule = NULL;
+    WCHAR errorBuffer[1024];
+
+    if (HRESULT_FACILITY(HardErrorStatus) == FACILITY_WIN32) {
+        dwFlags = FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM;
+    }
+    else {
+        dwFlags = FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_HMODULE;
+        hModule = GetModuleHandle(RtlNtdllName);
+    }
+
+    RtlSecureZeroMemory(errorBuffer, sizeof(errorBuffer));
+
+    if (FormatMessage(dwFlags,
+        hModule,
+        HardErrorStatus,
+        0,
+        errorBuffer,
+        RTL_NUMBER_OF(errorBuffer),
+        NULL))
+    {
+        supPrintfEvent(kduEventError, "%s, NTSTATUS (0x%lX): %ws",
+            Message,
+            HardErrorStatus,
+            errorBuffer);
+
+    }
+    else {
+        supPrintfEvent(kduEventError, "%s, NTSTATUS (0x%lX)\r\n",
+            Message,
+            HardErrorStatus);
+    }
+}
+
+/*
+* supShowWin32Error
+*
+* Purpose:
+*
+* Display win32 error.
+*
+*/
+VOID supShowWin32Error(
+    _In_ LPCSTR Message,
+    _In_ DWORD Win32Error
+)
+{
+    ULONG dwFlags = FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM;
+    WCHAR errorBuffer[1024];
+
+    RtlSecureZeroMemory(errorBuffer, sizeof(errorBuffer));
+
+    if (FormatMessage(dwFlags,
+        NULL,
+        Win32Error,
+        0,
+        errorBuffer,
+        RTL_NUMBER_OF(errorBuffer),
+        NULL))
+    {
+        supPrintfEvent(kduEventError, "%s, GetLastError %lu: %ws",
+            Message,
+            Win32Error,
+            errorBuffer);
+
+    }
+    else {
+        supPrintfEvent(kduEventError, "%s, GetLastError %lu\r\n",
+            Message,
+            Win32Error);
+    }
 }

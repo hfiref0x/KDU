@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
-*  TITLE:       DBUTIL.H
+*  TITLE:       DELL.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.31
 *
-*  DATE:        08 Feb 2022
+*  DATE:        08 Apr 2023
 *
-*  Dell BIOS Utility driver interface header.
+*  Dell drivers interface header.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED

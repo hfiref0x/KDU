@@ -205,6 +205,7 @@
     <None Include="drv\inpoutx64.bin" />
     <None Include="drv\iQVM64.bin" />
     <None Include="drv\kprocesshacker.bin" />
+    <None Include="drv\LDD.bin" />
     <None Include="drv\lha.bin" />
     <None Include="drv\mimidrv.bin" />
     <None Include="drv\mktoolsx64.bin" />

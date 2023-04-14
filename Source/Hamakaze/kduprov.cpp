@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.31
 *
-*  DATE:        20 Mar 2023
+*  DATE:        09 Apr 2023
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -156,6 +156,18 @@ VOID KDUProvList()
         if (provData->PhysMemoryBruteForce)
             printf_s("\tProvider supports only physical memory brute-force.\r\n");
 
+        if (provData->PreferPhysical)
+            printf_s("\tPhysical memory access is preferred.\r\n");
+
+        if (provData->PreferVirtual)
+            printf_s("\tVirtual memory access is preferred.\r\n");
+
+        if (provData->CompanionRequired)
+            printf_s("\tProvider expects companion to be loaded.\r\n");
+
+        if (provData->UseSymbols)
+            printf_s("\tMS symbols are required to query internal information.\r\n");
+
         //
         // List "based" flags.
         //
@@ -254,10 +266,7 @@ BOOL KDUProvExtractVulnerableDriver(
     supHeapFree(drvBuffer);
 
     if (resourceSize != writeBytes) {
-
-        supPrintfEvent(kduEventError,
-            "[!] Unable to extract vulnerable driver, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+        supShowHardError("[!] Unable to extract vulnerable driver", ntStatus);
         return FALSE;
     }
 
@@ -297,9 +306,7 @@ BOOL KDUProvLoadVulnerableDriver(
     }
     else {
 
-        supPrintfEvent(kduEventError,
-            "[!] Unable to load vulnerable driver, NTSTATUS (0x%lX)\r\n", ntStatus);
-
+        supShowHardError("[!] Unable to load vulnerable driver", ntStatus);
         DeleteFile(lpFullFileName);
     }
 
@@ -378,8 +385,7 @@ void KDUProvOpenVulnerableDriverAndRunCallbacks(
 
     if (!NT_SUCCESS(ntStatus)) {
 
-        supPrintfEvent(kduEventError,
-            "[!] Unable to open vulnerable driver, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("[!] Unable to open vulnerable driver", ntStatus);
 
     }
     else {
@@ -423,8 +429,7 @@ void KDUProvStopVulnerableDriver(
     ntStatus = supUnloadDriver(lpDriverName, TRUE);
     if (!NT_SUCCESS(ntStatus)) {
 
-        supPrintfEvent(kduEventError,
-            "[!] Unable to unload vulnerable driver, NTSTATUS (0x%lX)\r\n", ntStatus);
+        supShowHardError("[!] Unable to unload vulnerable driver", ntStatus);
 
     }
     else {
@@ -482,8 +487,7 @@ BOOL WINAPI KDUProviderPostOpen(
 
             if (!NT_SUCCESS(ntStatus)) {
 
-                supPrintfEvent(kduEventError,
-                    "[!] Unable to set driver device security descriptor, NTSTATUS (0x%lX)\r\n", ntStatus);
+                supShowHardError("[!] Unable to set driver device security descriptor", ntStatus);
 
             }
             else {
@@ -496,8 +500,7 @@ BOOL WINAPI KDUProviderPostOpen(
         }
         else {
 
-            supPrintfEvent(kduEventError,
-                "[!] Unable to allocate security descriptor, NTSTATUS (0x%lX)\r\n", ntStatus);
+            supShowHardError("[!] Unable to allocate security descriptor", ntStatus);
 
         }
 
@@ -668,10 +671,7 @@ HINSTANCE KDUProviderLoadDB(
         }
     }
     else {
-
-        supPrintfEvent(kduEventError,
-            "[!] Could not load drivers database, GetLastError %lu\r\n", GetLastError());
-
+        supShowWin32Error("[!] Cannot load drivers database", GetLastError());
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);
@@ -680,8 +680,8 @@ HINSTANCE KDUProviderLoadDB(
 }
 
 BOOL KDUpRwHandlersAreSet(
-    _In_ PVOID ReadHandler,
-    _In_ PVOID WriteHandler
+    _In_opt_ PVOID ReadHandler,
+    _In_opt_ PVOID WriteHandler
 )
 {
     if (ReadHandler == NULL ||
@@ -938,7 +938,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
         ntStatus = supGetFirmwareType(&fmwType);
         if (!NT_SUCCESS(ntStatus)) {
-            printf_s("[!] Could not query firmware type, NTSTATUS (0x%lX)\r\n", ntStatus);
+            supShowHardError("[!] Failed to query firmware type", ntStatus);
         }
         else {
 
@@ -1005,20 +1005,20 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
         ntStatus = supEnablePrivilege(SE_DEBUG_PRIVILEGE, TRUE);
         if (!NT_SUCCESS(ntStatus)) {
-
-            supPrintfEvent(kduEventError,
-                "[!] Abort: SeDebugPrivilege is not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);
-
+            supShowHardError("[!] Abort: SeDebugPrivilege is not assigned!", ntStatus);
             break;
         }
 
         ntStatus = supEnablePrivilege(SE_LOAD_DRIVER_PRIVILEGE, TRUE);
         if (!NT_SUCCESS(ntStatus)) {
-
-            supPrintfEvent(kduEventError,
-                "[!] Abort: SeLoadDriverPrivilege is not assigned! NTSTATUS (0x%lX)\r\n", ntStatus);
-
+            supShowHardError("[!] Abort: SeLoadDriverPrivilege is not assigned!", ntStatus);
             break;
+        }
+
+        if (provLoadData->UseSymbols) {
+            if (!symInit()) {
+                break;
+            }
         }
 
         //
@@ -1109,8 +1109,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
                         regParam))
                     {
 
-                        supPrintfEvent(kduEventError,
-                            "[!] Could not register provider driver, GetLastError %lu\r\n", GetLastError());
+                        supShowWin32Error("[!] Cannot register provider driver", GetLastError());
 
                         //
                         // This is hard error for some providers, abort execution.
