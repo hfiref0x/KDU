@@ -39,6 +39,64 @@ PKDU_DB_ENTRY KDUProviderToDbEntry(
 }
 
 /*
+* KDUProvDetectHyperV
+*
+* Purpose:
+*
+* Detect hyperv presence.
+*
+*/
+VOID KDUProvDetectHyperV(
+    VOID
+)
+{
+#define MSFT_HV "Microsoft Hv"
+#define MSFT_HV_SIZE sizeof(MSFT_HV) - sizeof(CHAR)
+#define HV_VENDOR_MAX 12
+
+    ULONG returnLength = 0;
+    SYSTEM_HYPERVISOR_DETAIL_INFORMATION hdi;
+    PHV_VENDOR_AND_MAX_FUNCTION pvi;
+    CHAR szVendor[32];
+
+    RtlSecureZeroMemory(&hdi, sizeof(hdi));
+
+    NTSTATUS ntStatus = NtQuerySystemInformation(SystemHypervisorDetailInformation,
+        &hdi, sizeof(hdi), &returnLength);
+
+    if (NT_SUCCESS(ntStatus)) {
+
+        pvi = (PHV_VENDOR_AND_MAX_FUNCTION)&hdi.HvVendorAndMaxFunction.Data;
+
+        if (RtlCompareMemory(MSFT_HV, pvi->VendorName, MSFT_HV_SIZE) == MSFT_HV_SIZE) {
+
+            supPrintfEvent(kduEventInformation, "[+] MSFT hypervisor present\r\n");
+
+        }
+        else {
+            __stosb((PBYTE)&szVendor, 0, sizeof(szVendor));
+            RtlCopyMemory(szVendor, pvi->VendorName, HV_VENDOR_MAX);
+            supPrintfEvent(kduEventInformation, "[+] The \"%s\" hypervisor present\r\n", szVendor);
+        }
+
+    }
+    else {
+
+        int CPUInfo[4] = { -1, -1, -1, -1 };
+
+        __cpuid(CPUInfo, 1);
+        if ((CPUInfo[2] >> 31) & 1) {
+            
+            __cpuid(CPUInfo, 0x40000000);
+            __stosb((PBYTE)&szVendor, 0, sizeof(szVendor));
+            RtlCopyMemory(szVendor, CPUInfo + 1, HV_VENDOR_MAX);
+            supPrintfEvent(kduEventInformation, "[+] The \"%s\" hypervisor present\r\n", szVendor);
+
+        }
+    }
+}
+
+/*
 * KDUFirmwareToString
 *
 * Purpose:
@@ -314,6 +372,32 @@ BOOL KDUProvLoadVulnerableDriver(
 }
 
 /*
+* KDUProvIsAlreadyLoaded
+*
+* Purpose:
+*
+* Check if provider driver is already loaded by presence of it device object.
+*
+*/
+BOOL KDUProvIsAlreadyLoaded(
+    _In_ KDU_CONTEXT* Context
+)
+{
+    LPWSTR lpRootDirectory;
+    LPWSTR lpDeviceName = Context->Provider->LoadData->DeviceName;
+
+    switch (Context->Provider->LoadData->ProviderId) {
+    case KDU_PROVIDER_DELL_PCDOC:
+        lpRootDirectory = (LPWSTR)L"\\GLOBAL??";
+        break;
+    default:
+        lpRootDirectory = (LPWSTR)L"\\Device";
+        break;
+    }
+    return supIsObjectExists(lpRootDirectory, lpDeviceName);
+}
+
+/*
 * KDUProvStartVulnerableDriver
 *
 * Purpose:
@@ -325,13 +409,12 @@ BOOL KDUProvStartVulnerableDriver(
     _In_ KDU_CONTEXT* Context
 )
 {
-    BOOL     bLoaded = FALSE;
-    LPWSTR   lpDeviceName = Context->Provider->LoadData->DeviceName;
+    BOOL bLoaded = FALSE;
 
     //
     // Check if driver already loaded.
     //
-    if (supIsObjectExists((LPWSTR)L"\\Device", lpDeviceName)) {
+    if (KDUProvIsAlreadyLoaded(Context)) {
 
         supPrintfEvent(kduEventError,
             "[!] Vulnerable driver is already loaded\r\n");
@@ -391,7 +474,7 @@ void KDUProvOpenVulnerableDriverAndRunCallbacks(
     else {
 
         supPrintfEvent(kduEventInformation,
-            "[+] Driver device \"%ws\" has successfully opened\r\n",
+            "[+] Driver device \"%ws\" has been opened successfully\r\n",
             Context->Provider->LoadData->DriverName);
 
         Context->DeviceHandle = deviceHandle;
@@ -906,8 +989,19 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 
     do {
 
-        if (ProviderId >= KDUProvGetCount())
+        if (ProviderId >= KDUProvGetCount()) {
+            
+            supPrintfEvent(kduEventInformation,
+                "[+] Pprovider with id %lu is not supported, will be using default provider (0)\r\n",
+                ProviderId);
+
             ProviderId = KDU_PROVIDER_DEFAULT;
+        }
+
+        //
+        // Check HyperV
+        //
+        KDUProvDetectHyperV();
 
         //
         // Load drivers DB.

@@ -1,13 +1,13 @@
 /************************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2015 - 2022 
+*  (C) COPYRIGHT AUTHORS, 2015 - 2023 
 *  Translated from Microsoft sources/debugger or mentioned elsewhere.
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.201
+*  VERSION:     1.207
 *
-*  DATE:        17 Aug 2022
+*  DATE:        01 Apr 2023
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -1976,6 +1976,33 @@ typedef struct _SYSTEM_CODEINTEGRITY_INFORMATION {
 #define CODEINTEGRITY_OPTION_HVCI_IUM_ENABLED             0x2000
 #define CODEINTEGRITY_OPTION_WHQL_ENFORCEMENT_ENABLED     0x4000
 #define CODEINTEGRITY_OPTION_WHQL_AUDITMODE_ENABLED       0x8000
+
+typedef struct _HV_DETAILS {
+    ULONG Data[4];
+} HV_DETAILS, * PHV_DETAILS;
+
+typedef struct _HV_VENDOR_AND_MAX_FUNCTION {
+    ULONG MaxFunction;
+    CHAR VendorName[12];
+} HV_VENDOR_AND_MAX_FUNCTION, * PHV_VENDOR_AND_MAX_FUNCTION;
+
+typedef struct _SYSTEM_HYPERVISOR_DETAIL_INFORMATION {
+    HV_DETAILS HvVendorAndMaxFunction;
+    HV_DETAILS HypervisorInterface;
+    HV_DETAILS HypervisorVersion;
+    HV_DETAILS HvFeatures;
+    HV_DETAILS HwFeatures;
+    HV_DETAILS EnlightenmentInfo;
+    HV_DETAILS ImplementationLimits;
+} SYSTEM_HYPERVISOR_DETAIL_INFORMATION, * PSYSTEM_HYPERVISOR_DETAIL_INFORMATION;
+
+typedef struct _SYSTEM_HYPERVISOR_QUERY_INFORMATION {
+    BOOLEAN HypervisorConnected;
+    BOOLEAN HypervisorDebuggingEnabled;
+    BOOLEAN HypervisorPresent;
+    BOOLEAN Spare0[5];
+    ULONGLONG EnabledEnlightenments;
+} SYSTEM_HYPERVISOR_QUERY_INFORMATION, * PSYSTEM_HYPERVISOR_QUERY_INFORMATION;
 
 typedef VOID(NTAPI *PIO_APC_ROUTINE)(
     _In_ PVOID ApcContext,
@@ -7326,6 +7353,7 @@ typedef struct _KSE_SHIMMED_DRIVER {
     LIST_ENTRY ListEntry;
     PVOID DriverBaseAddress;
     ULONG RefCount;
+    GUID* ShimGuid;
     //incomplete
 } KSE_SHIMMED_DRIVER, * PKSE_SHIMMED_DRIVER;
 
@@ -14489,6 +14517,53 @@ NtSystemDebugControl(
     _Out_writes_bytes_opt_(OutputBufferLength) PVOID OutputBuffer,
     _In_ ULONG OutputBufferLength,
     _Out_opt_ PULONG ReturnLength);
+
+/************************************************************************************
+*
+* HardError API.
+*
+************************************************************************************/
+
+#ifndef HARDERROR_OVERRIDE_ERRORMODE
+#define HARDERROR_OVERRIDE_ERRORMODE 0x10000000
+#endif
+
+typedef enum _HARDERROR_RESPONSE_OPTION {
+    OptionAbortRetryIgnore,
+    OptionOk,
+    OptionOkCancel,
+    OptionRetryCancel,
+    OptionYesNo,
+    OptionYesNoCancel,
+    OptionShutdownSystem,
+    OptionOkNoWait,
+    OptionCancelTryContinue
+} HARDERROR_RESPONSE_OPTION;
+
+typedef enum _HARDERROR_RESPONSE {
+    ResponseReturnToCaller,
+    ResponseNotHandled,
+    ResponseAbort,
+    ResponseCancel,
+    ResponseIgnore,
+    ResponseNo,
+    ResponseOk,
+    ResponseRetry,
+    ResponseYes,
+    ResponseTryAgain,
+    ResponseContinue
+} HARDERROR_RESPONSE;
+
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtRaiseHardError(
+    _In_ NTSTATUS ErrorStatus,
+    _In_ ULONG NumberOfParameters,
+    _In_ ULONG UnicodeStringParameterMask,
+    _In_reads_(NumberOfParameters) PULONG_PTR Parameters,
+    _In_ ULONG ValidResponseOptions,
+    _Out_ PULONG Response);
 
 /************************************************************************************
 *

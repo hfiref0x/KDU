@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.31
 *
-*  DATE:        08 Apr 2023
+*  DATE:        10 Apr 2023
 *
 *  KDU tests.
 *
@@ -118,6 +118,9 @@ VOID TestBrute(PKDU_CONTEXT Context)
     VICTIM_IMAGE_INFORMATION vi;
     HANDLE victimDeviceHandle = NULL;
 
+    if (Context->Provider->Callbacks.ReadPhysicalMemory == NULL)
+        return;
+
     if (VpCreate(Context->Victim, Context->ModuleBase, &victimDeviceHandle, NULL, NULL)) {
 
         RtlSecureZeroMemory(&vi, sizeof(vi));
@@ -181,15 +184,11 @@ VOID TestSymbols()
 VOID KDUTest()
 {
     PKDU_CONTEXT Context;
-    ULONG_PTR objectAddress = 0, value;
 
-    UCHAR Buffer[4096];
+   // KDUTestLoad();
 
    // TestSymbols();
-
-    RtlSecureZeroMemory(&Buffer, sizeof(Buffer));
-
-    Context = KDUProviderCreate(KDU_PROVIDER_LENOVO_DD, 
+    Context = KDUProviderCreate(36, 
         FALSE, 
         NT_WIN10_20H1, 
         KDU_SHELLCODE_V1, 
@@ -197,48 +196,8 @@ VOID KDUTest()
 
     if (Context) {
 
-
-        /*Context->Provider->Callbacks.ReadPhysicalMemory(Context->DeviceHandle,
-            0x0000000072a3a000,
-            Buffer,
-            sizeof(Buffer));*/
-
         TestBrute(Context);
-        KDUTestDSE(Context);
-
-        //ULONG64 dummy = 0;
-
-        /*Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
-            0xfffff80afbbe6d18,
-            &dummy,
-            sizeof(dummy));*/
-
-        if (supQueryObjectFromHandle(Context->DeviceHandle, &objectAddress)) {
-
-            /*   Context->Provider->Callbacks.ReadPhysicalMemory(
-                   Context->DeviceHandle,
-                   0x1000,
-                   &Buffer,
-                   0x1000);
-                   */
-            value = 0x1234567890ABCDEF;
-
-            //objectAddress = 0xfffff80710636d18;
-
-            FILE_OBJECT fileObject;
-
-            RtlSecureZeroMemory(&fileObject, sizeof(FILE_OBJECT));
-
-            if (Context->Provider->Callbacks.ReadKernelVM) {
-                Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
-                    objectAddress,
-                    &fileObject,
-                    sizeof(FILE_OBJECT));
-
-                Beep(0, 0);
-            }
-
-        }
+        //KDUTestDSE(Context);
 
         KDUProviderRelease(Context);
     }

@@ -136,7 +136,8 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 29          | Arthur Liberman| ALSysIO64   | Core Temp                          | Original          | 2.0.11 and below            |                      |
 | 30          | AMD            | AMDRyzenMasterDriver  | Multiple software packages | Original          | 2.0.0.0 and below           |                      |
 | 31          | Hilscher       | physmem     | Physical Memory Viewer for Windows | Original          | 1.0.0.0                     |  Cert, Name          |
-| 32          | Lenovo         | LDD         | Lenovo Diagnostics Drivers for Windows 10 and later | Original          | 1.0.4.0                     |  Cert, Name          |
+| 32          | Lenovo         | LDD         | Lenovo Diagnostics Driver for Windows 10 and later | Original          | 1.0.4.0 and below               |  Cert, Name          |
+| 33          | Dell           | pcdsrvc_x64 | Dell PC Doctor                     | Original          | 6.2.2.0                     |                      |
 
 ###### *At commit time, data maybe inaccurate.
 

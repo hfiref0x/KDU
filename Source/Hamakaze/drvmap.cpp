@@ -496,8 +496,10 @@ BOOL WINAPI KDUPagePatchCallback(
                     *(PULONG)&jmpcode[1],
                     Address + dispatchPageOffset);
 
+                targetAddress = Address + dispatchPageOffset;
+
                 bIoResult = WritePhysicalMemory(Params->DeviceHandle,
-                    Address + dispatchPageOffset,
+                    targetAddress,
                     jmpcode,
                     sizeof(jmpcode));
 

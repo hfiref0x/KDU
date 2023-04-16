@@ -47,7 +47,7 @@ typedef struct _LDD_WRITE_REQUEST {
 BOOL WINAPI LddReadWritePhysicalMemoryStub(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
-    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
 BOOL WINAPI LddRegisterDriver(

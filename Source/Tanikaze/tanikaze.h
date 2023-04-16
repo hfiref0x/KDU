@@ -518,6 +518,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"LenovoDiagnosticsDriver",
         (LPWSTR)L"LenovoDiagnosticsDriver",
         (LPWSTR)L"Lenovo"
+     },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_PCDSRVC,
+        KDU_PROVIDER_DELL_PCDOC,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"PC-Doctor (CVE-2019-12280)",
+        (LPWSTR)L"pcdsrvc_x64",
+        (LPWSTR)L"pcdsrvc_x64",
+        (LPWSTR)L"PC-Doctor, Inc."
      }
 
 };

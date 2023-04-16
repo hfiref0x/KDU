@@ -737,7 +737,7 @@ BOOL WINAPI AsusIO3PreOpen(
     if (dllBuffer == NULL) {
 
         supPrintfEvent(kduEventError,
-            "[!] Requested data id cannot be found %lu\r\n", IDR_TAIGEI32);
+            "[!] Failed to load helper dll\r\n");
 
         return FALSE;
 
@@ -754,12 +754,14 @@ BOOL WINAPI AsusIO3PreOpen(
             szTemp,
             ASUS_LDR_DLL);
 
+        NTSTATUS ntStatus;
+
         if (supWriteBufferToFile(szFileName,
             dllBuffer,
             resourceSize,
             TRUE,
             FALSE,
-            NULL))
+            &ntStatus))
         {
             resourceSize = 0;
             svcBuffer = (PBYTE)KDULoadResource(IDR_DATA_ASUSCERTSERVICE,
@@ -798,9 +800,18 @@ BOOL WINAPI AsusIO3PreOpen(
 
                 supHeapFree(svcBuffer);
             }
+            else {
+                supPrintfEvent(kduEventError, "[!] Failed to load ASUS service resource\r\n");
+            }
 
         }
+        else {
+            supShowHardError("[!] Error while writing data to disk", ntStatus);
+        }
 
+    }
+    else {
+        supPrintfEvent(kduEventError, "[!] Error while configuring helper dll\r\n");
     }
 
     supHeapFree(dllBuffer);

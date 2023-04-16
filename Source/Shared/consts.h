@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.31
 *
-*  DATE:        08 Apr 2023
+*  DATE:        10 Apr 2023
 *
 *  Global consts.
 *
@@ -55,7 +55,7 @@
 
 #define SHELL_POOL_TAG          '  oI'
 
-#define PROVIDER_RES_KEY        ' owo' // Giving you enough uwu's.
+#define PROVIDER_RES_KEY        0xF62E6CE0
 
 #define SYSTEM_PID_MAGIC           4
 
@@ -128,7 +128,7 @@
 #define IDR_AMD_RYZENMASTER             133
 #define IDR_PHYSMEM                     134
 #define IDR_LDD                         135
-#define IDR_RESERVED2                   136
+#define IDR_PCDSRVC                     136
 #define IDR_RESERVED3                   137
 #define IDR_RESERVED4                   138
 #define IDR_RESERVED6                   140
@@ -169,6 +169,7 @@
 #define KDU_PROVIDER_AMD_RYZENMASTER    30
 #define KDU_PROVIDER_HR_PHYSMEM         31
 #define KDU_PROVIDER_LENOVO_DD          32
+#define KDU_PROVIDER_DELL_PCDOC         33
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

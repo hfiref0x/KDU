@@ -222,3 +222,144 @@ BOOL WINAPI DbUtilWriteVirtualMemory(
     SetLastError(dwError);
     return bResult;
 }
+
+/*
+* DpdReadPhysicalMemory
+*
+* Purpose:
+*
+* Read from physical memory.
+*
+*/
+BOOL WINAPI DpdReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    BOOL bResult = FALSE;
+    PVOID pvBuffer = NULL;
+
+    PCDCSRVC_READWRITE_REQUEST request;
+    SIZE_T size;
+
+    size = sizeof(PCDCSRVC_READWRITE_REQUEST) + NumberOfBytes;
+    pvBuffer = (PVOID)VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+    if (pvBuffer) {
+
+        if (VirtualLock(pvBuffer, size)) {
+
+            request.PhysicalAddress.QuadPart = PhysicalAddress;
+            request.Size = NumberOfBytes;
+            request.Granularity = 0; //use direct memmove
+
+            bResult = supCallDriver(DeviceHandle,
+                IOCTL_PCDCSRVC_READPHYSMEM,
+                &request,
+                sizeof(PCDCSRVC_READWRITE_REQUEST),
+                pvBuffer,
+                NumberOfBytes);
+
+            if (bResult) {
+
+                RtlCopyMemory(Buffer,
+                    pvBuffer,
+                    NumberOfBytes);
+
+            }
+
+            VirtualUnlock(pvBuffer, size);
+        }
+
+        VirtualFree(pvBuffer, 0, MEM_RELEASE);
+
+    }
+
+    return bResult;
+}
+
+/*
+* DpdWritePhysicalMemory
+*
+* Purpose:
+*
+* Write to physical memory.
+*
+*/
+BOOL WINAPI DpdWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    BOOL bResult = FALSE;
+    PCDCSRVC_READWRITE_REQUEST* pRequest;
+    SIZE_T size;
+
+    size = sizeof(PCDCSRVC_READWRITE_REQUEST) + NumberOfBytes;
+    pRequest = (PCDCSRVC_READWRITE_REQUEST*)VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+    if (pRequest) {
+
+        if (VirtualLock(pRequest, size)) {
+
+            pRequest->PhysicalAddress.QuadPart = PhysicalAddress;
+            pRequest->Granularity = 0; //use direct memmove
+            pRequest->Size = NumberOfBytes;
+
+            //
+            // Append data buffer to the tail.
+            //
+            RtlCopyMemory(
+                RtlOffsetToPointer(pRequest, sizeof(PCDCSRVC_READWRITE_REQUEST)),
+                Buffer,
+                NumberOfBytes);
+
+            bResult = supCallDriver(DeviceHandle,
+                IOCTL_PCDCSRVC_WRITEPHYSMEM,
+                pRequest,
+                (ULONG)size,
+                NULL,
+                0);
+
+            VirtualUnlock(pRequest, size);
+        }
+
+        VirtualFree(pRequest, 0, MEM_RELEASE);
+
+    }
+
+    return bResult;
+}
+
+/*
+* DellRegisterDriver
+*
+* Purpose:
+*
+* Dell drivers initialization routine.
+*
+*/
+BOOL WINAPI DellRegisterDriver(
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param)
+{
+    ULONG driverId = PtrToUlong(Param);
+    ULONG keyValue = 0xA1B2C3D4;
+
+    switch (driverId) {
+
+    case IDR_PCDSRVC:
+
+        return supCallDriver(DeviceHandle,
+            IOCTL_PCDCSRVC_REGISTER,
+            &keyValue,
+            sizeof(ULONG),
+            &keyValue,
+            sizeof(ULONG));
+
+    default:
+        return TRUE;
+    }
+}

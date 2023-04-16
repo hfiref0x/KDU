@@ -28,6 +28,7 @@
 #define CMD_LIST        L"-list"
 #define CMD_SI          L"-diag"
 #define CMD_TEST        L"-test"
+#define CMD_RNG         L"-rng"
 
 #define CMD_DRVNAME     L"-drvn"
 #define CMD_DRVREG      L"-drvr"
@@ -303,8 +304,9 @@ INT KDUProcessCommandLine(
 #ifdef _DEBUG
 
         //
-        // Test switch, never used/present in the release build.
+        // Test switches, never used/present in the release build.
         //
+
         if (supGetCommandLineOption(CMD_TEST,
             FALSE,
             NULL,
@@ -312,6 +314,23 @@ INT KDUProcessCommandLine(
             NULL))
         {
             KDUTest();
+            retVal = 1;
+            break;
+        }
+
+        if (supGetCommandLineOption(CMD_RNG,
+            FALSE,
+            NULL,
+            0,
+            NULL))
+        {
+            DWORD dwKey = 0;
+            if (supGenRandom((PBYTE)&dwKey, sizeof(DWORD))) {
+                printf_s("[+] RNG: %lu\r\n", dwKey);
+            }
+            else {
+                printf_s("[!] RNG failed\r\n");
+            }
             retVal = 1;
             break;
         }

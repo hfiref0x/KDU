@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.31
 *
-*  DATE:        08 Apr 2023
+*  DATE:        10 Apr 2023
 *
 *  Providers global list.
 *
@@ -51,12 +51,13 @@ static KDU_VICTIM_PROVIDER g_KDUVictims[] = {
         (LPCWSTR)PROCEXP1627_DESC,        // Description
         IDR_PROCEXP1627,                  // Resource id in drivers database
         KDU_VICTIM_PE1627,                // Victim id
-        SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE,     // Desired access flags used for acquiring victim handle
+        SYNCHRONIZE |
+        GENERIC_READ | GENERIC_WRITE,     // Desired access flags used for acquiring victim handle
         KDU_VICTIM_FLAGS_SUPPORT_RELOAD,  // Victim flags, target dependent
         VpCreateCallback,                 // Victim create callback
         VpReleaseCallback,                // Victim release callback
         VpExecuteCallback,                // Victim execute payload callback
-        & g_ProcExpSig,                   // Victim dispatch bytes
+        &g_ProcExpSig,                    // Victim dispatch bytes
         sizeof(g_ProcExpSig)              // Victim dispatch bytes size
     },
 
@@ -65,12 +66,13 @@ static KDU_VICTIM_PROVIDER g_KDUVictims[] = {
         (LPCWSTR)PROCEXP1702_DESC,        // Description
         IDR_PROCEXP1702,                  // Resource id in drivers database
         KDU_VICTIM_PE1702,                // Victim id
-        SYNCHRONIZE | GENERIC_READ | GENERIC_WRITE,     // Desired access flags used for acquiring victim handle
+        SYNCHRONIZE |
+        GENERIC_READ | GENERIC_WRITE,     // Desired access flags used for acquiring victim handle
         KDU_VICTIM_FLAGS_SUPPORT_RELOAD,  // Victim flags, target dependent
         VpCreateCallback,                 // Victim create callback
         VpReleaseCallback,                // Victim release callback
         VpExecuteCallback,                // Victim execute payload callback
-        & g_ProcExpSig,                   // Victim dispatch bytes
+        &g_ProcExpSig,                    // Victim dispatch bytes
         sizeof(g_ProcExpSig)              // Victim dispatch bytes size
     }
 
@@ -869,6 +871,30 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)NULL,
         (provReadPhysicalMemory)LddReadWritePhysicalMemoryStub,
         (provWritePhysicalMemory)LddReadWritePhysicalMemoryStub,
+
+        (provValidatePrerequisites)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)DellRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)DpdReadPhysicalMemory,
+        (provWritePhysicalMemory)DpdWritePhysicalMemory,
 
         (provValidatePrerequisites)NULL
     }
