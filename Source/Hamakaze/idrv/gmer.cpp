@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       GMER.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.31
 *
-*  DATE:        08 Feb 2022
+*  DATE:        14 Apr 2023
 *
 *  GMER driver routines.
 *
@@ -99,32 +99,28 @@ BOOL WINAPI GmerWriteVirtualMemory(
     value = FIELD_OFFSET(GMER_WRITE_REQUEST, Data) + NumberOfBytes;
     size = ALIGN_UP_BY(value, PAGE_SIZE);
 
-    pRequest = (GMER_WRITE_REQUEST*)VirtualAlloc(NULL, size,
-        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    pRequest = (GMER_WRITE_REQUEST*)supAllocateLockedMemory(size,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE);
 
     if (pRequest) {
 
-        if (VirtualLock(pRequest, size)) {
+        pRequest->Unused = 0;
+        pRequest->VirtualAddress = VirtualAddress;
+        pRequest->DataSize = NumberOfBytes;
+        RtlCopyMemory(&pRequest->Data, Buffer, NumberOfBytes);
 
-            pRequest->Unused = 0;
-            pRequest->VirtualAddress = VirtualAddress;
-            pRequest->DataSize = NumberOfBytes;
-            RtlCopyMemory(&pRequest->Data, Buffer, NumberOfBytes);
+        bResult = supCallDriver(DeviceHandle,
+            IOCTL_GMER_WRITEVM,
+            pRequest,
+            (ULONG)size,
+            NULL,
+            0);
 
-            bResult = supCallDriver(DeviceHandle,
-                IOCTL_GMER_WRITEVM,
-                pRequest,
-                (ULONG)size,
-                NULL,
-                0);
+        if (!bResult)
+            dwError = GetLastError();
 
-            if (!bResult)
-                dwError = GetLastError();
-
-            VirtualUnlock(pRequest, size);
-        }
-
-        VirtualFree(pRequest, 0, MEM_RELEASE);
+        supFreeLockedMemory(pRequest, size);
     }
 
     SetLastError(dwError);

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       NAL.CPP
 *
-*  VERSION:     1.10
+*  VERSION:     1.31
 *
-*  DATE:        15 Apr 2021
+*  DATE:        14 Apr 2023
 *
 *  Intel Network Adapter iQVM64 driver routines.
 *
@@ -184,36 +184,32 @@ BOOL NalReadVirtualMemory(
     DWORD dwError = ERROR_SUCCESS;
     NAL_MEMMOVE request;
 
-    PVOID lockedBuffer = (PVOID)VirtualAlloc(NULL, NumberOfBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    PVOID lockedBuffer = (PVOID)supAllocateLockedMemory(NumberOfBytes,
+        MEM_RESERVE | MEM_COMMIT,
+        PAGE_READWRITE);
+
     if (lockedBuffer) {
 
-        if (VirtualLock(lockedBuffer, NumberOfBytes)) {
+        RtlSecureZeroMemory(&request, sizeof(request));
+        request.Header.FunctionId = NAL_FUNCID_MEMMOVE;
+        request.SourceAddress = VirtualAddress;
+        request.DestinationAddress = (ULONG_PTR)lockedBuffer;
+        request.Length = NumberOfBytes;
 
-            RtlSecureZeroMemory(&request, sizeof(request));
-            request.Header.FunctionId = NAL_FUNCID_MEMMOVE;
-            request.SourceAddress = VirtualAddress;
-            request.DestinationAddress = (ULONG_PTR)lockedBuffer;
-            request.Length = NumberOfBytes;
-
-            bResult = NalCallDriver(DeviceHandle, &request, sizeof(request));
-            if (bResult) {
-                RtlCopyMemory(Buffer, lockedBuffer, NumberOfBytes);
-            }
-            else {
-                dwError = GetLastError();
-            }
-
-            VirtualUnlock(lockedBuffer, NumberOfBytes);
+        bResult = NalCallDriver(DeviceHandle, &request, sizeof(request));
+        if (bResult) {
+            RtlCopyMemory(Buffer, lockedBuffer, NumberOfBytes);
         }
         else {
             dwError = GetLastError();
         }
 
-        VirtualFree(lockedBuffer, 0, MEM_RELEASE);
+        supFreeLockedMemory(lockedBuffer, NumberOfBytes);
     }
     else {
         dwError = GetLastError();
     }
+
     SetLastError(dwError);
     return bResult;
 }
@@ -237,31 +233,26 @@ BOOL NalWriteVirtualMemory(
     DWORD dwError = ERROR_SUCCESS;
     NAL_MEMMOVE request;
 
-    PVOID lockedBuffer = (PVOID)VirtualAlloc(NULL, NumberOfBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    PVOID lockedBuffer = (PVOID)supAllocateLockedMemory(NumberOfBytes,
+        MEM_RESERVE | MEM_COMMIT,
+        PAGE_READWRITE);
+
     if (lockedBuffer) {
 
         RtlCopyMemory(lockedBuffer, Buffer, NumberOfBytes);
 
-        if (VirtualLock(lockedBuffer, NumberOfBytes)) {
+        RtlSecureZeroMemory(&request, sizeof(request));
+        request.Header.FunctionId = NAL_FUNCID_MEMMOVE;
+        request.SourceAddress = (ULONG_PTR)lockedBuffer;
+        request.DestinationAddress = VirtualAddress;
+        request.Length = NumberOfBytes;
 
-            RtlSecureZeroMemory(&request, sizeof(request));
-            request.Header.FunctionId = NAL_FUNCID_MEMMOVE;
-            request.SourceAddress = (ULONG_PTR)lockedBuffer;
-            request.DestinationAddress = VirtualAddress;
-            request.Length = NumberOfBytes;
-
-            bResult = NalCallDriver(DeviceHandle, &request, sizeof(request));
-            if (bResult == FALSE) {
-                dwError = GetLastError();
-            }
-
-            VirtualUnlock(lockedBuffer, NumberOfBytes);
-        }
-        else {
+        bResult = NalCallDriver(DeviceHandle, &request, sizeof(request));
+        if (bResult == FALSE) {
             dwError = GetLastError();
         }
 
-        VirtualFree(lockedBuffer, 0, MEM_RELEASE);
+        supFreeLockedMemory(lockedBuffer, NumberOfBytes);
     }
     else {
         dwError = GetLastError();
@@ -330,38 +321,33 @@ BOOL WINAPI NalReadVirtualMemoryEx(
 {
     BOOL bResult = FALSE;
     DWORD dwError = ERROR_SUCCESS;
-    PVOID lockedBuffer = (PVOID)VirtualAlloc(NULL, NumberOfBytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    PVOID lockedBuffer = (PVOID)supAllocateLockedMemory(NumberOfBytes,
+        MEM_RESERVE | MEM_COMMIT,
+        PAGE_READWRITE);
+
     if (lockedBuffer) {
 
-        if (VirtualLock(lockedBuffer, NumberOfBytes)) {
+        ULONG_PTR physicalAddress, newVirt;
 
-            ULONG_PTR physicalAddress, newVirt;
+        if (NalVirtualToPhysical(DeviceHandle, VirtualAddress, &physicalAddress)) {
+            if (NalMapAddressEx(DeviceHandle, physicalAddress, &newVirt, NumberOfBytes)) {
 
-            if (NalVirtualToPhysical(DeviceHandle, VirtualAddress, &physicalAddress)) {
-                if (NalMapAddressEx(DeviceHandle, physicalAddress, &newVirt, NumberOfBytes)) {
-
-                    bResult = NalReadVirtualMemory(DeviceHandle, newVirt, lockedBuffer, NumberOfBytes);
-                    if (bResult) {
-                        RtlCopyMemory(Buffer, lockedBuffer, NumberOfBytes);
-                    }
-                    else {
-                        dwError = GetLastError();
-                    }
-
-                    NalUnmapAddress(DeviceHandle, newVirt, NumberOfBytes);
+                bResult = NalReadVirtualMemory(DeviceHandle, newVirt, lockedBuffer, NumberOfBytes);
+                if (bResult) {
+                    RtlCopyMemory(Buffer, lockedBuffer, NumberOfBytes);
                 }
-            }
-            else {
-                dwError = GetLastError();
-            }
+                else {
+                    dwError = GetLastError();
+                }
 
-            VirtualUnlock(lockedBuffer, NumberOfBytes);
+                NalUnmapAddress(DeviceHandle, newVirt, NumberOfBytes);
+            }
         }
         else {
             dwError = GetLastError();
         }
 
-        VirtualFree(lockedBuffer, 0, MEM_RELEASE);
+        supFreeLockedMemory(lockedBuffer, NumberOfBytes);
     }
     else {
         dwError = GetLastError();

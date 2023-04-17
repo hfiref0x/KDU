@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.31
 *
-*  DATE:        07 Apr 2023
+*  DATE:        14 Apr 2023
 *
 *  AMD Ryzen Master Service Driver routines.
 *
@@ -64,37 +64,32 @@ BOOL WINAPI RmReadPhysicalMemory(
     SIZE_T size;
 
     size = sizeof(RMDRV_REQUEST) + NumberOfBytes;
-    pRequest = (RMDRV_REQUEST*)VirtualAlloc(NULL, size,
-        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    pRequest = (RMDRV_REQUEST*)supAllocateLockedMemory(size,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE);
 
     if (pRequest) {
 
-        if (VirtualLock(pRequest, size)) {
+        pRequest->PhysicalAddress.QuadPart = PhysicalAddress;
+        pRequest->Size = NumberOfBytes;
 
-            pRequest->PhysicalAddress.QuadPart = PhysicalAddress;
-            pRequest->Size = NumberOfBytes;
+        bResult = supCallDriver(DeviceHandle,
+            IOCTL_AMDRM_READ_MEMORY,
+            pRequest,
+            sizeof(RMDRV_REQUEST),
+            pRequest,
+            (ULONG)size);
 
-            bResult = supCallDriver(DeviceHandle,
-                IOCTL_AMDRM_READ_MEMORY,
-                pRequest,
-                sizeof(RMDRV_REQUEST),
-                pRequest,
-                (ULONG)size);
+        if (bResult) {
 
-            if (bResult) {
+            RtlCopyMemory(
+                Buffer,
+                RtlOffsetToPointer(pRequest, sizeof(RMDRV_REQUEST)),
+                NumberOfBytes);
 
-                RtlCopyMemory(
-                    Buffer,
-                    RtlOffsetToPointer(pRequest, sizeof(RMDRV_REQUEST)),
-                    NumberOfBytes);
-
-            }
-
-            VirtualUnlock(pRequest, size);
         }
 
-        VirtualFree(pRequest, 0, MEM_RELEASE);
-
+        supFreeLockedMemory(pRequest, size);
     }
 
     return bResult;
@@ -120,33 +115,28 @@ BOOL WINAPI RmWritePhysicalMemory(
 
     size = sizeof(RMDRV_REQUEST) + NumberOfBytes;
 
-    pRequest = (RMDRV_REQUEST*)VirtualAlloc(NULL, size,
-        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    pRequest = (RMDRV_REQUEST*)supAllocateLockedMemory(size,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE);
 
     if (pRequest) {
 
-        if (VirtualLock(pRequest, size)) {
+        pRequest->PhysicalAddress.QuadPart = PhysicalAddress;
+        pRequest->Size = NumberOfBytes;
 
-            pRequest->PhysicalAddress.QuadPart = PhysicalAddress;
-            pRequest->Size = NumberOfBytes;
+        RtlCopyMemory(
+            RtlOffsetToPointer(pRequest, sizeof(RMDRV_REQUEST)),
+            Buffer,
+            NumberOfBytes);
 
-            RtlCopyMemory(
-                RtlOffsetToPointer(pRequest, sizeof(RMDRV_REQUEST)),
-                Buffer,
-                NumberOfBytes);
+        bResult = supCallDriver(DeviceHandle,
+            IOCTL_AMDRM_WRITE_MEMORY,
+            pRequest,
+            (ULONG)size,
+            NULL,
+            0);
 
-            bResult = supCallDriver(DeviceHandle,
-                IOCTL_AMDRM_WRITE_MEMORY,
-                pRequest,
-                (ULONG)size,
-                NULL,
-                0);
-
-            VirtualUnlock(pRequest, size);
-        }
-
-        VirtualFree(pRequest, 0, MEM_RELEASE);
-
+        supFreeLockedMemory(pRequest, size);
     }
 
     return bResult;

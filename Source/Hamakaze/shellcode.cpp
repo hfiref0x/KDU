@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.31
 *
-*  DATE:        09 Apr 2023
+*  DATE:        14 Apr 2023
 *
 *  Default driver mapping shellcode(s) implementation.
 *
@@ -1752,8 +1752,7 @@ VOID ScFree(
     _In_ ULONG ScSize
 )
 {
-    VirtualUnlock(ScBuffer, ScSize);
-    VirtualFree(ScBuffer, 0, MEM_RELEASE);
+    supFreeLockedMemory(ScBuffer, ScSize);
 }
 
 /*
@@ -1850,17 +1849,12 @@ PVOID ScAllocate(
 #endif
     }
 
-    pvShellCode = (SHELLCODE*)VirtualAlloc(NULL, scSize,
+    pvShellCode = (SHELLCODE*)supAllocateLockedMemory(scSize,
         MEM_RESERVE | MEM_COMMIT,
         PAGE_EXECUTE_READWRITE);
 
     if (pvShellCode == NULL)
         return NULL;
-
-    if (!VirtualLock(pvShellCode, scSize)) {
-        VirtualFree(pvShellCode, 0, MEM_RELEASE);
-        return NULL;
-    }
 
     pvBootstrap = pvShellCode->BootstrapCode;
 

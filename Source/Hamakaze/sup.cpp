@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.31
 *
-*  DATE:        08 Apr 2023
+*  DATE:        14 Apr 2023
 *
 *  Program global support routines.
 *
@@ -46,6 +46,71 @@ BOOL FORCEINLINE supHeapFree(
     _In_ PVOID Memory)
 {
     return RtlFreeHeap(NtCurrentPeb()->ProcessHeap, 0, Memory);
+}
+
+/*
+* supAllocateLockedMemory
+*
+* Purpose:
+*
+* Wrapper for VirtualAllocEx+VirtualLock.
+*
+*/
+PVOID supAllocateLockedMemory(
+    _In_ SIZE_T Size,
+    _In_ ULONG AllocationType,
+    _In_ ULONG Protect
+)
+{
+    PVOID Buffer = NULL;
+
+    Buffer = VirtualAllocEx(NtCurrentProcess(),
+        NULL,
+        Size,
+        AllocationType,
+        Protect);
+
+    if (Buffer) {
+
+        if (!VirtualLock(Buffer, Size)) {
+
+            VirtualFreeEx(NtCurrentProcess(),
+                Buffer,
+                0,
+                MEM_RELEASE);
+
+            Buffer = NULL;
+
+        }
+
+    }
+
+    return Buffer;
+}
+
+/*
+* supFreeLockedMemory
+*
+* Purpose:
+*
+* Wrapper for VirtualUnlock + VirtualFreeEx.
+*
+*/
+BOOL supFreeLockedMemory(
+    _In_ PVOID Memory,
+    _In_ SIZE_T LockedSize
+)
+{
+    if (VirtualUnlock(Memory, LockedSize)) {
+
+        return VirtualFreeEx(NtCurrentProcess(),
+            Memory,
+            0,
+            MEM_RELEASE);
+
+    }
+
+    return FALSE;
 }
 
 /*

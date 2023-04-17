@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.207
+*  VERSION:     1.210
 *
-*  DATE:        01 Apr 2023
+*  DATE:        11 Apr 2023
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -6049,6 +6049,9 @@ typedef struct _GDI_SHARED_MEMORY {
 #define DOS_MAX_PATH_LENGTH (DOS_MAX_COMPONENT_LENGTH + 5)
 #endif
 
+typedef struct _ACTIVATION_CONTEXT_DATA * PACTIVATION_CONTEXT_DATA;
+typedef struct _ASSEMBLY_STORAGE_MAP * PASSEMBLY_STORAGE_MAP;
+
 typedef struct _CURDIR {
     UNICODE_STRING DosPath;
     HANDLE Handle;
@@ -6099,17 +6102,20 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS {
     UNICODE_STRING RuntimeData;
     RTL_DRIVE_LETTER_CURDIR CurrentDirectories[RTL_MAX_DRIVE_LETTERS];
 
-    ULONG EnvironmentSize;
-    ULONG EnvironmentVersion;
-    PVOID PackageDependencyData; //8+
+    ULONG_PTR EnvironmentSize;
+    ULONG_PTR EnvironmentVersion;
+
+    PVOID PackageDependencyData;
     ULONG ProcessGroupId;
-    // ULONG LoaderThreads;
-    // UNICODE_STRING RedirectionDllName;
-    // UNICODE_STRING HeapPartitionName;
-    // ULONGLONG* DefaultThreadpoolCpuSetMasks;
-    // ULONG DefaultThreadpoolCpuSetMaskCount;
-    // ULONG DefaultThreadpoolThreadMaximum;
-} RTL_USER_PROCESS_PARAMETERS, *PRTL_USER_PROCESS_PARAMETERS;
+    ULONG LoaderThreads;
+
+    UNICODE_STRING RedirectionDllName; // RS4
+    UNICODE_STRING HeapPartitionName; // 19H1
+    ULONG_PTR DefaultThreadpoolCpuSetMasks;
+    ULONG DefaultThreadpoolCpuSetMaskCount;
+    ULONG DefaultThreadpoolThreadMaximum;
+    ULONG HeapMemoryTypeMask; // WIN11
+} RTL_USER_PROCESS_PARAMETERS, * PRTL_USER_PROCESS_PARAMETERS;
 
 typedef struct _PEB {
     BOOLEAN InheritedAddressSpace;
@@ -6130,6 +6136,7 @@ typedef struct _PEB {
             BOOLEAN IsLongPathAwareProcess : 1;
         };
     };
+
     HANDLE Mutant;
 
     PVOID ImageBaseAddress;
@@ -6138,8 +6145,9 @@ typedef struct _PEB {
     PVOID SubSystemData;
     PVOID ProcessHeap;
     PRTL_CRITICAL_SECTION FastPebLock;
-    PVOID AtlThunkSListPtr;
+    PSLIST_HEADER AtlThunkSListPtr;
     PVOID IFEOKey;
+
     union
     {
         ULONG CrossProcessFlags;
@@ -6152,25 +6160,26 @@ typedef struct _PEB {
             ULONG ProcessUsingFTH : 1;
             ULONG ProcessPreviouslyThrottled : 1;
             ULONG ProcessCurrentlyThrottled : 1;
-            ULONG ProcessImagesHotPatched : 1;
+            ULONG ProcessImagesHotPatched : 1; // RS5
             ULONG ReservedBits0 : 24;
         };
-        ULONG EnvironmentUpdateCount;
     };
     union
     {
         PVOID KernelCallbackTable;
         PVOID UserSharedInfoPtr;
     };
-    ULONG SystemReserved[1];
+    ULONG SystemReserved;
     ULONG AtlThunkSListPtr32;
     PVOID ApiSetMap;
     ULONG TlsExpansionCounter;
     PVOID TlsBitmap;
     ULONG TlsBitmapBits[2];
+
     PVOID ReadOnlySharedMemoryBase;
-    PVOID HotpatchInformation;
-    PVOID *ReadOnlyStaticServerData;
+    struct _SILO_USER_SHARED_DATA* SharedData;
+    PVOID* ReadOnlyStaticServerData;
+
     PVOID AnsiCodePageData;
     PVOID OemCodePageData;
     PVOID UnicodeCaseTableData;
@@ -6178,7 +6187,7 @@ typedef struct _PEB {
     ULONG NumberOfProcessors;
     ULONG NtGlobalFlag;
 
-    LARGE_INTEGER CriticalSectionTimeout;
+    ULARGE_INTEGER CriticalSectionTimeout;
     SIZE_T HeapSegmentReserve;
     SIZE_T HeapSegmentCommit;
     SIZE_T HeapDeCommitTotalFreeThreshold;
@@ -6186,7 +6195,7 @@ typedef struct _PEB {
 
     ULONG NumberOfHeaps;
     ULONG MaximumNumberOfHeaps;
-    PVOID *ProcessHeaps;
+    PVOID* ProcessHeaps;
 
     PVOID GdiSharedHandleTable;
     PVOID ProcessStarterHelper;
@@ -6202,7 +6211,7 @@ typedef struct _PEB {
     ULONG ImageSubsystem;
     ULONG ImageSubsystemMajorVersion;
     ULONG ImageSubsystemMinorVersion;
-    ULONG_PTR ImageProcessAffinityMask;
+    KAFFINITY ActiveProcessAffinityMask;
     GDI_HANDLE_BUFFER GdiHandleBuffer;
     PVOID PostProcessInitRoutine;
 
@@ -6218,22 +6227,35 @@ typedef struct _PEB {
 
     UNICODE_STRING CSDVersion;
 
-    PVOID ActivationContextData;
-    PVOID ProcessAssemblyStorageMap;
-    PVOID SystemDefaultActivationContextData;
-    PVOID SystemAssemblyStorageMap;
+    PACTIVATION_CONTEXT_DATA ActivationContextData;
+    PASSEMBLY_STORAGE_MAP ProcessAssemblyStorageMap;
+    PACTIVATION_CONTEXT_DATA SystemDefaultActivationContextData;
+    PASSEMBLY_STORAGE_MAP SystemAssemblyStorageMap;
 
     SIZE_T MinimumStackCommit;
 
-    PVOID *FlsCallback;
-    LIST_ENTRY FlsListHead;
-    PVOID FlsBitmap;
-    ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE / (sizeof(ULONG) * 8)];
-    ULONG FlsHighIndex;
+    PVOID SparePointers[2];
+    PVOID PatchLoaderData;
+    PVOID ChpeV2ProcessInfo; 
+
+    ULONG AppModelFeatureState;
+    ULONG SpareUlongs[2];
+
+    USHORT ActiveCodePage;
+    USHORT OemCodePage;
+    USHORT UseCaseMapping;
+    USHORT UnusedNlsField;
 
     PVOID WerRegistrationData;
     PVOID WerShipAssertPtr;
-    PVOID pContextData;
+
+    union
+    {
+        PVOID pContextData;
+        PVOID pUnused;
+        PVOID EcCodeBitMap;
+    };
+
     PVOID pImageHeaderHash;
     union
     {
@@ -6247,27 +6269,27 @@ typedef struct _PEB {
         };
     };
     ULONGLONG CsrServerReadOnlySharedMemoryBase;
-    //ULONGLONG TppWorkerpListLock;
-    //LIST_ENTRY TppWorkerpList;
-    //PVOID WaitOnAddressHashTable[128];
-    //PVOID TelemetryCoverageHeader;
-    //ULONG CloudFileFlags;
-    //ULONG CloudFileDiagFlags;
-    //CHAR PlaceholderCompatibilityMode;
-    //CHAR PlaceholderCompatibilityModeReserved[7];
-    //struct _LEAP_SECOND_DATA* LeapSecondData;
-    //union
-    //{
-    //  ULONG LeapSecondFlags;
-    //  struct 
-    //  {
-    //      ULONG SixtySecondEnabled : 1;
-    //      ULONG Reserved : 31;
-    //  }; 
-    //};
-    //ULONG NtGlobalFlag2;
-    //ULONG64 ExtendedFeatureDisableMask;
-} PEB, *PPEB;
+    PRTL_CRITICAL_SECTION TppWorkerpListLock;
+    LIST_ENTRY TppWorkerpList;
+    PVOID WaitOnAddressHashTable[128];
+    PVOID TelemetryCoverageHeader; // RS3
+    ULONG CloudFileFlags;
+    ULONG CloudFileDiagFlags; // RS4
+    CHAR PlaceholderCompatibilityMode;
+    CHAR PlaceholderCompatibilityModeReserved[7];
+    struct _LEAP_SECOND_DATA* LeapSecondData; // RS5
+    union
+    {
+        ULONG LeapSecondFlags;
+        struct
+        {
+            ULONG SixtySecondEnabled : 1;
+            ULONG Reserved : 31;
+        };
+    };
+    ULONG NtGlobalFlag2;
+    ULONGLONG ExtendedFeatureDisableMask; // since WIN11
+} PEB, * PPEB;
 
 typedef struct _TEB_ACTIVE_FRAME_CONTEXT {
     ULONG Flags;
@@ -6289,6 +6311,64 @@ typedef struct _GDI_TEB_BATCH {
     ULONG	Buffer[GDI_BATCH_BUFFER_SIZE];
 } GDI_TEB_BATCH, *PGDI_TEB_BATCH;
 
+typedef struct _ACTIVATION_CONTEXT_DATA {
+    ULONG Magic;
+    ULONG HeaderSize;
+    ULONG FormatVersion;
+    ULONG TotalSize;
+    ULONG DefaultTocOffset;
+    ULONG ExtendedTocOffset;
+    ULONG AssemblyRosterOffset; 
+    ULONG Flags;
+} ACTIVATION_CONTEXT_DATA, * PACTIVATION_CONTEXT_DATA;
+
+typedef struct _ASSEMBLY_STORAGE_MAP_ENTRY {
+    ULONG Flags;
+    UNICODE_STRING DosPath;
+    HANDLE Handle;
+} ASSEMBLY_STORAGE_MAP_ENTRY, * PASSEMBLY_STORAGE_MAP_ENTRY;
+
+typedef struct _ASSEMBLY_STORAGE_MAP {
+    ULONG Flags;
+    ULONG AssemblyCount;
+    PASSEMBLY_STORAGE_MAP_ENTRY* AssemblyArray;
+} ASSEMBLY_STORAGE_MAP, * PASSEMBLY_STORAGE_MAP;
+
+typedef VOID(NTAPI* PACTIVATION_CONTEXT_NOTIFY_ROUTINE)(
+    _In_ ULONG NotificationType,
+    _In_ struct _ACTIVATION_CONTEXT* ActivationContext,
+    _In_ PACTIVATION_CONTEXT_DATA ActivationContextData,
+    _In_opt_ PVOID NotificationContext,
+    _In_opt_ PVOID NotificationData,
+    _Inout_ PBOOLEAN DisableThisNotification
+    );
+
+typedef struct _ACTIVATION_CONTEXT {
+    LONG RefCount;
+    ULONG Flags;
+    PACTIVATION_CONTEXT_DATA ActivationContextData;
+    PACTIVATION_CONTEXT_NOTIFY_ROUTINE NotificationRoutine;
+    PVOID NotificationContext;
+    ULONG SentNotifications[8];
+    ULONG DisabledNotifications[8];
+    ASSEMBLY_STORAGE_MAP StorageMap;
+    PASSEMBLY_STORAGE_MAP_ENTRY InlineStorageMapEntries[32];
+} ACTIVATION_CONTEXT, * PACTIVATION_CONTEXT;
+
+typedef struct _RTL_ACTIVATION_CONTEXT_STACK_FRAME {
+    struct _RTL_ACTIVATION_CONTEXT_STACK_FRAME* Previous;
+    PACTIVATION_CONTEXT ActivationContext;
+    ULONG Flags;
+} RTL_ACTIVATION_CONTEXT_STACK_FRAME, * PRTL_ACTIVATION_CONTEXT_STACK_FRAME;
+
+typedef struct _ACTIVATION_CONTEXT_STACK {
+    PRTL_ACTIVATION_CONTEXT_STACK_FRAME ActiveFrame;
+    LIST_ENTRY FrameListCache;
+    ULONG Flags;
+    ULONG NextCookieSequenceNumber;
+    ULONG StackId;
+} ACTIVATION_CONTEXT_STACK, * PACTIVATION_CONTEXT_STACK;
+
 typedef struct _TEB {
     NT_TIB NtTib;
 
@@ -6307,16 +6387,39 @@ typedef struct _TEB {
     PVOID WOW32Reserved;
     LCID CurrentLocale;
     ULONG FpSoftwareStatusRegister;
-    PVOID SystemReserved1[54];
-    NTSTATUS ExceptionCode;
-    PVOID ActivationContextStackPointer;
-#if defined(_M_X64)
-    UCHAR SpareBytes[24];
+    PVOID ReservedForDebuggerInstrumentation[16];
+#ifdef _WIN64
+    PVOID SystemReserved1[30];
 #else
-    UCHAR SpareBytes[36];
+    PVOID SystemReserved1[26];
 #endif
-    ULONG TxFsContext;
 
+    CHAR PlaceholderCompatibilityMode;
+    BOOLEAN PlaceholderHydrationAlwaysExplicit;
+    CHAR PlaceholderReserved[10];
+
+    ULONG ProxiedProcessId;
+    ACTIVATION_CONTEXT_STACK ActivationStack;
+
+    UCHAR WorkingOnBehalfTicket[8];
+    NTSTATUS ExceptionCode;
+
+    PACTIVATION_CONTEXT_STACK ActivationContextStackPointer;
+    ULONG_PTR InstrumentationCallbackSp;
+    ULONG_PTR InstrumentationCallbackPreviousPc;
+    ULONG_PTR InstrumentationCallbackPreviousSp;
+#ifdef _WIN64
+    ULONG TxFsContext;
+#endif
+
+    BOOLEAN InstrumentationCallbackDisabled;
+#ifdef _WIN64
+    BOOLEAN UnalignedLoadStoreExceptions;
+#endif
+#ifndef _WIN64
+    UCHAR SpareBytes[23];
+    ULONG TxFsContext;
+#endif
     GDI_TEB_BATCH GdiTebBatch;
     CLIENT_ID RealClientId;
     HANDLE GdiCachedProcessHandle;
@@ -6346,7 +6449,7 @@ typedef struct _TEB {
     PVOID DbgSsReserved[2];
 
     ULONG HardErrorMode;
-#if defined(_M_X64)
+#ifdef _WIN64
     PVOID Instrumentation[11];
 #else
     PVOID Instrumentation[9];
@@ -6354,7 +6457,7 @@ typedef struct _TEB {
     GUID ActivityId;
 
     PVOID SubProcessTag;
-    PVOID EtwLocalData;
+    PVOID PerflibData;
     PVOID EtwTraceData;
     PVOID WinSockData;
     ULONG GdiBatchCount;
@@ -6374,13 +6477,13 @@ typedef struct _TEB {
 
     ULONG GuaranteedStackBytes;
     PVOID ReservedForPerf;
-    PVOID ReservedForOle;
+    PVOID ReservedForOle; // tagSOleTlsData
     ULONG WaitingOnLoaderLock;
     PVOID SavedPriorityState;
-    ULONG_PTR SoftPatchPtr1;
+    ULONG_PTR ReservedForCodeCoverage;
     PVOID ThreadPoolData;
-    PVOID *TlsExpansionSlots;
-#if defined(_M_X64)
+    PVOID* TlsExpansionSlots;
+#ifdef _WIN64
     PVOID DeallocationBStore;
     PVOID BStoreLimit;
 #endif
@@ -6388,7 +6491,7 @@ typedef struct _TEB {
     ULONG IsImpersonating;
     PVOID NlsCache;
     PVOID pShimData;
-    ULONG HeapVirtualAffinity;
+    ULONG HeapData;
     HANDLE CurrentTransactionHandle;
     PTEB_ACTIVE_FRAME ActiveFrame;
     PVOID FlsData;
@@ -6431,16 +6534,15 @@ typedef struct _TEB {
     PVOID TxnScopeExitCallback;
     PVOID TxnScopeContext;
     ULONG LockCount;
-    ULONG SpareUlong0;
+    LONG WowTebOffset;
     PVOID ResourceRetValue;
-    //PVOID ReservedForWdf;
-    //ULONGLONG ReservedForCrt;
-    //GUID EffectiveContainerId;
-    //ULONGLONG LastSleepCounter;
-    //ULONG SpinCallCount;
-    //UCHAR Padding8[4];
-    //ULONGLONG ExtendedFeatureDisableMask;
-} TEB, *PTEB;
+    PVOID ReservedForWdf;
+    ULONGLONG ReservedForCrt;
+    GUID EffectiveContainerId;
+    ULONGLONG LastSleepCounter;
+    ULONG SpinCallCount;
+    ULONGLONG ExtendedFeatureDisableMask;
+} TEB, * PTEB;
 
 typedef struct _PROCESS_DEVICEMAP_INFORMATION {
     union {

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       ALSYSIO64.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.31
 *
-*  DATE:        01 Dec 2022
+*  DATE:        14 Apr 2023
 *
 *  ALSYSIO64 driver routines.
 *
@@ -70,29 +70,24 @@ BOOL WINAPI AlcWritePhysicalMemory(
     value = FIELD_OFFSET(ALCPU_WRITE_REQUEST, Data) + NumberOfBytes;
     size = ALIGN_UP_BY(value, PAGE_SIZE);
 
-    pRequest = (ALCPU_WRITE_REQUEST*)VirtualAlloc(NULL, size,
-        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    pRequest = (ALCPU_WRITE_REQUEST*)supAllocateLockedMemory(size,
+        MEM_COMMIT | MEM_RESERVE, 
+        PAGE_READWRITE);
 
     if (pRequest) {
 
-        if (VirtualLock(pRequest, size)) {
+        pRequest->PhysicalAddress.QuadPart = PhysicalAddress;
+        pRequest->Size = NumberOfBytes;
+        RtlCopyMemory(&pRequest->Data, Buffer, NumberOfBytes);
 
-            pRequest->PhysicalAddress.QuadPart = PhysicalAddress;
-            pRequest->Size = NumberOfBytes;
-            RtlCopyMemory(&pRequest->Data, Buffer, NumberOfBytes);
+        bResult = supCallDriver(DeviceHandle,
+            IOCTL_ALCPU_WRITE_MEMORY,
+            pRequest,
+            (ULONG)size,
+            NULL,
+            0);
 
-            bResult = supCallDriver(DeviceHandle,
-                IOCTL_ALCPU_WRITE_MEMORY,
-                pRequest,
-                (ULONG)size,
-                NULL,
-                0);
-
-            VirtualUnlock(pRequest, size);
-        }
-
-        VirtualFree(pRequest, 0, MEM_RELEASE);
-
+        supFreeLockedMemory(pRequest, size);
     }
 
     return bResult;

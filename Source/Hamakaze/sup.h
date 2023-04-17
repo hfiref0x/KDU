@@ -113,6 +113,15 @@ PVOID FORCEINLINE supHeapAlloc(
 BOOL FORCEINLINE supHeapFree(
     _In_ PVOID Memory);
 
+PVOID supAllocateLockedMemory(
+    _In_ SIZE_T Size,
+    _In_ ULONG AllocationType,
+    _In_ ULONG Protect);
+
+BOOL supFreeLockedMemory(
+    _In_ PVOID Memory,
+    _In_ SIZE_T LockedSize);
+
 PVOID supMapPhysicalMemory(
     _In_ HANDLE SectionHandle,
     _In_ ULONG_PTR PhysicalAddress,

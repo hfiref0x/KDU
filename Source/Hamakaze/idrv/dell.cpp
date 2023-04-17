@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.31
 *
-*  DATE:        24 Mar 2023
+*  DATE:        14 Apr 2023
 *
 *  Dell drivers routines.
 *
@@ -132,35 +132,30 @@ BOOL WINAPI DbUtilReadVirtualMemory(
 
     size = (SIZE_T)FIELD_OFFSET(DBUTIL_READWRITE_REQUEST, Data) + NumberOfBytes;
 
-    pRequest = (DBUTIL_READWRITE_REQUEST*)VirtualAlloc(NULL, size,
+    pRequest = (DBUTIL_READWRITE_REQUEST*)supAllocateLockedMemory(size,
         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
     if (pRequest) {
 
-        if (VirtualLock(pRequest, size)) {
+        pRequest->Unused = 0xDEADBEEF;
+        pRequest->VirtualAddress = VirtualAddress;
+        pRequest->Offset = 0;
 
-            pRequest->Unused = 0xDEADBEEF;
-            pRequest->VirtualAddress = VirtualAddress;
-            pRequest->Offset = 0;
+        bResult = supCallDriver(DeviceHandle,
+            IOCTL_DBUTIL_READVM,
+            pRequest,
+            (ULONG)size,
+            pRequest,
+            (ULONG)size);
 
-            bResult = supCallDriver(DeviceHandle,
-                IOCTL_DBUTIL_READVM,
-                pRequest,
-                (ULONG)size,
-                pRequest,
-                (ULONG)size);
-
-            if (!bResult) {
-                dwError = GetLastError();
-            }
-            else {
-                RtlCopyMemory(Buffer, pRequest->Data, NumberOfBytes);
-            }
-
-            VirtualUnlock(pRequest, size);
+        if (!bResult) {
+            dwError = GetLastError();
+        }
+        else {
+            RtlCopyMemory(Buffer, pRequest->Data, NumberOfBytes);
         }
 
-        VirtualFree(pRequest, 0, MEM_RELEASE);
+        supFreeLockedMemory(pRequest, size);
     }
 
     SetLastError(dwError);
@@ -191,32 +186,27 @@ BOOL WINAPI DbUtilWriteVirtualMemory(
 
     size = (SIZE_T)FIELD_OFFSET(DBUTIL_READWRITE_REQUEST, Data) + NumberOfBytes;
 
-    pRequest = (DBUTIL_READWRITE_REQUEST*)VirtualAlloc(NULL, size,
+    pRequest = (DBUTIL_READWRITE_REQUEST*)supAllocateLockedMemory(size,
         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
     if (pRequest) {
 
-        if (VirtualLock(pRequest, size)) {
+        pRequest->Unused = 0xDEADBEEF;
+        pRequest->VirtualAddress = VirtualAddress;
+        pRequest->Offset = 0;
+        RtlCopyMemory(&pRequest->Data, Buffer, NumberOfBytes);
 
-            pRequest->Unused = 0xDEADBEEF;
-            pRequest->VirtualAddress = VirtualAddress;
-            pRequest->Offset = 0;
-            RtlCopyMemory(&pRequest->Data, Buffer, NumberOfBytes);
+        bResult = supCallDriver(DeviceHandle,
+            IOCTL_DBUTIL_WRITEVM,
+            pRequest,
+            (ULONG)size,
+            pRequest,
+            (ULONG)size);
 
-            bResult = supCallDriver(DeviceHandle,
-                IOCTL_DBUTIL_WRITEVM,
-                pRequest,
-                (ULONG)size,
-                pRequest,
-                (ULONG)size);
+        if (!bResult)
+            dwError = GetLastError();
 
-            if (!bResult)
-                dwError = GetLastError();
-
-            VirtualUnlock(pRequest, size);
-        }
-
-        VirtualFree(pRequest, 0, MEM_RELEASE);
+        supFreeLockedMemory(pRequest, size);
     }
 
     SetLastError(dwError);
@@ -244,36 +234,33 @@ BOOL WINAPI DpdReadPhysicalMemory(
     SIZE_T size;
 
     size = sizeof(PCDCSRVC_READWRITE_REQUEST) + NumberOfBytes;
-    pvBuffer = (PVOID)VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+    pvBuffer = (PVOID)supAllocateLockedMemory(size, 
+        MEM_COMMIT | MEM_RESERVE, 
+        PAGE_READWRITE);
 
     if (pvBuffer) {
 
-        if (VirtualLock(pvBuffer, size)) {
+        request.PhysicalAddress.QuadPart = PhysicalAddress;
+        request.Size = NumberOfBytes;
+        request.Granularity = 0; //use direct memmove
 
-            request.PhysicalAddress.QuadPart = PhysicalAddress;
-            request.Size = NumberOfBytes;
-            request.Granularity = 0; //use direct memmove
+        bResult = supCallDriver(DeviceHandle,
+            IOCTL_PCDCSRVC_READPHYSMEM,
+            &request,
+            sizeof(PCDCSRVC_READWRITE_REQUEST),
+            pvBuffer,
+            NumberOfBytes);
 
-            bResult = supCallDriver(DeviceHandle,
-                IOCTL_PCDCSRVC_READPHYSMEM,
-                &request,
-                sizeof(PCDCSRVC_READWRITE_REQUEST),
+        if (bResult) {
+
+            RtlCopyMemory(Buffer,
                 pvBuffer,
                 NumberOfBytes);
 
-            if (bResult) {
-
-                RtlCopyMemory(Buffer,
-                    pvBuffer,
-                    NumberOfBytes);
-
-            }
-
-            VirtualUnlock(pvBuffer, size);
         }
 
-        VirtualFree(pvBuffer, 0, MEM_RELEASE);
-
+        supFreeLockedMemory(pvBuffer, size);
     }
 
     return bResult;
@@ -298,36 +285,33 @@ BOOL WINAPI DpdWritePhysicalMemory(
     SIZE_T size;
 
     size = sizeof(PCDCSRVC_READWRITE_REQUEST) + NumberOfBytes;
-    pRequest = (PCDCSRVC_READWRITE_REQUEST*)VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+    pRequest = (PCDCSRVC_READWRITE_REQUEST*)supAllocateLockedMemory(size,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE);
 
     if (pRequest) {
 
-        if (VirtualLock(pRequest, size)) {
+        pRequest->PhysicalAddress.QuadPart = PhysicalAddress;
+        pRequest->Granularity = 0; //use direct memmove
+        pRequest->Size = NumberOfBytes;
 
-            pRequest->PhysicalAddress.QuadPart = PhysicalAddress;
-            pRequest->Granularity = 0; //use direct memmove
-            pRequest->Size = NumberOfBytes;
+        //
+        // Append data buffer to the tail.
+        //
+        RtlCopyMemory(
+            RtlOffsetToPointer(pRequest, sizeof(PCDCSRVC_READWRITE_REQUEST)),
+            Buffer,
+            NumberOfBytes);
 
-            //
-            // Append data buffer to the tail.
-            //
-            RtlCopyMemory(
-                RtlOffsetToPointer(pRequest, sizeof(PCDCSRVC_READWRITE_REQUEST)),
-                Buffer,
-                NumberOfBytes);
+        bResult = supCallDriver(DeviceHandle,
+            IOCTL_PCDCSRVC_WRITEPHYSMEM,
+            pRequest,
+            (ULONG)size,
+            NULL,
+            0);
 
-            bResult = supCallDriver(DeviceHandle,
-                IOCTL_PCDCSRVC_WRITEPHYSMEM,
-                pRequest,
-                (ULONG)size,
-                NULL,
-                0);
-
-            VirtualUnlock(pRequest, size);
-        }
-
-        VirtualFree(pRequest, 0, MEM_RELEASE);
-
+        supFreeLockedMemory(pRequest, size);
     }
 
     return bResult;

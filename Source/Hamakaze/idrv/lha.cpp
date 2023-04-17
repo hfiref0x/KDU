@@ -77,33 +77,27 @@ BOOL WINAPI LHAWritePhysicalMemory(
     value = FIELD_OFFSET(LHA_WRITE_PHYSICAL_MEMORY, Data) + NumberOfBytes;
     size = ALIGN_UP_BY(value, PAGE_SIZE);
 
-    pRequest = (LHA_WRITE_PHYSICAL_MEMORY*)VirtualAlloc(NULL, size,
-        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    pRequest = (LHA_WRITE_PHYSICAL_MEMORY*)supAllocateLockedMemory(size,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE);
 
     if (pRequest) {
 
-        if (VirtualLock(pRequest, size)) {
+        pRequest->Address = PhysicalAddress;
+        pRequest->Size = NumberOfBytes;
+        RtlCopyMemory(&pRequest->Data, Buffer, NumberOfBytes);
 
-            pRequest->Address = PhysicalAddress;
-            pRequest->Size = NumberOfBytes;
-            RtlCopyMemory(&pRequest->Data, Buffer, NumberOfBytes);
+        bResult = supCallDriver(DeviceHandle,
+            IOCTL_LHA_WRITE_PHYSICAL_MEMORY,
+            pRequest,
+            (ULONG)size,
+            NULL,
+            0);
 
-            bResult = supCallDriver(DeviceHandle,
-                IOCTL_LHA_WRITE_PHYSICAL_MEMORY,
-                pRequest,
-                (ULONG)size,
-                NULL,
-                0);
-
-            if (!bResult)
-                dwError = GetLastError();
-
-            VirtualUnlock(pRequest, size);
-        }
-        else {
+        if (!bResult)
             dwError = GetLastError();
-        }
-        VirtualFree(pRequest, 0, MEM_RELEASE);
+
+        supFreeLockedMemory(pRequest, size);
     }
 
     SetLastError(dwError);
