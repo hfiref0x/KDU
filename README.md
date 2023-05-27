@@ -138,6 +138,9 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 31          | Hilscher       | physmem     | Physical Memory Viewer for Windows | Original          | 1.0.0.0                     |  Cert, Name          |
 | 32          | Lenovo         | LDD         | Lenovo Diagnostics Driver for Windows 10 and later | Original          | 1.0.4.0 and below               |  Cert, Name          |
 | 33          | Dell           | pcdsrvc_x64 | Dell PC Doctor                     | Original          | 6.2.2.0                     |                      |
+| 34          | MSI            | winio       | MSI Foundation Service             | WINIO             | Undefined                   |                      |
+| 35          | HP             | EtdSupport  | ETDi Support Driver                | Original          | 18.0 and below              |                      |
+| 36          | Pavel Yosifovich | KExplore  | Kernel Explorer                | Original          | Undefined              |                      |
 
 ###### *At commit time, data maybe inaccurate.
 

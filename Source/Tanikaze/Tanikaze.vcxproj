@@ -198,12 +198,15 @@
     <None Include="drv\ene2.bin" />
     <None Include="drv\eneio64.bin" />
     <None Include="drv\enetechio64.bin" />
+    <None Include="drv\etdsupp.bin" />
     <None Include="drv\gdrv.bin" />
     <None Include="drv\glckio2.bin" />
     <None Include="drv\gmerdrv.bin" />
+    <None Include="drv\heavenluo.bin" />
     <None Include="drv\HW64.bin" />
     <None Include="drv\inpoutx64.bin" />
     <None Include="drv\iQVM64.bin" />
+    <None Include="drv\KExplore.bin" />
     <None Include="drv\kprocesshacker.bin" />
     <None Include="drv\LDD.bin" />
     <None Include="drv\lha.bin" />

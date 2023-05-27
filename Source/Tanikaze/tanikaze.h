@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.12
+*  VERSION:     1.13
 *
-*  DATE:        24 Mar 2023
+*  DATE:        20 May 2023
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -533,6 +533,51 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"pcdsrvc_x64",
         (LPWSTR)L"pcdsrvc_x64",
         (LPWSTR)L"PC-Doctor, Inc."
+     },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_MSI_WINIO,
+        KDU_PROVIDER_MSI_WINIO,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseWinIo,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"MSI Foundation Service",
+        (LPWSTR)L"WinIo",
+        (LPWSTR)L"WinIo",
+        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+     },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_HP_ETDSUPP,
+        KDU_PROVIDER_HP_ETDSUPPORT,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_VIRTUAL,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"ETDi Support Driver",
+        (LPWSTR)L"EtdSupport",
+        (LPWSTR)L"EtdSupport_18.0",
+        (LPWSTR)L"HP Inc."
+     },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_KEXPLORE,
+        KDU_PROVIDER_KEXPLORE,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_PREFER_VIRTUAL,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Kernel Explorer Driver",
+        (LPWSTR)L"KExplore",
+        (LPWSTR)L"KExplore",
+        (LPWSTR)L"Pavel Yosifovich"
      }
 
 };

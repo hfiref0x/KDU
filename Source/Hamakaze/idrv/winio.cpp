@@ -927,6 +927,7 @@ BOOL WINAPI WinIoRegisterDriver(
         g_SpecifyOffset = TRUE;
         break;
 
+    case IDR_MSI_WINIO:
     default:
         g_WinIoMapMemoryRoutine = WinIoMapMemory;
         g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;
