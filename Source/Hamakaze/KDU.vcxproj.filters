@@ -192,6 +192,12 @@
     <ClCompile Include="sym.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\hp.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\zodiacon.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -358,6 +364,12 @@
     </ClInclude>
     <ClInclude Include="sym.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\hp.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\zodiacon.h">
+      <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

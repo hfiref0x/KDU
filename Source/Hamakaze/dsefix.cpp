@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.32
 *
-*  DATE:        14 Apr 2023
+*  DATE:        20 May 2023
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -19,6 +19,18 @@
 *******************************************************************************/
 
 #include "global.h"
+
+
+/*
+* 
+*  Note:
+* 
+*  Since Windows 11 the entire CiPolicy section of CI.dll is virtual memory write protected.
+*  Attempt to write there will result in a bugcheck.
+*
+*  Take this into account when executing 'dsefix' operations.
+* 
+*/
 
 #ifdef __cplusplus
 extern "C" {

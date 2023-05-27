@@ -130,6 +130,12 @@ IDR_LDD                 RCDATA                  "drv\\LDD.bin"
 
 IDR_PCDSRVC             RCDATA                  "drv\\pcdsrvc_x64.bin"
 
+IDR_MSI_WINIO           RCDATA                  "drv\\heavenluo.bin"
+
+IDR_HP_ETDSUPP          RCDATA                  "drv\\etdsupp.bin"
+
+IDR_KEXPLORE            RCDATA                  "drv\\KExplore.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -137,8 +143,8 @@ IDR_PCDSRVC             RCDATA                  "drv\\pcdsrvc_x64.bin"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,3,2304
- PRODUCTVERSION 1,1,3,2304
+ FILEVERSION 1,1,4,2306
+ PRODUCTVERSION 1,1,4,2306
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -155,12 +161,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility Database"
-            VALUE "FileVersion", "1.1.3.2304"
+            VALUE "FileVersion", "1.1.4.2306"
             VALUE "InternalName", "Tanikaze.dll"
             VALUE "LegalCopyright", "Copyright (C) 2020 - 2023 KDU Project"
             VALUE "OriginalFilename", "Tanikaze.dll"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.1.3.2304"
+            VALUE "ProductVersion", "1.1.4.2306"
         END
     END
     BLOCK "VarFileInfo"

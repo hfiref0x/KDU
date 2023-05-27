@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2011 - 2022 UGN/HE
+*  (C) COPYRIGHT AUTHORS, 2011 - 2023 UGN/HE
 *
 *  TITLE:       NTSUP.C
 *
-*  VERSION:     2.14
+*  VERSION:     2.18
 *
-*  DATE:        07 Aug 2022
+*  DATE:        18 Feb 2023
 *
 *  Native API support functions.
 *
@@ -116,9 +116,9 @@ BOOL ntsupVirtualLock(
     _In_ SIZE_T dwSize
 )
 {
-    return (NT_SUCCESS(NtLockVirtualMemory(NtCurrentProcess(), 
-        &lpAddress, 
-        &dwSize, 
+    return (NT_SUCCESS(NtLockVirtualMemory(NtCurrentProcess(),
+        &lpAddress,
+        &dwSize,
         MAP_PROCESS)));
 }
 
@@ -135,9 +135,9 @@ BOOL ntsupVirtualUnlock(
     _In_ SIZE_T dwSize
 )
 {
-    return (NT_SUCCESS(NtUnlockVirtualMemory(NtCurrentProcess(), 
-        &lpAddress, 
-        &dwSize, 
+    return (NT_SUCCESS(NtUnlockVirtualMemory(NtCurrentProcess(),
+        &lpAddress,
+        &dwSize,
         MAP_PROCESS)));
 }
 
@@ -341,7 +341,7 @@ BOOL ntsupFindModuleEntryByAddress(
 * Find Module Name for given Address.
 *
 */
-BOOL ntsupFindModuleNameByAddress(
+PVOID ntsupFindModuleNameByAddress(
     _In_ PRTL_PROCESS_MODULES pModulesList,
     _In_ PVOID Address,
     _Inout_	LPWSTR Buffer,
@@ -356,7 +356,7 @@ BOOL ntsupFindModuleNameByAddress(
     if ((Buffer == NULL) ||
         (ccBuffer == 0))
     {
-        return FALSE;
+        return NULL;
     }
 
     modulesCount = pModulesList->NumberOfModules;
@@ -383,14 +383,14 @@ BOOL ntsupFindModuleNameByAddress(
 
                 RtlFreeUnicodeString(&usConvertedName);
 
-                return TRUE;
+                return &pModulesList->Modules[i];
             }
             else {
-                return FALSE;
+                return NULL;
             }
         }
     }
-    return FALSE;
+    return NULL;
 }
 
 /*
@@ -1442,6 +1442,77 @@ PVOID ntsupFindPattern(
 }
 
 /*
+* ntsupFindPatternEx
+*
+* Purpose:
+*
+* Lookup pattern in buffer with specified mask.
+*
+*/
+DWORD ntsupFindPatternEx(
+    _In_ PATTERN_SEARCH_PARAMS* SearchParams
+)
+{
+    PBYTE   p;
+    DWORD   c, i, n;
+    BOOLEAN found;
+    BYTE    low, high;
+
+    DWORD   bufferSize;
+
+    if (SearchParams == NULL)
+        return 0;
+
+    if ((SearchParams->PatternSize == 0) || (SearchParams->PatternSize > SearchParams->BufferSize))
+        return 0;
+
+    bufferSize = SearchParams->BufferSize - SearchParams->PatternSize;
+
+    for (n = 0, p = SearchParams->Buffer, c = 0; c <= bufferSize; ++p, ++c)
+    {
+        found = 1;
+        for (i = 0; i < SearchParams->PatternSize; ++i)
+        {
+            low = p[i] & 0x0f;
+            high = p[i] & 0xf0;
+
+            if (SearchParams->Mask[i] & 0xf0)
+            {
+                if (high != (SearchParams->Pattern[i] & 0xf0))
+                {
+                    found = 0;
+                    break;
+                }
+            }
+
+            if (SearchParams->Mask[i] & 0x0f)
+            {
+                if (low != (SearchParams->Pattern[i] & 0x0f))
+                {
+                    found = 0;
+                    break;
+                }
+            }
+
+        }
+
+        if (found) {
+
+            if (SearchParams->Callback(p,
+                SearchParams->PatternSize,
+                SearchParams->CallbackContext))
+            {
+                return n + 1;
+            }
+
+            n++;
+        }
+    }
+
+    return n;
+}
+
+/*
 * ntsupOpenProcess
 *
 * Purpose:
@@ -1940,6 +2011,26 @@ VOID ntsupPurgeSystemCache(
         smlc = MemoryPurgeStandbyList;
         NtSetSystemInformation(SystemMemoryListInformation, (PVOID)&smlc, sizeof(smlc));
     }
+}
+
+/*
+* ntsupGetSystemRoot
+*
+* Purpose:
+*
+* Return system root directory silo session aware.
+*
+*/
+PWSTR ntsupGetSystemRoot(
+    VOID
+)
+{
+    PEB* peb = NtCurrentPeb();
+
+    if (peb->SharedData && peb->SharedData->ServiceSessionId)
+        return peb->SharedData->NtSystemRoot;
+    else
+        return USER_SHARED_DATA->NtSystemRoot;
 }
 
 /*

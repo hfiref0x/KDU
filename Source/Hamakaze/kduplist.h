@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.31
+*  VERSION:     1.32
 *
-*  DATE:        10 Apr 2023
+*  DATE:        20 May 2023
 *
 *  Providers global list.
 *
@@ -41,6 +41,8 @@
 #include "idrv/ryzen.h"
 #include "idrv/hilscher.h"
 #include "idrv/lenovo.h"
+#include "idrv/hp.h"
+#include "idrv/zodiacon.h"
 
 //
 // Victims public array.
@@ -897,6 +899,77 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWritePhysicalMemory)DpdWritePhysicalMemory,
 
         (provValidatePrerequisites)NULL
-    }
+    },
 
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)WinIoReadKernelVirtualMemory,
+        (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)WinIoVirtualToPhysical,
+        (provQueryPML4)WinIoQueryPML4Value,
+        (provReadPhysicalMemory)WinIoReadPhysicalMemory,
+        (provWritePhysicalMemory)WinIoWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)HpEtdReadVirtualMemory,
+        (provWriteKernelVM)HpEtdWriteVirtualMemory,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL,
+
+        (provValidatePrerequisites)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)KObExpReadVirtualMemory,
+        (provWriteKernelVM)KObExpWriteVirtualMemory,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL,
+
+        (provValidatePrerequisites)NULL
+    }
 };
