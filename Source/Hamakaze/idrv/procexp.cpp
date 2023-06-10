@@ -4,9 +4,9 @@
 *
 *  TITLE:       PROCEXP.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.32
 *
-*  DATE:        20 Mar 2023
+*  DATE:        10 Jun 2023
 *
 *  Process Explorer driver routines.
 *
@@ -36,40 +36,10 @@ static KDU_VICTIM_PROVIDER g_ProcExpVictimSelf{
         sizeof(g_ProcExpSig)              // Victim dispatch bytes size
 };
 
-/*
-* PexpMapMemory
-*
-* Purpose:
-*
-* Map physical memory.
-*
-*/
-PVOID PexpMapMemory(
-    _In_ ULONG_PTR PhysicalAddress,
-    _In_ ULONG NumberOfBytes,
-    _In_ BOOL MapForWrite
-)
-{
-    return supMapPhysicalMemory(g_PexPhysicalMemorySection,
-        PhysicalAddress,
-        NumberOfBytes,
-        MapForWrite);
-}
+#define PexpMapMemory(PhysicalAddress, NumberOfBytes, MapForWrite) \
+    supMapPhysicalMemory(g_PexPhysicalMemorySection, PhysicalAddress, NumberOfBytes, MapForWrite)
 
-/*
-* PexpUnmapMemory
-*
-* Purpose:
-*
-* Unmap physical memory.
-*
-*/
-VOID PexpUnmapMemory(
-    _In_ PVOID BaseAddress
-)
-{
-    supUnmapPhysicalMemory(BaseAddress);
-}
+#define PexpUnmapMemory(BaseAddress) supUnmapPhysicalMemory(BaseAddress)
 
 /*
 * PexpReadWritePhysicalMemory

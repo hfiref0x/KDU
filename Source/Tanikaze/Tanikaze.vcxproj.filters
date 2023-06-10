@@ -169,6 +169,12 @@
     <None Include="drv\KExplore.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\KObjExp.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\KRegExp.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

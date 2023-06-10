@@ -188,7 +188,7 @@ VOID KDUTest()
    // KDUTestLoad();
 
    // TestSymbols();
-    Context = KDUProviderCreate(36, 
+    Context = KDUProviderCreate(38, 
         FALSE, 
         NT_WIN10_20H1, 
         KDU_SHELLCODE_V1, 

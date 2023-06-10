@@ -207,7 +207,9 @@
     <None Include="drv\inpoutx64.bin" />
     <None Include="drv\iQVM64.bin" />
     <None Include="drv\KExplore.bin" />
+    <None Include="drv\KObjExp.bin" />
     <None Include="drv\kprocesshacker.bin" />
+    <None Include="drv\KRegExp.bin" />
     <None Include="drv\LDD.bin" />
     <None Include="drv\lha.bin" />
     <None Include="drv\mimidrv.bin" />

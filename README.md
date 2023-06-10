@@ -141,6 +141,8 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 34          | MSI            | winio       | MSI Foundation Service             | WINIO             | Undefined                   |                      |
 | 35          | HP             | EtdSupport  | ETDi Support Driver                | Original          | 18.0 and below              |                      |
 | 36          | Pavel Yosifovich | KExplore  | Kernel Explorer                | Original          | Undefined              |                      |
+| 37          | Pavel Yosifovich | KObjExp  | Kernel Object Explorer          | Original          | Undefined              |                      |
+| 38          | Pavel Yosifovich | KRegExp  | Kernel Registry Explorer        | Original          | Undefined              |                      |
 
 ###### *At commit time, data maybe inaccurate.
 

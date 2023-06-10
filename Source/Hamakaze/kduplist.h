@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.32
 *
-*  DATE:        20 May 2023
+*  DATE:        10 Jun 2023
 *
 *  Providers global list.
 *
@@ -969,6 +969,54 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
+
+        (provValidatePrerequisites)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)ZdcStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)ZdcRegisterDriver,
+        (provUnregisterDriver)ZdcUnregisterDriver,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)ZdcReadKernelVirtualMemory,
+        (provWriteKernelVM)ZdcWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)ZdcVirtualToPhysical,
+        (provQueryPML4)ZdcQueryPML4Value,
+        (provReadPhysicalMemory)ZdcReadPhysicalMemory,
+        (provWritePhysicalMemory)ZdcWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)ZdcStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)ZdcRegisterDriver,
+        (provUnregisterDriver)ZdcUnregisterDriver,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)ZdcReadKernelVirtualMemory,
+        (provWriteKernelVM)ZdcWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)ZdcVirtualToPhysical,
+        (provQueryPML4)ZdcQueryPML4Value,
+        (provReadPhysicalMemory)ZdcReadPhysicalMemory,
+        (provWritePhysicalMemory)ZdcWritePhysicalMemory,
 
         (provValidatePrerequisites)NULL
     }

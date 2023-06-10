@@ -323,6 +323,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Shared\minirtl\strtoul.c" />
     <ClCompile Include="..\Shared\minirtl\ultohex.c" />
     <ClCompile Include="..\Shared\minirtl\_strcat.c" />
     <ClCompile Include="..\Shared\minirtl\_strcpy.c" />

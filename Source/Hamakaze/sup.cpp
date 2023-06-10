@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.32
 *
-*  DATE:        14 Apr 2023
+*  DATE:        10 Jun 2023
 *
 *  Program global support routines.
 *
@@ -309,6 +309,131 @@ BOOL WINAPI supReadWritePhysicalMemory(
     else {
         dwError = GetLastError();
     }
+
+    SetLastError(dwError);
+    return bResult;
+}
+
+/*
+* supOpenPhysicalMemory2
+*
+* Purpose:
+*
+* Locate and open physical memory section for read/write.
+*
+*/
+BOOL WINAPI supOpenPhysicalMemory2(
+    _In_ HANDLE DeviceHandle,
+    _In_ pfnDuplicateHandleCallback DuplicateHandleCallback,
+    _Out_ PHANDLE PhysicalMemoryHandle)
+{
+    BOOL bResult = FALSE;
+    DWORD dwError = ERROR_NOT_FOUND;
+    ULONG sectionObjectType = (ULONG)-1;
+    HANDLE sectionHandle = NULL;
+    PSYSTEM_HANDLE_INFORMATION_EX handleArray = NULL;
+    UNICODE_STRING ustr;
+    OBJECT_ATTRIBUTES obja;
+    UNICODE_STRING usSection;
+
+    do {
+
+        *PhysicalMemoryHandle = NULL;
+
+        RtlInitUnicodeString(&ustr, L"\\KnownDlls\\kernel32.dll");
+        InitializeObjectAttributes(&obja, &ustr, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+        NTSTATUS ntStatus = NtOpenSection(&sectionHandle, SECTION_QUERY, &obja);
+
+        if (!NT_SUCCESS(ntStatus)) {
+            dwError = RtlNtStatusToDosError(ntStatus);
+            break;
+        }
+
+        handleArray = (PSYSTEM_HANDLE_INFORMATION_EX)supGetSystemInfo(SystemExtendedHandleInformation);
+        if (handleArray == NULL) {
+            dwError = ERROR_NOT_ENOUGH_MEMORY;
+            break;
+        }
+
+        ULONG i;
+        DWORD currentProcessId = GetCurrentProcessId();
+
+        for (i = 0; i < handleArray->NumberOfHandles; i++) {
+            if (handleArray->Handles[i].UniqueProcessId == currentProcessId &&
+                handleArray->Handles[i].HandleValue == (ULONG_PTR)sectionHandle)
+            {
+                sectionObjectType = handleArray->Handles[i].ObjectTypeIndex;
+                break;
+            }
+        }
+
+        NtClose(sectionHandle);
+        sectionHandle = NULL;
+
+        if (sectionObjectType == (ULONG)-1) {
+            dwError = ERROR_INVALID_DATATYPE;
+            break;
+        }
+
+        RtlInitUnicodeString(&usSection, L"\\Device\\PhysicalMemory");
+
+        for (i = 0; i < handleArray->NumberOfHandles; i++) {
+            if (handleArray->Handles[i].UniqueProcessId == SYSTEM_PID_MAGIC &&
+                handleArray->Handles[i].ObjectTypeIndex == (ULONG_PTR)sectionObjectType &&
+                handleArray->Handles[i].GrantedAccess == SECTION_ALL_ACCESS)
+            {
+                HANDLE testHandle = NULL;
+
+                if (DuplicateHandleCallback(DeviceHandle,
+                    UlongToHandle(SYSTEM_PID_MAGIC),
+                    NULL,
+                    (HANDLE)handleArray->Handles[i].HandleValue,
+                    &testHandle,
+                    MAXIMUM_ALLOWED,
+                    0,
+                    0))
+                {
+                    union {
+                        BYTE* Buffer;
+                        POBJECT_NAME_INFORMATION Information;
+                    } NameInfo;
+
+                    NameInfo.Buffer = NULL;
+
+                    ntStatus = supQueryObjectInformation(testHandle,
+                        ObjectNameInformation,
+                        (PVOID*)&NameInfo.Buffer,
+                        NULL,
+                        (PNTSUPMEMALLOC)supHeapAlloc,
+                        (PNTSUPMEMFREE)supHeapFree);
+
+                    if (NT_SUCCESS(ntStatus) && NameInfo.Buffer) {
+
+                        if (RtlEqualUnicodeString(&usSection, &NameInfo.Information->Name, TRUE)) {
+                            *PhysicalMemoryHandle = testHandle;
+                            bResult = TRUE;
+                        }
+
+                        supHeapFree(NameInfo.Buffer);
+                    }
+
+                    if (bResult == FALSE)
+                        NtClose(testHandle);
+                }
+
+                if (bResult)
+                    break;
+
+            }
+        }
+
+    } while (FALSE);
+
+    if (sectionHandle) NtClose(sectionHandle);
+    if (handleArray) supHeapFree(handleArray);
+
+    if (bResult) dwError = ERROR_SUCCESS;
 
     SetLastError(dwError);
     return bResult;
@@ -3353,5 +3478,101 @@ VOID supShowWin32Error(
         supPrintfEvent(kduEventError, "%s, GetLastError %lu\r\n",
             Message,
             Win32Error);
+    }
+}
+
+/*
+* supIpcOnException
+*
+* Purpose:
+*
+* ALPC receive exception callback.
+*
+*/
+VOID CALLBACK supIpcOnException(
+    _In_ ULONG ExceptionCode,
+    _In_opt_ PVOID UserContext
+)
+{
+    UNREFERENCED_PARAMETER(UserContext);
+
+    supPrintfEvent(kduEventError,
+        "[!] Exception 0x%lx thrown during IPC callback\r\n", ExceptionCode);
+}
+
+/*
+* supIpcDuplicateHandleCallback
+*
+* Purpose:
+*
+* ALPC receive message callback for IPC_GET_HANDLE case.
+*
+*/
+VOID CALLBACK supIpcDuplicateHandleCallback(
+    _In_ PCLIENT_ID ClientId,
+    _In_ PKDU_MSG Message,
+    _In_opt_ PVOID UserContext
+)
+{
+    KDU_CONTEXT* Context = (PKDU_CONTEXT)UserContext;
+
+    if (Context == NULL)
+        return;
+
+    __try {
+
+        if (Message->Function == IPC_GET_HANDLE &&
+            Message->Status == STATUS_SECRET_TOO_LONG)
+        {
+            HANDLE hProcess = NULL, hNewHandle = NULL;
+            OBJECT_ATTRIBUTES obja;
+
+            InitializeObjectAttributes(&obja, NULL, 0, NULL, NULL);
+
+            if (NT_SUCCESS(NtOpenProcess(&hProcess,
+                PROCESS_QUERY_INFORMATION | PROCESS_DUP_HANDLE | PROCESS_TERMINATE,
+                &obja,
+                ClientId)))
+            {
+                PVOID wow64Information = NULL;
+                ULONG returnLength;
+                BOOL validLength = FALSE;
+
+                if (NT_SUCCESS(NtQueryInformationProcess(hProcess,
+                    ProcessWow64Information,
+                    &wow64Information,
+                    sizeof(wow64Information),
+                    &returnLength)))
+                {
+                    if (wow64Information == NULL)
+                        validLength = (Message->ReturnedLength == sizeof(HANDLE));
+                    else
+                        validLength = (Message->ReturnedLength == sizeof(ULONG));
+
+                    if (validLength) {
+
+                        if (NT_SUCCESS(NtDuplicateObject(
+                            hProcess,
+                            (HANDLE)Message->Data,
+                            NtCurrentProcess(),
+                            &hNewHandle,
+                            0,
+                            0,
+                            DUPLICATE_SAME_ACCESS)))
+                        {
+                            Context->DeviceHandle = hNewHandle;
+                        }
+
+                    }
+
+                }
+                NtTerminateProcess(hProcess, STATUS_TOO_MANY_SECRETS);
+                NtClose(hProcess);
+            }
+
+        }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return;
     }
 }

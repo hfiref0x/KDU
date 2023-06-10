@@ -38,6 +38,8 @@
 #define IDR_MSI_WINIO                   137
 #define IDR_HP_ETDSUPP                  138
 #define IDR_KEXPLORE                    139
+#define IDR_KOBJEXP                     140
+#define IDR_KREGEXP                     141
 #define IDR_DATA_DBUTILCAT              1000
 #define IDR_DATA_DBUTILINF              1001
 #define IDR_DATA_KMUEXE                 1002
@@ -50,7 +52,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        140
+#define _APS_NEXT_RESOURCE_VALUE        142
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           101

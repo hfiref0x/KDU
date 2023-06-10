@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.13
+*  VERSION:     1.14
 *
-*  DATE:        20 May 2023
+*  DATE:        10 Jun 2023
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -578,7 +578,37 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"KExplore",
         (LPWSTR)L"KExplore",
         (LPWSTR)L"Pavel Yosifovich"
-     }
+     },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        NT_WIN10_22H2,
+        IDR_KOBJEXP,
+        KDU_PROVIDER_KOBJEXP,
+        KDU_VICTIM_PE1702,
+        SourceBaseNone,
+        KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_PREFER_PHYSICAL,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Kernel Object Explorer Driver",
+        (LPWSTR)L"KObjExp",
+        (LPWSTR)L"KObjExp",
+        (LPWSTR)L"Pavel Yosifovich"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        NT_WIN10_22H2,
+        IDR_KREGEXP,
+        KDU_PROVIDER_KREGEXP,
+        KDU_VICTIM_PE1702,
+        SourceBaseNone,
+        KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_PREFER_PHYSICAL,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Kernel Registry Explorer Driver",
+        (LPWSTR)L"KRegExp",
+        (LPWSTR)L"KRegExp",
+        (LPWSTR)L"Pavel Yosifovich"
+    }
 
 };
 

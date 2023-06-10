@@ -8,3 +8,4 @@ SB_SMS_WriteBlockEx   = StubFunc
 SB_SMS_GetCtrlCountEx = StubFunc
 SB_SMS_QuickCommandEx = StubFunc
 RegisterForProvider = UnlockAsIO
+RegisterForProvider2 = ExecutableMain

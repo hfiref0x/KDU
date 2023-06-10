@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       LDR.CPP
 *
-*  VERSION:     1.13
+*  VERSION:     1.14
 *
-*  DATE:        05 Feb 2022
+*  DATE:        10 Jun 2023
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -122,41 +122,56 @@ LPVOID PELoaderGetProcAddress(
     _In_ PCHAR RoutineName
 )
 {
-    PIMAGE_EXPORT_DIRECTORY     ExportDirectory = NULL;
-    PIMAGE_FILE_HEADER          fh1 = NULL;
-    PIMAGE_OPTIONAL_HEADER32    oh32 = NULL;
-    PIMAGE_OPTIONAL_HEADER64    oh64 = NULL;
+    PIMAGE_EXPORT_DIRECTORY ExportDirectory = NULL;
+    USHORT OrdinalNumber;
+    PULONG NameTableBase;
+    PUSHORT NameOrdinalTableBase;
+    PULONG Addr;
+    LONG Result;
+    ULONG High, Low, Middle = 0;
 
-    USHORT      OrdinalNumber;
-    PULONG      NameTableBase;
-    PUSHORT     NameOrdinalTableBase;
-    PULONG      Addr;
-    LONG        Result;
-    ULONG       High, Low, Middle = 0;
+    union {
+        PIMAGE_NT_HEADERS64 nt64;
+        PIMAGE_NT_HEADERS32 nt32;
+        PIMAGE_NT_HEADERS nt;
+    } NtHeaders;
 
-    fh1 = (PIMAGE_FILE_HEADER)((ULONG_PTR)ImageBase + ((PIMAGE_DOS_HEADER)ImageBase)->e_lfanew + sizeof(DWORD));
-    oh32 = (PIMAGE_OPTIONAL_HEADER32)((ULONG_PTR)fh1 + sizeof(IMAGE_FILE_HEADER));
-    oh64 = (PIMAGE_OPTIONAL_HEADER64)oh32;
+    NtHeaders.nt = RtlImageNtHeader(ImageBase);
 
-    if (fh1->Machine == IMAGE_FILE_MACHINE_AMD64) {
-        ExportDirectory = (PIMAGE_EXPORT_DIRECTORY)((ULONG_PTR)ImageBase +
-            oh64->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
-    }
-    else {
-        ExportDirectory = (PIMAGE_EXPORT_DIRECTORY)((ULONG_PTR)ImageBase +
-            oh32->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+    if (NtHeaders.nt == NULL) {
+        SetLastError((DWORD)STATUS_ACCESS_VIOLATION);
+        return NULL;
     }
 
-    NameTableBase = (PULONG)((PBYTE)ImageBase + (ULONG)ExportDirectory->AddressOfNames);
-    NameOrdinalTableBase = (PUSHORT)((PBYTE)ImageBase + (ULONG)ExportDirectory->AddressOfNameOrdinals);
+    if (NtHeaders.nt->FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64) {
+
+        ExportDirectory = (PIMAGE_EXPORT_DIRECTORY)RtlOffsetToPointer(ImageBase,
+            NtHeaders.nt64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+
+    }
+    else if (NtHeaders.nt->FileHeader.Machine == IMAGE_FILE_MACHINE_I386) {
+
+        ExportDirectory = (PIMAGE_EXPORT_DIRECTORY)RtlOffsetToPointer(ImageBase,
+            NtHeaders.nt32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+    }
+    else
+    {
+        SetLastError(ERROR_UNSUPPORTED_TYPE);
+        return NULL;
+    }
+
+    NameTableBase = (PULONG)RtlOffsetToPointer(ImageBase, (ULONG)ExportDirectory->AddressOfNames);
+    NameOrdinalTableBase = (PUSHORT)RtlOffsetToPointer(ImageBase, (ULONG)ExportDirectory->AddressOfNameOrdinals);
     Low = 0;
     High = ExportDirectory->NumberOfNames - 1;
     while (High >= Low) {
+
         Middle = (Low + High) >> 1;
+
         Result = _strcmp_a(
             RoutineName,
-            (char*)ImageBase + NameTableBase[Middle]
-        );
+            (char*)RtlOffsetToPointer(ImageBase, NameTableBase[Middle]));
+
         if (Result < 0) {
             High = Middle - 1;
         }
@@ -168,7 +183,7 @@ LPVOID PELoaderGetProcAddress(
                 break;
             }
         }
-    } //while
+    }
     if (High < Low)
         return NULL;
 
@@ -176,6 +191,6 @@ LPVOID PELoaderGetProcAddress(
     if ((ULONG)OrdinalNumber >= ExportDirectory->NumberOfFunctions)
         return NULL;
 
-    Addr = (PULONG)((PBYTE)ImageBase + (ULONG)ExportDirectory->AddressOfFunctions);
-    return (LPVOID)((PBYTE)ImageBase + Addr[OrdinalNumber]);
+    Addr = (PULONG)RtlOffsetToPointer(ImageBase, (ULONG)ExportDirectory->AddressOfFunctions);
+    return (LPVOID)RtlOffsetToPointer(ImageBase, Addr[OrdinalNumber]);
 }

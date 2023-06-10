@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.32
 *
-*  DATE:        20 May 2023
+*  DATE:        10 Jun 2023
 *
 *  Global consts.
 *
@@ -27,10 +27,13 @@
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
 #define KDU_MAX_NTBUILDNUMBER   0xFFFFFFFF  //Undefined
 
+#define IPC_GET_HANDLE          0x1337
+
 #define KDU_SYNC_MUTANT         0x2306
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
+#define WDAC_POLICY_FILE        L"\\systemroot\\system32\\CodeIntegrity\\driversipolicy.p7b"
 
 #define PROCEXP152              L"PROCEXP152"
 #define PROCEXP1627_DESC        L"Process Explorer v16"
@@ -47,6 +50,9 @@
 #define MAPMEM_BASE_DESC        "MapMem from NTDDK 3.51"
 #define PHYMEM_BASE_DESC        "PhyMem by akui"
 #define RWEVERYTHING_BASE_DESC  "RWEverything by ckimchan.tw"
+
+#define ZODIACON_SYSEXP_EXE     L"SysExp.exe"
+#define ZODIACON_REGEXP_EXE     L"RegExp.exe"
 
 #define CPU_VENDOR_INTEL        "GenuineIntel"
 #define CPU_VENDOR_INTEL_LENGTH sizeof(CPU_VENDOR_INTEL) - sizeof(CHAR)
@@ -132,8 +138,8 @@
 #define IDR_MSI_WINIO                   137
 #define IDR_HP_ETDSUPP                  138
 #define IDR_KEXPLORE                    139
-#define IDR_RESERVED6                   140
-#define IDR_RESERVED7                   141
+#define IDR_KOBJEXP                     140
+#define IDR_KREGEXP                     141
 #define IDR_RESERVED8                   142
 
 //
@@ -176,6 +182,8 @@
 #define KDU_PROVIDER_MSI_WINIO          34
 #define KDU_PROVIDER_HP_ETDSUPPORT      35
 #define KDU_PROVIDER_KEXPLORE           36
+#define KDU_PROVIDER_KOBJEXP            37
+#define KDU_PROVIDER_KREGEXP            38
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

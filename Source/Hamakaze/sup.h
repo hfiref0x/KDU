@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.31
+*  VERSION:     1.32
 *
-*  DATE:        08 Apr 2023
+*  DATE:        10 Jun 2023
 *
 *  Support routines header file.
 *
@@ -42,7 +42,7 @@ typedef BOOL(CALLBACK* pfnOpenProcessCallback)(
 typedef BOOL(CALLBACK* pfnDuplicateHandleCallback)(
     _In_ HANDLE DeviceHandle,
     _In_ HANDLE SourceProcessId, //some drivers need pid not handle
-    _In_ HANDLE SourceProcessHandle,
+    _In_opt_ HANDLE SourceProcessHandle,
     _In_ HANDLE SourceHandle,
     _Out_ PHANDLE TargetHandle,
     _In_ ACCESS_MASK DesiredAccess,
@@ -137,6 +137,11 @@ BOOL WINAPI supReadWritePhysicalMemory(
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes,
     _In_ BOOLEAN DoWrite);
+
+BOOL WINAPI supOpenPhysicalMemory2(
+    _In_ HANDLE DeviceHandle,
+    _In_ pfnDuplicateHandleCallback DuplicateHandleCallback,
+    _Out_ PHANDLE PhysicalMemoryHandle);
 
 BOOL WINAPI supOpenPhysicalMemory(
     _In_ HANDLE DeviceHandle,
@@ -386,3 +391,12 @@ VOID supShowHardError(
 VOID supShowWin32Error(
     _In_ LPCSTR Message,
     _In_ DWORD Win32Error);
+
+VOID CALLBACK supIpcOnException(
+    _In_ ULONG ExceptionCode,
+    _In_opt_ PVOID UserContext);
+
+VOID CALLBACK supIpcDuplicateHandleCallback(
+    _In_ PCLIENT_ID ClientId,
+    _In_ PKDU_MSG Message,
+    _In_opt_ PVOID UserContext);

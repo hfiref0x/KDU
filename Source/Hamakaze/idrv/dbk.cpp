@@ -4,9 +4,9 @@
 *
 *  TITLE:       DBK.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.32
 *
-*  DATE:        09 Apr 2023
+*  DATE:        10 Jun 2023
 *
 *  Cheat Engine's DBK driver routines.
 *
@@ -20,8 +20,6 @@
 #include "global.h"
 #include "idrv/dbk.h"
 #include "idrv/ldrsc.h"
-
-#define DBK_GET_HANDLE 0x1337
 
 #define DBK_LDR_DLL L"u.dll"
 #define DBK_KMU_EXE L"kernelmoduleunloader.exe"
@@ -65,83 +63,6 @@ NTSTATUS CALLBACK DbkSetupCheatEngineObjectNames(
     }
 
     return ntStatus;
-}
-
-/*
-* DbkpIpcOnException
-*
-* Purpose:
-*
-* ALPC receive exception callback.
-*
-*/
-VOID CALLBACK DbkpIpcOnException(
-    _In_ ULONG ExceptionCode,
-    _In_opt_ PVOID UserContext
-)
-{
-    UNREFERENCED_PARAMETER(UserContext);
-
-    supPrintfEvent(kduEventError,
-        "[!] Exception 0x%lx thrown during IPC callback\r\n", ExceptionCode);
-}
-
-/*
-* DbkpIpcCallback
-*
-* Purpose:
-*
-* ALPC receive message callback.
-*
-*/
-VOID CALLBACK DbkpIpcCallback(
-    _In_ PCLIENT_ID ClientId,
-    _In_ PKDU_MSG Message,
-    _In_opt_ PVOID UserContext
-)
-{
-    KDU_CONTEXT* Context = (PKDU_CONTEXT)UserContext;
-
-    if (Context == NULL)
-        return;
-
-    __try {
-
-        if (Message->Function == DBK_GET_HANDLE &&
-            Message->Status == STATUS_SECRET_TOO_LONG &&
-            Message->ReturnedLength == sizeof(ULONG))
-        {
-            HANDLE hProcess = NULL, hNewHandle = NULL;
-            OBJECT_ATTRIBUTES obja;
-
-            InitializeObjectAttributes(&obja, NULL, 0, NULL, NULL);
-
-            if (NT_SUCCESS(NtOpenProcess(&hProcess,
-                PROCESS_DUP_HANDLE | PROCESS_TERMINATE,
-                &obja,
-                ClientId)))
-            {
-                if (NT_SUCCESS(NtDuplicateObject(
-                    hProcess,
-                    (HANDLE)Message->Data,
-                    NtCurrentProcess(),
-                    &hNewHandle,
-                    0,
-                    0,
-                    DUPLICATE_SAME_ACCESS)))
-                {
-                    Context->DeviceHandle = hNewHandle;
-                }
-
-                NtTerminateProcess(hProcess, STATUS_TOO_MANY_SECRETS);
-                NtClose(hProcess);
-            }
-
-        }
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        return;
-    }
 }
 
 /*
@@ -218,8 +139,8 @@ BOOL DbkOpenCheatEngineDriver(
             sizeof(g_KduLoaderShellcode),
             &memIO))
         {
-            ipcServer = IpcStartApiServer(DbkpIpcCallback,
-                DbkpIpcOnException,
+            ipcServer = IpcStartApiServer(supIpcDuplicateHandleCallback,
+                supIpcOnException,
                 NULL,
                 NULL,
                 (PVOID)Context);

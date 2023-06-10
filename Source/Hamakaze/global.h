@@ -77,6 +77,7 @@ extern "C" {
 #include "shared/consts.h"
 #include "shared/kdubase.h"
 #include "sig.h"
+#include "ipcsvc.h"
 #include "sup.h"
 #include "sym.h"
 #include "compress.h"
@@ -87,7 +88,6 @@ extern "C" {
 #include "ps.h"
 #include "pagewalk.h"
 #include "dsefix.h"
-#include "ipcsvc.h"
 #include "diag.h"
 #include "tests.h"
 

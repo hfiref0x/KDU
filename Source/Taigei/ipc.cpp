@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       IPC.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.21
 *
-*  DATE:        10 Feb 2022
+*  DATE:        10 Jun 2023
 *
 *  Inter-process communication.
 *
@@ -19,7 +19,7 @@
 
 #include "global.h"
 
-#define DBK_GET_HANDLE 0x1337
+#define IPC_GET_HANDLE 0x1337
 
 NTSTATUS IpcConnectToPort(
     _In_ LPCWSTR PortName,
@@ -102,7 +102,7 @@ VOID IpcSendHandleToServer(
     if (NT_SUCCESS(ntStatus)) {
 
         ntStatus = IpcSendReply(portHandle,
-            DBK_GET_HANDLE,
+            IPC_GET_HANDLE,
             (ULONG64)ProcessHandle,
             sizeof(ProcessHandle),
             STATUS_SECRET_TOO_LONG);
