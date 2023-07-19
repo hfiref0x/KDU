@@ -195,6 +195,7 @@
     <None Include="drv\dbutildrv2.bin" />
     <None Include="drv\DirectIo64.bin" />
     <None Include="drv\DirectIo64_2.bin" />
+    <None Include="drv\echo_driver.bin" />
     <None Include="drv\ene2.bin" />
     <None Include="drv\eneio64.bin" />
     <None Include="drv\enetechio64.bin" />

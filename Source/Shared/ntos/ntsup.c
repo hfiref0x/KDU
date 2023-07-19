@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTSUP.C
 *
-*  VERSION:     2.18
+*  VERSION:     2.20
 *
-*  DATE:        18 Feb 2023
+*  DATE:        14 Jul 2023
 *
 *  Native API support functions.
 *
@@ -842,7 +842,7 @@ PVOID ntsupGetSystemInfoEx(
         &returnedLength)) == STATUS_INFO_LENGTH_MISMATCH)
     {
         FreeMem(buffer);
-        bufferSize *= 2;
+        bufferSize <<= 1;
 
         if (bufferSize > NTQSI_MAX_BUFFER_LENGTH)
             return NULL;
@@ -1047,7 +1047,7 @@ BOOL ntsupQueryProcessName(
     ULONG NextEntryDelta = 0;
 
     union {
-        PSYSTEM_PROCESSES_INFORMATION Processes;
+        PSYSTEM_PROCESS_INFORMATION Process;
         PBYTE ListRef;
     } List;
 
@@ -1057,18 +1057,18 @@ BOOL ntsupQueryProcessName(
 
         List.ListRef += NextEntryDelta;
 
-        if ((ULONG_PTR)List.Processes->UniqueProcessId == dwProcessId) {
+        if ((ULONG_PTR)List.Process->UniqueProcessId == dwProcessId) {
 
             _strncpy(
                 Buffer,
                 ccBuffer,
-                List.Processes->ImageName.Buffer,
-                List.Processes->ImageName.Length / sizeof(WCHAR));
+                List.Process->ImageName.Buffer,
+                List.Process->ImageName.Length / sizeof(WCHAR));
 
             return TRUE;
         }
 
-        NextEntryDelta = List.Processes->NextEntryDelta;
+        NextEntryDelta = List.Process->NextEntryDelta;
 
     } while (NextEntryDelta);
 
@@ -1088,13 +1088,13 @@ BOOL ntsupQueryProcessName(
 BOOL ntsupQueryProcessEntryById(
     _In_ HANDLE UniqueProcessId,
     _In_ PVOID ProcessList,
-    _Out_ PSYSTEM_PROCESSES_INFORMATION* Entry
+    _Out_ PSYSTEM_PROCESS_INFORMATION* Entry
 )
 {
     ULONG NextEntryDelta = 0;
 
     union {
-        PSYSTEM_PROCESSES_INFORMATION Processes;
+        PSYSTEM_PROCESS_INFORMATION Process;
         PBYTE ListRef;
     } List;
 
@@ -1106,12 +1106,12 @@ BOOL ntsupQueryProcessEntryById(
 
         List.ListRef += NextEntryDelta;
 
-        if (List.Processes->UniqueProcessId == UniqueProcessId) {
-            *Entry = List.Processes;
+        if (List.Process->UniqueProcessId == UniqueProcessId) {
+            *Entry = List.Process;
             return TRUE;
         }
 
-        NextEntryDelta = List.Processes->NextEntryDelta;
+        NextEntryDelta = List.Process->NextEntryDelta;
 
     } while (NextEntryDelta);
 

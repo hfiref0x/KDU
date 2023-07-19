@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.32
+*  VERSION:     1.33
 *
-*  DATE:        10 Jun 2023
+*  DATE:        16 Jul 2023
 *
 *  Providers global list.
 *
@@ -43,6 +43,7 @@
 #include "idrv/lenovo.h"
 #include "idrv/hp.h"
 #include "idrv/zodiacon.h"
+#include "idrv/echodrv.h"
 
 //
 // Victims public array.
@@ -1017,6 +1018,30 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)ZdcQueryPML4Value,
         (provReadPhysicalMemory)ZdcReadPhysicalMemory,
         (provWritePhysicalMemory)ZdcWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)EchoDrvRegisterDriver,
+        (provUnregisterDriver)EchoDrvUnregisterDriver,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)EchoDrvReadVirtualMemory,
+        (provWriteKernelVM)EchoDrvWriteVirtualMemory,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL,
 
         (provValidatePrerequisites)NULL
     }

@@ -4,9 +4,9 @@
 *
 *  TITLE:       WDKSUP.H
 *
-*  VERSION:     1.31
+*  VERSION:     1.33
 *
-*  DATE:        08 Apr 2023
+*  DATE:        16 Jul 2023
 *
 *  Header file for NT WDK definitions.
 *
@@ -26,6 +26,8 @@
 // Processor modes.
 //
 
+#ifndef NTOS_RTL
+
 typedef CCHAR KPROCESSOR_MODE;
 
 typedef enum _MODE {
@@ -33,6 +35,8 @@ typedef enum _MODE {
     UserMode,
     MaximumMode
 } MODE;
+
+#endif
 
 #define FIXED_UNICODE_STRING_LENGTH MAX_PATH
 
