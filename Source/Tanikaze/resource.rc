@@ -140,6 +140,8 @@ IDR_KOBJEXP             RCDATA                  "drv\\KObjExp.bin"
 
 IDR_KREGEXP             RCDATA                  "drv\\KRegExp.bin"
 
+IDR_ECHODRV             RCDATA                  "drv\\echo_driver.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -147,8 +149,8 @@ IDR_KREGEXP             RCDATA                  "drv\\KRegExp.bin"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,5,2306
- PRODUCTVERSION 1,1,5,2306
+ FILEVERSION 1,1,6,2307
+ PRODUCTVERSION 1,1,6,2307
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -165,12 +167,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility Database"
-            VALUE "FileVersion", "1.1.5.2306"
+            VALUE "FileVersion", "1.1.6.2307"
             VALUE "InternalName", "Tanikaze.dll"
             VALUE "LegalCopyright", "Copyright (C) 2020 - 2023 KDU Project"
             VALUE "OriginalFilename", "Tanikaze.dll"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.1.5.2306"
+            VALUE "ProductVersion", "1.1.6.2307"
         END
     END
     BLOCK "VarFileInfo"

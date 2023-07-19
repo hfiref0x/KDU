@@ -4,9 +4,9 @@
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.33
 *
-*  DATE:        10 Apr 2023
+*  DATE:        16 Jul 2023
 *
 *  KDU tests.
 *
@@ -57,7 +57,7 @@ VOID KDUTestLoad()
 
 VOID KDUTestDSE(PKDU_CONTEXT Context)
 {
-    ULONG_PTR g_CiOptions = 0xfffff8077d239418;//need update
+    ULONG_PTR g_CiOptions = 0xfffff8044e039418;//need update
     ULONG_PTR oldValue = 0, newValue = 0x0, testValue = 0;
     KDU_PROVIDER* prov = Context->Provider;
 
@@ -188,7 +188,7 @@ VOID KDUTest()
    // KDUTestLoad();
 
    // TestSymbols();
-    Context = KDUProviderCreate(38, 
+    Context = KDUProviderCreate(39, 
         FALSE, 
         NT_WIN10_20H1, 
         KDU_SHELLCODE_V1, 

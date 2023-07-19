@@ -143,6 +143,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 36          | Pavel Yosifovich | KExplore  | Kernel Explorer                | Original          | Undefined              |                      |
 | 37          | Pavel Yosifovich | KObjExp  | Kernel Object Explorer          | Original          | Undefined              |                      |
 | 38          | Pavel Yosifovich | KRegExp  | Kernel Registry Explorer        | Original          | Undefined              |                      |
+| 39          | Inspect Element LTD | EchoDrv  | Echo AntiCheat (spyware)     | Original          | Undefined              |                      |
 
 ###### *At commit time, data maybe inaccurate.
 
@@ -207,6 +208,7 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 * How to exploit a vulnerable windows driver, https://github.com/stong/CVE-2020-15368
 * CVE-2022-3699, https://github.com/alfarom256/CVE-2022-3699
 * LOLDrivers, https://www.loldrivers.io
+* ECHOH NO, https://github.com/kite03/echoac-poc/
 
 # Wormhole drivers code
 

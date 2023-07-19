@@ -140,6 +140,7 @@
     <ClCompile Include="idrv\dbk.cpp" />
     <ClCompile Include="idrv\dell.cpp" />
     <ClCompile Include="idrv\directio64.cpp" />
+    <ClCompile Include="idrv\echodrv.cpp" />
     <ClCompile Include="idrv\gmer.cpp" />
     <ClCompile Include="idrv\hilscher.cpp" />
     <ClCompile Include="idrv\hp.cpp" />
@@ -193,6 +194,7 @@
     <ClInclude Include="idrv\asrdrv.h" />
     <ClInclude Include="idrv\atszio.h" />
     <ClInclude Include="idrv\dbk.h" />
+    <ClInclude Include="idrv\echodrv.h" />
     <ClInclude Include="idrv\hilscher.h" />
     <ClInclude Include="idrv\hp.h" />
     <ClInclude Include="idrv\ldrsc.h" />

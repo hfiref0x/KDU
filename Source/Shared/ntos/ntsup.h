@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTSUP.H
 *
-*  VERSION:     2.18
+*  VERSION:     2.19
 *
-*  DATE:        16 Feb 2023
+*  DATE:        10 Jul 2023
 *
 *  Common header file for the NT API support functions and definitions.
 *
@@ -232,7 +232,7 @@ BOOL ntsupQueryProcessName(
 BOOL ntsupQueryProcessEntryById(
     _In_ HANDLE UniqueProcessId,
     _In_ PVOID ProcessList,
-    _Out_ PSYSTEM_PROCESSES_INFORMATION* Entry);
+    _Out_ PSYSTEM_PROCESS_INFORMATION* Entry);
 
 NTSTATUS ntsupQueryProcessImageFileNameByProcessId(
     _In_ HANDLE UniqueProcessId,

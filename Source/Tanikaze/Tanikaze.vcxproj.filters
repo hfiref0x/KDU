@@ -175,6 +175,9 @@
     <None Include="drv\KRegExp.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\echo_driver.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

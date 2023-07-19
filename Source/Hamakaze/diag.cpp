@@ -4,9 +4,9 @@
 *
 *  TITLE:       DIAG.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.33
 *
-*  DATE:        09 Apr 2023
+*  DATE:        16 Jul 2023
 *
 *  Hamakaze system diagnostics component.
 *
@@ -649,7 +649,7 @@ VOID KDUBacktraceByHandle(
     UNICODE_STRING usLsass;
 
     union {
-        PSYSTEM_PROCESSES_INFORMATION Processes;
+        PSYSTEM_PROCESS_INFORMATION Process;
         PBYTE ListRef;
     } List;
 
@@ -688,13 +688,13 @@ VOID KDUBacktraceByHandle(
         do {
 
             List.ListRef += nextEntryDelta;
-            if (RtlEqualUnicodeString(&usLsass, &List.Processes->ImageName, TRUE)) {
-                cid.UniqueProcess = List.Processes->UniqueProcessId;
+            if (RtlEqualUnicodeString(&usLsass, &List.Process->ImageName, TRUE)) {
+                cid.UniqueProcess = List.Process->UniqueProcessId;
                 TracePsHandle(&cid, SystemRangeStart, pvModules, FALSE);
                 break;
             }
 
-            nextEntryDelta = List.Processes->NextEntryDelta;
+            nextEntryDelta = List.Process->NextEntryDelta;
 
         } while (nextEntryDelta);
 

@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.14
+*  VERSION:     1.16
 *
-*  DATE:        10 Jun 2023
+*  DATE:        15 Jul 2023
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -608,6 +608,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"KRegExp",
         (LPWSTR)L"KRegExp",
         (LPWSTR)L"Pavel Yosifovich"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ECHODRV,
+        KDU_PROVIDER_ECHODRV,
+        KDU_VICTIM_PE1702,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_VIRTUAL,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Echo AntiCheat",
+        (LPWSTR)L"EchoDrv",
+        (LPWSTR)L"EchoDrv",
+        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
     }
 
 };

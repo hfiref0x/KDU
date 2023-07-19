@@ -198,6 +198,9 @@
     <ClCompile Include="idrv\zodiacon.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\echodrv.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -369,6 +372,9 @@
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
     <ClInclude Include="idrv\zodiacon.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\echodrv.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>

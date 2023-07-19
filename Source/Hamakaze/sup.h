@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.32
+*  VERSION:     1.33
 *
-*  DATE:        10 Jun 2023
+*  DATE:        16 Jun 2023
 *
 *  Support routines header file.
 *
@@ -360,10 +360,6 @@ NTSTATUS supFilterDeviceIoControl(
     _Out_writes_bytes_to_opt_(OutBufferSize, *BytesReturned) PVOID OutBuffer,
     _In_ ULONG OutBufferSize,
     _Out_opt_ PULONG BytesReturned);
-
-ULONG_PTR supGetHalQuerySystemInformation(
-    _In_ ULONG_PTR NtOsLoadedBase,
-    _In_ ULONG_PTR NtOsMappedBase);
 
 PCM_RESOURCE_LIST supQueryPhysicalMemoryLayout(
     VOID);

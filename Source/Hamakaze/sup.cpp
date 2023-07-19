@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.32
+*  VERSION:     1.33
 *
-*  DATE:        10 Jun 2023
+*  DATE:        16 Jul 2023
 *
 *  Program global support routines.
 *
@@ -3048,33 +3048,6 @@ NTSTATUS supFilterDeviceIoControl(
         *BytesReturned = (ULONG)ioStatusBlock.Information;
 
     return ntStatus;
-}
-
-/*
-* supGetHalQuerySystemInformation
-*
-* Purpose:
-*
-* Return address of HalQuerySystemInformation in HalDispatchTable structure.
-*
-*/
-ULONG_PTR supGetHalQuerySystemInformation(
-    _In_ ULONG_PTR NtOsLoadedBase,
-    _In_ ULONG_PTR NtOsMappedBase
-)
-{
-    ULONG_PTR base = NtOsLoadedBase, address, result = 0;
-
-    address = (ULONG_PTR)GetProcAddress((HINSTANCE)NtOsMappedBase, "HalDispatchTable");
-    if (address) {
-
-        address += sizeof(ULONG_PTR); //skip aligned Version field
-        address = base + address - (ULONG_PTR)NtOsMappedBase;
-        result = address;
-
-    }
-
-    return result;
 }
 
 /*
