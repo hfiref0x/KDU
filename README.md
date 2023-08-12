@@ -76,7 +76,7 @@ That mean you cannot use parameters specified at your DriverEntry as they won't 
 
 + No SEH support for target drivers;
 
-There is no SEH code in x64. Instead of this you have table of try/except/finally regions which must be in the executable image described by pointer in PE header. If there is an exception occured system handler will first look in which module that happened. Mapped drivers are not inside Windows controlled list of drivers (PsLoadedModulesList - PatchGuard protected), so nothing will be found and system will simple crash.
+There is no SEH code in x64. Instead of this you have table of try/except/finally regions which must be in the executable image described by pointer in PE header. If there is an exception occurred system handler will first look in which module that happened. Mapped drivers are not inside Windows controlled list of drivers (PsLoadedModulesList - PatchGuard protected), so nothing will be found and system will simple crash.
 
 + No driver unloading;
 
@@ -174,7 +174,7 @@ GenAsIo2Unlock is a special utility used to generate "unlocking" resource which 
 
 # Reporting bugs and incompatibilities
 
-If you expirienced bug or incompatibility while using KDU with 3rd party software or OS feel free to fill the issue. However if this incompatibility is caused by your own actions such reports will be ignored. Any BSOD reports should include minidump attached or your own dump analysis (windbg !analyze -v), issues without these information will be ignored.
+If you experienced bug or incompatibility while using KDU with 3rd party software or OS feel free to fill the issue. However if this incompatibility is caused by your own actions such reports will be ignored. Any BSOD reports should include minidump attached or your own dump analysis (windbg !analyze -v), issues without these information will be ignored.
 
 Anticheat, antimalware incompatibilities will be ignored, that's your own fault.
 
