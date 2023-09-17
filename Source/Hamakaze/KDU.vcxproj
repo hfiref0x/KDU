@@ -129,7 +129,8 @@
     <ClCompile Include="..\Shared\minirtl\_strncmp.c" />
     <ClCompile Include="..\Shared\minirtl\_strncpy.c" />
     <ClCompile Include="..\Shared\ntos\ntsup.c" />
-    <ClCompile Include="..\Shared\tinyaes\aes.c" />
+    <ClCompile Include="..\Shared\thirdparty\tinyaes\aes.c" />
+    <ClCompile Include="..\Shared\thirdparty\whirlpool\whirlpool.c" />
     <ClCompile Include="compress.cpp" />
     <ClCompile Include="drvmap.cpp" />
     <ClCompile Include="dsefix.cpp" />
@@ -150,6 +151,7 @@
     <ClCompile Include="idrv\mapmem.cpp" />
     <ClCompile Include="idrv\marvinhw.cpp" />
     <ClCompile Include="idrv\mimidrv.cpp" />
+    <ClCompile Include="idrv\nvidia.cpp" />
     <ClCompile Include="idrv\phymem.cpp" />
     <ClCompile Include="idrv\procexp.cpp" />
     <ClCompile Include="idrv\ryzen.cpp" />
@@ -184,7 +186,9 @@
     <ClInclude Include="..\Shared\ntos\ntbuilds.h" />
     <ClInclude Include="..\Shared\ntos\ntos.h" />
     <ClInclude Include="..\Shared\ntos\ntsup.h" />
-    <ClInclude Include="..\Shared\tinyaes\aes.h" />
+    <ClInclude Include="..\Shared\thirdparty\tinyaes\aes.h" />
+    <ClInclude Include="..\Shared\thirdparty\whirlpool\nessie.h" />
+    <ClInclude Include="..\Shared\thirdparty\whirlpool\whirlpool.h" />
     <ClInclude Include="compress.h" />
     <ClInclude Include="drvmap.h" />
     <ClInclude Include="dsefix.h" />
@@ -207,6 +211,7 @@
     <ClInclude Include="idrv\mapmem.h" />
     <ClInclude Include="idrv\marvinhw.h" />
     <ClInclude Include="idrv\mimidrv.h" />
+    <ClInclude Include="idrv\nvidia.h" />
     <ClInclude Include="idrv\phymem.h" />
     <ClInclude Include="idrv\procexp.h" />
     <ClInclude Include="idrv\ryzen.h" />

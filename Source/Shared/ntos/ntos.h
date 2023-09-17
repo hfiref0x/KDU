@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.218
+*  VERSION:     1.219
 *
-*  DATE:        13 Jul 2023
+*  DATE:        21 Jul 2023
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -1866,6 +1866,14 @@ typedef enum _SYSTEM_INFORMATION_CLASS {
     SystemPointerAuthInformation = 236,
     SystemSecureKernelDebuggerInformation = 237,
     SystemOriginalImageFeatureInformation = 238,
+    SystemMemoryNumaInformation = 239,
+    SystemMemoryNumaPerformanceInformation = 240,
+    SystemCodeIntegritySignedPoliciesFullInformation = 241,
+    SystemSecureSecretsInformation = 242,
+    SystemTrustedAppsRuntimeInformation = 243,
+    SystemBadPageInformationEx = 244,
+    SystemResourceDeadlockTimeout = 245,
+    SystemBreakOnContextUnwindFailureInformation = 246,
     MaxSystemInfoClass
 } SYSTEM_INFORMATION_CLASS, * PSYSTEM_INFORMATION_CLASS;
 
@@ -2237,6 +2245,12 @@ typedef enum _FILE_INFORMATION_CLASS {
     FileStorageReserveIdInformation,
     FileCaseSensitiveInformationForceAccessCheck,
     FileKnownFolderInformation,
+    FileStatBasicInformation,
+    FileId64ExtdDirectoryInformation,
+    FileId64ExtdBothDirectoryInformation,
+    FileIdAllExtdDirectoryInformation,
+    FileIdAllExtdBothDirectoryInformation,
+    FileStreamReservationInformation,
     FileMaximumInformation
 } FILE_INFORMATION_CLASS, *PFILE_INFORMATION_CLASS;
 
@@ -2255,6 +2269,7 @@ typedef enum _FSINFOCLASS {
     FileFsDataCopyInformation,
     FileFsMetadataSizeInformation,
     FileFsFullSizeInformationEx,
+    FileFsGuidInformation,
     FileFsMaximumInformation
 } FS_INFORMATION_CLASS, *PFS_INFORMATION_CLASS;
 
@@ -4569,6 +4584,20 @@ typedef struct _DRIVER_EXTENSION_V4 {
     PVOID DvCallbacks; //DriverVerifier
     PVOID VerifierContext;
 } DRIVER_EXTENSION_V4, * PDRIVER_EXTENSION_V4;
+
+// Private, since 11 25XXX
+typedef struct _DRIVER_EXTENSION_V5 {
+    struct _DRIVER_OBJECT* DriverObject;
+    PVOID AddDevice;
+    ULONG Count;
+    UNICODE_STRING ServiceKeyName;
+    struct _IO_CLIENT_EXTENSION* ClientDriverExtension;
+    struct _FS_FILTER_CALLBACKS* FsFilterCallbacks;
+    PVOID KseCallbacks; //KernelShimEngine
+    PVOID DvCallbacks; //DriverVerifier
+    PVOID VerifierContext;
+    struct _DRIVER_PROXY_EXTENSION* DriverProxyExtension;
+} DRIVER_EXTENSION_V5, * PDRIVER_EXTENSION_V5; /* size: 0x0058 */
 
 #define DRVO_UNLOAD_INVOKED             0x00000001
 #define DRVO_LEGACY_DRIVER              0x00000002
@@ -8494,6 +8523,20 @@ CsrClientConnectToServer(
      (_ucStr)->Length = 0, \
      (_ucStr)->MaximumLength = (USHORT)(_bufSize))
 #endif
+
+FORCEINLINE
+VOID
+NTAPI
+RtlInitEmptyAnsiString(
+    _Out_ PANSI_STRING AnsiString,
+    _Pre_maybenull_ _Pre_readable_size_(MaximumLength) PCHAR Buffer,
+    _In_ USHORT MaximumLength
+)
+{
+    memset(AnsiString, 0, sizeof(ANSI_STRING));
+    AnsiString->MaximumLength = MaximumLength;
+    AnsiString->Buffer = Buffer;
+}
 
 NTSYSAPI
 BOOLEAN

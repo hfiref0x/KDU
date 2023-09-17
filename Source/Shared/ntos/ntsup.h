@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTSUP.H
 *
-*  VERSION:     2.19
+*  VERSION:     2.22
 *
-*  DATE:        10 Jul 2023
+*  DATE:        22 Jul 2023
 *
 *  Common header file for the NT API support functions and definitions.
 *
@@ -132,17 +132,25 @@ SIZE_T ntsupWriteBufferToFile(
     _In_ BOOL Append,
     _Out_opt_ NTSTATUS* Result);
 
+PVOID ntsupGetModuleEntryByAddress(
+    _In_ PRTL_PROCESS_MODULES ModulesList,
+    _In_ PVOID Address);
+
 PVOID ntsupFindModuleEntryByName(
-    _In_ PRTL_PROCESS_MODULES pModulesList,
+    _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ LPCSTR ModuleName);
 
+PVOID ntsupFindModuleEntryByName_U(
+    _In_ PRTL_PROCESS_MODULES ModulesList,
+    _In_ LPCWSTR ModuleName);
+
 BOOL ntsupFindModuleEntryByAddress(
-    _In_ PRTL_PROCESS_MODULES pModulesList,
+    _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ PVOID Address,
     _Out_ PULONG ModuleIndex);
 
 PVOID ntsupFindModuleNameByAddress(
-    _In_ PRTL_PROCESS_MODULES pModulesList,
+    _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ PVOID Address,
     _Inout_	LPWSTR Buffer,
     _In_ DWORD ccBuffer);
