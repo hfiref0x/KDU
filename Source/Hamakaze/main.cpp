@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.34
 *
-*  DATE:        09 Apr 2023
+*  DATE:        16 Sep 2023
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -574,8 +574,8 @@ int KDUMain()
         }
 
         if (!ntsupUserIsFullAdmin()) {
-            printf_s("[!] Administrator privileges are required to continue.\r\n"\
-                "Verify that you have sufficient privileges and you are not running program under compatibility layer.\r\n");
+            supPrintfEvent(kduEventError, "[!] Administrator privileges are required to continue.\r\n"\
+                "[!] Verify that you have sufficient privileges and you are not running program under any compatibility layer.\r\n");
             iResult = ERROR_PRIVILEGE_NOT_HELD;
             break;
         }

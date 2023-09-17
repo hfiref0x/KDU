@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTSUP.C
 *
-*  VERSION:     2.20
+*  VERSION:     2.21
 *
-*  DATE:        14 Jul 2023
+*  DATE:        22 Jul 2023
 *
 *  Native API support functions.
 *
@@ -280,27 +280,72 @@ SIZE_T ntsupWriteBufferToFile(
 *
 */
 PVOID ntsupFindModuleEntryByName(
-    _In_ PRTL_PROCESS_MODULES pModulesList,
+    _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ LPCSTR ModuleName
 )
 {
-    ULONG i, modulesCount = pModulesList->NumberOfModules, fnameOffset;
+    ULONG i, modulesCount = ModulesList->NumberOfModules, fnameOffset;
     LPSTR entryName;
     PRTL_PROCESS_MODULE_INFORMATION moduleEntry;
 
     for (i = 0; i < modulesCount; i++) {
 
-        moduleEntry = &pModulesList->Modules[i];
+        moduleEntry = &ModulesList->Modules[i];
         fnameOffset = moduleEntry->OffsetToFileName;
         entryName = (LPSTR)&moduleEntry->FullPathName[fnameOffset];
 
         if (entryName) {
             if (_strcmpi_a(entryName, ModuleName) == 0)
-                return &pModulesList->Modules[i];
+                return moduleEntry;
         }
     }
 
     return NULL;
+}
+
+/*
+* ntsupFindModuleEntryByName_U
+*
+* Purpose:
+*
+* Find Module entry for given name.
+*
+*/
+PVOID ntsupFindModuleEntryByName_U(
+    _In_ PRTL_PROCESS_MODULES ModulesList,
+    _In_ LPCWSTR ModuleName
+)
+{
+    ULONG i, modulesCount = ModulesList->NumberOfModules, fnameOffset;
+    LPSTR entryName;
+    PRTL_PROCESS_MODULE_INFORMATION moduleEntry, result = NULL;
+
+    UNICODE_STRING usString;
+    ANSI_STRING moduleName;
+
+    RtlInitUnicodeStringEx(&usString, ModuleName);
+    moduleName.Buffer = NULL;
+    moduleName.Length = moduleName.MaximumLength = 0;
+    if (NT_SUCCESS(RtlUnicodeStringToAnsiString(&moduleName, &usString, TRUE))) {
+
+        for (i = 0; i < modulesCount; i++) {
+
+            moduleEntry = &ModulesList->Modules[i];
+            fnameOffset = moduleEntry->OffsetToFileName;
+            entryName = (LPSTR)&moduleEntry->FullPathName[fnameOffset];
+
+            if (entryName) {
+                if (_strcmpi_a(entryName, moduleName.Buffer) == 0) {
+                    result = moduleEntry;
+                    break;
+                }
+            }
+        }
+
+        RtlFreeAnsiString(&moduleName);
+    }
+
+    return result;
 }
 
 /*
@@ -312,25 +357,51 @@ PVOID ntsupFindModuleEntryByName(
 *
 */
 BOOL ntsupFindModuleEntryByAddress(
-    _In_ PRTL_PROCESS_MODULES pModulesList,
+    _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ PVOID Address,
     _Out_ PULONG ModuleIndex
 )
 {
-    ULONG i, modulesCount = pModulesList->NumberOfModules;
+    ULONG i, modulesCount = ModulesList->NumberOfModules;
 
     *ModuleIndex = 0;
 
     for (i = 0; i < modulesCount; i++) {
         if (IN_REGION(Address,
-            pModulesList->Modules[i].ImageBase,
-            pModulesList->Modules[i].ImageSize))
+            ModulesList->Modules[i].ImageBase,
+            ModulesList->Modules[i].ImageSize))
         {
             *ModuleIndex = i;
             return TRUE;
         }
     }
     return FALSE;
+}
+
+/*
+* ntsupGetModuleEntryByAddress
+*
+* Purpose:
+*
+* Get Module Entry for given Address.
+*
+*/
+PVOID ntsupGetModuleEntryByAddress(
+    _In_ PRTL_PROCESS_MODULES ModulesList,
+    _In_ PVOID Address
+)
+{
+    ULONG i, modulesCount = ModulesList->NumberOfModules;
+
+    for (i = 0; i < modulesCount; i++) {
+        if (IN_REGION(Address,
+            ModulesList->Modules[i].ImageBase,
+            ModulesList->Modules[i].ImageSize))
+        {           
+            return &ModulesList->Modules[i];
+        }
+    }
+    return NULL;
 }
 
 /*
@@ -342,7 +413,7 @@ BOOL ntsupFindModuleEntryByAddress(
 *
 */
 PVOID ntsupFindModuleNameByAddress(
-    _In_ PRTL_PROCESS_MODULES pModulesList,
+    _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ PVOID Address,
     _Inout_	LPWSTR Buffer,
     _In_ DWORD ccBuffer //size of buffer in chars
@@ -359,14 +430,14 @@ PVOID ntsupFindModuleNameByAddress(
         return NULL;
     }
 
-    modulesCount = pModulesList->NumberOfModules;
+    modulesCount = ModulesList->NumberOfModules;
 
     for (i = 0; i < modulesCount; i++) {
         if (IN_REGION(Address,
-            pModulesList->Modules[i].ImageBase,
-            pModulesList->Modules[i].ImageSize))
+            ModulesList->Modules[i].ImageBase,
+            ModulesList->Modules[i].ImageSize))
         {
-            moduleEntry = &pModulesList->Modules[i];
+            moduleEntry = &ModulesList->Modules[i];
 
             RtlInitEmptyUnicodeString(&usConvertedName, NULL, 0);
             ntStatus = ntsupConvertToUnicode(
@@ -383,7 +454,7 @@ PVOID ntsupFindModuleNameByAddress(
 
                 RtlFreeUnicodeString(&usConvertedName);
 
-                return &pModulesList->Modules[i];
+                return &ModulesList->Modules[i];
             }
             else {
                 return NULL;

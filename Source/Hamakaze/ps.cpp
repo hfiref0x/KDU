@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.34
 *
-*  DATE:        09 Apr 2023
+*  DATE:        16 Sep 2023
 *
 *  Processes DKOM related routines.
 *
@@ -237,7 +237,8 @@ BOOL KDUControlProcess(
             case NT_WIN10_22H2:
             case NT_WIN11_21H2:
             case NT_WIN11_22H2:
-            case NTX_WIN11_ADB:
+            case NT_WIN11_23H2:
+            case NT_WIN11_24H2:
                 Offset = PsProtectionOffset_19041;
                 break;
             default:

@@ -4,9 +4,9 @@
 *
 *  TITLE:       WINIO.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.34
 *
-*  DATE:        14 Apr 2023
+*  DATE:        14 Sep 2023
 *
 *  WINIO based drivers routines.
 *
@@ -23,7 +23,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#include "../Shared/tinyaes/aes.h"
+#include "../Shared/thirdparty/tinyaes/aes.h"
 }
 #endif
 

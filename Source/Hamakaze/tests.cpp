@@ -4,9 +4,9 @@
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.33
+*  VERSION:     1.34
 *
-*  DATE:        16 Jul 2023
+*  DATE:        16 Sep 2023
 *
 *  KDU tests.
 *
@@ -188,7 +188,7 @@ VOID KDUTest()
    // KDUTestLoad();
 
    // TestSymbols();
-    Context = KDUProviderCreate(39, 
+    Context = KDUProviderCreate(40, 
         FALSE, 
         NT_WIN10_20H1, 
         KDU_SHELLCODE_V1, 
@@ -196,8 +196,8 @@ VOID KDUTest()
 
     if (Context) {
 
-        //TestBrute(Context);
-        KDUTestDSE(Context);
+        TestBrute(Context);
+        //KDUTestDSE(Context);
 
         KDUProviderRelease(Context);
     }

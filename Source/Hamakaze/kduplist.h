@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.33
+*  VERSION:     1.34
 *
-*  DATE:        16 Jul 2023
+*  DATE:        16 Sep 2023
 *
 *  Providers global list.
 *
@@ -44,6 +44,7 @@
 #include "idrv/hp.h"
 #include "idrv/zodiacon.h"
 #include "idrv/echodrv.h"
+#include "idrv/nvidia.h"
 
 //
 // Victims public array.
@@ -1042,6 +1043,30 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
+
+        (provValidatePrerequisites)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NvoReadPhysicalMemory,
+        (provWritePhysicalMemory)NvoWritePhysicalMemory,
 
         (provValidatePrerequisites)NULL
     }

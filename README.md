@@ -144,6 +144,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 37          | Pavel Yosifovich | KObjExp  | Kernel Object Explorer          | Original          | Undefined              |                      |
 | 38          | Pavel Yosifovich | KRegExp  | Kernel Registry Explorer        | Original          | Undefined              |                      |
 | 39          | Inspect Element LTD | EchoDrv  | Echo AntiCheat (spyware)     | Original          | Undefined              |                      |
+| 40          | NVidia | nvoclock  | NVidia System Utility Driver     | Original          | 7.0.0.32              |                      |
 
 ###### *At commit time, data maybe inaccurate.
 
@@ -186,6 +187,7 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 # Third party code usage
 
 * TinyAES, https://github.com/kokke/tiny-AES-c
+* whirlpool, https://github.com/mabako/mta-whirlpool
 
 # References
 
@@ -209,6 +211,7 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 * CVE-2022-3699, https://github.com/alfarom256/CVE-2022-3699
 * LOLDrivers, https://www.loldrivers.io
 * ECHOH NO, https://github.com/kite03/echoac-poc/
+* NVDrv, https://github.com/zer0condition/NVDrv
 
 # Wormhole drivers code
 

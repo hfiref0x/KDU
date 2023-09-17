@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.16
+*  VERSION:     1.17
 *
-*  DATE:        15 Jul 2023
+*  DATE:        16 Sep 2023
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -623,6 +623,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"EchoDrv",
         (LPWSTR)L"EchoDrv",
         (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_NVOCLOCK,
+        KDU_PROVIDER_NVOCLOCK,
+        KDU_VICTIM_PE1702,
+        SourceBaseNone,
+        KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"NVidia System Utility Driver",
+        (LPWSTR)L"nvoclock",
+        (LPWSTR)L"NVR0Internal",
+        (LPWSTR)L"NVIDIA Corporation"
     }
 
 };
