@@ -540,8 +540,6 @@ BOOL WINAPI ZmOpenProcess(
 {
     UNREFERENCED_PARAMETER(DesiredAccess);
 
-    BOOL bResult = FALSE;
-
     *ProcessHandle = NULL;
 
     return supCallDriver(DeviceHandle,

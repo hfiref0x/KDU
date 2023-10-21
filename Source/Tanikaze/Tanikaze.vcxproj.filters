@@ -181,6 +181,9 @@
     <None Include="drv\nvoclock.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\irec.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

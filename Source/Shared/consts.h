@@ -144,6 +144,7 @@
 #define IDR_RESERVED8                   142
 #define IDR_ECHODRV                     143
 #define IDR_NVOCLOCK                    144
+#define IDR_IREC                        145
 
 //
 // Vulnerable drivers providers id
@@ -189,6 +190,7 @@
 #define KDU_PROVIDER_KREGEXP            38
 #define KDU_PROVIDER_ECHODRV            39
 #define KDU_PROVIDER_NVOCLOCK           40
+#define KDU_PROVIDER_BINALYZE_IREC      41
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
@@ -258,6 +260,11 @@
 // Process with MSFT symbols.
 //
 #define KDUPROV_FLAGS_USE_SYMBOLS           0x00000800
+
+//
+// Provider can be used to open a handle for the specified process.
+//
+#define KDUPROV_FLAGS_OPENPROCESS_SUPPORTED 0x00001000
 
 //
 // KDU shellcode support flags

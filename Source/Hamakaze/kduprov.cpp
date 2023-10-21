@@ -189,42 +189,48 @@ VOID KDUProvList()
         //
         // List provider flags.
         //
+        if (provData->Flags)
+            printf_s("\tProvider capabilities: \r\n");
+
         if (provData->SignatureWHQL)
-            printf_s("\tDriver is WHQL signed\r\n");
+            printf_s("\t->Driver is WHQL signed.\r\n");
         //
         // Some Realtek drivers are digitally signed 
         // after binary modification with wrong PE checksum as result.
         // Note: Windows 7 will not allow their load.
         //
         if (provData->IgnoreChecksum)
-            printf_s("\tIgnore invalid image checksum\r\n");
+            printf_s("\t->Ignore invalid image checksum.\r\n");
 
         //
         // Some BIOS flashing drivers does not support unload.
         //
         if (provData->NoUnloadSupported)
-            printf_s("\tDriver does not support unload procedure\r\n");
+            printf_s("\t->Driver does not support unload procedure.\r\n");
 
         if (provData->PML4FromLowStub)
-            printf_s("\tVirtual to physical addresses translation require PML4 query from low stub\r\n");
+            printf_s("\t->Virtual to physical addresses translation require PML4 query from low stub.\r\n");
 
         if (provData->NoVictim)
-            printf_s("\tNo victim required\r\n");
+            printf_s("\t->No victim required.\r\n");
 
         if (provData->PhysMemoryBruteForce)
-            printf_s("\tProvider supports only physical memory brute-force.\r\n");
+            printf_s("\t->Provider supports only physical memory brute-force.\r\n");
 
         if (provData->PreferPhysical)
-            printf_s("\tPhysical memory access is preferred.\r\n");
+            printf_s("\t->Physical memory access is preferred.\r\n");
 
         if (provData->PreferVirtual)
-            printf_s("\tVirtual memory access is preferred.\r\n");
+            printf_s("\t->Virtual memory access is preferred.\r\n");
 
         if (provData->CompanionRequired)
-            printf_s("\tProvider expects companion to be loaded.\r\n");
+            printf_s("\t->Provider expects companion to be loaded.\r\n");
 
         if (provData->UseSymbols)
-            printf_s("\tMS symbols are required to query internal information.\r\n");
+            printf_s("\t->MS symbols are required to query internal information.\r\n");
+
+        if (provData->OpenProcessSupported)
+            printf_s("\t->Driver can be used to open a handle for the specified process.\r\n");
 
         //
         // List "based" flags.
