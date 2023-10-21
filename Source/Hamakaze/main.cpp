@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.34
+*  VERSION:     1.40
 *
-*  DATE:        16 Sep 2023
+*  DATE:        20 Oct 2023
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -24,6 +24,7 @@
 #define CMD_SCV         L"-scv"
 #define CMD_PS          L"-ps"
 #define CMD_PSE         L"-pse"
+#define CMD_DMP         L"-dmp"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
 #define CMD_SI          L"-diag"
@@ -40,6 +41,7 @@
                      "kdu -diag         - Run system diagnostic for troubleshooting\r\n"\
                      "kdu -prv id       - Optional, sets provider id to be used with rest of commands, default 0\r\n"\
                      "kdu -pse cmdline  - Launch program as PPL\r\n"\
+                     "kdu -dmp pid      - Dump virtual memory of the given process\r\n"\
                      "kdu -ps pid       - Disable ProtectedProcess for given pid\r\n"\
                      "kdu -dse value    - Write user defined value to the system DSE state flags\r\n"\
                      "kdu -map filename - Map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
@@ -48,6 +50,37 @@
                      "-drvr name        - Optional, driver registry key name (only valid for shellcode version 3)\r\n"
 
 #define T_PRNTDEFAULT   "%s\r\n"
+
+/*
+* KDUProcessDmpSwitch
+*
+* Purpose:
+*
+* Handle -dmp switch.
+*
+*/
+INT KDUProcessDmpSwitch(
+    _In_ ULONG HvciEnabled,
+    _In_ ULONG NtBuildNumber,
+    _In_ ULONG ProviderId,
+    _In_ HANDLE ProcessId)
+{
+    INT retVal = 0;
+    KDU_CONTEXT* provContext;
+
+    provContext = KDUProviderCreate(ProviderId,
+        HvciEnabled,
+        NtBuildNumber,
+        KDU_SHELLCODE_NONE,
+        ActionTypeDumpProcess);
+
+    if (provContext) {
+        retVal = KDUDumpProcessMemory(provContext, ProcessId);
+        KDUProviderRelease(provContext);
+    }
+
+    return retVal;
+}
 
 /*
 * KDUProcessPSEObjectSwitch
@@ -370,7 +403,7 @@ INT KDUProcessCommandLine(
         if (supGetCommandLineOption(CMD_PRV,
             TRUE,
             szParameter,
-            sizeof(szParameter) / sizeof(WCHAR),
+            RTL_NUMBER_OF(szParameter),
             NULL))
         {
             providerId = _strtoul(szParameter);
@@ -399,7 +432,7 @@ INT KDUProcessCommandLine(
         if (supGetCommandLineOption(CMD_DSE,
             TRUE,
             szParameter,
-            sizeof(szParameter) / sizeof(WCHAR),
+            RTL_NUMBER_OF(szParameter),
             NULL))
         {
             dseValue = _strtoul(szParameter);
@@ -416,7 +449,7 @@ INT KDUProcessCommandLine(
             if (supGetCommandLineOption(CMD_MAP,
                 TRUE,
                 szParameter,
-                sizeof(szParameter) / sizeof(WCHAR),
+                RTL_NUMBER_OF(szParameter),
                 &paramLength))
             {
                 if (paramLength == 0) {
@@ -435,7 +468,7 @@ INT KDUProcessCommandLine(
                     if (supGetCommandLineOption(CMD_SCV,
                         TRUE,
                         szExtraParameter,
-                        sizeof(szExtraParameter) / sizeof(WCHAR),
+                        RTL_NUMBER_OF(szExtraParameter),
                         NULL))
                     {
                         shellVersion = _strtoul(szExtraParameter);
@@ -460,7 +493,7 @@ INT KDUProcessCommandLine(
                     supGetCommandLineOption(CMD_DRVNAME,
                         TRUE,
                         szDriverName,
-                        sizeof(szDriverName) / sizeof(WCHAR),
+                        RTL_NUMBER_OF(szDriverName),
                         &paramLength);
 
                     lpParam1 = (paramLength != 0) ? szDriverName : NULL;
@@ -470,7 +503,7 @@ INT KDUProcessCommandLine(
                     supGetCommandLineOption(CMD_DRVREG,
                         TRUE,
                         szDriverRegPath,
-                        sizeof(szDriverRegPath) / sizeof(WCHAR),
+                        RTL_NUMBER_OF(szDriverRegPath),
                         &paramLength);
 
                     lpParam2 = (paramLength != 0) ? szDriverRegPath : NULL;
@@ -494,7 +527,7 @@ INT KDUProcessCommandLine(
                 if (supGetCommandLineOption(CMD_PS,
                     TRUE,
                     szParameter,
-                    sizeof(szParameter) / sizeof(WCHAR),
+                    RTL_NUMBER_OF(szParameter),
                     NULL))
                 {
                     processId = strtou64(szParameter);
@@ -508,13 +541,27 @@ INT KDUProcessCommandLine(
                 else if (supGetCommandLineOption(CMD_PSE,
                     TRUE,
                     szParameter,
-                    sizeof(szParameter) / sizeof(WCHAR),
+                    RTL_NUMBER_OF(szParameter),
                     NULL))
                 {
                     retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
                         NtBuildNumber,
                         providerId,
                         szParameter);
+                }
+
+                else if (supGetCommandLineOption(CMD_DMP,
+                    TRUE,
+                    szParameter,
+                    RTL_NUMBER_OF(szParameter),
+                    NULL))
+                {
+                    processId = strtou64(szParameter);
+
+                    retVal = KDUProcessDmpSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        (HANDLE)processId);
                 }
 
                 else {
@@ -664,13 +711,14 @@ VOID KDUIntroBanner()
 {
     IMAGE_NT_HEADERS* ntHeaders = RtlImageNtHeader(NtCurrentPeb()->ImageBaseAddress);
 
-    printf_s("[#] Kernel Driver Utility v%lu.%lu.%lu (build %lu) started, (c)2020 - 2023 KDU Project\r\n"\
+    printf_s("[#] Kernel Driver Utility v%lu.%lu.%lu (build %lu) started, (c)2020 - %lu KDU Project\r\n"\
         "[#] Built at %s, header checksum 0x%lX\r\n"\
         "[#] Supported x64 OS : Windows 7 and above\r\n",
         KDU_VERSION_MAJOR,
         KDU_VERSION_MINOR,
         KDU_VERSION_REVISION,
         KDU_VERSION_BUILD,
+        KDU_COPYRIGHT_YEAR,
         __TIMESTAMP__,
         ntHeaders->OptionalHeader.CheckSum);
 }

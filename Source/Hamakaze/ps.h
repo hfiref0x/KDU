@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2022
+*  (C) COPYRIGHT AUTHORS, 2018 - 2023
 *
 *  TITLE:       PS.H
 *
-*  VERSION:     1.28
+*  VERSION:     1.40
 *
-*  DATE:        01 Dec 2022
+*  DATE:        20 Oct 2023
 *
 *  Processes support prototypes and definitions.
 *
@@ -37,6 +37,10 @@ BOOL KDUUnprotectProcess(
 BOOL KDURunCommandPPL(
     _In_ PKDU_CONTEXT Context,
     _In_ LPWSTR CommandLine);
+
+BOOL KDUDumpProcessMemory(
+    _In_ PKDU_CONTEXT Context,
+    _In_ HANDLE ProcessId);
 
 BOOL KDUControlProcess(
     _In_ PKDU_CONTEXT Context,

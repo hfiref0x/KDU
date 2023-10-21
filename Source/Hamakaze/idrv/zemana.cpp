@@ -4,9 +4,9 @@
 *
 *  TITLE:       ZEMANA.CPP
 *
-*  VERSION:     1.30
+*  VERSION:     1.40
 *
-*  DATE:        20 Mar 2023
+*  DATE:        20 Oct 2023
 *
 *  Zemana driver routines.
 *
@@ -522,6 +522,34 @@ BOOL ZmControlDSE(
         supPrintfEvent(kduEventInformation, "[+] DSE patch executed successfully\r\n");
 
     return bResult;
+}
+
+/*
+* ZmOpenProcess
+*
+* Purpose:
+*
+* Open process via Zemana driver.
+*
+*/
+BOOL WINAPI ZmOpenProcess(
+    _In_ HANDLE DeviceHandle,
+    _In_ HANDLE ProcessId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ProcessHandle)
+{
+    UNREFERENCED_PARAMETER(DesiredAccess);
+
+    BOOL bResult = FALSE;
+
+    *ProcessHandle = NULL;
+
+    return supCallDriver(DeviceHandle,
+        IOCTL_ZEMANA_OPEN_PROCESS,
+        &ProcessId,
+        sizeof(ProcessId),
+        ProcessHandle,
+        sizeof(ProcessHandle));
 }
 
 /*

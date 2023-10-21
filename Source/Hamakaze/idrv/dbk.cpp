@@ -4,9 +4,9 @@
 *
 *  TITLE:       DBK.CPP
 *
-*  VERSION:     1.32
+*  VERSION:     1.40
 *
-*  DATE:        10 Jun 2023
+*  DATE:        20 Oct 2023
 *
 *  Cheat Engine's DBK driver routines.
 *
@@ -648,6 +648,39 @@ BOOL DbkControlDSE(
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);
+
+    return bResult;
+}
+
+/*
+* DbkOpenProcess
+*
+* Purpose:
+*
+* Open process via CheatEngine driver.
+*
+*/
+BOOL WINAPI DbkOpenProcess(
+    _In_ HANDLE DeviceHandle,
+    _In_ HANDLE ProcessId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ProcessHandle)
+{
+    UNREFERENCED_PARAMETER(DesiredAccess);
+
+    struct {
+        HANDLE ProcessHandle;
+        BYTE Special;
+    } outputBuffer = { NULL, 0 };
+
+    BOOL bResult = supCallDriver(DeviceHandle,
+        IOCTL_CE_OPENPROCESS,
+        &ProcessId,
+        sizeof(DWORD),
+        &outputBuffer,
+        sizeof(outputBuffer));
+
+    *ProcessHandle = outputBuffer.ProcessHandle;
 
     return bResult;
 }

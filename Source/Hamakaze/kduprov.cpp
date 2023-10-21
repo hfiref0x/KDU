@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.40
 *
-*  DATE:        09 Apr 2023
+*  DATE:        21 Oct 2023
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -726,6 +726,40 @@ BOOL WINAPI KDUWriteKernelVM(
 }
 
 /*
+* KDUOpenProcess
+*
+* Purpose:
+*
+* Provider wrapper for OpenProcess routine.
+*
+*/
+_Success_(return != FALSE)
+BOOL WINAPI KDUOpenProcess(
+    _In_ struct _KDU_CONTEXT* Context,
+    _In_ HANDLE ProcessId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ProcessHandle
+)
+{
+    BOOL bResult = FALSE;
+    KDU_PROVIDER* prov = Context->Provider;
+
+    __try {
+
+        bResult = prov->Callbacks.OpenProcess(Context->DeviceHandle,
+            ProcessId,
+            DesiredAccess,
+            ProcessHandle);
+
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        SetLastError(GetExceptionCode());
+        return FALSE;
+    }
+    return bResult;
+}
+
+/*
 * KDUProviderLoadDB
 *
 * Purpose:
@@ -839,6 +873,18 @@ BOOL KDUProviderVerifyActionType(
                     "\tKDU interface is not implemented for these methods.\r\n");
                 return FALSE;
             }
+
+        }
+
+        break;
+
+    case ActionTypeDumpProcess:
+
+        if (Provider->Callbacks.OpenProcess == NULL) {
+
+            supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support arbitrary process handle acquisition or\r\n"\
+                "\tKDU interface is not implemented for this method.\r\n");
+            return FALSE;
 
         }
 

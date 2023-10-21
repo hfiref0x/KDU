@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       ZEMANA.H
 *
-*  VERSION:     1.27
+*  VERSION:     1.40
 *
-*  DATE:        08 Nov 2022
+*  DATE:        20 Oct 2023
 *
 *  Zemana driver interface header.
 *
@@ -34,6 +34,7 @@
 #define ZEMANA_SCSI_WRITE        (DWORD)0x806
 #define ZEMANA_PROTECT_REGISTRY  (DWORD)0x810
 #define ZEMANA_SAVE_MINIPORT_FIX (DWORD)0x811
+#define ZEMANA_OPEN_PROCESS      (DWORD)0x813
 
 #define IOCTL_ZEMANA_REGISTER_PROCESS       \
     CTL_CODE(FILE_DEVICE_ZEMANA, ZEMANA_REGISTER_PROCESS, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x80002010
@@ -50,6 +51,9 @@
 #define IOCTL_ZEMANA_PROTECT_REGISTRY      \
     CTL_CODE(FILE_DEVICE_ZEMANA, ZEMANA_PROTECT_REGISTRY, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x80002040
 
+#define IOCTL_ZEMANA_OPEN_PROCESS      \
+    CTL_CODE(FILE_DEVICE_ZEMANA, ZEMANA_OPEN_PROCESS, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x8000204C  
+
 BOOL ZmMapDriver(
     _In_ PKDU_CONTEXT Context,
     _In_ PVOID ImageBase);
@@ -58,6 +62,12 @@ BOOL ZmControlDSE(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG DSEValue,
     _In_ ULONG_PTR Address);
+
+BOOL WINAPI ZmOpenProcess(
+    _In_ HANDLE DeviceHandle,
+    _In_ HANDLE ProcessId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ProcessHandle);
 
 BOOL WINAPI ZmRegisterDriver(
     _In_ HANDLE DeviceHandle,

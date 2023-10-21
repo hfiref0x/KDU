@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       PROCEXP.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.40
 *
-*  DATE:        08 Feb 2022
+*  DATE:        20 Oct 2023
 *
 *  Process Explorer driver interface header.
 *
@@ -80,3 +80,9 @@ BOOL WINAPI PexWriteKernelVirtualMemory(
     _In_ ULONG_PTR Address,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI PexOpenProcess(
+    _In_ HANDLE DeviceHandle,
+    _In_ HANDLE ProcessId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ProcessHandle);

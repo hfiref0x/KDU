@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.34
+*  VERSION:     1.40
 *
-*  DATE:        16 Sep 2023
+*  DATE:        20 Oct 2023
 *
 *  Processes DKOM related routines.
 *
@@ -18,6 +18,16 @@
 *******************************************************************************/
 
 #include "global.h"
+#include <Dbghelp.h>
+
+typedef BOOL (WINAPI *pfnMiniDumpWriteDump)(
+    _In_ HANDLE hProcess,
+    _In_ DWORD ProcessId,
+    _In_ HANDLE hFile,
+    _In_ MINIDUMP_TYPE DumpType,
+    _In_opt_ PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam,
+    _In_opt_ PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
+    _In_opt_ PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
 
 LPSTR KDUGetProtectionTypeAsString(
     _In_ ULONG Type
@@ -87,7 +97,110 @@ LPSTR KDUGetProtectionSignerAsString(
 }
 
 /*
-* KDUControlProcess
+* KDUDumpProcessMemory
+*
+* Purpose:
+*
+* Dump process memory.
+*
+*/
+BOOL KDUDumpProcessMemory(
+    _In_ PKDU_CONTEXT Context,
+    _In_ HANDLE ProcessId
+)
+{
+    BOOL bResult = FALSE;
+    HMODULE dbgModule;
+    HANDLE hFile = INVALID_HANDLE_VALUE;
+    HANDLE processHandle = NULL;
+    pfnMiniDumpWriteDump pMiniDumpWriteDump;
+
+    WCHAR szOutputName[MAX_PATH];
+    union {
+        PSYSTEM_PROCESS_INFORMATION Process;
+        PBYTE ListRef;
+    } List;
+
+    PSYSTEM_PROCESS_INFORMATION procEntry = NULL;
+    PVOID procBuffer = supGetSystemInfo(SystemProcessInformation);
+
+    do {
+
+        List.ListRef = (PBYTE)procBuffer;
+        if (List.ListRef == NULL) {
+            supPrintfEvent(kduEventError, "Cannot allocate process list\r\n");
+            break;
+        }
+
+        if (!ntsupQueryProcessEntryById(ProcessId, List.ListRef, &procEntry)) {
+
+            supPrintfEvent(kduEventError,
+                "The %lX process doesn't exist in process list\r\n",
+                HandleToUlong(ProcessId));
+
+            break;
+        }
+
+        supPrintfEvent(kduEventInformation, "[+] Dumping memory of the process 0x%lX (%wZ)\r\n",
+            HandleToUlong(ProcessId), procEntry->ImageName);
+
+        dbgModule = LoadLibraryEx(L"dbghelp.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (dbgModule == NULL) {
+            supShowWin32Error("[!] Cannot load dbghelp.dll", GetLastError());
+            break;
+        }
+
+        pMiniDumpWriteDump = (pfnMiniDumpWriteDump)GetProcAddress(dbgModule, "MiniDumpWriteDump");
+        if (pMiniDumpWriteDump == NULL) {
+            supShowWin32Error("[!] Dump function is not found", GetLastError());
+            break;
+        }
+
+        bResult = KDUOpenProcess(Context, ProcessId, PROCESS_ALL_ACCESS, &processHandle);
+        if (!bResult || processHandle == NULL) {
+            supShowWin32Error("[!] Cannot open process", GetLastError());
+            break;
+        }
+
+        StringCchPrintf(szOutputName,
+            RTL_NUMBER_OF(szOutputName),
+            TEXT("vmem_pid_%lX.dmp"),
+            HandleToUlong(ProcessId));
+
+        hFile = CreateFile(szOutputName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+        if (hFile == INVALID_HANDLE_VALUE) {
+            supShowWin32Error("[!] Cannot write memory dump", GetLastError());
+            break;
+        }
+
+        bResult = pMiniDumpWriteDump(processHandle,
+            0,
+            hFile,
+            MiniDumpWithFullMemory,
+            NULL,
+            NULL,
+            NULL);
+
+        if (bResult) {
+            supPrintfEvent(kduEventInformation, "[+] Process memory dumped to %ws\r\n", szOutputName);
+        }
+        else {
+            supShowWin32Error("[!] Cannot dump process", GetLastError());
+        }
+
+    } while (FALSE);
+
+    if (procBuffer) supHeapFree(procBuffer);
+    if (processHandle) NtClose(processHandle);
+
+    if (hFile != INVALID_HANDLE_VALUE)
+        CloseHandle(hFile);
+
+    return bResult;
+}
+
+/*
+* KDURunCommandPPL
 *
 * Purpose:
 *
@@ -123,14 +236,14 @@ BOOL KDURunCommandPPL(
         &si,                // Pointer to STARTUPINFO structure
         &pi);               // Pointer to PROCESS_INFORMATION structure
     if (!bResult) {
-        printf("[!] Failed to create process: 0x%lX\n", GetLastError());
+        supShowWin32Error("[!] Failed to create process", GetLastError());
         return bResult;
     }
     printf_s("[+] Created Process with PID %lu\r\n", pi.dwProcessId);
 
     bResult = KDUControlProcess(Context, pi.dwProcessId, PsProtectedSignerAntimalware, PsProtectedTypeProtectedLight);
     if (!bResult) {
-        printf_s("[!] Failed to set process as PPL: 0x%lX\n", GetLastError());
+        supShowWin32Error("[!] Failed to set process as PPL", GetLastError());
         return bResult;
     }
 
@@ -151,7 +264,7 @@ BOOL KDURunCommandPPL(
 }
 
 /*
-* KDUControlProcess
+* KDUUnprotectProcess
 *
 * Purpose:
 *
@@ -203,9 +316,9 @@ BOOL KDUControlProcess(
     if (NT_SUCCESS(ntStatus)) {
 
         printf_s("[+] Process with PID %llu opened (PROCESS_QUERY_LIMITED_INFORMATION)\r\n", ProcessId);
-        supQueryObjectFromHandle(hProcess, &ProcessObject);
+        bResult = supQueryObjectFromHandle(hProcess, &ProcessObject);
 
-        if (ProcessObject != 0) {
+        if (bResult && (ProcessObject != 0)) {
 
             printf_s("[+] Process object (EPROCESS) found, 0x%llX\r\n", ProcessObject);
 

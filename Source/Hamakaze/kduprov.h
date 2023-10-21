@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.30
+*  VERSION:     1.40
 *
-*  DATE:        20 Mar 2023
+*  DATE:        21 Oct 2023
 *
 *  Provider support routines.
 *
@@ -136,11 +136,22 @@ typedef BOOL(WINAPI* provValidatePrerequisites)(
     _In_ struct _KDU_CONTEXT* Context
     );
 
+//
+// Prototype for process handle acquisition.
+//
+typedef BOOL(WINAPI* provOpenProcess)(
+    _In_ HANDLE DeviceHandle,
+    _In_ HANDLE ProcessId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ProcessHandle
+    );
+
 typedef enum _KDU_ACTION_TYPE {
     ActionTypeMapDriver = 0,
-    ActionTypeDKOM = 1,
-    ActionTypeDSECorruption = 2,
-    ActionTypeUnspecified = 3,
+    ActionTypeDKOM,
+    ActionTypeDSECorruption,
+    ActionTypeDumpProcess,
+    ActionTypeUnspecified,
     ActionTypeMax
 } KDU_ACTION_TYPE;
 
@@ -172,6 +183,8 @@ typedef struct _KDU_PROVIDER {
         provWritePhysicalMemory WritePhysicalMemory; //optional
 
         provValidatePrerequisites ValidatePrerequisites; //optional
+
+        provOpenProcess OpenProcess; //optional
 
     } Callbacks;
 } KDU_PROVIDER, * PKDU_PROVIDER;
@@ -255,6 +268,13 @@ BOOL WINAPI KDUWriteKernelVM(
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
+
+_Success_(return != FALSE)
+BOOL WINAPI KDUOpenProcess(
+    _In_ struct _KDU_CONTEXT* Context,
+    _In_ HANDLE ProcessId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ProcessHandle);
 
 BOOL WINAPI KDUProviderStub(
     VOID);
