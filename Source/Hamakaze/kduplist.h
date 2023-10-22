@@ -1178,5 +1178,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provValidatePrerequisites)NULL,
 
         (provOpenProcess)BeDrvOpenProcess
-     }
+     },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)WRZeroReadPhysicalMemory,
+        (provWritePhysicalMemory)WRZeroWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+    }
+
 };

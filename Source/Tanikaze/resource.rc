@@ -146,6 +146,8 @@ IDR_NVOCLOCK            RCDATA                  "drv\\nvoclock.bin"
 
 IDR_IREC                RCDATA                  "drv\\irec.bin"
 
+IDR_PHYDMACC            RCDATA                  "drv\\PhyDMACC.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -153,8 +155,8 @@ IDR_IREC                RCDATA                  "drv\\irec.bin"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,7,2310
- PRODUCTVERSION 1,1,7,2310
+ FILEVERSION 1,1,8,2310
+ PRODUCTVERSION 1,1,8,2310
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -171,12 +173,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility Database"
-            VALUE "FileVersion", "1.1.7.2310"
+            VALUE "FileVersion", "1.1.8.2310"
             VALUE "InternalName", "Tanikaze.dll"
             VALUE "LegalCopyright", "Copyright (C) 2020 - 2023 KDU Project"
             VALUE "OriginalFilename", "Tanikaze.dll"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.1.7.2310"
+            VALUE "ProductVersion", "1.1.8.2310"
         END
     END
     BLOCK "VarFileInfo"

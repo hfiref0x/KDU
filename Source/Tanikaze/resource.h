@@ -40,6 +40,7 @@
 #define IDR_KEXPLORE                    139
 #define IDR_KOBJEXP                     140
 #define IDR_KREGEXP                     141
+#define IDR_PHYDMACC                    142
 #define IDR_ECHODRV                     143
 #define IDR_NVOCLOCK                    144
 #define IDR_IREC                        145

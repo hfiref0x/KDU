@@ -147,7 +147,8 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 38          | Pavel Yosifovich | KRegExp  | Kernel Registry Explorer        | Original          | Undefined              |                      |
 | 39          | Inspect Element LTD | EchoDrv  | Echo AntiCheat (spyware)     | Original          | Undefined              |                      |
 | 40          | NVidia | nvoclock  | NVidia System Utility Driver     | Original          | 7.0.0.32              |                      |
-| 41          | Binalyze | IREC  | Binalyze DFIR     | Original          | Undefined              |                      |
+| 41          | Binalyze | IREC  | Binalyze DFIR     | Original          | 3.11.0              |                      |
+| 42          | DavidXXW | PhyDMACC  | SLIC ToolKit     | WINRING0          | 1.2.0              |                      |
 
 ###### *At commit time, data maybe inaccurate.
 

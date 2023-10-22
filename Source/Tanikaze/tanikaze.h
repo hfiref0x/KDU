@@ -653,6 +653,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"IREC",
         (LPWSTR)L"IREC",
         (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_PHYDMACC,
+        KDU_PROVIDER_PHYDMACC,
+        KDU_VICTIM_PE1702,
+        SourceBaseWinRing0,
+        KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"SLIC ToolKit",
+        (LPWSTR)L"PhyDMACC",
+        (LPWSTR)L"PhyDMACC_1_2_0",
+        (LPWSTR)L"Suzhou Ind. Park ShiSuanKeJi Co., Ltd."
     }
 
 };

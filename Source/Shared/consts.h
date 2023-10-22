@@ -141,7 +141,7 @@
 #define IDR_KEXPLORE                    139
 #define IDR_KOBJEXP                     140
 #define IDR_KREGEXP                     141
-#define IDR_RESERVED8                   142
+#define IDR_PHYDMACC                    142
 #define IDR_ECHODRV                     143
 #define IDR_NVOCLOCK                    144
 #define IDR_IREC                        145
@@ -191,6 +191,7 @@
 #define KDU_PROVIDER_ECHODRV            39
 #define KDU_PROVIDER_NVOCLOCK           40
 #define KDU_PROVIDER_BINALYZE_IREC      41
+#define KDU_PROVIDER_PHYDMACC           42
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
