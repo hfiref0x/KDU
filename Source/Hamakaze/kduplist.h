@@ -46,6 +46,7 @@
 #include "idrv/echodrv.h"
 #include "idrv/nvidia.h"
 #include "idrv/binalyze.h"
+#include "idrv/rzpnk.h"
 
 //
 // Victims public array.
@@ -1204,6 +1205,33 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provValidatePrerequisites)NULL,
 
         (provOpenProcess)NULL
+    },
+
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)NULL,
+        (provControlDSE)NULL,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)RazerOpenProcess
     }
 
 };

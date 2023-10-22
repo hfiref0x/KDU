@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.17
+*  VERSION:     1.18
 *
-*  DATE:        16 Sep 2023
+*  DATE:        21 Oct 2023
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -668,6 +668,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"PhyDMACC",
         (LPWSTR)L"PhyDMACC_1_2_0",
         (LPWSTR)L"Suzhou Ind. Park ShiSuanKeJi Co., Ltd."
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_RZPNK,
+        KDU_PROVIDER_RAZER,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_NO_VICTIM | KDUPROV_FLAGS_OPENPROCESS_SUPPORTED,
+        KDUPROV_SC_NONE,
+        (LPWSTR)L"Razer Overlay Support driver CVE-2017-9769",
+        (LPWSTR)L"rzpnk",
+        (LPWSTR)L"47CD78C9-64C3-47C2-B80F-677B887CF095",
+        (LPWSTR)L"Razer USA Ltd."
     }
 
 };

@@ -148,6 +148,8 @@ IDR_IREC                RCDATA                  "drv\\irec.bin"
 
 IDR_PHYDMACC            RCDATA                  "drv\\PhyDMACC.bin"
 
+IDR_RZPNK               RCDATA                  "drv\\rzpnk.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

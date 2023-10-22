@@ -104,6 +104,7 @@
 #define IDR_PROCEXP1627                 2000
 #define IDR_PROCEXP1702                 2001
 #define IDR_INTEL_NAL                   103
+#define IDR_RZPNK                       104
 #define IDR_RTCORE64                    105
 #define IDR_GDRV                        106
 #define IDR_ATSZIO64                    107
@@ -192,6 +193,7 @@
 #define KDU_PROVIDER_NVOCLOCK           40
 #define KDU_PROVIDER_BINALYZE_IREC      41
 #define KDU_PROVIDER_PHYDMACC           42
+#define KDU_PROVIDER_RAZER              43
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
