@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       DBK.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.40
 *
-*  DATE:        14 Feb 2022
+*  DATE:        20 Oct 2023
 *
 *  Cheat Engine's DBK driver interface header.
 *
@@ -25,6 +25,7 @@
 
 #define DBK_DEVICE_TYPE (DWORD)FILE_DEVICE_UNKNOWN
 
+#define DBK_FUNC_OPEN_PROCESS (DWORD)0x0802
 #define DBK_FUNC_ALLOCATEMEM_NONPAGED (DWORD)0x0826
 #define DBK_FUNC_FREEMEM (DWORD)0x084C
 #define DBK_FUNC_MAP_MEMORY (DWORD)0x084D
@@ -46,6 +47,10 @@
 #define IOCTL_CE_EXECUTE_CODE    \
     CTL_CODE(DBK_DEVICE_TYPE, DBK_FUNC_EXECUTE_CODE, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 
+#define IOCTL_CE_OPENPROCESS     \
+    CTL_CODE(DBK_DEVICE_TYPE, DBK_FUNC_OPEN_PROCESS, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+
+
 BOOL DbkStartVulnerableDriver(
     _In_ KDU_CONTEXT* Context);
 
@@ -57,3 +62,9 @@ BOOL DbkControlDSE(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG DSEValue,
     _In_ ULONG_PTR Address);
+
+BOOL WINAPI DbkOpenProcess(
+    _In_ HANDLE DeviceHandle,
+    _In_ HANDLE ProcessId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ProcessHandle);

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2023
 *
 *  TITLE:       ECHODRV.H
 *
-*  VERSION:     1.33
+*  VERSION:     1.40
 *
-*  DATE:        16 Jul 2023
+*  DATE:        21 Oct 2023
 *
 *  Inspect Element LTD spyware (anticheat) driver interface header.
 *
@@ -47,13 +47,13 @@ typedef struct _ECHODRV_REGISTER {
     _Out_ DWORD UniqCode; //0x1000 for call
 } ECHODRV_REGISTER, * PECHODRV_REGISTER;
 
-typedef struct _ECHODRV_VALIDATE_PROCESS {
+typedef struct _ECHODRV_OPENPROCESS_REQUEST {
     _In_ DWORD ProcessId;
     _In_ ACCESS_MASK DesiredAccess;
     _Out_ HANDLE ProcessHandle;
     _Out_ BOOL bSuccess;
     _Out_ DWORD UniqCode; //0x1001 for call
-} ECHODRV_VALIDATE_PROCESS, * PECHODRV_VALIDATE_PROCESS;
+} ECHODRV_OPENPROCESS_REQUEST, * PECHODRV_OPENPROCESS_REQUEST;
 
 typedef struct _ECHODRV_COPYVM_REQUEST {
     _In_ HANDLE ProcessHandle;
@@ -84,3 +84,9 @@ BOOL WINAPI EchoDrvWriteVirtualMemory(
     _In_ ULONG_PTR VirtualAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI EchoDrvOpenProcess(
+    _In_ HANDLE DeviceHandle,
+    _In_ HANDLE ProcessId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ProcessHandle);

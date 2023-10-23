@@ -4,9 +4,9 @@
 *
 *  TITLE:       ECHODRV.CPP
 *
-*  VERSION:     1.33
+*  VERSION:     1.40
 *
-*  DATE:        16 Jul 2023
+*  DATE:        21 Oct 2023
 *
 *  Inspect Element LTD spyware (anticheat) driver interface.
 *
@@ -126,7 +126,7 @@ BOOL WINAPI EchoDrvRegisterDriver(
 
     BOOL bResult;
     ECHODRV_REGISTER regRequest;
-    ECHODRV_VALIDATE_PROCESS procRequest;
+    ECHODRV_OPENPROCESS_REQUEST procRequest;
 
     RtlSecureZeroMemory(&regRequest, sizeof(regRequest));
 
@@ -189,4 +189,38 @@ BOOL WINAPI EchoDrvUnregisterDriver(
         NtClose(gEchoDrvClientHandle);
 
     return TRUE;
+}
+
+/*
+* EchoDrvOpenProcess
+*
+* Purpose:
+*
+* Open process via Echo driver.
+*
+*/
+BOOL WINAPI EchoDrvOpenProcess(
+    _In_ HANDLE DeviceHandle,
+    _In_ HANDLE ProcessId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ProcessHandle)
+{
+    BOOL bResult = FALSE;
+    ECHODRV_OPENPROCESS_REQUEST procRequest;
+
+    RtlSecureZeroMemory(&procRequest, sizeof(procRequest));
+
+    procRequest.ProcessId = HandleToUlong(ProcessId);
+    procRequest.DesiredAccess = DesiredAccess;
+
+    bResult = supCallDriver(DeviceHandle,
+        IOCTL_ECHODRV_OPEN_PROCESS,
+        &procRequest,
+        sizeof(procRequest),
+        &procRequest,
+        sizeof(procRequest));
+
+    *ProcessHandle = procRequest.ProcessHandle;
+
+    return bResult;
 }

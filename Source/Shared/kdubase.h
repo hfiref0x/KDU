@@ -53,7 +53,8 @@ typedef struct _KDU_DB_ENTRY {
             ULONG PreferVirtual : 1;
             ULONG CompanionRequired : 1;
             ULONG UseSymbols : 1;
-            ULONG Reserved : 20;
+            ULONG OpenProcessSupported : 1;
+            ULONG Reserved : 19;
         };
     };
     ULONG SupportedShellFlags;

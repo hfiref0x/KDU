@@ -207,6 +207,7 @@
     <None Include="drv\HW64.bin" />
     <None Include="drv\inpoutx64.bin" />
     <None Include="drv\iQVM64.bin" />
+    <None Include="drv\irec.bin" />
     <None Include="drv\KExplore.bin" />
     <None Include="drv\KObjExp.bin" />
     <None Include="drv\kprocesshacker.bin" />
@@ -218,6 +219,7 @@
     <None Include="drv\msio64.bin" />
     <None Include="drv\nvoclock.bin" />
     <None Include="drv\pcdsrvc_x64.bin" />
+    <None Include="drv\PhyDMACC.bin" />
     <None Include="drv\phymemx64.bin" />
     <None Include="drv\physmem.bin" />
     <None Include="drv\procexp.bin" />
@@ -225,6 +227,7 @@
     <None Include="drv\procexp1702.bin" />
     <None Include="drv\RTCore64.bin" />
     <None Include="drv\rtkio64.bin" />
+    <None Include="drv\rzpnk.bin" />
     <None Include="drv\SysDrv3S.bin" />
     <None Include="drv\WinRing0x64.bin" />
   </ItemGroup>

@@ -3,6 +3,7 @@
 // Used by resource.rc
 //
 #define IDR_INTEL_NAL                   103
+#define IDR_RZPNK                       104
 #define IDR_RTCORE64                    105
 #define IDR_GDRV                        106
 #define IDR_ATSZIO64                    107
@@ -40,8 +41,10 @@
 #define IDR_KEXPLORE                    139
 #define IDR_KOBJEXP                     140
 #define IDR_KREGEXP                     141
+#define IDR_PHYDMACC                    142
 #define IDR_ECHODRV                     143
 #define IDR_NVOCLOCK                    144
+#define IDR_IREC                        145
 #define IDR_DATA_DBUTILCAT              1000
 #define IDR_DATA_DBUTILINF              1001
 #define IDR_DATA_KMUEXE                 1002
@@ -54,7 +57,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        145
+#define _APS_NEXT_RESOURCE_VALUE        147
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           101

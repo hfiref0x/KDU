@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2023
 *
-*  TITLE:       RZPNK.H
+*  TITLE:       BINALYZE.H
 *
 *  VERSION:     1.40
 *
 *  DATE:        20 Oct 2023
 *
-*  Razer Overlay Support driver interface header.
+*  Binalyze driver interface header.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -19,23 +19,13 @@
 
 #pragma once
 
-//
-// Razer Overlay Support driver interface for CVE-2017-9769.
-//
+#define IREC_DEVICE_TYPE            (DWORD)0x8001
+#define IREC_FUNCTION_OPEN_PROCESS  (DWORD)0x80A
 
-#define RAZER_DEVICE_TYPE FILE_DEVICE_UNKNOWN
+#define IOCTL_IREC_OPEN_PROCESS      \
+    CTL_CODE(IREC_DEVICE_TYPE, IREC_FUNCTION_OPEN_PROCESS, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x80012028
 
-#define RAZER_OPEN_PROCESS_FUNCID   (DWORD)0x814
-
-#define IOCTL_RZPNK_OPEN_PROCESS    \
-    CTL_CODE(RAZER_DEVICE_TYPE, RAZER_OPEN_PROCESS_FUNCID, METHOD_BUFFERED, FILE_WRITE_ACCESS) //0x22A050
-
-typedef struct _RAZER_OPEN_PROCESS {
-    HANDLE ProcessId;
-    HANDLE ProcessHandle;
-} RAZER_OPEN_PROCESS, * PRAZER_OPEN_PROCESS;
-
-BOOL WINAPI RazerOpenProcess(
+BOOL WINAPI BeDrvOpenProcess(
     _In_ HANDLE DeviceHandle,
     _In_ HANDLE ProcessId,
     _In_ ACCESS_MASK DesiredAccess,

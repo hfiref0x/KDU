@@ -24,6 +24,7 @@ It features:
 ###### KDU -prv ProviderID
 ###### KDU -ps ProcessID
 ###### KDU -pse Commandline
+###### KDU -dmp ProcessID
 ###### KDU -dse value
 ###### KDU -map filename
 * -list - list currently available providers;
@@ -31,6 +32,7 @@ It features:
 * -prv  - optional, select vulnerability driver provider;
 * -ps   - modify process object of given ProcessID, downgrading any protections;
 * -pse  - launch program as ProtectedProcessLight-AntiMalware (PPL);
+* -dmp  - dump virtual memory of the given process;
 * -dse  - write user defined value to the system DSE state flags;
 * -map  - map driver to the kernel and execute it entry point, this command have dependencies listed below;
   * -scv version - optional, select shellcode version, default 1;
@@ -145,6 +147,9 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 38          | Pavel Yosifovich | KRegExp  | Kernel Registry Explorer        | Original          | Undefined              |                      |
 | 39          | Inspect Element LTD | EchoDrv  | Echo AntiCheat (spyware)     | Original          | Undefined              |                      |
 | 40          | NVidia | nvoclock  | NVidia System Utility Driver     | Original          | 7.0.0.32              |                      |
+| 41          | Binalyze | IREC  | Binalyze DFIR     | Original          | 3.11.0              |                      |
+| 42          | DavidXXW | PhyDMACC  | SLIC ToolKit     | WINRING0          | 1.2.0              |                      |
+| 43          | Razer | rzpnk  | Razer Synapse     | Original          |  2.20.15.1104              |                      |
 
 ###### *At commit time, data maybe inaccurate.
 
@@ -212,6 +217,7 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 * LOLDrivers, https://www.loldrivers.io
 * ECHOH NO, https://github.com/kite03/echoac-poc/
 * NVDrv, https://github.com/zer0condition/NVDrv
+* CVE-2023-41444, https://blog.dru1d.ninja/windows-driver-exploit-development-irec-sys-a5eb45093945
 
 # Wormhole drivers code
 

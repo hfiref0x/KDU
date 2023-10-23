@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       KPH.CPP
 *
-*  VERSION:     1.20
+*  VERSION:     1.40
 *
-*  DATE:        08 Feb 2022
+*  DATE:        20 Oct 2023
 *
 *  KProcessHacker2 driver routines.
 *
@@ -292,14 +292,14 @@ BOOL KphpDuplicateHandle(
 }
 
 /*
-* KphpOpenProcess
+* KphOpenProcess
 *
 * Purpose:
 *
 * Open process handle via KPH driver request.
 *
 */
-BOOL KphpOpenProcess(
+BOOL WINAPI KphOpenProcess(
     _In_ HANDLE DeviceHandle,
     _In_ HANDLE ProcessId,
     _In_ ACCESS_MASK DesiredAccess,
@@ -339,7 +339,7 @@ BOOL WINAPI KphRegisterDriver(
     UNREFERENCED_PARAMETER(Param);
 
     return supOpenPhysicalMemory(DeviceHandle,
-        (pfnOpenProcessCallback)KphpOpenProcess,
+        (pfnOpenProcessCallback)KphOpenProcess,
         (pfnDuplicateHandleCallback)KphpDuplicateHandle,
         &g_KphPhysicalMemorySection);
 }

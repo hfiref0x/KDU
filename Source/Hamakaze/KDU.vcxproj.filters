@@ -213,6 +213,12 @@
     <ClCompile Include="idrv\nvidia.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\binalyze.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="idrv\rzpnk.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -396,6 +402,12 @@
       <Filter>thirdparty\whirlpool</Filter>
     </ClInclude>
     <ClInclude Include="idrv\nvidia.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\binalyze.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\rzpnk.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>

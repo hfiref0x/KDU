@@ -4,9 +4,9 @@
 *
 *  TITLE:       PROCEXP.CPP
 *
-*  VERSION:     1.32
+*  VERSION:     1.40
 *
-*  DATE:        10 Jun 2023
+*  DATE:        20 Oct 2023
 *
 *  Process Explorer driver routines.
 *
@@ -277,14 +277,14 @@ BOOL PexpDuplicateHandle(
 }
 
 /*
-* PexpOpenProcess
+* PexOpenProcess
 *
 * Purpose:
 *
 * Open process handle via ProcExp driver request.
 *
 */
-BOOL PexpOpenProcess(
+BOOL WINAPI PexOpenProcess(
     _In_ HANDLE DeviceHandle,
     _In_ HANDLE ProcessId,
     _In_ ACCESS_MASK DesiredAccess,
@@ -324,7 +324,7 @@ BOOL WINAPI PexRegisterDriver(
     context->Victim = &g_ProcExpVictimSelf;
 
     return supOpenPhysicalMemory(DeviceHandle,
-        PexpOpenProcess,
+        PexOpenProcess,
         PexpDuplicateHandle,
         &g_PexPhysicalMemorySection);
 }
