@@ -150,6 +150,10 @@ IDR_PHYDMACC            RCDATA                  "drv\\PhyDMACC.bin"
 
 IDR_RZPNK               RCDATA                  "drv\\rzpnk.bin"
 
+IDR_AMD_PDFWKRNL        RCDATA                  "drv\\PdFwKrnl.bin"
+
+IDR_AMD_AOD215          RCDATA                  "drv\\AODDriver215.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -157,8 +161,8 @@ IDR_RZPNK               RCDATA                  "drv\\rzpnk.bin"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,8,2310
- PRODUCTVERSION 1,1,8,2310
+ FILEVERSION 1,1,9,2312
+ PRODUCTVERSION 1,1,9,2312
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -175,12 +179,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility Database"
-            VALUE "FileVersion", "1.1.8.2310"
+            VALUE "FileVersion", "1.1.9.2312"
             VALUE "InternalName", "Tanikaze.dll"
-            VALUE "LegalCopyright", "Copyright (C) 2020 - 2023 KDU Project"
+            VALUE "LegalCopyright", "Copyright (C) 2020 - 2024 KDU Project"
             VALUE "OriginalFilename", "Tanikaze.dll"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.1.8.2310"
+            VALUE "ProductVersion", "1.1.9.2312"
         END
     END
     BLOCK "VarFileInfo"

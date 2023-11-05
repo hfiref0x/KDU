@@ -155,7 +155,7 @@
     <ClCompile Include="idrv\nvidia.cpp" />
     <ClCompile Include="idrv\phymem.cpp" />
     <ClCompile Include="idrv\procexp.cpp" />
-    <ClCompile Include="idrv\ryzen.cpp" />
+    <ClCompile Include="idrv\amd.cpp" />
     <ClCompile Include="idrv\rzpnk.cpp" />
     <ClCompile Include="idrv\winio.cpp" />
     <ClCompile Include="idrv\nal.cpp" />
@@ -217,7 +217,7 @@
     <ClInclude Include="idrv\nvidia.h" />
     <ClInclude Include="idrv\phymem.h" />
     <ClInclude Include="idrv\procexp.h" />
-    <ClInclude Include="idrv\ryzen.h" />
+    <ClInclude Include="idrv\amd.h" />
     <ClInclude Include="idrv\rzpnk.h" />
     <ClInclude Include="idrv\winio.h" />
     <ClInclude Include="idrv\nal.h" />

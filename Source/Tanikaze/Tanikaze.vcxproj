@@ -186,6 +186,7 @@
     <None Include="drv\ALSysIO64.bin" />
     <None Include="drv\AMDRyzenMasterDriver.bin" />
     <None Include="drv\amsdk.bin" />
+    <None Include="drv\AODDriver215.bin" />
     <None Include="drv\asio2.bin" />
     <None Include="drv\AsIO3.bin" />
     <None Include="drv\AsrDrv106.bin" />
@@ -219,8 +220,10 @@
     <None Include="drv\msio64.bin" />
     <None Include="drv\nvoclock.bin" />
     <None Include="drv\pcdsrvc_x64.bin" />
+    <None Include="drv\PdFwKrnl.bin" />
     <None Include="drv\PhyDMACC.bin" />
     <None Include="drv\phymemx64.bin" />
+    <None Include="drv\phymem_panda.bin" />
     <None Include="drv\physmem.bin" />
     <None Include="drv\procexp.bin" />
     <None Include="drv\procexp1627.bin" />

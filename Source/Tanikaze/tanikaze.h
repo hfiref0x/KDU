@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.18
+*  VERSION:     1.19
 *
-*  DATE:        21 Oct 2023
+*  DATE:        04 Nov 2023
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -683,6 +683,36 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"rzpnk",
         (LPWSTR)L"47CD78C9-64C3-47C2-B80F-677B887CF095",
         (LPWSTR)L"Razer USA Ltd."
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_AMD_PDFWKRNL,
+        KDU_PROVIDER_AMD_PDFWKRNL,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_VIRTUAL,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"AMD USB-C Power Delivery Firmware Update Utility CVE-2023-20598",
+        (LPWSTR)L"PdFwKrnl",
+        (LPWSTR)L"PdFwKrnl",
+        (LPWSTR)L"Advanced Micro Devices Inc."
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_AMD_AOD215,
+        KDU_PROVIDER_AMD_AOD215,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"AMD OverDrive Driver (same as CVE-2020-12928)",
+        (LPWSTR)L"AODDriver",
+        (LPWSTR)L"AODDriver",
+        (LPWSTR)L"Advanced Micro Devices Inc."
     }
 
 };

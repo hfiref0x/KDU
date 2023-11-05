@@ -183,7 +183,7 @@
     <ClCompile Include="idrv\alcpu.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
-    <ClCompile Include="idrv\ryzen.cpp">
+    <ClCompile Include="idrv\amd.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
     <ClCompile Include="idrv\hilscher.cpp">
@@ -371,7 +371,7 @@
     <ClInclude Include="idrv\alcpu.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
-    <ClInclude Include="idrv\ryzen.h">
+    <ClInclude Include="idrv\amd.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
     <ClInclude Include="idrv\hilscher.h">
