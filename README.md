@@ -220,6 +220,8 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 * ECHOH NO, https://github.com/kite03/echoac-poc/
 * NVDrv, https://github.com/zer0condition/NVDrv
 * CVE-2023-41444, https://blog.dru1d.ninja/windows-driver-exploit-development-irec-sys-a5eb45093945
+* CVE-2023-20598, https://www.amd.com/en/resources/product-security/bulletin/amd-sb-6009.html
+* CVE-2020-12928, https://h0mbre.github.io/RyzenMaster_CVE/
 
 # Wormhole drivers code
 
