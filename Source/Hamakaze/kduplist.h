@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.40
+*  VERSION:     1.41
 *
-*  DATE:        21 Oct 2023
+*  DATE:        04 Nov 2023
 *
 *  Providers global list.
 *
@@ -38,7 +38,7 @@
 #include "idrv/zemana.h"
 #include "idrv/asrdrv.h"
 #include "idrv/alcpu.h"
-#include "idrv/ryzen.h"
+#include "idrv/amd.h"
 #include "idrv/hilscher.h"
 #include "idrv/lenovo.h"
 #include "idrv/hp.h"
@@ -1232,6 +1232,58 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provValidatePrerequisites)NULL,
 
         (provOpenProcess)RazerOpenProcess
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)PdFwReadVirtualMemory,
+        (provWriteKernelVM)PdFwWriteVirtualMemory,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)RmReadPhysicalMemory,
+        (provWritePhysicalMemory)RmWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
     }
 
 };

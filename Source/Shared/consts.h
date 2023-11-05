@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.40
+*  VERSION:     1.41
 *
-*  DATE:        21 Oct 2023
+*  DATE:        04 Nov 2023
 *
 *  Global consts.
 *
@@ -21,8 +21,8 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       4
-#define KDU_VERSION_REVISION    0
-#define KDU_VERSION_BUILD       2310
+#define KDU_VERSION_REVISION    1
+#define KDU_VERSION_BUILD       2311
 #define KDU_COPYRIGHT_YEAR      2023
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
@@ -30,7 +30,7 @@
 
 #define IPC_GET_HANDLE          0x1337
 
-#define KDU_SYNC_MUTANT         0x2310
+#define KDU_SYNC_MUTANT         0x2311
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
@@ -146,6 +146,9 @@
 #define IDR_ECHODRV                     143
 #define IDR_NVOCLOCK                    144
 #define IDR_IREC                        145
+#define IDR_AMD_PDFWKRNL                146
+#define IDR_AMD_AOD215                  147
+#define IDR_RESERVED0                   148
 
 //
 // Vulnerable drivers providers id
@@ -194,6 +197,8 @@
 #define KDU_PROVIDER_BINALYZE_IREC      41
 #define KDU_PROVIDER_PHYDMACC           42
 #define KDU_PROVIDER_RAZER              43
+#define KDU_PROVIDER_AMD_PDFWKRNL       44
+#define KDU_PROVIDER_AMD_AOD215         45
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

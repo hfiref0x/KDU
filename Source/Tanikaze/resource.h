@@ -45,6 +45,8 @@
 #define IDR_ECHODRV                     143
 #define IDR_NVOCLOCK                    144
 #define IDR_IREC                        145
+#define IDR_AMD_PDFWKRNL                146
+#define IDR_AMD_AOD215                  147
 #define IDR_DATA_DBUTILCAT              1000
 #define IDR_DATA_DBUTILINF              1001
 #define IDR_DATA_KMUEXE                 1002
@@ -57,7 +59,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        147
+#define _APS_NEXT_RESOURCE_VALUE        148
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           101

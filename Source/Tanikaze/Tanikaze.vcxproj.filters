@@ -190,6 +190,15 @@
     <None Include="drv\PhyDMACC.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\PdFwKrnl.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\AODDriver215.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\phymem_panda.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
