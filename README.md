@@ -151,7 +151,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 42          | DavidXXW | PhyDMACC  | SLIC ToolKit     | WINRING0          | 1.2.0              |                      |
 | 43          | Razer | rzpnk  | Razer Synapse     | Original          |  2.20.15.1104              |                      |
 | 44          | AMD | PdFwKrnl  | AMD Radeon™ Software (Adrenalin Edition and PRO Edition) | Original          |  23.9.1 and below             |                      |
-| 45          | AMD | AODriver  | AMD OverDrive Driver     | Original          |  2.1.5 and below              |                      |
+| 45          | AMD | AODDriver  | AMD OverDrive Driver     | Original          |  2.1.5 and below              |                      |
 
 ###### *At commit time, data maybe inaccurate.
 
