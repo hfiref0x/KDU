@@ -130,7 +130,7 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 21          | DarkByte       | Dbk64       | Cheat Engine                       | Original          | 7.4 and below               | Cert, Name           |
 | 22          | ASUSTeK        | AsIO3       | ASUS GPU TweakII                   | WINIO             | 2.3.0.3                     |                      |
 | 23          | Marvin         | Hw          | Marvin Hardware Access Driver      | Original          | 4.9 and below               | Name                 |
-| 24          | CODESYS        | SysDrv3S    | CODESYS SysDrv3S                   | MAPMEM            | 3.5.6 and below             |                      |
+| 24          | CODESYS        | SysDrv3S    | CODESYS SysDrv3S                   | MAPMEM            | 3.5.6 and below             | Cert                     |
 | 25          | Zemana         | amsdk       | WatchDog/MalwareFox/Zemana AM      | Original          | 3.0.0 and below             |                      |
 | 26          | HiRes Ent.     | inpoutx64   | Various                            | WINIO             | 1.2.0 and below             |                      |
 | 27          | PassMark       | DirectIo64  | PassMark OSForensics               | Original          | Any                         |                      |
@@ -141,17 +141,22 @@ You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware
 | 32          | Lenovo         | LDD         | Lenovo Diagnostics Driver for Windows 10 and later | Original          | 1.0.4.0 and below               |  Cert, Name          |
 | 33          | Dell           | pcdsrvc_x64 | Dell PC Doctor                     | Original          | 6.2.2.0                     |                      |
 | 34          | MSI            | winio       | MSI Foundation Service             | WINIO             | Undefined                   |                      |
-| 35          | HP             | EtdSupport  | ETDi Support Driver                | Original          | 18.0 and below              |                      |
+| 35          | HP             | EtdSupport  | ETDi Support Driver                | Original          | 18.0 and below              |  Cert                |
 | 36          | Pavel Yosifovich | KExplore  | Kernel Explorer                | Original          | Undefined              |                      |
 | 37          | Pavel Yosifovich | KObjExp  | Kernel Object Explorer          | Original          | Undefined              |                      |
 | 38          | Pavel Yosifovich | KRegExp  | Kernel Registry Explorer        | Original          | Undefined              |                      |
 | 39          | Inspect Element LTD | EchoDrv  | Echo AntiCheat (spyware)     | Original          | Undefined              |                      |
 | 40          | NVidia | nvoclock  | NVidia System Utility Driver     | Original          | 7.0.0.32              |                      |
 | 41          | Binalyze | IREC  | Binalyze DFIR     | Original          | 3.11.0              |                      |
-| 42          | DavidXXW | PhyDMACC  | SLIC ToolKit     | WINRING0          | 1.2.0              |                      |
+| 42          | DavidXXW | PhyDMACC  | SLIC ToolKit     | WINRING0          | 1.2.0              |  Page hash                    |
 | 43          | Razer | rzpnk  | Razer Synapse     | Original          |  2.20.15.1104              |                      |
 | 44          | AMD | PdFwKrnl  | AMD Radeon™ Software (Adrenalin Edition and PRO Edition) | Original          |  23.9.1 and below             |                      |
 | 45          | AMD | AODDriver  | AMD OverDrive Driver     | Original          |  2.1.5 and below              |                      |
+
+MSFT blacklist types
+* Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
+* Name - by original filename entry stored inside VERSION_INFO file resources, this type of bans are only possible with cross-checking of file version otherwise it will cause false-positives in case if the driver has "fixed/unaffected" version. 
+* Hash/Page hash - by authenticode hash/page hash, allows MSFT to ban exact driver file.
 
 ###### *At commit time, data maybe inaccurate.
 
