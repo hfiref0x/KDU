@@ -291,6 +291,8 @@ They are used in multiple products from hardware vendors mostly in unmodified st
 * WinRing0 BSOD/CVE generator, https://github.com/hfiref0x/Misc/tree/master/source/WormholeDrivers/WINRING0
 * PhyMem BSOD/CVE generator, https://github.com/hfiref0x/Misc/tree/master/source/WormholeDrivers/PHYMEM
 * MapMem BSOD/CVE generator, https://github.com/hfiref0x/Misc/tree/master/source/WormholeDrivers/MAPMEM
+* InpOut BSOD/CVE generator, https://github.com/hfiref0x/Misc/tree/master/source/WormholeDrivers/INPOUT
+* Intel infamous driver, https://github.com/hfiref0x/Misc/tree/master/source/IntelNal
 
 # Authors
 
