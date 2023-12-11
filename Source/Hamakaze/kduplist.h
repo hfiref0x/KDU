@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.41
 *
-*  DATE:        04 Nov 2023
+*  DATE:        09 Dec 2023
 *
 *  Providers global list.
 *
@@ -1280,6 +1280,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)NULL,
         (provReadPhysicalMemory)RmReadPhysicalMemory,
         (provWritePhysicalMemory)RmWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)WinIoRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)WinIoReadKernelVirtualMemory,
+        (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)WinIoVirtualToPhysical,
+        (provQueryPML4)WinIoQueryPML4Value,
+        (provReadPhysicalMemory)WinIoReadPhysicalMemory,
+        (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
         (provValidatePrerequisites)NULL,
 

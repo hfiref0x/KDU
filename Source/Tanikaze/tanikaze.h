@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.19
 *
-*  DATE:        04 Nov 2023
+*  DATE:        09 Dec 2023
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -713,6 +713,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"AODDriver",
         (LPWSTR)L"AODDriver",
         (LPWSTR)L"Advanced Micro Devices Inc."
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_WNBIOS64,
+        KDU_PROVIDER_WINCOR,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseWinIo,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"WnBios Driver",
+        (LPWSTR)L"wnBios64",
+        (LPWSTR)L"WNBIOS",
+        (LPWSTR)L"Wincor Nixdorf International GmbH"
     }
 
 };

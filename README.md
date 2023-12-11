@@ -155,6 +155,7 @@ Note: Provider with Id 0 assumed as default if no -prv command is specified.
 | 43     | Razer | rzpnk  | Razer Synapse     |  2.20.15.1104   |                      |
 | 44     | AMD | PdFwKrnl  | AMD Radeon™ Software (Adrenalin Edition and PRO Edition) | 23.9.1 and below             |                      |
 | 45     | AMD | AODDriver  | AMD OverDrive Driver     | 2.1.5 and below              |                      |
+| 46     | Wincor Nixdorf  | wnBios64  | WinBios Driver     | 1.2.0 and below              |                      |
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
@@ -210,6 +211,7 @@ MSFT blacklist types:
 |43|Original|CVE-2017-9769|**File(SHA1):** F999709E5B00A68A0F4FA912619FE6548AD0C42D<br>**Authenticode(SHA1):** 1AC31466261A6DA69FBEB8E99D0B7B772071AC7F<br>**Page(SHA1):** 4EC299E9A539F6BC194BD3D436B24A565BD32EF4<br>**Page(SHA256):** C8CE0EE4FF58779A292B5626D9953888A1A04799E18924CB7A075095C25042E8 |
 |44|Original|CVE-2023-20598|**File(SHA1):** A24840E32071E0F64E1DFF8CA540604896811587<br>**Authenticode(SHA1):** 661A1A28950CEC3F2C3D0E72AB2A05D4A173CF9A<br>**Page(SHA1):** 869BED04EB66492AC532E36C3C6171AB34DA1A00<br>**Page(SHA256):** E5DC6305227951B05997CD147C59795991F7EDE52461D069EFE1D568DD25C580 |
 |45|Original|CVE-2020-12928|**File(SHA1):** 17D28A90EF4D3DBB083371F99943FF938F3B39F6<br>**Authenticode(SHA1):** 9A329362E340FC8363E67FB5F23A8391CB83BF00<br>**Page(SHA1):** 0BC84A62ABD3CA20305FB834592928C2317439D6<br>**Page(SHA256):** 76C7A12CDE2FDC80A6AF0A58E7698FC1F5EC8746EFB461FB07155B7065480715 |
+|46|WINIO||**File(SHA1):** AEC96520E85330594D3165C86CB92EAC34C1E095<br>**Authenticode(SHA1):** A7179D7CF5EE58276C3C42A16195A0B733F31B53<br>**Page(SHA1):** AF7FED1C68BB2D459F7778EC6D20459618CF3D26<br>**Page(SHA256):** 490B1FFC374F9CDEC57BBCE9DAD93251516DE93C7A7F3475D8AC55A6DCBB958E|
 
 ###### *At commit time, data maybe inaccurate.
 

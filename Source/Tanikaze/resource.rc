@@ -154,6 +154,8 @@ IDR_AMD_PDFWKRNL        RCDATA                  "drv\\PdFwKrnl.bin"
 
 IDR_AMD_AOD215          RCDATA                  "drv\\AODDriver215.bin"
 
+IDR_WNBIOS64            RCDATA                  "drv\\wnBios64.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

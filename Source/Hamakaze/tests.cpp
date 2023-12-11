@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.41
 *
-*  DATE:        04 Nov 2023
+*  DATE:        08 Dec 2023
 *
 *  KDU tests.
 *
@@ -57,7 +57,7 @@ VOID KDUTestLoad()
 
 VOID KDUTestDSE(PKDU_CONTEXT Context)
 {
-    ULONG_PTR g_CiOptions = 0xfffff80779c39418;//need update
+    ULONG_PTR g_CiOptions = 0xfffff8064063a438;//need update
     ULONG_PTR oldValue = 0, newValue = 0x0, testValue = 0;
     KDU_PROVIDER* prov = Context->Provider;
 

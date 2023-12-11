@@ -4,9 +4,9 @@
 *
 *  TITLE:       WINIO.CPP
 *
-*  VERSION:     1.34
+*  VERSION:     1.41
 *
-*  DATE:        14 Sep 2023
+*  DATE:        02 Dec 2023
 *
 *  WINIO based drivers routines.
 *
@@ -928,6 +928,7 @@ BOOL WINAPI WinIoRegisterDriver(
         break;
 
     case IDR_MSI_WINIO:
+    case IDR_WNBIOS64:
     default:
         g_WinIoMapMemoryRoutine = WinIoMapMemory;
         g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;

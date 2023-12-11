@@ -189,6 +189,7 @@
     <None Include="drv\AODDriver215.bin" />
     <None Include="drv\asio2.bin" />
     <None Include="drv\AsIO3.bin" />
+    <None Include="drv\AsmIo64.bin" />
     <None Include="drv\AsrDrv106.bin" />
     <None Include="drv\ATSZIO64.bin" />
     <None Include="drv\dbk64.bin" />
@@ -233,6 +234,7 @@
     <None Include="drv\rzpnk.bin" />
     <None Include="drv\SysDrv3S.bin" />
     <None Include="drv\WinRing0x64.bin" />
+    <None Include="drv\wnBios64.bin" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

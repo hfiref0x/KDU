@@ -199,6 +199,12 @@
     <None Include="drv\phymem_panda.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\AsmIo64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\wnBios64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
