@@ -199,10 +199,13 @@
     <None Include="drv\phymem_panda.bin">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="drv\AsmIo64.bin">
+    <None Include="drv\wnBios64.bin">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="drv\wnBios64.bin">
+    <None Include="drv\eleetx1.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\AxtuDrv.bin">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

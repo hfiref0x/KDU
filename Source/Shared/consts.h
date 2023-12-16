@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.41
 *
-*  DATE:        09 Dec 2023
+*  DATE:        10 Dec 2023
 *
 *  Global consts.
 *
@@ -149,6 +149,8 @@
 #define IDR_AMD_PDFWKRNL                146
 #define IDR_AMD_AOD215                  147
 #define IDR_WNBIOS64                    148
+#define IDR_EVGA_ELEETX1                149
+#define IDR_ASROCKDRV2                  150
 
 //
 // Vulnerable drivers providers id
@@ -200,6 +202,8 @@
 #define KDU_PROVIDER_AMD_PDFWKRNL       44
 #define KDU_PROVIDER_AMD_AOD215         45
 #define KDU_PROVIDER_WINCOR             46
+#define KDU_PROVIDER_EVGA_ELEETX1       47
+#define KDU_PROVIDER_ASROCK2            48
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

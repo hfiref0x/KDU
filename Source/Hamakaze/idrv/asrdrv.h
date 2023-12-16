@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       ASRDRV.H
 *
-*  VERSION:     1.28
+*  VERSION:     1.41
 *
-*  DATE:        22 Nov 2022
+*  DATE:        10 Dec 2023
 *
 *  ASRock driver interface header.
 *
@@ -31,6 +31,12 @@
 
 #define IOCTL_ASRDRV_EXEC_DISPATCH \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, ASRDRV_EXEC_DISPATCH, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+
+#define IOCTL_RWDRV_READ_MEMORY  \
+	CTL_CODE(FILE_DEVICE_UNKNOWN, ASRDRV_READ_MEMORY, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x00222808
+
+#define IOCTL_RWDRV_WRITE_MEMORY \
+	CTL_CODE(FILE_DEVICE_UNKNOWN, ASRDRV_WRITE_MEMORY, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x0022280C
 
 //
 // Based on CVE-2020-15368
@@ -70,6 +76,16 @@ typedef struct _ASRDRV_COMMAND {
 } ASRDRV_COMMAND, * PASRDRV_COMMAND;
 #pragma pack(pop)
 
+//
+// Original RWE layout.
+//
+typedef struct _ASR_RWE_REQUEST {
+    PHYSICAL_ADDRESS Address;           //+0x00
+    ULONG Size;                         //+0x08
+    ASRDRV_MM_GRANULARITY Granularity;  //+0x0C
+    PBYTE Data;                         //+0x10
+} ASR_RWE_REQUEST, *PASR_RWE_REQUEST;
+
 BOOL WINAPI AsrReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
@@ -77,6 +93,18 @@ BOOL WINAPI AsrReadPhysicalMemory(
     _In_ ULONG NumberOfBytes);
 
 BOOL WINAPI AsrWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI RweReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI RweWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ PVOID Buffer,

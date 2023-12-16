@@ -219,6 +219,9 @@
     <ClCompile Include="idrv\rzpnk.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\evga.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -408,6 +411,9 @@
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
     <ClInclude Include="idrv\rzpnk.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\evga.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
   </ItemGroup>

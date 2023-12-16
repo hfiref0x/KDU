@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2023
 *
 *  TITLE:       GLOBAL.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.19
 *
-*  DATE:        10 Nov 2022
+*  DATE:        10 Dec 2023
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -20,5 +20,8 @@
 #include "tanikaze.h"
 
 /*
-*  Nothing
+* Nothing
+* 
+* WARNING, THIS DLL MUST BE BUILD IN RELEASE CONFIGURATION, ALWAYS.
+* 
 */

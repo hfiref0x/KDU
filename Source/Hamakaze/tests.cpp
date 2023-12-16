@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.41
 *
-*  DATE:        08 Dec 2023
+*  DATE:        10 Dec 2023
 *
 *  KDU tests.
 *
@@ -188,7 +188,7 @@ VOID KDUTest()
    // KDUTestLoad();
 
    // TestSymbols();
-    Context = KDUProviderCreate(46, 
+    Context = KDUProviderCreate(48, 
         FALSE, 
         NT_WIN10_20H1, 
         KDU_SHELLCODE_V1, 

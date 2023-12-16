@@ -143,6 +143,7 @@
     <ClCompile Include="idrv\dell.cpp" />
     <ClCompile Include="idrv\directio64.cpp" />
     <ClCompile Include="idrv\echodrv.cpp" />
+    <ClCompile Include="idrv\evga.cpp" />
     <ClCompile Include="idrv\gmer.cpp" />
     <ClCompile Include="idrv\hilscher.cpp" />
     <ClCompile Include="idrv\hp.cpp" />
@@ -202,6 +203,7 @@
     <ClInclude Include="idrv\binalyze.h" />
     <ClInclude Include="idrv\dbk.h" />
     <ClInclude Include="idrv\echodrv.h" />
+    <ClInclude Include="idrv\evga.h" />
     <ClInclude Include="idrv\hilscher.h" />
     <ClInclude Include="idrv\hp.h" />
     <ClInclude Include="idrv\ldrsc.h" />

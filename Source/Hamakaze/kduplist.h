@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.41
 *
-*  DATE:        09 Dec 2023
+*  DATE:        10 Dec 2023
 *
 *  Providers global list.
 *
@@ -47,6 +47,7 @@
 #include "idrv/nvidia.h"
 #include "idrv/binalyze.h"
 #include "idrv/rzpnk.h"
+#include "idrv/evga.h"
 
 //
 // Victims public array.
@@ -1306,6 +1307,58 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)EvgaReadPhysicalMemory,
+        (provWritePhysicalMemory)EvgaWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)RweReadPhysicalMemory,
+        (provWritePhysicalMemory)RweWritePhysicalMemory,
 
         (provValidatePrerequisites)NULL,
 

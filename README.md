@@ -149,13 +149,15 @@ Note: Provider with Id 0 assumed as default if no -prv command is specified.
 | 37     | Pavel Yosifovich | KObjExp  | Kernel Object Explorer          | Undefined              |                      |
 | 38     | Pavel Yosifovich | KRegExp  | Kernel Registry Explorer        | Undefined              |                      |
 | 39     | Inspect Element LTD | EchoDrv  | Echo AntiCheat (spyware)  | Undefined              |  Hash                   |
-| 40     | NVidia | nvoclock  | NVidia System Utility Driver     | 7.0.0.32              |                      |
-| 41     | Binalyze | IREC  | Binalyze DFIR    | 3.11.0  |                      |
-| 42     | DavidXXW | PhyDMACC  | SLIC ToolKit     | 1.2.0  |  Page hash                    |
-| 43     | Razer | rzpnk  | Razer Synapse     |  2.20.15.1104   |                      |
-| 44     | AMD | PdFwKrnl  | AMD Radeon™ Software (Adrenalin Edition and PRO Edition) | 23.9.1 and below             |                      |
-| 45     | AMD | AODDriver  | AMD OverDrive Driver     | 2.1.5 and below              |                      |
-| 46     | Wincor Nixdorf  | wnBios64  | WinBios Driver     | 1.2.0 and below              |                      |
+| 40     | NVidia         | nvoclock  | NVidia System Utility Driver     | 7.0.0.32              |                      |
+| 41     | Binalyze       | IREC  | Binalyze DFIR    | 3.11.0  |                      |
+| 42     | DavidXXW       | PhyDMACC  | SLIC ToolKit     | 1.2.0  |  Page hash                    |
+| 43     | Razer          | rzpnk  | Razer Synapse     |  2.20.15.1104   |                      |
+| 44     | AMD            | PdFwKrnl  | AMD Radeon™ Software (Adrenalin Edition and PRO Edition) | 23.9.1 and below             |                      |
+| 45     | AMD            | AODDriver  | AMD OverDrive Driver     | 2.1.5 and below              |                      |
+| 46     | Wincor Nixdorf | wnBios64  | WinBios Driver     | 1.2.0 and below              |                      |
+| 47     | EVGA  | EleetX1| EVGA ELEET X1     | 1.0.16.0 and below              |                      |
+| 48     | ASRock         | AxtuDrv  | AsRock Extreme Tuner     | Undefined              |                      |
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
@@ -212,6 +214,9 @@ MSFT blacklist types:
 |44|Original|CVE-2023-20598|**File(SHA1):** A24840E32071E0F64E1DFF8CA540604896811587<br>**Authenticode(SHA1):** 661A1A28950CEC3F2C3D0E72AB2A05D4A173CF9A<br>**Page(SHA1):** 869BED04EB66492AC532E36C3C6171AB34DA1A00<br>**Page(SHA256):** E5DC6305227951B05997CD147C59795991F7EDE52461D069EFE1D568DD25C580 |
 |45|Original|CVE-2020-12928|**File(SHA1):** 17D28A90EF4D3DBB083371F99943FF938F3B39F6<br>**Authenticode(SHA1):** 9A329362E340FC8363E67FB5F23A8391CB83BF00<br>**Page(SHA1):** 0BC84A62ABD3CA20305FB834592928C2317439D6<br>**Page(SHA256):** 76C7A12CDE2FDC80A6AF0A58E7698FC1F5EC8746EFB461FB07155B7065480715 |
 |46|WINIO||**File(SHA1):** AEC96520E85330594D3165C86CB92EAC34C1E095<br>**Authenticode(SHA1):** A7179D7CF5EE58276C3C42A16195A0B733F31B53<br>**Page(SHA1):** AF7FED1C68BB2D459F7778EC6D20459618CF3D26<br>**Page(SHA256):** 490B1FFC374F9CDEC57BBCE9DAD93251516DE93C7A7F3475D8AC55A6DCBB958E|
+|47|Original||**File(SHA1):** DA66B66DCA5EA8689DB903EC23E98F2C881DE6F8<br>**Authenticode(SHA1):** A8D16FED8999033126D60C656A3BA359DFAA559F<br>**Page(SHA1):** 082FBFF03465F78276D5A2066398A9D3C73DB9AB<br>**Page(SHA256):** F677A9447400EAEE6E12A88F59AAADCF6DDF8F16EC8F7612BF50AB378A9B9012|
+|48|RWEverything||**File(SHA1):** 3F6A997B04D2299BA0E9F505803E8D60D0755F44<br>**Authenticode(SHA1):** E7FAC017B371A43276E03BF5F71D437E8D377930<br>**Page(SHA1):** EE9A5A98C257F2D50030B7F3AB6D7DA805FCC150<br>**Page(SHA256):** D159D969E05C83F27F446BCC5F171A0043CC3DF0B518962CEE7ACBE30BCC02F8|
+
 
 ###### *At commit time, data maybe inaccurate.
 

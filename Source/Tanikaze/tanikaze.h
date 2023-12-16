@@ -728,7 +728,37 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"wnBios64",
         (LPWSTR)L"WNBIOS",
         (LPWSTR)L"Wincor Nixdorf International GmbH"
-    }
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_EVGA_ELEETX1,
+        KDU_PROVIDER_EVGA_ELEETX1,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"EVGA Low Level Driver",
+        (LPWSTR)L"EleetX1",
+        (LPWSTR)L"EleetX1",
+        (LPWSTR)L"EVGA Corp."
+    },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ASROCKDRV2,
+        KDU_PROVIDER_ASROCK2,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseRWEverything,
+        KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"RW-Everything Read & Write Driver",
+        (LPWSTR)L"AxtuDrv",
+        (LPWSTR)L"AxtuDrv",
+        (LPWSTR)L"ASROCK Incorporation"
+     }
 
 };
 

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2023
 *
 *  TITLE:       ASRDRV.CPP
 *
-*  VERSION:     1.28
+*  VERSION:     1.41
 *
-*  DATE:        22 Nov 2022
+*  DATE:        10 Dec 2023
 *
 *  ASRock driver routines.
 *
@@ -26,7 +26,6 @@
 
 #define ASROCK_AES_KEY          "C110DD4FE9434147B92A5A1E3FDBF29A"
 #define ASROCK_AES_KEY_LENGTH   sizeof(ASROCK_AES_KEY) - sizeof(CHAR)
-
 
 /*
 * AsrEncryptDriverRequest
@@ -149,7 +148,7 @@ BOOL AsrEncryptDriverRequest(
                 pbCipherData,
                 cbResult);
 
-            requestFooter = (ASRDRV_REQUEST_FOOTER*)RtlOffsetToPointer(result, 
+            requestFooter = (ASRDRV_REQUEST_FOOTER*)RtlOffsetToPointer(result,
                 outSize - sizeof(ASRDRV_REQUEST_FOOTER));
 
             requestFooter->Size = cbResult;
@@ -214,6 +213,7 @@ BOOL AsrCallDriver(
     return NT_SUCCESS(status);
 }
 
+
 /*
 * AsrReadPhysicalMemory
 *
@@ -266,4 +266,82 @@ BOOL WINAPI AsrWritePhysicalMemory(
     return AsrCallDriver(DeviceHandle,
         IOCTL_ASRDRV_WRITE_MEMORY,
         &args);
+}
+
+/*
+* RweReadPhysicalMemory
+*
+* Purpose:
+*
+* Read from the physical memory.
+*
+*/
+BOOL WINAPI RweReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    BOOL bResult = FALSE;
+    ASR_RWE_REQUEST request;
+
+    ULONG_PTR mapAddress = (PhysicalAddress & ~(PAGE_SIZE - 1));
+    ULONG size = ALIGN_UP_BY(NumberOfBytes, PAGE_SIZE);
+    PVOID data = (ASR_RWE_REQUEST*)supAllocateLockedMemory(size,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE);
+
+    if (data) {
+
+        RtlSecureZeroMemory(&request, sizeof(request));
+
+        request.Address.QuadPart = mapAddress;
+        request.Size = size;
+        request.Data = (PBYTE)data;
+        request.Granularity = AsrGranularityDword;
+
+        if (supCallDriver(DeviceHandle,
+            IOCTL_RWDRV_READ_MEMORY,
+            &request,
+            sizeof(request),
+            &request,
+            sizeof(request)))
+        {
+            RtlCopyMemory(Buffer, RtlOffsetToPointer(data, PhysicalAddress - mapAddress), size);
+            bResult = TRUE;
+        }
+
+        supFreeLockedMemory(data, size);
+    }
+
+    return bResult;
+}
+
+/*
+* RweWritePhysicalMemory
+*
+* Purpose:
+*
+* Write to the physical memory.
+*
+*/
+BOOL WINAPI RweWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    ASR_RWE_REQUEST request;
+
+    request.Address.QuadPart = PhysicalAddress;
+    request.Size = NumberOfBytes;
+    request.Granularity = AsrGranularityByte;
+    request.Data = (PBYTE)Buffer;
+
+    return supCallDriver(DeviceHandle,
+        IOCTL_RWDRV_WRITE_MEMORY,
+        &request,
+        sizeof(request),
+        &request,
+        sizeof(request));
 }

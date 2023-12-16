@@ -156,6 +156,10 @@ IDR_AMD_AOD215          RCDATA                  "drv\\AODDriver215.bin"
 
 IDR_WNBIOS64            RCDATA                  "drv\\wnBios64.bin"
 
+IDR_EVGA_ELEETX1        RCDATA                  "drv\\eleetx1.bin"
+
+IDR_ASROCKDRV2          RCDATA                  "drv\\AxtuDrv.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
