@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.41
 *
-*  DATE:        10 Dec 2023
+*  DATE:        16 Dec 2023
 *
 *  Providers global list.
 *
@@ -1324,7 +1324,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
         (provMapDriver)KDUMapDriver,
-        (provControlDSE)KDUControlDSE,
+        (provControlDSE)KDUControlDSE2,
 
         (provReadKernelVM)NULL,
         (provWriteKernelVM)NULL,
