@@ -1345,7 +1345,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
         (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
 
-        (provRegisterDriver)NULL,
+        (provRegisterDriver)AsrRegisterDriver,
         (provUnregisterDriver)NULL,
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)KDUProviderPostOpen,
@@ -1364,6 +1364,60 @@ static KDU_PROVIDER g_KDUProviders[] =
 
         (provOpenProcess)NULL
     },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)AsrReadPhysicalMemory,
+        (provWritePhysicalMemory)AsrWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+    },
+
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)AsrRegisterDriver,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE2,
+
+        (provReadKernelVM)NULL,
+        (provWriteKernelVM)NULL,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)RweReadPhysicalMemory,
+        (provWritePhysicalMemory)RweWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+    },
+
 
     {
         NULL,

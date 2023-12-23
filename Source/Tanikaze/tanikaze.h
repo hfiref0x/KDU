@@ -773,6 +773,36 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"AppShopDrv103",
         (LPWSTR)L"AppShopDrv103",
         (LPWSTR)L"ASROCK Incorporation"
+     },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ASROCKDRV3,
+        KDU_PROVIDER_ASROCK4,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseRWEverything,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"ASRock IO Driver",
+        (LPWSTR)L"AsrDrv107n",
+        (LPWSTR)L"AsrDrv107n",
+        (LPWSTR)L"ASROCK INC."
+     },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ASROCKDRV4,
+        KDU_PROVIDER_ASROCK5,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseRWEverything,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"ASRock IO Driver",
+        (LPWSTR)L"AsrDrv107",
+        (LPWSTR)L"AsrDrv107",
+        (LPWSTR)L"ASROCK INC."
      }
 
 };

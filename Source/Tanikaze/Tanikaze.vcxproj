@@ -192,6 +192,8 @@
     <None Include="drv\asio2.bin" />
     <None Include="drv\AsIO3.bin" />
     <None Include="drv\AsrDrv106.bin" />
+    <None Include="drv\AsrDrv107.bin" />
+    <None Include="drv\AsrDrv107n.bin" />
     <None Include="drv\ATSZIO64.bin" />
     <None Include="drv\AxtuDrv.bin" />
     <None Include="drv\dbk64.bin" />

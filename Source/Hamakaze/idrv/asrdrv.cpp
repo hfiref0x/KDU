@@ -27,6 +27,9 @@
 #define ASROCK_AES_KEY          "C110DD4FE9434147B92A5A1E3FDBF29A"
 #define ASROCK_AES_KEY_LENGTH   sizeof(ASROCK_AES_KEY) - sizeof(CHAR)
 
+ULONG g_AsrReadPhysIOCTL;
+ULONG g_AsrWritePhysIOCTL;
+
 /*
 * AsrEncryptDriverRequest
 *
@@ -268,6 +271,9 @@ BOOL WINAPI AsrWritePhysicalMemory(
         &args);
 }
 
+
+
+
 /*
 * RweReadPhysicalMemory
 *
@@ -301,7 +307,7 @@ BOOL WINAPI RweReadPhysicalMemory(
         request.Granularity = AsrGranularityDword;
 
         if (supCallDriver(DeviceHandle,
-            IOCTL_RWDRV_READ_MEMORY,
+            g_AsrReadPhysIOCTL,
             &request,
             sizeof(request),
             &request,
@@ -339,9 +345,39 @@ BOOL WINAPI RweWritePhysicalMemory(
     request.Data = (PBYTE)Buffer;
 
     return supCallDriver(DeviceHandle,
-        IOCTL_RWDRV_WRITE_MEMORY,
+        g_AsrWritePhysIOCTL,
         &request,
         sizeof(request),
         &request,
         sizeof(request));
+}
+
+/*
+* AsrRegisterDriver
+*
+* Purpose:
+*
+* Register AsRock driver.
+*
+*/
+BOOL WINAPI AsrRegisterDriver(
+    _In_ HANDLE DeviceHandle,
+    _In_opt_ PVOID Param)
+{
+    ULONG DriverId = PtrToUlong(Param);
+
+    UNREFERENCED_PARAMETER(DeviceHandle);
+
+    g_AsrReadPhysIOCTL = IOCTL_RWDRV_READ_MEMORY;
+    g_AsrWritePhysIOCTL = IOCTL_RWDRV_WRITE_MEMORY;
+
+    switch (DriverId) {
+
+    case IDR_ASROCKDRV3:
+        g_AsrReadPhysIOCTL = IOCTL_RWDRV_READ_MEMORY_7N;
+        g_AsrWritePhysIOCTL = IOCTL_RWDRV_WRITE_MEMORY_7N;
+        break;
+    }
+
+    return TRUE;
 }

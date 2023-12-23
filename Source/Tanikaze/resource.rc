@@ -162,6 +162,10 @@ IDR_ASROCKDRV2          RCDATA                  "drv\\AxtuDrv.bin"
 
 IDR_ASROCKAPPSHOP103    RCDATA                  "drv\\AppShopDrv103.bin"
 
+IDR_ASROCKDRV3          RCDATA                  "drv\\AsrDrv107n.bin"
+
+IDR_ASROCKDRV4          RCDATA                  "drv\\AsrDrv107.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
