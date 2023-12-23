@@ -152,6 +152,8 @@
 #define IDR_EVGA_ELEETX1                149
 #define IDR_ASROCKDRV2                  150
 #define IDR_ASROCKAPPSHOP103            151
+#define IDR_ASROCKDRV3                  152
+#define IDR_ASROCKDRV4                  153
 
 //
 // Vulnerable drivers providers id
@@ -206,6 +208,8 @@
 #define KDU_PROVIDER_EVGA_ELEETX1       47
 #define KDU_PROVIDER_ASROCK2            48
 #define KDU_PROVIDER_ASROCK3            49
+#define KDU_PROVIDER_ASROCK4            50
+#define KDU_PROVIDER_ASROCK5            51
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
