@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.41
 *
-*  DATE:        10 Dec 2023
+*  DATE:        11 Dec 2023
 *
 *  Global consts.
 *
@@ -30,7 +30,7 @@
 
 #define IPC_GET_HANDLE          0x1337
 
-#define KDU_SYNC_MUTANT         0x2311
+#define KDU_SYNC_MUTANT         0x2312
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
@@ -151,6 +151,7 @@
 #define IDR_WNBIOS64                    148
 #define IDR_EVGA_ELEETX1                149
 #define IDR_ASROCKDRV2                  150
+#define IDR_ASROCKAPPSHOP103            151
 
 //
 // Vulnerable drivers providers id
@@ -204,6 +205,7 @@
 #define KDU_PROVIDER_WINCOR             46
 #define KDU_PROVIDER_EVGA_ELEETX1       47
 #define KDU_PROVIDER_ASROCK2            48
+#define KDU_PROVIDER_ASROCK3            49
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

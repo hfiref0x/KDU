@@ -160,6 +160,8 @@ IDR_EVGA_ELEETX1        RCDATA                  "drv\\eleetx1.bin"
 
 IDR_ASROCKDRV2          RCDATA                  "drv\\AxtuDrv.bin"
 
+IDR_ASROCKAPPSHOP103    RCDATA                  "drv\\AppShopDrv103.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

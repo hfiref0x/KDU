@@ -208,6 +208,9 @@
     <None Include="drv\AxtuDrv.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\AppShopDrv103.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

@@ -188,6 +188,7 @@
     <None Include="drv\AMDRyzenMasterDriver.bin" />
     <None Include="drv\amsdk.bin" />
     <None Include="drv\AODDriver215.bin" />
+    <None Include="drv\AppShopDrv103.bin" />
     <None Include="drv\asio2.bin" />
     <None Include="drv\AsIO3.bin" />
     <None Include="drv\AsrDrv106.bin" />

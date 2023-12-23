@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.19
 *
-*  DATE:        09 Dec 2023
+*  DATE:        10 Dec 2023
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -757,6 +757,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"RW-Everything Read & Write Driver",
         (LPWSTR)L"AxtuDrv",
         (LPWSTR)L"AxtuDrv",
+        (LPWSTR)L"ASROCK Incorporation"
+     },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ASROCKAPPSHOP103,
+        KDU_PROVIDER_ASROCK3,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseRWEverything,
+        KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"AppShopDrv103 Driver",
+        (LPWSTR)L"AppShopDrv103",
+        (LPWSTR)L"AppShopDrv103",
         (LPWSTR)L"ASROCK Incorporation"
      }
 

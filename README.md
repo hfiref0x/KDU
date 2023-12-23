@@ -158,6 +158,7 @@ Note: Provider with Id 0 assumed as default if no -prv command is specified.
 | 46     | Wincor Nixdorf | wnBios64  | WinBios Driver     | 1.2.0 and below              |                      |
 | 47     | EVGA  | EleetX1| EVGA ELEET X1     | 1.0.16.0 and below              |                      |
 | 48     | ASRock         | AxtuDrv  | AsRock Extreme Tuner     | Undefined              |                      |
+| 49     | ASRock         | AppShopDrv103  | ASRock APP Shop    | 1.0.58 and below       |                      |
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
@@ -216,7 +217,7 @@ MSFT blacklist types:
 |46|WINIO||**File(SHA1):** AEC96520E85330594D3165C86CB92EAC34C1E095<br>**Authenticode(SHA1):** A7179D7CF5EE58276C3C42A16195A0B733F31B53<br>**Page(SHA1):** AF7FED1C68BB2D459F7778EC6D20459618CF3D26<br>**Page(SHA256):** 490B1FFC374F9CDEC57BBCE9DAD93251516DE93C7A7F3475D8AC55A6DCBB958E|
 |47|Original||**File(SHA1):** DA66B66DCA5EA8689DB903EC23E98F2C881DE6F8<br>**Authenticode(SHA1):** A8D16FED8999033126D60C656A3BA359DFAA559F<br>**Page(SHA1):** 082FBFF03465F78276D5A2066398A9D3C73DB9AB<br>**Page(SHA256):** F677A9447400EAEE6E12A88F59AAADCF6DDF8F16EC8F7612BF50AB378A9B9012|
 |48|RWEverything||**File(SHA1):** 3F6A997B04D2299BA0E9F505803E8D60D0755F44<br>**Authenticode(SHA1):** E7FAC017B371A43276E03BF5F71D437E8D377930<br>**Page(SHA1):** EE9A5A98C257F2D50030B7F3AB6D7DA805FCC150<br>**Page(SHA256):** D159D969E05C83F27F446BCC5F171A0043CC3DF0B518962CEE7ACBE30BCC02F8|
-
+|49|RWEverything||**File(SHA1):** 6074C2360F5DC74738873A525DFBD67EB6625986<br>**Authenticode(SHA1):** 03C523F31603C460076AD549F985DD9533734E95<br>**Page(SHA1):** 85B6FC43E943C9EB9B3DE1FF82A56870620CC1CF<br>**Page(SHA256):** A3AF7747FAC60B814FA6717B174F1199B9D163081B55AE40CEDD9983B6D033F5|
 
 ###### *At commit time, data maybe inaccurate.
 
@@ -301,4 +302,4 @@ They are used in multiple products from hardware vendors mostly in unmodified st
 
 # Authors
 
-(c) 2020 - 2023 KDU Project
+(c) 2020 - 2024 KDU Project
