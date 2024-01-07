@@ -73,7 +73,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>$(ProjectDir)Utils\GenAsIo2Unlock .\output\$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
+      <Command>"$(ProjectDir)Utils\GenAsIo2Unlock" .\output\$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
     </PostBuildEvent>
     <MASM>
       <AssembledCodeListingFile>shellstager.lst</AssembledCodeListingFile>
