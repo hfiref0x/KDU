@@ -107,7 +107,7 @@
       <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
     </Link>
     <PostBuildEvent>
-      <Command>$(ProjectDir)Utils\GenAsIo2Unlock .\output\$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
+      <Command>"$(ProjectDir)Utils\GenAsIo2Unlock" .\output\$(Platform)\$(Configuration)\$(TargetName)$(TargetExt)</Command>
     </PostBuildEvent>
     <MASM>
       <GenerateDebugInformation>false</GenerateDebugInformation>
