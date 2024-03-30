@@ -1,12 +1,12 @@
 ﻿/*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2020 - 2024
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.40
+*  VERSION:     1.41
 *
-*  DATE:        21 Oct 2023
+*  DATE:        30 Mar 2024
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -778,6 +778,8 @@ HINSTANCE KDUProviderLoadDB(
 )
 {
     HINSTANCE hInstance;
+    KDU_DB_VERSION *pVersionInfo;
+    BOOL bFailed = TRUE;
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
@@ -786,12 +788,50 @@ HINSTANCE KDUProviderLoadDB(
     if (hInstance) {
         printf_s("[+] Drivers database \"%ws\" loaded at 0x%p\r\n", DRV64DLL, hInstance);
 
-        gProvTable = (PKDU_DB)GetProcAddress(hInstance, "gProvTable");
-        if (gProvTable == NULL) {
-            supPrintfEvent(kduEventError, "[!] Providers table not found\r\n");
+        do {
+
+            pVersionInfo = (PKDU_DB_VERSION)GetProcAddress(hInstance, "gVersion");
+            if (pVersionInfo == NULL) {
+                supPrintfEvent(kduEventError, "[!] Providers version data not found\r\n");
+                break;
+            }
+
+            if (pVersionInfo->MajorVersion != KDU_VERSION_MAJOR ||
+                pVersionInfo->MinorVersion != KDU_VERSION_MINOR ||
+                pVersionInfo->Revision != KDU_VERSION_REVISION ||
+                pVersionInfo->Build != KDU_VERSION_BUILD)
+            {
+                supPrintfEvent(kduEventError, "[!] Providers database has wrong version, expected %lu.%lu.%lu.%lu, got %lu.%lu.%lu.%lu\r\n",
+                    KDU_VERSION_MAJOR,
+                    KDU_VERSION_MINOR,
+                    KDU_VERSION_REVISION,
+                    KDU_VERSION_BUILD,
+                    pVersionInfo->MajorVersion,
+                    pVersionInfo->MinorVersion,
+                    pVersionInfo->Revision,
+                    pVersionInfo->Build);
+
+                break;
+            }
+            else {
+                printf_s("[+] Drivers database version is OK\r\n");
+            }
+
+            gProvTable = (PKDU_DB)GetProcAddress(hInstance, "gProvTable");
+            if (gProvTable == NULL) {
+                supPrintfEvent(kduEventError, "[!] Providers table not found\r\n");
+                break;
+            }
+
+            bFailed = FALSE;
+
+        } while (FALSE);
+
+        if (bFailed) {
             FreeLibrary(hInstance);
             hInstance = NULL;
         }
+
     }
     else {
         supShowWin32Error("[!] Cannot load drivers database", GetLastError());

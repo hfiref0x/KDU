@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022 - 2023
+*  (C) COPYRIGHT AUTHORS, 2022 - 2024
 *
 *  TITLE:       KDUBASE.H
 *
-*  VERSION:     1.31
+*  VERSION:     1.41
 *
-*  DATE:        08 Apr 2023
+*  DATE:        30 Mar 2024
 *
 *  Base KDU definitions.
 *
@@ -68,3 +68,10 @@ typedef struct _KDU_DB {
     ULONG NumberOfEntries;
     KDU_DB_ENTRY* Entries;
 } KDU_DB, * PKDU_DB;
+
+typedef struct _KDU_DB_VERSION {
+    WORD MajorVersion;
+    WORD MinorVersion;
+    WORD Revision;
+    WORD Build;
+} KDU_DB_VERSION, * PKDU_DB_VERSION;

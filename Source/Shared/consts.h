@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2020 - 2024
 *
 *  TITLE:       CONSTS.H
 *
 *  VERSION:     1.41
 *
-*  DATE:        11 Dec 2023
+*  DATE:        30 Mar 2024
 *
 *  Global consts.
 *
@@ -22,15 +22,15 @@
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       4
 #define KDU_VERSION_REVISION    1
-#define KDU_VERSION_BUILD       2312
-#define KDU_COPYRIGHT_YEAR      2023
+#define KDU_VERSION_BUILD       2403
+#define KDU_COPYRIGHT_YEAR      2024
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
 #define KDU_MAX_NTBUILDNUMBER   0xFFFFFFFF  //Undefined
 
 #define IPC_GET_HANDLE          0x1337
 
-#define KDU_SYNC_MUTANT         0x2312
+#define KDU_SYNC_MUTANT         0x2403
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"

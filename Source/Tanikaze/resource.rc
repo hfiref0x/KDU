@@ -173,8 +173,8 @@ IDR_ASROCKDRV4          RCDATA                  "drv\\AsrDrv107.bin"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,9,2312
- PRODUCTVERSION 1,1,9,2312
+ FILEVERSION 1,2,0,2403
+ PRODUCTVERSION 1,2,0,2403
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -191,12 +191,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility Database"
-            VALUE "FileVersion", "1.1.9.2312"
+            VALUE "FileVersion", "1.2.0.2403"
             VALUE "InternalName", "Tanikaze.dll"
             VALUE "LegalCopyright", "Copyright (C) 2020 - 2024 KDU Project"
             VALUE "OriginalFilename", "Tanikaze.dll"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.1.9.2312"
+            VALUE "ProductVersion", "1.2.0.2403"
         END
     END
     BLOCK "VarFileInfo"

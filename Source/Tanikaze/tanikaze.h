@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2020 - 2024
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.19
+*  VERSION:     1.20
 *
-*  DATE:        10 Dec 2023
+*  DATE:        30 Mar 2024
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -814,6 +814,13 @@ extern "C" {
     KDU_DB gProvTable = {
         RTL_NUMBER_OF(gProvEntry),
         gProvEntry
+    };
+
+    KDU_DB_VERSION gVersion = {
+        KDU_VERSION_MAJOR,
+        KDU_VERSION_MINOR,
+        KDU_VERSION_REVISION,
+        KDU_VERSION_BUILD
     };
 
 #ifdef __cplusplus
