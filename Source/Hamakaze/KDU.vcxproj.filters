@@ -57,7 +57,7 @@
     <ClCompile Include="victim.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="idrv\nal.cpp">
+    <ClCompile Include="idrv\intel.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
     <ClCompile Include="idrv\rtcore.cpp">
@@ -248,7 +248,7 @@
     <ClInclude Include="victim.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="idrv\nal.h">
+    <ClInclude Include="idrv\intel.h">
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
     <ClInclude Include="idrv\rtcore.h">

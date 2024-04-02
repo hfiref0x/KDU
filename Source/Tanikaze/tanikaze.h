@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.20
+*  VERSION:     1.21
 *
-*  DATE:        30 Mar 2024
+*  DATE:        01 Apr 2024
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -803,7 +803,22 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"AsrDrv107",
         (LPWSTR)L"AsrDrv107",
         (LPWSTR)L"ASROCK INC."
-     }
+     },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_PMXDRV64,
+        KDU_PROVIDER_INTEL_PMXDRV,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Intel(R) Management Engine Tools Driver",
+        (LPWSTR)L"PMxDrv",
+        (LPWSTR)L"Pmxdrv",
+        (LPWSTR)L"Intel(R) Embedded Subsystems and IP Blocks Group"
+    }
 
 };
 

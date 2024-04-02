@@ -161,6 +161,7 @@ Note: Provider with Id 0 assumed as default if no -prv command is specified.
 | 49     | ASRock         | AppShopDrv103  | ASRock APP Shop    | 1.0.58 and below       |                      |
 | 50     | ASRock         | AsrDrv107n  | ASRock Motherboard Utility    | 3.0.498 and below       |                      |
 | 51     | ASRock         | AsrDrv107  | ASRock Motherboard Utility    | 3.0.498 and below       |                      |
+| 52     | Intel          | PmxDrv  | Intel(R) Management Engine Tools Driver    | 1.0.0.1003 and below       |                      |
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
@@ -222,6 +223,7 @@ MSFT blacklist types:
 |49|RWEverything||**File(SHA1):** 6074C2360F5DC74738873A525DFBD67EB6625986<br>**Authenticode(SHA1):** 03C523F31603C460076AD549F985DD9533734E95<br>**Page(SHA1):** 85B6FC43E943C9EB9B3DE1FF82A56870620CC1CF<br>**Page(SHA256):** A3AF7747FAC60B814FA6717B174F1199B9D163081B55AE40CEDD9983B6D033F5|
 |50|RWEverything||**File(SHA1):** 11D7E0D29AB17292FD43BDD5CCB7DA0403E50E52<br>**Authenticode(SHA1):** CA06D9FD91F7B681204B35975D5C069D0DABE276<br>**Page(SHA1):** B7693E1170B01F24A824892607C2258CA653805A<br>**Page(SHA256):** B8776F6889CF3D8252F0912DD9745F8EFF4513292DF2B2B1D484CDBC68FBAE4C|
 |51|RWEverything||**File(SHA1):** B1FAD5DA173C6A603FFFE20E0CB5F0BDCA823BD5<br>**Authenticode(SHA1):** 268073AD0B17E2161C1A2A6C5B1BDEBB7B3011B4<br>**Page(SHA1):** 0B48F35DAF8B8BC9BA4E413EF222415EAB791AE0<br>**Page(SHA256):** B073907634013A8EB65E4C8AA42535BAD08101E58B7B1489AEE395B7BE9C69E2|
+|52|Original||**File(SHA1):** 9E5FCAEA33C9A181C56F7D0E4D9C42F8EDEAD252<br>**Authenticode(SHA1):** 7919108CB1278503EC4A78DD25694C6770EAA989<br>**Page(SHA1):** E1CE5A5E2CEB0AAD9CB588A900BF471462FAC42B<br>**Page(SHA256):** 6991344C8771FC717F878F9A6B0C258BC81FB3BF1F7F3CBED3EF8F86541B253F|
 
 ###### *At commit time, data maybe inaccurate.
 

@@ -167,6 +167,7 @@
       </EntryPointSymbol>
       <NoEntryPoint>true</NoEntryPoint>
       <AdditionalOptions>/NOCOFFGRPINFO %(AdditionalOptions)</AdditionalOptions>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -231,6 +232,7 @@
     <None Include="drv\phymemx64.bin" />
     <None Include="drv\phymem_panda.bin" />
     <None Include="drv\physmem.bin" />
+    <None Include="drv\pmxdrv64.bin" />
     <None Include="drv\procexp.bin" />
     <None Include="drv\procexp1627.bin" />
     <None Include="drv\procexp1702.bin" />

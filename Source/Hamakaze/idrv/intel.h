@@ -1,14 +1,17 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2024
 *
-*  TITLE:       NAL.H
+*  TITLE:       INTEL.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.42
 *
-*  DATE:        15 Apr 2021
+*  DATE:        01 Apr 2024
 *
-*  Intel Network Adapter iQVM64 driver interface header.
+*  Intel drivers interface header.
+* 
+*    Network Adapter iQVM64 driver aka Nal
+*    Intel(R) Management Engine Tools Driver
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -70,6 +73,39 @@ typedef struct _NAL_UNMAP_IO_SPACE {
     ULONG NumberOfBytes;
 } NAL_UNMAP_IO_SPACE, * PNAL_UNMAP_IO_SPACE;
 
+//
+// Intel ME driver.
+//
+#define PMXDRV_MAP_FUNCID       (DWORD)0xAAE
+#define PMXDRV_UNMAP_FUNCID     (DWORD)0xAAF
+
+#define IOCTL_PMXDRV_MAP_MEMORY     \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, PMXDRV_MAP_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x00222AB8
+
+#define IOCTL_PMXDRV_UNMAP_MEMORY   \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, PMXDRV_UNMAP_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS) //0x00222ABC
+
+#include <pshpack1.h>
+typedef struct _PMX_MAPMEM_PACKET {
+   ULONG Size;
+   LARGE_INTEGER SectionOffset;
+   UINT32 CommitSize;
+   UINT64 Result;
+} PMX_MAPMEM_PACKET, * PPMX_MAPMEM_PACKET;
+#include <poppack.h>
+
+typedef struct _PMX_UNMAPMEM_PACKET {
+    ULONG Size;
+    ULONG Reserved0[2];
+    PVOID Address;
+} PMX_UNMAPMEM_PACKET, * PPMX_UNMAPMEM_PACKET;
+
+typedef struct _PMX_INPUT_BUFFER {
+    PVOID Data;
+    ULONG InputSize;
+    ULONG Padding;
+} PMX_INPUT_BUFFER, * PPMX_INPUT_BUFFER;
+
 BOOL NalCallDriver(
     _In_ HANDLE DeviceHandle,
     _In_ PVOID Buffer,
@@ -116,5 +152,38 @@ _Success_(return != FALSE)
 BOOL WINAPI NalWriteVirtualMemoryEx(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI PmxDrvQueryPML4Value(
+    _In_ HANDLE DeviceHandle,
+    _Out_ ULONG_PTR* Value);
+
+BOOL WINAPI PmxDrvVirtualToPhysical(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress);
+
+BOOL WINAPI PmxDrvReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI PmxDrvWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI PmxDrvReadKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI PmxDrvWriteKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);

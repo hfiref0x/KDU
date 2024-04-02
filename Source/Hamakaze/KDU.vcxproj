@@ -159,7 +159,7 @@
     <ClCompile Include="idrv\amd.cpp" />
     <ClCompile Include="idrv\rzpnk.cpp" />
     <ClCompile Include="idrv\winio.cpp" />
-    <ClCompile Include="idrv\nal.cpp" />
+    <ClCompile Include="idrv\intel.cpp" />
     <ClCompile Include="idrv\rtcore.cpp" />
     <ClCompile Include="idrv\winring0.cpp" />
     <ClCompile Include="idrv\zemana.cpp" />
@@ -222,7 +222,7 @@
     <ClInclude Include="idrv\amd.h" />
     <ClInclude Include="idrv\rzpnk.h" />
     <ClInclude Include="idrv\winio.h" />
-    <ClInclude Include="idrv\nal.h" />
+    <ClInclude Include="idrv\intel.h" />
     <ClInclude Include="idrv\rtcore.h" />
     <ClInclude Include="idrv\winring0.h" />
     <ClInclude Include="idrv\zemana.h" />

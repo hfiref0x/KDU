@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2020 - 2024
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.41
+*  VERSION:     1.42
 *
-*  DATE:        10 Dec 2023
+*  DATE:        01 Apr 2024
 *
 *  KDU tests.
 *
@@ -57,7 +57,7 @@ VOID KDUTestLoad()
 
 VOID KDUTestDSE(PKDU_CONTEXT Context)
 {
-    ULONG_PTR g_CiOptions = 0xfffff8064063a438;//need update
+    ULONG_PTR g_CiOptions = 0xfffff80031e3a478;//need update
     ULONG_PTR oldValue = 0, newValue = 0x0, testValue = 0;
     KDU_PROVIDER* prov = Context->Provider;
 
@@ -188,7 +188,7 @@ VOID KDUTest()
    // KDUTestLoad();
 
    // TestSymbols();
-    Context = KDUProviderCreate(50, 
+    Context = KDUProviderCreate(KDU_PROVIDER_INTEL_PMXDRV, 
         FALSE, 
         NT_WIN10_20H1, 
         KDU_SHELLCODE_V1, 
@@ -196,8 +196,8 @@ VOID KDUTest()
 
     if (Context) {
 
-        TestBrute(Context);
-        //KDUTestDSE(Context);
+        //TestBrute(Context);
+        KDUTestDSE(Context);
 
         KDUProviderRelease(Context);
     }

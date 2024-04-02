@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2020 - 2024
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.41
+*  VERSION:     1.42
 *
-*  DATE:        17 Dec 2023
+*  DATE:        01 Apr 2024
 *
 *  Providers global list.
 *
@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "idrv/nal.h"
+#include "idrv/intel.h"
 #include "idrv/rtcore.h"
 #include "idrv/mapmem.h"
 #include "idrv/atszio.h"
@@ -1439,6 +1439,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)NULL,
         (provReadPhysicalMemory)AsrReadPhysicalMemory,
         (provWritePhysicalMemory)AsrWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)PmxDrvReadKernelVirtualMemory,
+        (provWriteKernelVM)PmxDrvWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)PmxDrvVirtualToPhysical,
+        (provQueryPML4)PmxDrvQueryPML4Value,
+        (provReadPhysicalMemory)PmxDrvReadPhysicalMemory,
+        (provWritePhysicalMemory)PmxDrvWritePhysicalMemory,
 
         (provValidatePrerequisites)NULL,
 
