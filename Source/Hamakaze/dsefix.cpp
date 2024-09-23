@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2023
+*  (C) COPYRIGHT AUTHORS, 2014 - 2024
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.32
+*  VERSION:     1.42
 *
-*  DATE:        20 May 2023
+*  DATE:        23 Sep 2024
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -50,11 +50,9 @@ ULONG KDUpCheckInstructionBlock(
     RtlSecureZeroMemory(&hs, sizeof(hs));
 
     hde64_disasm(&Code[offset], &hs);
-    if (hs.flags & F_ERROR)
+    if ((hs.flags & F_ERROR) || (hs.len != 3)) {
         return 0;
-
-    if (hs.len != 3)
-        return 0;
+    }
 
     //
     // mov     r9, rbx
@@ -68,33 +66,19 @@ ULONG KDUpCheckInstructionBlock(
     offset += hs.len;
 
     hde64_disasm(&Code[offset], &hs);
-    if (hs.flags & F_ERROR)
-        return 0;
-
-    if (hs.len != 3)
-        return 0;
-
-    //
-    // mov     r8, rdi
-    //
-    if (Code[offset] != 0x4C ||
-        Code[offset + 1] != 0x8B)
-    {
+    if ((hs.flags & F_ERROR) || (hs.len != 3)) {
         return 0;
     }
 
-    offset += hs.len;
-
-    hde64_disasm(&Code[offset], &hs);
-    if (hs.flags & F_ERROR)
-        return 0;
-    if (hs.len != 3)
-        return 0;
-
     //
-    // mov     rdx, rsi
+    // mov     r8, rdi 
+    // 
+    // or 
     //
-    if (Code[offset] != 0x48 ||
+    // mov     r8d, edi
+    //
+    if (Code[offset] != 0x4C && 
+        Code[offset] != 0x44 &&
         Code[offset + 1] != 0x8B)
     {
         return 0;
@@ -106,8 +90,52 @@ ULONG KDUpCheckInstructionBlock(
     if (hs.flags & F_ERROR)
         return 0;
 
-    if (hs.len != 2)
+    if (hs.len == 3) {
+
+        //
+        // mov     rdx, rsi
+        //
+        if (Code[offset] != 0x48 ||
+            Code[offset + 1] != 0x8B)
+        {
+            return 0;
+        }
+    }
+    else if (hs.len == 5)
+    {
+        //
+        // mov[rsp + 38h + 28h], rax
+        //
+        if (Code[offset] != 0x48 ||
+            Code[offset + 1] != 0x89)
+        {
+            return 0;
+        }
+
+        offset += hs.len;
+        hde64_disasm(&Code[offset], &hs);
+        if (hs.flags & F_ERROR || hs.len != 3) {
+            return 0;
+        }
+        //
+        // mov     rdx, rsi
+        //
+        if (Code[offset] != 0x48 ||
+            Code[offset + 1] != 0x8B)
+        {
+            return 0;
+        }
+    }
+    else {
         return 0;
+    }
+
+    offset += hs.len;
+
+    hde64_disasm(&Code[offset], &hs);
+    if ((hs.flags & F_ERROR) || (hs.len != 2)) {
+        return 0;
+    }
 
     //
     // mov     ecx, ebp
