@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2024
 *
 *  TITLE:       WINRING0.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.43
 *
-*  DATE:        15 Apr 2021
+*  DATE:        10 Nov 2024
 *
 *  WinRing0 based drivers interface header.
 *
@@ -52,6 +52,25 @@ typedef struct _OLS_WRITE_MEMORY_INPUT {
 } OLS_WRITE_MEMORY_INPUT;
 
 #pragma pack(pop)
+
+//
+// Faintsnow Hardware read & write driver interface.
+// Essentially it's a slightly tweaked WinRing0 copy-paste.
+//
+// Related CVE's: 
+//    CVE-2021-29337, CVE-2023-1679, CVE-2021-29337, CVE-2020-13517 etc, all the same and all makes zero sense.
+//
+
+#define HWRWDRV_TYPE        (DWORD)0x9C40
+
+#define HWRW_READ_MEMORY     (DWORD)0x841
+#define HWRW_WRITE_MEMORY    (DWORD)0x842
+
+#define IOCTL_HWRW_READ_MEMORY        \
+    CTL_CODE(HWRWDRV_TYPE, HWRW_READ_MEMORY, METHOD_BUFFERED, FILE_READ_ACCESS) //0x9C406104
+
+#define IOCTL_HWRW_WRITE_MEMORY       \
+    CTL_CODE(HWRWDRV_TYPE, HWRW_WRITE_MEMORY, METHOD_BUFFERED, FILE_WRITE_ACCESS) //0x9C40A108
 
 BOOL WINAPI WRZeroReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,

@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.21
+*  VERSION:     1.22
 *
-*  DATE:        01 Apr 2024
+*  DATE:        10 Nov 2024
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -818,6 +818,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"PMxDrv",
         (LPWSTR)L"Pmxdrv",
         (LPWSTR)L"Intel(R) Embedded Subsystems and IP Blocks Group"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_HWRWDRVX64,
+        KDU_PROVIDER_HWRWDRVX64,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseWinRing0,
+        KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Hardware read & write driver",
+        (LPWSTR)L"HwRwDrv.x64",
+        (LPWSTR)L"HwRwDrv",
+        (LPWSTR)L"Open Source Developer, Jun Liu"
     }
 
 };

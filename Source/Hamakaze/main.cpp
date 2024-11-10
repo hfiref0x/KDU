@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2020 - 2024
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.40
+*  VERSION:     1.43
 *
-*  DATE:        20 Oct 2023
+*  DATE:        10 Nov 2024
 *
 *  Hamakaze main logic and entrypoint.
 *

@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.226
+*  VERSION:     1.227
 *
-*  DATE:        07 Jun 2024
+*  DATE:        07 Oct 2024
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -7405,6 +7405,29 @@ typedef struct _FLT_OBJECT_V2 {
     GUID UniqueIdentifier;
 } FLT_OBJECT_V2, *PFLT_OBJECT_V2; /* size: 0x0030 */
 
+// Since w11 25h2
+typedef struct _FLT_OBJECT_V3 {
+    ULONG Flags;
+    ULONG PointerCount;
+    EX_RUNDOWN_REF RundownRef;
+    LIST_ENTRY PrimaryLink;
+    PVOID RundownLog;
+    GUID UniqueIdentifier;
+} FLT_OBJECT_V3, * PFLT_OBJECT_V3; /* size: 0x0038 */
+
+typedef struct _FLT_OBJECT_LOG_ENTRY {
+    ULONG Action;
+    LONG Padding_25;
+    EX_RUNDOWN_REF RundownRef;
+    PVOID Stack[14];
+} FLT_OBJECT_LOG_ENTRY, * PFLT_OBJECT_LOG_ENTRY; /* size: 0x0080 */
+
+typedef struct _FLT_OBJECT_LOG {
+    LONG Index;
+    ULONG Reserved;
+    FLT_OBJECT_LOG_ENTRY Log[1024];
+} FLT_OBJECT_LOG, * PFLT_OBJECT_LOG; /* size: 0x20008 */
+
 typedef struct _FLT_SERVER_PORT_OBJECT {
     LIST_ENTRY FilterLink;
     PVOID ConnectNotify;
@@ -7576,8 +7599,43 @@ typedef struct _FLT_FILTER_V4 {
     /* 0x02a8 */ EX_PUSH_LOCK_AUTO_EXPAND PortLock;
 } FLT_FILTER_V4, * PFLT_FILTER_V4; /* size: 0x02b8 */
 
-typedef FLT_FILTER_V4 FLT_FILTER_COMPATIBLE;
-typedef PFLT_FILTER_V4 PFLT_FILTER_COMPATIBLE;
+// Windows 11+ (27XXX)
+typedef struct _FLT_FILTER_V5 {
+    /* 0x0000 */ FLT_OBJECT_V3 Base;
+    /* 0x0038 */ struct _FLTP_FRAME* Frame;
+    /* 0x0040 */ UNICODE_STRING Name;
+    /* 0x0050 */ UNICODE_STRING DefaultAltitude;
+    /* 0x0060 */ FLT_FILTER_FLAGS Flags;
+    /* 0x0064 */ LONG Padding;
+    /* 0x0068 */ DRIVER_OBJECT* DriverObject;
+    /* 0x0070 */ FLT_RESOURCE_LIST_HEAD InstanceList;
+    /* 0x00f0 */ struct _FLT_VERIFIER_EXTENSION* VerifierExtension;
+    /* 0x00f8 */ LIST_ENTRY VerifiedFiltersLink;
+    /* 0x0108 */ PVOID FilterUnload /* function */;
+    /* 0x0110 */ PVOID InstanceSetup /* function */;
+    /* 0x0118 */ PVOID InstanceQueryTeardown /* function */;
+    /* 0x0120 */ PVOID InstanceTeardownStart /* function */;
+    /* 0x0128 */ PVOID InstanceTeardownComplete /* function */;
+    /* 0x0130 */ struct _ALLOCATE_CONTEXT_HEADER* SupportedContextsListHead;
+    /* 0x0138 */ struct _ALLOCATE_CONTEXT_HEADER* SupportedContexts[7];
+    /* 0x0170 */ PVOID PreVolumeMount /* function */;
+    /* 0x0178 */ PVOID PostVolumeMount /* function */;
+    /* 0x0180 */ PVOID GenerateFileName /* function */;
+    /* 0x0188 */ PVOID NormalizeNameComponent /* function */;
+    /* 0x0190 */ PVOID NormalizeNameComponentEx /* function */;
+    /* 0x0198 */ PVOID NormalizeContextCleanup /* function */;
+    /* 0x01a0 */ PVOID KtmNotification /* function */;
+    /* 0x01a8 */ PVOID SectionNotification /* function */;
+    /* 0x01b0 */ struct _FLT_OPERATION_REGISTRATION* Operations;
+    /* 0x01b8 */ PVOID OldDriverUnload /* function */;
+    /* 0x01c0 */ FLT_MUTEX_LIST_HEAD ActiveOpens;
+    /* 0x0210 */ FLT_MUTEX_LIST_HEAD ConnectionList;
+    /* 0x0260 */ FLT_MUTEX_LIST_HEAD PortList;
+    /* 0x02b0 */ EX_PUSH_LOCK_AUTO_EXPAND PortLock;
+} FLT_FILTER_V5, * PFLT_FILTER_V5; /* size: 0x02c0 */
+
+typedef FLT_FILTER_V5 FLT_FILTER_COMPATIBLE;
+typedef PFLT_FILTER_V5 PFLT_FILTER_COMPATIBLE;
 
 /*
 ** FLT MANAGER END
