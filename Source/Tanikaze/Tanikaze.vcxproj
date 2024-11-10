@@ -213,6 +213,7 @@
     <None Include="drv\gmerdrv.bin" />
     <None Include="drv\heavenluo.bin" />
     <None Include="drv\HW64.bin" />
+    <None Include="drv\HwRwDrv.x64.bin" />
     <None Include="drv\inpoutx64.bin" />
     <None Include="drv\iQVM64.bin" />
     <None Include="drv\irec.bin" />

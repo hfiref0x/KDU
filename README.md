@@ -162,6 +162,7 @@ Note: Provider with Id 0 assumed as default if no -prv command is specified.
 | 50     | ASRock         | AsrDrv107n  | ASRock Motherboard Utility    | 3.0.498 and below       |                      |
 | 51     | ASRock         | AsrDrv107  | ASRock Motherboard Utility    | 3.0.498 and below       |                      |
 | 52     | Intel          | PmxDrv  | Intel(R) Management Engine Tools Driver    | 1.0.0.1003 and below       |                      |
+| 53     | Jun Liu        | HwRwDrv  | Hardware read & write driver    | 1.0.0.6 and below       |                      |
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
@@ -224,6 +225,7 @@ MSFT blacklist types:
 |50|RWEverything||**File(SHA1):** 11D7E0D29AB17292FD43BDD5CCB7DA0403E50E52<br>**Authenticode(SHA1):** CA06D9FD91F7B681204B35975D5C069D0DABE276<br>**Page(SHA1):** B7693E1170B01F24A824892607C2258CA653805A<br>**Page(SHA256):** B8776F6889CF3D8252F0912DD9745F8EFF4513292DF2B2B1D484CDBC68FBAE4C|
 |51|RWEverything||**File(SHA1):** B1FAD5DA173C6A603FFFE20E0CB5F0BDCA823BD5<br>**Authenticode(SHA1):** 268073AD0B17E2161C1A2A6C5B1BDEBB7B3011B4<br>**Page(SHA1):** 0B48F35DAF8B8BC9BA4E413EF222415EAB791AE0<br>**Page(SHA256):** B073907634013A8EB65E4C8AA42535BAD08101E58B7B1489AEE395B7BE9C69E2|
 |52|Original||**File(SHA1):** 9E5FCAEA33C9A181C56F7D0E4D9C42F8EDEAD252<br>**Authenticode(SHA1):** 7919108CB1278503EC4A78DD25694C6770EAA989<br>**Page(SHA1):** E1CE5A5E2CEB0AAD9CB588A900BF471462FAC42B<br>**Page(SHA256):** 6991344C8771FC717F878F9A6B0C258BC81FB3BF1F7F3CBED3EF8F86541B253F|
+|53|WINRING0||**File(SHA1):** DB8BCB8693DDF715552F85B8E2628F060070F920<br>**Authenticode(SHA1):** 8C40A82DF3D606A87DF243C787283C26CE9B0458<br>**Page(SHA1):** F7362528C0118F895D4D51588102C51A09B1691C<br>**Page(SHA256):** 2A8B9C786DEA17F00E105BFEF82B723E2578150E814DD9A94ED007275C96AC25|
 
 ###### *At commit time, data maybe inaccurate.
 

@@ -4,9 +4,9 @@
 *
 *  TITLE:       ASRDRV.CPP
 *
-*  VERSION:     1.41
+*  VERSION:     1.43
 *
-*  DATE:        10 Dec 2023
+*  DATE:        10 Nov 2023
 *
 *  ASRock driver routines.
 *
@@ -270,9 +270,6 @@ BOOL WINAPI AsrWritePhysicalMemory(
         IOCTL_ASRDRV_WRITE_MEMORY,
         &args);
 }
-
-
-
 
 /*
 * RweReadPhysicalMemory

@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.42
+*  VERSION:     1.43
 *
-*  DATE:        23 Sep 2024
+*  DATE:        10 Nov 2024
 *
 *  Global consts.
 *
@@ -21,8 +21,8 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       4
-#define KDU_VERSION_REVISION    2
-#define KDU_VERSION_BUILD       2409
+#define KDU_VERSION_REVISION    3
+#define KDU_VERSION_BUILD       2411
 #define KDU_COPYRIGHT_YEAR      2024
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
@@ -30,7 +30,7 @@
 
 #define IPC_GET_HANDLE          0x1337
 
-#define KDU_SYNC_MUTANT         0x2409
+#define KDU_SYNC_MUTANT         0x2411
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
@@ -155,6 +155,7 @@
 #define IDR_ASROCKDRV3                  152
 #define IDR_ASROCKDRV4                  153
 #define IDR_PMXDRV64                    154
+#define IDR_HWRWDRVX64                  155
 
 //
 // Vulnerable drivers providers id
@@ -212,6 +213,7 @@
 #define KDU_PROVIDER_ASROCK4            50
 #define KDU_PROVIDER_ASROCK5            51
 #define KDU_PROVIDER_INTEL_PMXDRV       52
+#define KDU_PROVIDER_HWRWDRVX64         53
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

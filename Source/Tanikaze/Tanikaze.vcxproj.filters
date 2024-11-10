@@ -220,6 +220,9 @@
     <None Include="drv\pmxdrv64.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\HwRwDrv.x64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
