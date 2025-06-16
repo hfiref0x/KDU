@@ -1,4 +1,5 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/pxpwehogor7x4mqa?svg=true)](https://ci.appveyor.com/project/hfiref0x/kdu)
+[![Visitors](https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2Fhfiref0x%2Fkdu&countColor=%23263759&style=flat)](https://visitorbadge.io/status?path=https%3A%2F%2Fgithub.com%2Fhfiref0x%2Fkdu)
 
 # KDU
 ## Kernel Driver Utility
@@ -10,12 +11,12 @@
 
 # Purpose and Features
 
-The purpose of this tool is to give a simple way to explore Windows kernel/components without doing a lot of additional work or setting up local debugger.
+The purpose of this tool is to provide a simple way to explore the Windows kernel/components without requiring extensive setup or a local debugger.
 It features:
-+ Protected Processes Hijacking via Process object modification;
-+ Driver Signature Enforcement Overrider (similar to DSEFIx);
++ Protected Process Hijacking via Process object modification;
++ Driver Signature Enforcement Overrider (similar to DSEFix);
 + Driver loader for bypassing Driver Signature Enforcement (similar to TDL/Stryker);
-+ Support of various vulnerable drivers use as functionality "providers".
++ Support for various vulnerable drivers used as functionality "providers".
 
 #### Usage
 
@@ -28,13 +29,13 @@ It features:
 ###### KDU -dse value
 ###### KDU -map filename
 * -list - list currently available providers;
-* -diag - run system diagnostic for troubleshooting;
-* -prv  - optional, select vulnerability driver provider;
+* -diag - run system diagnostics for troubleshooting;
+* -prv  - optional, select vulnerable driver provider;
 * -ps   - modify process object of given ProcessID, downgrading any protections;
 * -pse  - launch program as ProtectedProcessLight-AntiMalware (PPL);
 * -dmp  - dump virtual memory of the given process;
-* -dse  - write user defined value to the system DSE state flags;
-* -map  - map driver to the kernel and execute it entry point, this command have dependencies listed below;
+* -dse  - write user-defined value to the system DSE state flags;
+* -map  - map driver to the kernel and execute its entry point; this command has dependencies listed below;
   * -scv version - optional, select shellcode version, default 1;
   * -drvn name - driver object name (only valid for shellcode version 3);
   * -drvr name - optional, driver registry key name (only valid for shellcode version 3).
@@ -59,7 +60,7 @@ Compiled and run on Windows 8.1*
 
 <img src="https://raw.githubusercontent.com/hfiref0x/kdu/master/Help/kdu2.png" width="600" />
 
-Run on Windows 7 SP1 fully patched (precomplied version)*
+Run on Windows 7 SP1 fully patched (precompiled version)*
 
 <img src="https://raw.githubusercontent.com/hfiref0x/kdu/master/Help/kdu3.png" width="600" />
 
@@ -71,41 +72,41 @@ Run on Windows 10 19H2 (precompiled version, SecureBoot enabled)*
 
 #### Limitations of -map command
 
-Due to unusual way of loading that is not involving standard kernel loader, but uses overwriting already loaded modules with shellcode, there are some limitations:
+Due to the unusual way of loading that does not involve the standard kernel loader, but uses overwriting already loaded modules with shellcode, there are some limitations:
 
 + Loaded drivers MUST BE specially designed to run as "driverless";
 
-That mean you cannot use parameters specified at your DriverEntry as they won't be valid. That also mean you can not load *any* drivers but only specially designed or you need to alter shellcode responsible for driver mapping.
+That means you cannot use parameters specified at your DriverEntry as they won't be valid. That also means you cannot load *any* drivers but only specially designed ones, or you need to alter shellcode routines.
 
 + No SEH support for target drivers;
 
-There is no SEH code in x64. Instead of this you have table of try/except/finally regions which must be in the executable image described by pointer in PE header. If there is an exception occurred system handler will first look in which module that happened. Mapped drivers are not inside Windows controlled list of drivers (PsLoadedModulesList - PatchGuard protected), so nothing will be found and system will simple crash.
+There is no SEH code in x64. Instead, you have a table of try/except/finally regions described by a pointer in the PE header. If there is an exception, it may result in a BSOD.
 
 + No driver unloading;
 
-Mapped code can't unload itself, however you still can release all resources allocated by your mapped code.
+Mapped code can't unload itself; however, you can release all resources allocated by your mapped code.
 DRIVER_OBJECT->DriverUnload should be set to NULL.
 
 + Only ntoskrnl import resolved, everything else is up to you;
 
-If your project need another module dependency then you have to rewrite this loader part.
+If your project needs another module dependency, you must rewrite this loader part.
 
-+ Several Windows primitives are banned by PatchGuard from usage from the dynamic code.
++ Several Windows primitives are banned by PatchGuard from usage by dynamic code.
 
-Because of unsual way of loading mapped driver won't be inside PsLoadedModulesList. That mean any callback registered by such code will have handler located in memory outside this list. PatchGuard has ability to check whatever the registered callbacks point to valid loaded modules or not and BSOD with "Kernel notification callout modification" if such dynamic code detected.
+Because of the unusual way of loading, mapped driver won't be inside PsLoadedModulesList. That means any callback registered by such code will have its handler located in memory outside this list. PatchGuard may detect this and crash the system.
 
-In general if you want to know what you *should not do* in kernel look at https://github.com/hfiref0x/KDU/tree/master/Source/Examples/BadRkDemo which contain a few examples of forbidden things.
+In general, if you want to know what you *should not do* in kernel, look at https://github.com/hfiref0x/KDU/tree/master/Source/Examples/BadRkDemo which contains a few examples of forbidden things.
 
 #### Kernel traces note
-This tool does not change (and this won't change in future) internal Windows structures of MmUnloadedDrivers and/or PiDDBCacheTable. That's because:
-+ KDU is not designed to circumvent third-party security software or various dubious crapware (e.g. anti-cheats);
+This tool does not change (and will not change in future) internal Windows structures of MmUnloadedDrivers and/or PiDDBCacheTable. That's because:
++ KDU is not designed to circumvent third-party security software or various dubious software (e.g. anti-cheats);
 + These data can be a target for PatchGuard protection in the next major Windows 10 update.
 
 You use it at your own risk. Some lazy AV may flag this tool as hacktool/malware.
 
 # Supported Providers
 
-Note: Provider with Id 0 assumed as default if no -prv command is specified.
+Note: Provider with Id 0 is assumed as default if no -prv command is specified.
 
 | Id     | Vendor         | Driver      | Software package                   | Version                      | MSFT blacklist*     |
 |--------|----------------|-------------|------------------------------------|-----------------------------|----------------------|
@@ -227,43 +228,42 @@ MSFT blacklist types:
 |52|Original||**File(SHA1):** 9E5FCAEA33C9A181C56F7D0E4D9C42F8EDEAD252<br>**Authenticode(SHA1):** 7919108CB1278503EC4A78DD25694C6770EAA989<br>**Page(SHA1):** E1CE5A5E2CEB0AAD9CB588A900BF471462FAC42B<br>**Page(SHA256):** 6991344C8771FC717F878F9A6B0C258BC81FB3BF1F7F3CBED3EF8F86541B253F|
 |53|WINRING0||**File(SHA1):** DB8BCB8693DDF715552F85B8E2628F060070F920<br>**Authenticode(SHA1):** 8C40A82DF3D606A87DF243C787283C26CE9B0458<br>**Page(SHA1):** F7362528C0118F895D4D51588102C51A09B1691C<br>**Page(SHA256):** 2A8B9C786DEA17F00E105BFEF82B723E2578150E814DD9A94ED007275C96AC25|
 
-###### *At commit time, data maybe inaccurate.
+###### *At commit time, data may be inaccurate.
 
-More providers maybe added in the future.
+More providers may be added in the future.
 
-# How it work
+# How it works
 
-It uses known to be vulnerable (or wormhole by design) driver from legitimate software to access arbitrary kernel memory with read/write primitives.
+It uses known vulnerable (or wormhole by design) drivers from legitimate software to access arbitrary kernel memory with read/write primitives.
 
-Depending on command KDU will either work as TDL/DSEFix or modify kernel mode process objects (EPROCESS). 
+Depending on the command, KDU will either work as TDL/DSEFix or modify kernel mode process objects (EPROCESS). 
 
-When in -map mode KDU for most available providers will by default use 3rd party signed driver from SysInternals Process Explorer and hijack it by placing a small loader shellcode inside it IRP_MJ_DEVICE_CONTROL/IRP_MJ_CREATE/IRP_MJ_CLOSE handler. This is done by overwriting physical memory where Process Explorer dispatch handler located and triggering it by calling driver IRP_MJ_CREATE handler (CreateFile call). Next shellcode will map input driver as code buffer to kernel mode and run it with current IRQL be PASSIVE_LEVEL. After that hijacked Process Explorer driver will be unloaded together with vulnerable provider driver. This entire idea comes from malicious software of the middle of 200x known as rootkits.
+When in -map mode, KDU for most available providers will by default use a 3rd party signed driver from SysInternals Process Explorer and hijack it by placing a small loader shellcode inside its IRP_MJ_DEVICE_CONTROL routine.
 
 # Shellcode versions
 
-KDU uses shellcode to map input drivers and execute their DriverEntry. There are few shellcode variants embedded into KDU. Shellcode V1, V2 and V3 used together with 3rd party victim driver (Process Explorer, by default). They are implemented as fake driver dispatch entry and their differences are: V1 uses newly created system thread to execute code, V2 uses system work items, V3 manually builds driver object and runs DriverEntry as if this driver was loaded normally. Shellcode V4 is simplified version of previous variants intended to be run not like an driver dispatch entry. While theoretically all "providers" can support all variants this implementation is limited per provider. You can view it by typing -list command and looking for shellcode support mask. Currently all providers except N21 support V1, V2 and V3 variants.
+KDU uses shellcode to map input drivers and execute their DriverEntry. There are a few shellcode variants embedded into KDU. Shellcode V1, V2, and V3 are used together with 3rd party victim driver (Process Explorer, etc.).
 
 # Build and Notes
 
 KDU comes with full source code.
-In order to build from source you need Microsoft Visual Studio 2019 and later versions. For driver builds you need Microsoft Windows Driver Kit 10 and/or above.
+To build from source, you need Microsoft Visual Studio 2019 or later. For driver builds, you need Microsoft Windows Driver Kit 10 and/or above.
 
-Complete working binaries include: kdu.exe (main executable) and drv64.dll (drivers database). They must reside in the same directory that must have R/W access enabled for kdu.exe. All binaries MUST BE compiled in "Release" configuration. In order to use providers that require Microsoft Symbols usage you need to put dbghelp.dll and symsrv.dll from the Debugging Tools For Windows into KDU directory. 
+Complete working binaries include: kdu.exe (main executable) and drv64.dll (drivers database). They must reside in the same directory with R/W access enabled for kdu.exe. All binaries MUST be unblocked from the system zone.
 
 # Utils and Notes
 
-GenAsIo2Unlock is a special utility used to generate "unlocking" resource which is required for working with AsIO2 driver. Full source of this utility included in Source\Utils\GenAsIo2Unlock. Compiled version located in Sources\Hamakaze\Utils\GenAsIo2Unlock.exe. **Warning this utility is set on execution at post-build-event for both Debug/Release configurations.** If you don't want to run precompiled version replace it with newly compiled from sources. If you remove this post-build-event newly compiled KDU will NOT BE ABLE to use AsIO2 driver (provider #13).
+GenAsIo2Unlock is a special utility used to generate "unlocking" resources required for working with the AsIO2 driver. Full source of this utility is included in Source\Utils\GenAsIo2Unlock. Compiled binary is not provided.
 
 # Reporting bugs and incompatibilities
 
-If you experienced bug or incompatibility while using KDU with 3rd party software or OS feel free to fill the issue. However if this incompatibility is caused by your own actions such reports will be ignored. Any BSOD reports should include minidump attached or your own dump analysis (windbg !analyze -v), issues without these information will be ignored.
+If you experience a bug or incompatibility while using KDU with 3rd party software or OS, feel free to fill an issue. However, if this incompatibility is caused by your own actions, such reports will be ignored.
 
-Anticheat, antimalware incompatibilities will be ignored, that's your own fault.
-
+Anticheat, antimalware incompatibilities will be ignored, that's your own responsibility.
 
 # Disclaimer
 
-Using this program might crash your computer with BSOD. Compiled binary and source code provided AS-IS in hope it will be useful BUT WITHOUT WARRANTY OF ANY KIND. Since KDU rely on completely bugged and vulnerable drivers security of computer where it executed maybe put at risk. Make sure you understand what you do.
+Using this program might crash your computer with a BSOD. Compiled binary and source code are provided AS-IS in the hope they will be useful BUT WITHOUT WARRANTY OF ANY KIND. Since KDU relies on completely bugged, vulnerable drivers, it is highly recommended to use it on virtual machines only.
 
 # Third party code usage
 
@@ -282,13 +282,13 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 * ATSZIO64 headers and libs, https://github.com/DOGSHITD/SciDetectorApp/tree/master/DetectSciApp
 * ATSZIO64 ASUS Drivers Privilege Escalation, https://github.com/LimiQS/AsusDriversPrivEscala
 * CVE-2019-18845, https://www.activecyber.us/activelabs/viper-rgb-driver-local-privilege-escalation-cve-2019-18845
-* DEFCON27: Get off the kernel if you cant drive, https://eclypsium.com/wp-content/uploads/2019/08/EXTERNAL-Get-off-the-kernel-if-you-cant-drive-DEFCON27.pdf
+* DEFCON27: Get off the kernel if you can't drive, https://eclypsium.com/wp-content/uploads/2019/08/EXTERNAL-Get-off-the-kernel-if-you-cant-drive-DEFCON27.pdf
 * CVE-2019-8372: Local Privilege Elevation in LG Kernel Driver, http://www.jackson-t.ca/lg-driver-lpe.html
 * CVE-2021-21551, https://attackerkb.com/topics/zAHZGAFaQX/cve-2021-21551
 * KDU v1.1 release and bonus (AsIO3.sys unlock), https://swapcontext.blogspot.com/2021/04/kdu-v11-release-and-bonus-asio3sys.html
 * GhostEmperor: From ProxyLogon to kernel mode, https://securelist.com/ghostemperor-from-proxylogon-to-kernel-mode/104407/
 * KDU v1.2 release and the wonderful world of Microsoft incoherency, https://swapcontext.blogspot.com/2022/02/kdu-v12-release-and-wonderful-world-of.html
-* How to exploit a vulnerable windows driver, https://github.com/stong/CVE-2020-15368
+* How to exploit a vulnerable Windows driver, https://github.com/stong/CVE-2020-15368
 * CVE-2022-3699, https://github.com/alfarom256/CVE-2022-3699
 * LOLDrivers, https://www.loldrivers.io
 * ECHOH NO, https://github.com/kite03/echoac-poc/
@@ -299,7 +299,7 @@ Using this program might crash your computer with BSOD. Compiled binary and sour
 
 # Wormhole drivers code
 
-They are used in multiple products from hardware vendors mostly in unmodified state. They all break OS security model and additionally bugged. Links are for educational purposes of how not to do your drivers. Note that following github account have nothing to do with these code, these code in unmodified state and provided only for educational purposes.
+They are used in multiple products from hardware vendors, mostly in unmodified state. They all break the OS security model and are additionally bugged. Links are for educational purposes on how not to do things in driver development.
 
 * WinIo 3.0 BSOD/CVE generator, https://github.com/hfiref0x/Misc/tree/master/source/WormholeDrivers/WINIO
 * WinRing0 BSOD/CVE generator, https://github.com/hfiref0x/Misc/tree/master/source/WormholeDrivers/WINRING0
@@ -310,4 +310,4 @@ They are used in multiple products from hardware vendors mostly in unmodified st
 
 # Authors
 
-(c) 2020 - 2024 KDU Project
+(c) 2020 - 2025 KDU Project
