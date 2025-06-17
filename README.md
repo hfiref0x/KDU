@@ -1,7 +1,7 @@
+# KDU
 [![Build status](https://ci.appveyor.com/api/projects/status/pxpwehogor7x4mqa?svg=true)](https://ci.appveyor.com/project/hfiref0x/kdu)
 [![Visitors](https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2Fhfiref0x%2Fkdu&countColor=%23263759&style=flat)](https://visitorbadge.io/status?path=https%3A%2F%2Fgithub.com%2Fhfiref0x%2Fkdu)
 
-# KDU
 ## Kernel Driver Utility
 
 #### System Requirements
