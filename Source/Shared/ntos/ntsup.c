@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2011 - 2023 UGN/HE
+*  (C) COPYRIGHT AUTHORS, 2011 - 2025 UGN/HE
 *
 *  TITLE:       NTSUP.C
 *
-*  VERSION:     2.21
+*  VERSION:     2.23
 *
-*  DATE:        22 Jul 2023
+*  DATE:        08 Jun 2025
 *
 *  Native API support functions.
 *
@@ -60,7 +60,7 @@ VOID ntsupHeapFree(
 *
 * Purpose:
 *
-* Wrapper for NtAllocateVirtualMemory.
+* Wrapper for ntsupVirtualAllocEx with standard parameters.
 *
 */
 PVOID ntsupVirtualAllocEx(
@@ -142,7 +142,7 @@ BOOL ntsupVirtualUnlock(
 }
 
 /*
-* NtSupVirtualFree
+* ntsupVirtualFree
 *
 * Purpose:
 *
@@ -161,6 +161,10 @@ BOOL ntsupVirtualFree(
             &Memory,
             &sizeDummy,
             MEM_RELEASE);
+    }
+    else {
+        RtlSetLastWin32Error(ERROR_INVALID_PARAMETER);
+        return FALSE;
     }
 
     RtlSetLastWin32Error(RtlNtStatusToDosError(ntStatus));
@@ -293,11 +297,8 @@ PVOID ntsupFindModuleEntryByName(
         moduleEntry = &ModulesList->Modules[i];
         fnameOffset = moduleEntry->OffsetToFileName;
         entryName = (LPSTR)&moduleEntry->FullPathName[fnameOffset];
-
-        if (entryName) {
-            if (_strcmpi_a(entryName, ModuleName) == 0)
-                return moduleEntry;
-        }
+        if (_strcmpi_a(entryName, ModuleName) == 0)
+            return moduleEntry;
     }
 
     return NULL;
@@ -323,28 +324,25 @@ PVOID ntsupFindModuleEntryByName_U(
     UNICODE_STRING usString;
     ANSI_STRING moduleName;
 
-    RtlInitUnicodeStringEx(&usString, ModuleName);
-    moduleName.Buffer = NULL;
-    moduleName.Length = moduleName.MaximumLength = 0;
-    if (NT_SUCCESS(RtlUnicodeStringToAnsiString(&moduleName, &usString, TRUE))) {
+    if (NT_SUCCESS(RtlInitUnicodeStringEx(&usString, ModuleName))) {
+        moduleName.Buffer = NULL;
+        moduleName.Length = moduleName.MaximumLength = 0;
+        if (NT_SUCCESS(RtlUnicodeStringToAnsiString(&moduleName, &usString, TRUE))) {
 
-        for (i = 0; i < modulesCount; i++) {
+            for (i = 0; i < modulesCount; i++) {
 
-            moduleEntry = &ModulesList->Modules[i];
-            fnameOffset = moduleEntry->OffsetToFileName;
-            entryName = (LPSTR)&moduleEntry->FullPathName[fnameOffset];
-
-            if (entryName) {
+                moduleEntry = &ModulesList->Modules[i];
+                fnameOffset = moduleEntry->OffsetToFileName;
+                entryName = (LPSTR)&moduleEntry->FullPathName[fnameOffset];
                 if (_strcmpi_a(entryName, moduleName.Buffer) == 0) {
                     result = moduleEntry;
                     break;
                 }
             }
+
+            RtlFreeAnsiString(&moduleName);
         }
-
-        RtlFreeAnsiString(&moduleName);
     }
-
     return result;
 }
 
@@ -353,7 +351,9 @@ PVOID ntsupFindModuleEntryByName_U(
 *
 * Purpose:
 *
-* Find Module Entry for given Address.
+* Find Module Name for given Address and copy it to the supplied buffer.
+*
+* Returns module entry if found, NULL otherwise.
 *
 */
 BOOL ntsupFindModuleEntryByAddress(
@@ -793,7 +793,11 @@ PVOID ntsupGetLoadedModulesListEx(
         &bufferSize);
 
     if (ntStatus == STATUS_INFO_LENGTH_MISMATCH) {
+
         FreeMem(buffer);
+        if (bufferSize > MAX_NTSUP_BUFFER_SIZE)
+            return NULL;
+
         buffer = AllocMem((SIZE_T)bufferSize);
 
         ntStatus = NtQuerySystemInformation(
@@ -807,13 +811,11 @@ PVOID ntsupGetLoadedModulesListEx(
         *ReturnLength = bufferSize;
 
     //
-    // Handle unexpected return.
-    //
-    // If driver image path exceeds structure field size then 
+    // Handle special case:
+    // If driver image path exceeds structure field size, 
     // RtlUnicodeStringToAnsiString will throw STATUS_BUFFER_OVERFLOW.
-    // 
-    // If this is the last driver in the enumeration service will return 
-    // valid data but STATUS_BUFFER_OVERFLOW in result.
+    // If this is the last driver in enumeration, service will return 
+    // valid data but with STATUS_BUFFER_OVERFLOW result.
     //
     if (ntStatus == STATUS_BUFFER_OVERFLOW) {
 
@@ -915,7 +917,7 @@ PVOID ntsupGetSystemInfoEx(
         FreeMem(buffer);
         bufferSize <<= 1;
 
-        if (bufferSize > NTQSI_MAX_BUFFER_LENGTH)
+        if (bufferSize > MAX_NTSUP_BUFFER_SIZE)
             return NULL;
 
         buffer = AllocMem((SIZE_T)bufferSize);
@@ -1724,11 +1726,12 @@ LPWSTR ntsupQueryEnvironmentVariableOffset(
 {
     UNICODE_STRING   str1;
     PWCHAR           ptrEnvironment;
+    ULONG            scanCount = 0;
 
     ptrEnvironment = (PWCHAR)RtlGetCurrentPeb()->ProcessParameters->Environment;
 
     do {
-        if (*ptrEnvironment == 0)
+        if (*ptrEnvironment == 0 || scanCount++ > MAX_NTSUP_ENV_SCAN)
             return 0;
 
         RtlInitUnicodeString(&str1, ptrEnvironment);
@@ -2144,6 +2147,10 @@ PBYTE ntsupQueryResourceData(
     IMAGE_RESOURCE_DATA_ENTRY* dataEntry;
     PBYTE                      dataPtr = NULL;
     ULONG                      dataSize = 0;
+
+    if (DataSize) {
+        *DataSize = 0;
+    }
 
     if (DllHandle != NULL) {
 

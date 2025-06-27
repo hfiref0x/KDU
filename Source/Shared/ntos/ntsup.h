@@ -1,12 +1,12 @@
 /************************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2011 - 2023 UGN/HE
+*  (C) COPYRIGHT AUTHORS, 2011 - 2025 UGN/HE
 *
 *  TITLE:       NTSUP.H
 *
-*  VERSION:     2.22
+*  VERSION:     2.23
 *
-*  DATE:        22 Jul 2023
+*  DATE:        08 Jun 2025
 *
 *  Common header file for the NT API support functions and definitions.
 *
@@ -72,7 +72,8 @@ typedef BOOL(CALLBACK* PNTSUPMEMFREE)(
 
 #define ntsupProcessHeap() NtCurrentPeb()->ProcessHeap
 
-#define NTQSI_MAX_BUFFER_LENGTH (512 * 1024 * 1024)
+#define MAX_NTSUP_BUFFER_SIZE (512 * 1024 * 1024) //512MB
+#define MAX_NTSUP_ENV_SCAN 4096
 
 typedef struct _OBJSCANPARAM {
     PCWSTR Buffer;
