@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36221.1 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiPolicyChecker", "SiPolicyChecker.csproj", "{573F7D50-6961-494B-8506-1E282E5596EE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{573F7D50-6961-494B-8506-1E282E5596EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{573F7D50-6961-494B-8506-1E282E5596EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{573F7D50-6961-494B-8506-1E282E5596EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{573F7D50-6961-494B-8506-1E282E5596EE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A9A1F4F1-7330-44AE-929F-79BE00E52B47}
+	EndGlobalSection
+EndGlobal
