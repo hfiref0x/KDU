@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2023
+*  (C) COPYRIGHT AUTHORS, 2014 - 2025
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.40
+*  VERSION:     1.44
 *
-*  DATE:        21 Oct 2023
+*  DATE:        10 Jul 2025
 *
 *  Provider support routines.
 *
@@ -203,7 +203,10 @@ typedef struct _KDU_CONTEXT {
 
     ULONG_PTR NtOsBase;
     ULONG_PTR NtOsMappedBase;
-    HANDLE DeviceHandle;
+    union {
+        HANDLE DeviceHandle;
+        HANDLE PortHandle;
+    };
 
     //full file name to the vulnerable driver
     PWSTR DriverFileName; 

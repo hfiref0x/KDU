@@ -2326,14 +2326,110 @@ BOOL supxSetupInstallDriverFromInf(
 }
 
 /*
-* supSetupManageDriverPackage
+* supSetupManageFsFilterDriverPackage
 *
 * Purpose:
 *
 * Drop or remove required driver package files from disk in the current process directory.
 *
 */
-BOOL supSetupManageDriverPackage(
+BOOL supSetupManageFsFilterDriverPackage(
+    _In_ PVOID Context,
+    _In_ BOOLEAN DoInstall,
+    _In_ PSUP_SETUP_DRVPKG DriverPackage
+)
+{
+    BOOL bResult = FALSE;
+    LPWSTR lpFileName;
+    KDU_CONTEXT* context = (KDU_CONTEXT*)Context;
+
+    PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
+    SIZE_T allocSize = 64 +
+        _strlen(DriverPackage->InfFile) * sizeof(WCHAR) +
+        CurrentDirectory->Length +
+        sizeof(WCHAR);
+
+    ULONG lastError = ERROR_SUCCESS;
+
+    if (DoInstall) {
+
+        //
+        // Drop target driver.
+        //
+        if (!KDUProvExtractVulnerableDriver(context)) {
+            SetLastError(ERROR_INTERNAL_ERROR);
+            return FALSE;
+        }
+    }
+
+    //
+    // Drop inf file.
+    //
+    lpFileName = (LPWSTR)supHeapAlloc(allocSize);
+    if (lpFileName) {
+
+        StringCchPrintf(lpFileName, allocSize / sizeof(WCHAR), TEXT("%ws%ws"),
+            CurrentDirectory->Buffer,
+            DriverPackage->InfFile);
+
+        if (supExtractFileFromDB(context->ModuleBase, lpFileName, DriverPackage->InfFileResourceId)) {
+
+            WCHAR szCmd[MAX_PATH * 2];
+            WCHAR szFileName[MAX_PATH * 2];
+
+            StringCchPrintf(szCmd, ARRAYSIZE(szCmd),
+                TEXT("%ws 132 %ws"),
+                DoInstall ? TEXT("DefaultInstall") : TEXT("DefaultUninstall"),
+                lpFileName);
+
+#pragma warning(push)
+#pragma warning(disable: 6387)
+            InstallHinfSection(NULL, NULL, szCmd, 0);
+#pragma warning(pop)
+
+            //
+            // Since it doesn't provide any way to check result we have to inspect changes ourself.
+            //
+            StringCchPrintf(szFileName, RTL_NUMBER_OF(szFileName), TEXT("%ws\\system32\\drivers\\%ws.sys"),
+                USER_SHARED_DATA->NtSystemRoot,
+                context->Provider->LoadData->DriverName);
+
+            if (RtlDoesFileExists_U(szFileName)) {
+                if (DoInstall)
+                    bResult = TRUE;
+                else
+                    lastError = ERROR_FILE_EXISTS;
+            }
+            else {
+                if (DoInstall)
+                    lastError = ERROR_FILE_NOT_FOUND;
+                else
+                    bResult = TRUE;
+            }
+
+        }
+        else {
+            lastError = ERROR_FILE_NOT_FOUND;
+        }
+        supHeapFree(lpFileName);
+    }
+    else {
+        lastError = ERROR_NOT_ENOUGH_MEMORY;
+    }
+
+    SetLastError(lastError);
+    return bResult;
+}
+
+/*
+* supSetupManagePnpDriverPackage
+*
+* Purpose:
+*
+* Drop or remove required driver package files from disk in the current process directory.
+*
+*/
+BOOL supSetupManagePnpDriverPackage(
     _In_ PVOID Context,
     _In_ BOOLEAN DoInstall,
     _In_ PSUP_SETUP_DRVPKG DriverPackage
@@ -2347,7 +2443,8 @@ BOOL supSetupManageDriverPackage(
     PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
     SIZE_T allocSize = 64 +
         ((_strlen(DriverPackage->CatalogFile) + _strlen(DriverPackage->InfFile)) * sizeof(WCHAR)) +
-        CurrentDirectory->Length;
+        CurrentDirectory->Length +
+        sizeof(WCHAR);
 
     ULONG length, lastError = ERROR_SUCCESS;
 
@@ -2404,8 +2501,14 @@ BOOL supSetupManageDriverPackage(
 
                 }
             }
+            else {
+                lastError = ERROR_FILE_NOT_FOUND;
+            }
 
             supHeapFree(lpFileName);
+        }
+        else {
+            lastError = ERROR_NOT_ENOUGH_MEMORY;
         }
     }
     else {
@@ -2431,6 +2534,9 @@ BOOL supSetupManageDriverPackage(
 
             supHeapFree(lpFileName);
             bResult = TRUE;
+        }
+        else {
+            lastError = ERROR_NOT_ENOUGH_MEMORY;
         }
 
     }

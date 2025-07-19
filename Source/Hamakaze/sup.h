@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2020 - 2025
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.33
+*  VERSION:     1.44
 *
-*  DATE:        16 Jun 2023
+*  DATE:        10 Jul 2025
 *
 *  Support routines header file.
 *
@@ -298,7 +298,12 @@ VOID supGenerateSharedObjectName(
     _In_ WORD ObjectId,
     _Inout_ LPWSTR lpBuffer);
 
-BOOL supSetupManageDriverPackage(
+BOOL supSetupManageFsFilterDriverPackage(
+    _In_ PVOID Context,
+    _In_ BOOLEAN DoInstall,
+    _In_ PSUP_SETUP_DRVPKG DriverPackage);
+
+BOOL supSetupManagePnpDriverPackage(
     _In_ PVOID Context,
     _In_ BOOLEAN DoInstall,
     _In_ PSUP_SETUP_DRVPKG DriverPackage);

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2024
+*  (C) COPYRIGHT AUTHORS, 2020 - 2025
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.22
+*  VERSION:     1.23
 *
-*  DATE:        10 Nov 2024
+*  DATE:        10 Jul 2025
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -833,7 +833,22 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"HwRwDrv.x64",
         (LPWSTR)L"HwRwDrv",
         (LPWSTR)L"Open Source Developer, Jun Liu"
-    }
+    },
+
+    {
+        NT_WIN10_THRESHOLD1,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_NEACSAFE64,
+        KDU_PROVIDER_NEACSAFE64,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_FS_FILTER,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"NeacSafe64 mini-filter driver (CVE-2025-45737)",
+        (LPWSTR)L"NeacSafe64",
+        (LPWSTR)L"OWNeacSafePort",
+        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+    },
 
 };
 

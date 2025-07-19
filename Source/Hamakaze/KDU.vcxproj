@@ -153,6 +153,7 @@
     <ClCompile Include="idrv\mapmem.cpp" />
     <ClCompile Include="idrv\marvinhw.cpp" />
     <ClCompile Include="idrv\mimidrv.cpp" />
+    <ClCompile Include="idrv\netease.cpp" />
     <ClCompile Include="idrv\nvidia.cpp" />
     <ClCompile Include="idrv\phymem.cpp" />
     <ClCompile Include="idrv\procexp.cpp" />
@@ -216,6 +217,7 @@
     <ClInclude Include="idrv\mapmem.h" />
     <ClInclude Include="idrv\marvinhw.h" />
     <ClInclude Include="idrv\mimidrv.h" />
+    <ClInclude Include="idrv\netease.h" />
     <ClInclude Include="idrv\nvidia.h" />
     <ClInclude Include="idrv\phymem.h" />
     <ClInclude Include="idrv\procexp.h" />

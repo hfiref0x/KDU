@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.235
+*  VERSION:     1.236
 *
-*  DATE:        31 Mar 2025
+*  DATE:        12 Jun 2025
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -6685,15 +6685,18 @@ typedef VOID(NTAPI* PACTIVATION_CONTEXT_NOTIFY_ROUTINE)(
     );
 
 typedef struct _ACTIVATION_CONTEXT {
-    LONG RefCount;
+    ULONG RefCount;
     ULONG Flags;
-    PACTIVATION_CONTEXT_DATA ActivationContextData;
+    LIST_ENTRY Links;
+    ACTIVATION_CONTEXT_DATA* ActivationContextData;
     PACTIVATION_CONTEXT_NOTIFY_ROUTINE NotificationRoutine;
     PVOID NotificationContext;
-    ULONG SentNotifications[8];
-    ULONG DisabledNotifications[8];
+    ULONG SendNotifications[4];
+    ULONG DisabledNotifications[4];
     ASSEMBLY_STORAGE_MAP StorageMap;
-    PASSEMBLY_STORAGE_MAP_ENTRY InlineStorageMapEntries[32];
+    ASSEMBLY_STORAGE_MAP_ENTRY* InlineStorageMapEntries;
+    ULONG StackTraceIndex;
+    PVOID StackTraces[4][4];
 } ACTIVATION_CONTEXT, * PACTIVATION_CONTEXT;
 
 typedef struct _RTL_ACTIVATION_CONTEXT_STACK_FRAME {

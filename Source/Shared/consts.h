@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2024
+*  (C) COPYRIGHT AUTHORS, 2020 - 2025
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.43
+*  VERSION:     1.44
 *
-*  DATE:        10 Nov 2024
+*  DATE:        10 Jul 2025
 *
 *  Global consts.
 *
@@ -21,16 +21,16 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       4
-#define KDU_VERSION_REVISION    3
-#define KDU_VERSION_BUILD       2411
-#define KDU_COPYRIGHT_YEAR      2024
+#define KDU_VERSION_REVISION    4
+#define KDU_VERSION_BUILD       2507
+#define KDU_COPYRIGHT_YEAR      2025
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
 #define KDU_MAX_NTBUILDNUMBER   0xFFFFFFFF  //Undefined
 
 #define IPC_GET_HANDLE          0x1337
 
-#define KDU_SYNC_MUTANT         0x2411
+#define KDU_SYNC_MUTANT         0x2507
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
@@ -97,6 +97,7 @@
 #define IDR_DATA_KMUEXE                 1002
 #define IDR_DATA_KMUSIG                 1003
 #define IDR_DATA_ASUSCERTSERVICE        1004
+#define IDR_DATA_NEACSAFEINF            1005
 
 //
 // Driver id table
@@ -214,6 +215,7 @@
 #define KDU_PROVIDER_ASROCK5            51
 #define KDU_PROVIDER_INTEL_PMXDRV       52
 #define KDU_PROVIDER_HWRWDRVX64         53
+#define KDU_PROVIDER_NEACSAFE64         54
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
@@ -288,6 +290,11 @@
 // Provider can be used to open a handle for the specified process.
 //
 #define KDUPROV_FLAGS_OPENPROCESS_SUPPORTED 0x00001000
+
+//
+// Provider is FS filter, it must be handled differently.
+//
+#define KDUPROV_FLAGS_FS_FILTER            0x00002000
 
 //
 // KDU shellcode support flags

@@ -154,6 +154,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <Optimization>MinSpace</Optimization>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -185,6 +186,7 @@
     <None Include="data\dbutilinf.bin" />
     <None Include="data\KMUEXE.bin" />
     <None Include="data\KMUSIG.bin" />
+    <None Include="data\NeacSafe64Cat.bin" />
     <None Include="drv\ALSysIO64.bin" />
     <None Include="drv\AMDRyzenMasterDriver.bin" />
     <None Include="drv\amsdk.bin" />
@@ -226,6 +228,7 @@
     <None Include="drv\mimidrv.bin" />
     <None Include="drv\mktoolsx64.bin" />
     <None Include="drv\msio64.bin" />
+    <None Include="drv\NeacSafe64.bin" />
     <None Include="drv\nvoclock.bin" />
     <None Include="drv\pcdsrvc_x64.bin" />
     <None Include="drv\PdFwKrnl.bin" />

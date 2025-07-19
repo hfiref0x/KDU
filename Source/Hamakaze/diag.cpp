@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022 - 2023
+*  (C) COPYRIGHT AUTHORS, 2022 - 2025
 *
 *  TITLE:       DIAG.CPP
 *
-*  VERSION:     1.33
+*  VERSION:     1.44
 *
-*  DATE:        16 Jul 2023
+*  DATE:        10 Jul 2025
 *
 *  Hamakaze system diagnostics component.
 *
@@ -25,20 +25,6 @@ typedef struct _OBJENUMPARAM {
     PWSTR ObjectDirectory;
     PUNICODE_STRING ObjectType;
 } OBJENUMPARAM, * POBJENUMPARAM;
-
-typedef struct _FILTER_FULL_INFORMATION {
-    ULONG NextEntryOffset;
-    ULONG FrameID;
-    ULONG NumberOfInstances;
-    USHORT FilterNameLength;
-    WCHAR FilterNameBuffer[1];
-} FILTER_FULL_INFORMATION, * PFILTER_FULL_INFORMATION;
-
-typedef enum _FILTER_INFORMATION_CLASS {
-    FilterFullInformation,
-    FilterAggregateBasicInformation,
-    FilterAggregateStandardInformation
-} FILTER_INFORMATION_CLASS, * PFILTER_INFORMATION_CLASS;
 
 NTSTATUS NTAPI EnumObjectsCallback(
     _In_ POBJECT_DIRECTORY_INFORMATION Entry,
