@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2024
+*  (C) COPYRIGHT AUTHORS, 2020 - 2025
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.43
+*  VERSION:     1.44
 *
-*  DATE:        10 Nov 2024
+*  DATE:        10 Jul 2025
 *
 *  Providers global list.
 *
@@ -48,6 +48,7 @@
 #include "idrv/binalyze.h"
 #include "idrv/rzpnk.h"
 #include "idrv/evga.h"
+#include "idrv/netease.h"
 
 //
 // Victims public array.
@@ -1495,6 +1496,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provValidatePrerequisites)NULL,
 
         (provOpenProcess)NULL
-     }
+     },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)NetEaseStartVulnerableDriver,
+        (provStopVulnerableDriver)NetEaseStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)NULL,
+        (provMapDriver)NULL,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)NetEaseReadVirtualMemory,
+        (provWriteKernelVM)NetEaseWriteVirtualMemory,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)NULL,
+        (provWritePhysicalMemory)NULL,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+    }
 
 };

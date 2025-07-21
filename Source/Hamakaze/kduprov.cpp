@@ -1,12 +1,12 @@
 ﻿/*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2024
+*  (C) COPYRIGHT AUTHORS, 2020 - 2025
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.41
+*  VERSION:     1.44
 *
-*  DATE:        30 Mar 2024
+*  DATE:        10 Jul 2025
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -914,7 +914,7 @@ BOOL KDUProviderVerifyActionType(
                 bSecondTry = FALSE;
             }
 
-            if (bFirstTry == NULL && bSecondTry == NULL) {
+            if (bFirstTry == FALSE && bSecondTry == FALSE) {
                 supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support arbitrary kernel read/write or\r\n"\
                     "\tKDU interface is not implemented for these methods.\r\n");
                 return FALSE;

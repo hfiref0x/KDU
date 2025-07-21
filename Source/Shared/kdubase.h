@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022 - 2024
+*  (C) COPYRIGHT AUTHORS, 2022 - 2025
 *
 *  TITLE:       KDUBASE.H
 *
-*  VERSION:     1.41
+*  VERSION:     1.44
 *
-*  DATE:        30 Mar 2024
+*  DATE:        10 Jul 2025
 *
 *  Base KDU definitions.
 *
@@ -54,13 +54,17 @@ typedef struct _KDU_DB_ENTRY {
             ULONG CompanionRequired : 1;
             ULONG UseSymbols : 1;
             ULONG OpenProcessSupported : 1;
-            ULONG Reserved : 19;
+            ULONG FsFilter : 1;
+            ULONG Reserved : 18;
         };
     };
     ULONG SupportedShellFlags;
     LPWSTR Desciption;
     LPWSTR DriverName; //only file name, e.g. PROCEXP
-    LPWSTR DeviceName; //device name, e.g. PROCEXP152
+    union {
+        LPWSTR DeviceName; //device name, e.g. PROCEXP152
+        LPWSTR PortName;
+    };
     LPWSTR SignerName;
 } KDU_DB_ENTRY, * PKDU_DB_ENTRY;
 

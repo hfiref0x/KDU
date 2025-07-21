@@ -164,6 +164,7 @@ Note: Provider with Id 0 is assumed as default if no -prv command is specified.
 | 51     | ASRock         | AsrDrv107  | ASRock Motherboard Utility    | 3.0.498 and below       |                      |
 | 52     | Intel          | PmxDrv  | Intel(R) Management Engine Tools Driver    | 1.0.0.1003 and below       |                      |
 | 53     | Jun Liu        | HwRwDrv  | Hardware read & write driver    | 1.0.0.6 and below       |                      |
+| 54     | NetEase        | NeacSafe64  | NeacSafe64 mini-filter driver    | 1.0.0.1 and below       |                      |
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
@@ -227,6 +228,7 @@ MSFT blacklist types:
 |51|RWEverything||**File(SHA1):** B1FAD5DA173C6A603FFFE20E0CB5F0BDCA823BD5<br>**Authenticode(SHA1):** 268073AD0B17E2161C1A2A6C5B1BDEBB7B3011B4<br>**Page(SHA1):** 0B48F35DAF8B8BC9BA4E413EF222415EAB791AE0<br>**Page(SHA256):** B073907634013A8EB65E4C8AA42535BAD08101E58B7B1489AEE395B7BE9C69E2|
 |52|Original||**File(SHA1):** 9E5FCAEA33C9A181C56F7D0E4D9C42F8EDEAD252<br>**Authenticode(SHA1):** 7919108CB1278503EC4A78DD25694C6770EAA989<br>**Page(SHA1):** E1CE5A5E2CEB0AAD9CB588A900BF471462FAC42B<br>**Page(SHA256):** 6991344C8771FC717F878F9A6B0C258BC81FB3BF1F7F3CBED3EF8F86541B253F|
 |53|WINRING0||**File(SHA1):** DB8BCB8693DDF715552F85B8E2628F060070F920<br>**Authenticode(SHA1):** 8C40A82DF3D606A87DF243C787283C26CE9B0458<br>**Page(SHA1):** F7362528C0118F895D4D51588102C51A09B1691C<br>**Page(SHA256):** 2A8B9C786DEA17F00E105BFEF82B723E2578150E814DD9A94ED007275C96AC25|
+|54|Original|CVE-2025-45737|**File(SHA1):** 7E6DD5F1363C3070C59378EC8B23B6EC7B5671B4<br>**Authenticode(SHA1):** 5C41FA80052C332F7D6323C91E84E1204BA1C1C7<br>**Page(SHA1):** 5670C9130CC8997FBA6BD1C615F0DA97DC1FD43C<br>**Page(SHA256):** 34B6E417ABA41F5C7D7EE260AF1F56D9A74519F64B8E15BB510A295D2F9ED464|
 
 ###### *At commit time, data may be inaccurate.
 
@@ -296,6 +298,7 @@ Using this program might crash your computer with a BSOD. Compiled binary and so
 * CVE-2023-41444, https://blog.dru1d.ninja/windows-driver-exploit-development-irec-sys-a5eb45093945
 * CVE-2023-20598, https://www.amd.com/en/resources/product-security/bulletin/amd-sb-6009.html
 * CVE-2020-12928, https://h0mbre.github.io/RyzenMaster_CVE/
+* CVE-2025-45737, https://github.com/smallzhong/NeacController
 
 # Wormhole drivers code
 

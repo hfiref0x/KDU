@@ -223,6 +223,12 @@
     <None Include="drv\HwRwDrv.x64.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\NeacSafe64.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\NeacSafe64Cat.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
