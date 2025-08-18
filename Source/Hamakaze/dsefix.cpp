@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2024
+*  (C) COPYRIGHT AUTHORS, 2014 - 2025
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.42
+*  VERSION:     1.44
 *
-*  DATE:        23 Sep 2024
+*  DATE:        18 Aug 2025
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3

@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTSUP.H
 *
-*  VERSION:     2.24
+*  VERSION:     2.25
 *
-*  DATE:        10 Aug 2025
+*  DATE:        18 Aug 2025
 *
 *  Common header file for the NT API support functions and definitions.
 *
