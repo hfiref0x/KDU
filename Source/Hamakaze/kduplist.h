@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.44
 *
-*  DATE:        10 Jul 2025
+*  DATE:        17 Aug 2025
 *
 *  Providers global list.
 *
@@ -1508,7 +1508,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provUnregisterDriver)NULL,
         (provPreOpenDriver)NULL,
         (provPostOpenDriver)NULL,
-        (provMapDriver)NULL,
+        (provMapDriver)KDUMapDriver,
         (provControlDSE)KDUControlDSE,
 
         (provReadKernelVM)NetEaseReadVirtualMemory,

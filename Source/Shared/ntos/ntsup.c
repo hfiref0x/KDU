@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTSUP.C
 *
-*  VERSION:     2.23
+*  VERSION:     2.25
 *
-*  DATE:        08 Jun 2025
+*  DATE:        17 Aug 2025
 *
 *  Native API support functions.
 *
@@ -24,6 +24,188 @@
 #pragma warning(push)
 #pragma warning(disable: 26812) // Prefer 'enum class' over 'enum'
 #pragma warning(disable: 6320) // exception may mask
+
+/*
+* 
+* SHA256 algo (used by Ronova so keep it here).
+* 
+*/
+
+typedef struct _NTSUP_SHA256_CTX {
+    ULONG State[8];
+    ULONG64 BitCount;
+    UCHAR Buffer[64];
+} NTSUP_SHA256_CTX, * PNTSUP_SHA256_CTX;
+
+#define NTSUP_ROTR32(v,b) _rotr(v,b)
+#define NTSUP_CH(x,y,z)   (((x) & (y)) ^ ((~x) & (z)))
+#define NTSUP_MAJ(x,y,z)  (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
+#define NTSUP_BSIG0(x)    (NTSUP_ROTR32(x,2) ^ NTSUP_ROTR32(x,13) ^ NTSUP_ROTR32(x,22))
+#define NTSUP_BSIG1(x)    (NTSUP_ROTR32(x,6) ^ NTSUP_ROTR32(x,11) ^ NTSUP_ROTR32(x,25))
+#define NTSUP_SSIG0(x)    (NTSUP_ROTR32(x,7) ^ NTSUP_ROTR32(x,18) ^ ((x) >> 3))
+#define NTSUP_SSIG1(x)    (NTSUP_ROTR32(x,17) ^ NTSUP_ROTR32(x,19) ^ ((x) >> 10))
+
+static const ULONG ntsupSha256K[64] = {
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,
+    0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,
+    0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,
+    0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,
+    0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,
+    0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,
+    0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,
+    0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,
+    0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+};
+
+VOID ntsupSha256Transform(
+    _Inout_ PNTSUP_SHA256_CTX Ctx,
+    _In_reads_bytes_(64) const UCHAR Block[64]
+)
+{
+    ULONG W[64];
+    ULONG a, b, c, d, e, f, g, h, t1, t2;
+    ULONG i;
+    for (i = 0; i < 16; i++) {
+        W[i] = (Block[i * 4] << 24) |
+            (Block[i * 4 + 1] << 16) |
+            (Block[i * 4 + 2] << 8) |
+            (Block[i * 4 + 3]);
+    }
+    for (i = 16; i < 64; i++) {
+        W[i] = NTSUP_SSIG1(W[i - 2]) + W[i - 7] + NTSUP_SSIG0(W[i - 15]) + W[i - 16];
+    }
+
+    a = Ctx->State[0];
+    b = Ctx->State[1];
+    c = Ctx->State[2];
+    d = Ctx->State[3];
+    e = Ctx->State[4];
+    f = Ctx->State[5];
+    g = Ctx->State[6];
+    h = Ctx->State[7];
+
+    for (i = 0; i < 64; i++) {
+        t1 = h + NTSUP_BSIG1(e) + NTSUP_CH(e, f, g) + ntsupSha256K[i] + W[i];
+        t2 = NTSUP_BSIG0(a) + NTSUP_MAJ(a, b, c);
+        h = g;
+        g = f;
+        f = e;
+        e = d + t1;
+        d = c;
+        c = b;
+        b = a;
+        a = t1 + t2;
+    }
+
+    Ctx->State[0] += a;
+    Ctx->State[1] += b;
+    Ctx->State[2] += c;
+    Ctx->State[3] += d;
+    Ctx->State[4] += e;
+    Ctx->State[5] += f;
+    Ctx->State[6] += g;
+    Ctx->State[7] += h;
+
+    RtlSecureZeroMemory(W, sizeof(W));
+}
+
+VOID ntsupSha256Init(
+    _Out_ PNTSUP_SHA256_CTX Ctx
+)
+{
+    RtlSecureZeroMemory(Ctx, sizeof(NTSUP_SHA256_CTX));
+    Ctx->State[0] = 0x6A09E667;
+    Ctx->State[1] = 0xBB67AE85;
+    Ctx->State[2] = 0x3C6EF372;
+    Ctx->State[3] = 0xA54FF53A;
+    Ctx->State[4] = 0x510E527F;
+    Ctx->State[5] = 0x9B05688C;
+    Ctx->State[6] = 0x1F83D9AB;
+    Ctx->State[7] = 0x5BE0CD19;
+}
+
+VOID ntsupSha256Update(
+    _Inout_ PNTSUP_SHA256_CTX Ctx,
+    _In_reads_bytes_(Length) const UCHAR* Data,
+    _In_ SIZE_T Length
+)
+{
+    SIZE_T have, need;
+    SIZE_T off;
+    const UCHAR* p;
+
+    if (Length == 0) return;
+
+    have = (SIZE_T)((Ctx->BitCount >> 3) & 0x3F);
+    need = 64 - have;
+    Ctx->BitCount += (ULONG64)Length * 8;
+    p = Data;
+    off = 0;
+
+    if (have && Length >= need) {
+        RtlCopyMemory(Ctx->Buffer + have, p, need);
+        ntsupSha256Transform(Ctx, Ctx->Buffer);
+        off += need;
+        have = 0;
+    }
+
+    while (off + 64 <= Length) {
+#pragma warning(push)
+#pragma warning(disable: 6385)
+        ntsupSha256Transform(Ctx, p + off);
+#pragma warning(pop)
+        off += 64;
+    }
+
+    if (off < Length) {
+        RtlCopyMemory(Ctx->Buffer + have, p + off, Length - off);
+    }
+}
+
+VOID ntsupSha256Final(
+    _Inout_ PNTSUP_SHA256_CTX Ctx,
+    _Out_writes_bytes_all_(32) UCHAR Digest[32]
+)
+{
+    UCHAR pad[64];
+    UCHAR len[8];
+    SIZE_T padLen;
+    SIZE_T i;
+    ULONG64 bitCount;
+
+    bitCount = Ctx->BitCount;
+
+    for (i = 0; i < 8; i++) {
+        len[7 - i] = (UCHAR)(bitCount >> (i * 8));
+    }
+
+    pad[0] = 0x80;
+    RtlSecureZeroMemory(pad + 1, 63);
+
+    padLen = 64 - ((bitCount >> 3) & 0x3f);
+    if (padLen < 9) padLen += 64;
+
+    ntsupSha256Update(Ctx, pad, padLen - 8);
+    ntsupSha256Update(Ctx, len, 8);
+
+    for (i = 0; i < 8; i++) {
+        Digest[i * 4 + 0] = (UCHAR)(Ctx->State[i] >> 24);
+        Digest[i * 4 + 1] = (UCHAR)(Ctx->State[i] >> 16);
+        Digest[i * 4 + 2] = (UCHAR)(Ctx->State[i] >> 8);
+        Digest[i * 4 + 3] = (UCHAR)(Ctx->State[i]);
+    }
+
+    RtlSecureZeroMemory(Ctx, sizeof(NTSUP_SHA256_CTX));
+    RtlSecureZeroMemory(pad, sizeof(pad));
+    RtlSecureZeroMemory(len, sizeof(len));
+}
 
 /*
 * ntsupHeapAlloc
@@ -189,7 +371,7 @@ SIZE_T ntsupWriteBufferToFile(
 )
 {
     NTSTATUS           ntStatus = STATUS_UNSUCCESSFUL;
-    ACCESS_MASK        desiredAccess = FILE_WRITE_ACCESS | SYNCHRONIZE;
+    ACCESS_MASK        desiredAccess = FILE_WRITE_DATA | SYNCHRONIZE;
     DWORD              dwFlag = FILE_OVERWRITE_IF;
     ULONG              blockSize, remainingSize;
     HANDLE             hFile = NULL;
@@ -212,7 +394,7 @@ SIZE_T ntsupWriteBufferToFile(
     }
 
     if (Append) {
-        desiredAccess |= FILE_READ_ACCESS;
+        desiredAccess |= FILE_READ_DATA | FILE_APPEND_DATA;
         dwFlag = FILE_OPEN_IF;
     }
 
@@ -239,9 +421,11 @@ SIZE_T ntsupWriteBufferToFile(
                 __leave;
 
             bytesWritten += ioStatus.Information;
+            if (Append)
+                pPosition = NULL;
         }
         else {
-            blockSize = 0x7FFFFFFF;
+            blockSize = MAX_NTSUP_WRITE_CHUNK;
             nBlocks = (Size / blockSize);
             for (blockIndex = 0; blockIndex < nBlocks; blockIndex++) {
 
@@ -251,6 +435,8 @@ SIZE_T ntsupWriteBufferToFile(
 
                 ptr += blockSize;
                 bytesWritten += ioStatus.Information;
+                if (Append && blockIndex == 0)
+                    pPosition = NULL;
             }
             remainingSize = (ULONG)(Size % blockSize);
             if (remainingSize) {
@@ -421,12 +607,11 @@ PVOID ntsupFindModuleNameByAddress(
 {
     ULONG i, modulesCount;
     NTSTATUS ntStatus;
+    SIZE_T copyLength;
     UNICODE_STRING usConvertedName;
     PRTL_PROCESS_MODULE_INFORMATION moduleEntry;
 
-    if ((Buffer == NULL) ||
-        (ccBuffer == 0))
-    {
+    if ((Buffer == NULL) || (ccBuffer == 0)) {
         return NULL;
     }
 
@@ -446,11 +631,15 @@ PVOID ntsupFindModuleNameByAddress(
 
             if (NT_SUCCESS(ntStatus)) {
 
+                copyLength = usConvertedName.Length / sizeof(WCHAR);
+                if (copyLength > (SIZE_T)(ccBuffer - 1))
+                    copyLength = ccBuffer - 1;
+
                 _strncpy(
                     Buffer,
                     ccBuffer,
                     usConvertedName.Buffer,
-                    usConvertedName.Length / sizeof(WCHAR));
+                    copyLength);
 
                 RtlFreeUnicodeString(&usConvertedName);
 
@@ -700,7 +889,7 @@ BOOLEAN ntsupIsKdEnabled(
 
     if (DebuggerAllowed) {
 
-        RtlSecureZeroMemory(&kdInfo, sizeof(kdInfo));
+        RtlSecureZeroMemory(&kdInfoEx, sizeof(kdInfoEx));
 
         ntStatus = NtQuerySystemInformation(
             SystemKernelDebuggerInformationEx,
@@ -777,10 +966,7 @@ PVOID ntsupGetLoadedModulesListEx(
     if (ReturnLength)
         *ReturnLength = 0;
 
-    if (ExtendedOutput)
-        infoClass = SystemModuleInformationEx;
-    else
-        infoClass = SystemModuleInformation;
+    infoClass = ExtendedOutput ? SystemModuleInformationEx : SystemModuleInformation;
 
     buffer = AllocMem((SIZE_T)bufferSize);
     if (buffer == NULL)
@@ -795,10 +981,12 @@ PVOID ntsupGetLoadedModulesListEx(
     if (ntStatus == STATUS_INFO_LENGTH_MISMATCH) {
 
         FreeMem(buffer);
-        if (bufferSize > MAX_NTSUP_BUFFER_SIZE)
+        if (bufferSize == 0 || bufferSize > MAX_NTSUP_BUFFER_SIZE)
             return NULL;
 
         buffer = AllocMem((SIZE_T)bufferSize);
+        if (buffer == NULL)
+            return NULL;
 
         ntStatus = NtQuerySystemInformation(
             infoClass,
@@ -831,9 +1019,7 @@ PVOID ntsupGetLoadedModulesListEx(
         return buffer;
     }
 
-    if (buffer)
-        FreeMem(buffer);
-
+    FreeMem(buffer);
     return NULL;
 }
 
@@ -921,6 +1107,8 @@ PVOID ntsupGetSystemInfoEx(
             return NULL;
 
         buffer = AllocMem((SIZE_T)bufferSize);
+        if (buffer == NULL)
+            return NULL;
     }
 
     if (ReturnLength)
@@ -930,9 +1118,7 @@ PVOID ntsupGetSystemInfoEx(
         return buffer;
     }
 
-    if (buffer)
-        FreeMem(buffer);
-
+    FreeMem(buffer);
     return NULL;
 }
 
@@ -1117,7 +1303,7 @@ BOOL ntsupQueryProcessName(
     _In_ DWORD ccBuffer //size of buffer in chars
 )
 {
-    ULONG NextEntryDelta = 0;
+    ULONG NextEntryDelta = 0, iteration = 0;
 
     union {
         PSYSTEM_PROCESS_INFORMATION Process;
@@ -1142,6 +1328,8 @@ BOOL ntsupQueryProcessName(
         }
 
         NextEntryDelta = List.Process->NextEntryDelta;
+        if (++iteration > MAX_NTSUP_PROCESS_ENUM_ITER)
+            break;
 
     } while (NextEntryDelta);
 
@@ -1164,7 +1352,7 @@ BOOL ntsupQueryProcessEntryById(
     _Out_ PSYSTEM_PROCESS_INFORMATION* Entry
 )
 {
-    ULONG NextEntryDelta = 0;
+    ULONG NextEntryDelta = 0, iteration = 0;
 
     union {
         PSYSTEM_PROCESS_INFORMATION Process;
@@ -1185,6 +1373,8 @@ BOOL ntsupQueryProcessEntryById(
         }
 
         NextEntryDelta = List.Process->NextEntryDelta;
+        if (++iteration > MAX_NTSUP_PROCESS_ENUM_ITER)
+            break;
 
     } while (NextEntryDelta);
 
@@ -1261,7 +1451,7 @@ NTSTATUS ntsupQuerySystemObjectInformationVariableSize(
 {
     NTSTATUS ntStatus;
     PVOID queryBuffer;
-    ULONG returnLength = 0;
+    ULONG returnLengthLocal = 0;
 
     *Buffer = NULL;
     if (ReturnLength) *ReturnLength = 0;
@@ -1270,7 +1460,7 @@ NTSTATUS ntsupQuerySystemObjectInformationVariableSize(
         InformationClass,
         NULL,
         0,
-        &returnLength);
+        &returnLengthLocal);
 
     //
     // Test all possible acceptable failures.
@@ -1282,19 +1472,22 @@ NTSTATUS ntsupQuerySystemObjectInformationVariableSize(
         return ntStatus;
     }
 
-    queryBuffer = AllocMem(returnLength);
+    if (returnLengthLocal == 0 || returnLengthLocal > MAX_NTSUP_BUFFER_SIZE)
+        return STATUS_INVALID_BUFFER_SIZE;
+
+    queryBuffer = AllocMem(returnLengthLocal);
     if (queryBuffer == NULL)
         return STATUS_INSUFFICIENT_RESOURCES;
 
     ntStatus = QueryRoutine(ObjectHandle,
         InformationClass,
         queryBuffer,
-        returnLength,
-        &returnLength);
+        returnLengthLocal,
+        &returnLengthLocal);
 
     if (NT_SUCCESS(ntStatus)) {
         *Buffer = queryBuffer;
-        if (ReturnLength) *ReturnLength = returnLength;
+        if (ReturnLength) *ReturnLength = returnLengthLocal;
     }
     else {
         FreeMem(queryBuffer);
@@ -2395,6 +2588,178 @@ BOOLEAN ntsupUserIsFullAdmin(
         NtClose(hToken);
     }
     return bResult;
+}
+
+/*
+* ntsupHashImageSections
+*
+* Purpose:
+*
+* Produce a SHA-256 hash for a PE image mapping in memory (either a raw
+* file mapping or a loaded module) by hashing the PE headers plus every
+* executable section.
+*
+*/
+NTSTATUS ntsupHashImageSections(
+    _In_ PVOID ImageBase,
+    _In_ SIZE_T ImageSize,          // Size of image mapping
+    _Out_writes_bytes_(HashBufferSize) PBYTE HashBuffer,
+    _In_ SIZE_T HashBufferSize,
+    _In_ NTSUP_IMAGE_TYPE ImageType
+)
+{
+    BOOL anySectionHashed;
+    PIMAGE_NT_HEADERS ntHeaders;
+    PIMAGE_SECTION_HEADER sectionHeader;
+    ULONG numberOfSections, i;
+    ULONG_PTR baseAddress = (ULONG_PTR)ImageBase;
+    NTSUP_SHA256_CTX ctx;
+    ULONG_PTR sectionStart, headersEnd;
+    SIZE_T toHash, sizeOfHeaders, maxVirtualSize, maxRawSize, maxSafeSize;
+
+    //
+    // Validate parameters.
+    //
+    if (ImageBase == NULL || HashBuffer == NULL)
+        return STATUS_INVALID_PARAMETER;
+
+    if (HashBufferSize < NTSUPHASH_SHA256_SIZE)
+        return STATUS_BUFFER_TOO_SMALL;
+
+    if (ImageSize == 0)
+        return STATUS_INVALID_PARAMETER;
+
+    //
+    // Get NT headers with boundary check.
+    //
+    if (!NT_SUCCESS(RtlImageNtHeaderEx(0,
+        ImageBase,
+        ImageSize,
+        (PIMAGE_NT_HEADERS*)&ntHeaders)) || ntHeaders == NULL) 
+    {
+        return STATUS_INVALID_IMAGE_FORMAT;
+    }
+
+    if (ntHeaders->OptionalHeader.SizeOfImage == 0)
+        return STATUS_INVALID_IMAGE_FORMAT;
+
+    //
+    // Validate image size matches reported size.
+    //
+    if (ntHeaders->OptionalHeader.SizeOfImage > ImageSize &&
+        ImageType == ImageTypeLoaded) 
+    {
+        return STATUS_INVALID_IMAGE_FORMAT;
+    }
+
+    numberOfSections = ntHeaders->FileHeader.NumberOfSections;
+
+    //
+    // Validate section headers are within image bounds.
+    //
+    if (numberOfSections == 0 ||
+        numberOfSections > (MAXULONG_PTR / sizeof(IMAGE_SECTION_HEADER)))
+    {
+        return STATUS_INVALID_IMAGE_FORMAT;
+    }
+
+    sectionHeader = IMAGE_FIRST_SECTION(ntHeaders);
+    headersEnd = (ULONG_PTR)sectionHeader +
+        (numberOfSections * sizeof(IMAGE_SECTION_HEADER));
+
+    if (headersEnd < (ULONG_PTR)sectionHeader ||
+        headersEnd > baseAddress + ImageSize)
+    {
+        return STATUS_INVALID_IMAGE_FORMAT;
+    }
+
+    ntsupSha256Init(&ctx);
+
+    //
+    // Hash PE headers first.
+    //
+    sizeOfHeaders = min(ntHeaders->OptionalHeader.SizeOfHeaders, ImageSize);
+    if (sizeOfHeaders) {
+        ntsupSha256Update(&ctx, (PUCHAR)ImageBase, sizeOfHeaders);
+    }
+
+    anySectionHashed = FALSE;
+
+    //
+    // Process each section.
+    //
+    for (i = 0; i < numberOfSections; i++, sectionHeader++) {
+        // Only hash executable sections
+        if ((sectionHeader->Characteristics & IMAGE_SCN_MEM_EXECUTE) == 0)
+            continue;
+
+        //
+        // Determine section location based on image type.
+        //
+        if (ImageType == ImageTypeLoaded) {
+            //
+            // For loaded modules: use virtual addresses.
+            //
+            if (sectionHeader->VirtualAddress == 0 ||
+                sectionHeader->Misc.VirtualSize == 0) {
+                continue;
+            }
+
+            //
+            // Skip sections outside loaded image.
+            //
+            if (sectionHeader->VirtualAddress >= ntHeaders->OptionalHeader.SizeOfImage) {
+                continue;
+            }
+
+            maxVirtualSize = ntHeaders->OptionalHeader.SizeOfImage - sectionHeader->VirtualAddress;
+            toHash = min(sectionHeader->Misc.VirtualSize, maxVirtualSize);
+            sectionStart = baseAddress + sectionHeader->VirtualAddress;
+        }
+        else {
+            //
+            // For raw files: use file offsets.
+            //
+            if (sectionHeader->PointerToRawData == 0 ||
+                sectionHeader->SizeOfRawData == 0) {
+                continue;
+            }
+
+            //
+            // Skip sections outside file.
+            //
+            if (sectionHeader->PointerToRawData >= ImageSize) {
+                continue;
+            }
+
+            maxRawSize = ImageSize - sectionHeader->PointerToRawData;
+            toHash = min(sectionHeader->SizeOfRawData, maxRawSize);
+            sectionStart = baseAddress + sectionHeader->PointerToRawData;
+        }
+
+        if (sectionStart < baseAddress ||
+            sectionStart >= baseAddress + ImageSize) 
+        {
+            continue;
+        }
+
+        maxSafeSize = (baseAddress + ImageSize) - sectionStart;
+        if (toHash > maxSafeSize) {
+            toHash = maxSafeSize;
+        }
+
+        ntsupSha256Update(&ctx, (PUCHAR)sectionStart, toHash);
+        anySectionHashed = TRUE;
+    }
+
+    //
+    // Return header-only hash if no executable sections found.
+    //
+    ntsupSha256Final(&ctx, HashBuffer);
+    if (!anySectionHashed)
+        return STATUS_NOT_FOUND;
+
+    return STATUS_SUCCESS;
 }
 
 #pragma warning(pop)

@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.44
 *
-*  DATE:        10 Jul 2025
+*  DATE:        17 Aug 2025
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -660,6 +660,7 @@ int KDUMain()
 
         SYSTEM_CODEINTEGRITY_INFORMATION ciPolicy;
         ULONG dummy = 0;
+        BOOL hvciActive = FALSE; 
 
         ciPolicy.Length = sizeof(ciPolicy);
         ciPolicy.CodeIntegrityOptions = 0;
@@ -675,8 +676,10 @@ int KDUMain()
             if (ciPolicy.CodeIntegrityOptions & CODEINTEGRITY_OPTION_DEBUGMODE_ENABLED)
                 printf_s("[*] Debug Mode ENABLED\r\n");
 
-            if (ciPolicy.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED)
+            if (ciPolicy.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED) {
+                hvciActive = TRUE;
                 printf_s("[*] HVCI KMCI ENABLED\r\n");
+            }
 
             if (ciPolicy.CodeIntegrityOptions & CODEINTEGRITY_OPTION_WHQL_ENFORCEMENT_ENABLED)
                 printf_s("[*] WHQL enforcement ENABLED\r\n");
@@ -685,7 +688,7 @@ int KDUMain()
 
         if (osv.dwBuildNumber >= NT_WIN10_REDSTONE5) {
             BOOL bEnabled = FALSE;
-            if (supDetectMsftBlockList(&bEnabled, FALSE)) {
+            if (supDetectMsftBlockList(&bEnabled, FALSE, osv.dwBuildNumber, hvciActive)) {
                 printf_s("[+] MSFT Driver block list is %sbled\r\n", (bEnabled) ? "ena" : "disa");
             }
         }

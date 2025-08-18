@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.44
 *
-*  DATE:        10 Jul 2025
+*  DATE:        17 Aug 2025
 *
 *  Support routines header file.
 *
@@ -375,7 +375,9 @@ BOOL supEnumeratePhysicalMemory(
 
 BOOL supDetectMsftBlockList(
     _In_ PBOOL Enabled,
-    _In_ BOOL Disable);
+    _In_ BOOL Disable,
+    _In_ ULONG NtBuildNumber,
+    _In_ BOOL HvciActive);
 
 ULONG_PTR supResolveMiPteBaseAddress(
     _In_opt_ PVOID NtOsBase);
