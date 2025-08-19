@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.44
 *
-*  DATE:        18 Aug 2025
+*  DATE:        19 Aug 2025
 *
 *  Driver mapping routines.
 *
@@ -59,7 +59,7 @@ VOID KDUShowPayloadResult(
         &viewSize,
         ViewUnmap,
         0,
-        PAGE_READWRITE);
+        PAGE_READONLY);
 
     if (NT_SUCCESS(ntStatus) && pvPayloadHead.Ref) {
 

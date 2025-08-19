@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.44
 *
-*  DATE:        18 Aug 2025
+*  DATE:        19 Aug 2025
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -175,12 +175,9 @@ INT KDUProcessDSEFixSwitch(
 
         if (provContext->Provider->Callbacks.ControlDSE) {
 
-            ciVarAddress = KDUQueryCodeIntegrityVariableAddress(NtBuildNumber);
-
+            ciVarAddress = KDUQueryCodeIntegrityVariableSymbol(NtBuildNumber);
             if (ciVarAddress == 0) {
-
-                ciVarAddress = KDUQueryCodeIntegrityVariableSymbol(NtBuildNumber);
-
+                ciVarAddress = KDUQueryCodeIntegrityVariableAddress(NtBuildNumber);
             }
 
             if (ciVarAddress == 0) {

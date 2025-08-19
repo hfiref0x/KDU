@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.44
 *
-*  DATE:        18 Aug 2025
+*  DATE:        19 Aug 2025
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -171,7 +171,7 @@ VOID KDUProvList()
         printf_s("Provider # %lu, ResourceId # %lu\r\n\t%ws, DriverName \"%ws\", DeviceName \"%ws\"\r\n",
             provData->ProviderId,
             provData->ResourceId,
-            provData->Desciption,
+            provData->Description,
             provData->DriverName,
             provData->DeviceName);
 
@@ -617,119 +617,6 @@ BOOL WINAPI KDUProviderPostOpen(
     return (deviceHandle != NULL);
 }
 
-/*
-* KDUVirtualToPhysical
-*
-* Purpose:
-*
-* Provider wrapper for VirtualToPhysical routine.
-*
-*/
-BOOL WINAPI KDUVirtualToPhysical(
-    _In_ KDU_CONTEXT* Context,
-    _In_ ULONG_PTR VirtualAddress,
-    _Out_ ULONG_PTR* PhysicalAddress)
-{
-    KDU_PROVIDER* prov = Context->Provider;
-
-    if (PhysicalAddress)
-        *PhysicalAddress = 0;
-    else {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-
-    if (prov->Callbacks.VirtualToPhysical == NULL) {
-        SetLastError(ERROR_NOT_SUPPORTED);
-        return FALSE;
-    }
-
-    return prov->Callbacks.VirtualToPhysical(Context->DeviceHandle,
-        VirtualAddress,
-        PhysicalAddress);
-}
-
-/*
-* KDUReadKernelVM
-*
-* Purpose:
-*
-* Provider wrapper for ReadKernelVM routine.
-*
-*/
-_Success_(return != FALSE)
-BOOL WINAPI KDUReadKernelVM(
-    _In_ KDU_CONTEXT * Context,
-    _In_ ULONG_PTR Address,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
-    _In_ ULONG NumberOfBytes)
-{
-    BOOL bResult = FALSE;
-    KDU_PROVIDER* prov = Context->Provider;
-
-    if (Address < Context->MaximumUserModeAddress) {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-
-    //
-    // Some providers under several conditions may crash here without bugcheck.
-    //
-    __try {
-
-        bResult = prov->Callbacks.ReadKernelVM(Context->DeviceHandle,
-            Address,
-            Buffer,
-            NumberOfBytes);
-
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        SetLastError(GetExceptionCode());
-        return FALSE;
-    }
-    return bResult;
-}
-
-/*
-* KDUWriteKernelVM
-*
-* Purpose:
-*
-* Provider wrapper for WriteKernelVM routine.
-*
-*/
-_Success_(return != FALSE)
-BOOL WINAPI KDUWriteKernelVM(
-    _In_ KDU_CONTEXT * Context,
-    _In_ ULONG_PTR Address,
-    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
-    _In_ ULONG NumberOfBytes)
-{
-    BOOL bResult = FALSE;
-    KDU_PROVIDER* prov = Context->Provider;
-
-    if (Address < Context->MaximumUserModeAddress) {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-
-    //
-    // Some providers under several conditions may crash here without bugcheck.
-    //
-    __try {
-
-        bResult = prov->Callbacks.WriteKernelVM(Context->DeviceHandle,
-            Address,
-            Buffer,
-            NumberOfBytes);
-
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        SetLastError(GetExceptionCode());
-        return FALSE;
-    }
-    return bResult;
-}
 
 /*
 * KDUOpenProcess
@@ -876,8 +763,18 @@ BOOL KDUProviderVerifyActionType(
     BOOL bResult = TRUE;
     
 #ifdef _DEBUG
+    DbgPrint("KDUProviderVerifyActionType bypassed\r\n");
     return TRUE;
 #endif
+
+    //
+    // Check mixed settings.
+    //
+    if (Provider->LoadData->PreferPhysical && Provider->LoadData->PreferVirtual) {
+        supPrintfEvent(kduEventError,
+            "[!] Abort: provider flags PreferPhysical and PreferVirtual cannot be combined\r\n");
+        return FALSE;
+    }
 
     switch (ActionType) {
     case ActionTypeDKOM:
@@ -1019,7 +916,8 @@ VOID KDUFallBackOnLoad(
     if (ctx->DeviceHandle)
         NtClose(ctx->DeviceHandle);
 
-    ctx->Provider->Callbacks.StopVulnerableDriver(ctx);
+    if (ctx->Provider->Callbacks.StopVulnerableDriver)
+        ctx->Provider->Callbacks.StopVulnerableDriver(ctx);
 
     if (ctx->DriverFileName)
         supHeapFree(ctx->DriverFileName);
@@ -1084,7 +982,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         if (ProviderId >= KDUProvGetCount()) {
             
             supPrintfEvent(kduEventInformation,
-                "[+] Pprovider with id %lu is not supported, will be using default provider (0)\r\n",
+                "[+] Provider with id %lu is not supported, will be using default provider (0)\r\n",
                 ProviderId);
 
             ProviderId = KDU_PROVIDER_DEFAULT;
@@ -1147,7 +1045,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         // Show provider info.
         //
         supPrintfEvent(kduEventInformation, "[+] Provider: \"%ws\", Name \"%ws\"\r\n",
-            provLoadData->Desciption,
+            provLoadData->Description,
             provLoadData->DriverName);
 
         //
@@ -1326,7 +1224,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
 *
 * Purpose:
 *
-* Reelease Provider context, free resources and unload driver.
+* Release Provider context, free resources and unload driver.
 *
 */
 VOID WINAPI KDUProviderRelease(

