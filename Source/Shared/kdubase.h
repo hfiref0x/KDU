@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.44
 *
-*  DATE:        10 Jul 2025
+*  DATE:        19 Aug 2025
 *
 *  Base KDU definitions.
 *
@@ -59,7 +59,7 @@ typedef struct _KDU_DB_ENTRY {
         };
     };
     ULONG SupportedShellFlags;
-    LPWSTR Desciption;
+    LPWSTR Description;
     LPWSTR DriverName; //only file name, e.g. PROCEXP
     union {
         LPWSTR DeviceName; //device name, e.g. PROCEXP152
