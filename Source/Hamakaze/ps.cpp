@@ -351,8 +351,10 @@ BOOL KDUControlProcess(
             case NT_WIN11_21H2:
             case NT_WIN11_22H2:
             case NT_WIN11_23H2:
-            case NT_WIN11_24H2:
                 Offset = PsProtectionOffset_19041;
+                break;
+            case NT_WIN11_24H2:
+                Offset = PsProtectionOffset_22000;
                 break;
             default:
                 Offset = 0;
