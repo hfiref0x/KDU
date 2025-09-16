@@ -27,6 +27,7 @@
 #define PsProtectionOffset_18362 (ULONG_PTR)0x6FA
 #define PsProtectionOffset_18363 (ULONG_PTR)0x6FA
 #define PsProtectionOffset_19041 (ULONG_PTR)0x87A //same for 19042..19045
+#define PsProtectionOffset_22000 (ULONG_PTR)0x5FA
 
 #define EPROCESS_TO_PROTECTION(Object, PsProtectionOffset) ((ULONG_PTR)Object + (ULONG_PTR)PsProtectionOffset)
 
