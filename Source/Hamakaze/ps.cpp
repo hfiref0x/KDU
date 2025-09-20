@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.44
 *
-*  DATE:        19 Aug 2025
+*  DATE:        18 Sep 2025
 *
 *  Processes DKOM related routines.
 *
@@ -354,7 +354,7 @@ BOOL KDUControlProcess(
                 Offset = PsProtectionOffset_19041;
                 break;
             case NT_WIN11_24H2:
-                Offset = PsProtectionOffset_22000;
+                Offset = PsProtectionOffset_26100;
                 break;
             default:
                 Offset = 0;
