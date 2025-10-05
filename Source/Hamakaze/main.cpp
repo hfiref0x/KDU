@@ -24,6 +24,7 @@
 #define CMD_SCV         L"-scv"
 #define CMD_PS          L"-ps"
 #define CMD_PSE         L"-pse"
+#define CMD_PSW         L"-psw"
 #define CMD_DMP         L"-dmp"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
@@ -40,7 +41,8 @@
                      "kdu -list         - List available providers\r\n"\
                      "kdu -diag         - Run system diagnostic for troubleshooting\r\n"\
                      "kdu -prv id       - Optional, sets provider id to be used with rest of commands, default 0\r\n"\
-                     "kdu -pse cmdline  - Launch program as PPL\r\n"\
+                     "kdu -pse cmdline  - Launch program as PsProtectedSignerAntimalware-Light\r\n"\
+                     "kdu -psw cmdline  - Launch program as PsProtectedSignerWinTcb-Light\r\n"\
                      "kdu -dmp pid      - Dump virtual memory of the given process\r\n"\
                      "kdu -ps pid       - Disable ProtectedProcess for given pid\r\n"\
                      "kdu -dse value    - Write user defined value to the system DSE state flags\r\n"\
@@ -87,14 +89,15 @@ INT KDUProcessDmpSwitch(
 *
 * Purpose:
 *
-* Handle -pse switch.
+* Handle -pse and -psw switch.
 *
 */
 INT KDUProcessPSEObjectSwitch(
     _In_ ULONG HvciEnabled,
     _In_ ULONG NtBuildNumber,
     _In_ ULONG ProviderId,
-    _In_ LPWSTR CommandLine
+    _In_ LPWSTR CommandLine,
+    _In_ BOOL HighestSigner
 )
 {
     INT retVal = 0;
@@ -107,7 +110,7 @@ INT KDUProcessPSEObjectSwitch(
         ActionTypeDKOM);
 
     if (provContext) {
-        retVal = KDURunCommandPPL(provContext, CommandLine);
+        retVal = KDURunCommandPPL(provContext, CommandLine, HighestSigner);
         KDUProviderRelease(provContext);
     }
 
@@ -544,7 +547,21 @@ INT KDUProcessCommandLine(
                     retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
                         NtBuildNumber,
                         providerId,
-                        szParameter);
+                        szParameter,
+                        FALSE);
+                }
+
+                else if (supGetCommandLineOption(CMD_PSW,
+                    TRUE,
+                    szParameter,
+                    RTL_NUMBER_OF(szParameter),
+                    NULL))
+                {
+                    retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        szParameter, 
+                        TRUE);
                 }
 
                 else if (supGetCommandLineOption(CMD_DMP,

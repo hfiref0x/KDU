@@ -37,7 +37,8 @@ BOOL KDUUnprotectProcess(
 
 BOOL KDURunCommandPPL(
     _In_ PKDU_CONTEXT Context,
-    _In_ LPWSTR CommandLine);
+    _In_ LPWSTR CommandLine,
+    _In_ BOOL HighestSigner);
 
 BOOL KDUDumpProcessMemory(
     _In_ PKDU_CONTEXT Context,
