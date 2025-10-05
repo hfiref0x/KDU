@@ -209,7 +209,8 @@ BOOL KDUDumpProcessMemory(
 */
 BOOL KDURunCommandPPL(
     _In_ PKDU_CONTEXT Context,
-    _In_ LPWSTR CommandLine)
+    _In_ LPWSTR CommandLine,
+    _In_ BOOL HighestSigner)
 {
     BOOL       bResult = FALSE;
     DWORD      dwThreadResumeCount = 0;
@@ -241,7 +242,17 @@ BOOL KDURunCommandPPL(
     }
     printf_s("[+] Created Process with PID %lu\r\n", pi.dwProcessId);
 
-    bResult = KDUControlProcess(Context, pi.dwProcessId, PsProtectedSignerAntimalware, PsProtectedTypeProtectedLight);
+    PS_PROTECTED_SIGNER signer;
+	PS_PROTECTED_TYPE type;
+	if (HighestSigner) { // the highest observed protection is WinTcb(6)/ProtectedLight(1)
+        signer = PsProtectedSignerWinTcb;
+		type = PsProtectedTypeProtectedLight;
+    }
+    else {
+        signer = PsProtectedSignerAntimalware;
+        type = PsProtectedTypeProtectedLight;
+    }
+    bResult = KDUControlProcess(Context, pi.dwProcessId, signer, type);
     if (!bResult) {
         supShowWin32Error("[!] Failed to set process as PPL", GetLastError());
         return bResult;
@@ -278,6 +289,36 @@ BOOL KDUUnprotectProcess(
     return KDUControlProcess(Context, ProcessId, PsProtectedSignerNone, PsProtectedTypeNone);
 }
 
+
+/*
+* printProtection
+*
+* Purpose:
+*
+* Print process protection with string descriptions.
+*
+*/
+VOID printProtection(
+    _In_ ULONG Buffer
+)
+{
+    PS_PROTECTION* PsProtection = (PS_PROTECTION*)&Buffer;
+
+    LPSTR pStr;
+
+    pStr = KDUGetProtectionTypeAsString(PsProtection->Type);
+    printf_s("\tPsProtection->Type: %lu (%s)\r\n",
+        PsProtection->Type,
+        pStr);
+
+    pStr = KDUGetProtectionSignerAsString(PsProtection->Signer);
+    printf_s("\tPsProtection->Signer: %lu (%s)\r\n",
+        PsProtection->Signer,
+        pStr);
+
+    printf_s("\tPsProtection->Audit: %lu\r\n", PsProtection->Audit);
+}
+
 /*
 * KDUControlProcess
 *
@@ -300,8 +341,6 @@ BOOL KDUControlProcess(
 
     CLIENT_ID clientId;
     OBJECT_ATTRIBUTES obja;
-
-    PS_PROTECTION *PsProtection;
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
@@ -380,23 +419,8 @@ BOOL KDUControlProcess(
                     &Buffer,
                     sizeof(ULONG)))
                 {
-                    PsProtection = (PS_PROTECTION*)&Buffer;
-
-                    LPSTR pStr;
-
-                    printf_s("[+] Kernel memory read succeeded\r\n");
-
-                    pStr = KDUGetProtectionTypeAsString(PsProtection->Type);
-                    printf_s("\tPsProtection->Type: %lu (%s)\r\n",
-                        PsProtection->Type,
-                        pStr);
-
-                    pStr = KDUGetProtectionSignerAsString(PsProtection->Signer);
-                    printf_s("\tPsProtection->Signer: %lu (%s)\r\n",
-                        PsProtection->Signer,
-                        pStr);
-
-                    printf_s("\tPsProtection->Audit: %lu\r\n", PsProtection->Audit);
+                    printf_s("[+] Kernel memory read at %p succeeded\r\n", (void*)VirtualAddress);
+                    printProtection(Buffer);
 
                     Buffer &= 0xFFFFFF00;
                     Buffer |= ((PsProtectionSigner << 4) | (PsProtectionType & 0x7));
@@ -415,9 +439,10 @@ BOOL KDUControlProcess(
                             &verifyBuf,
                             sizeof(UCHAR))) 
                         {
+                            printf_s("[+] Kernel memory read at %p succeeded\r\n", (void *)VirtualAddress);
                             printf_s("\tNew PsProtection: 0x%02X\n", verifyBuf & 0xff);
+                            printProtection(verifyBuf);
                         }
-
                     }
                     else {
 
