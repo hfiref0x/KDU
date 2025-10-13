@@ -25,6 +25,7 @@
 #define CMD_PS          L"-ps"
 #define CMD_PSE         L"-pse"
 #define CMD_PSW         L"-psw"
+#define CMD_PM          L"-pm"
 #define CMD_DMP         L"-dmp"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
@@ -41,10 +42,11 @@
                      "kdu -list         - List available providers\r\n"\
                      "kdu -diag         - Run system diagnostic for troubleshooting\r\n"\
                      "kdu -prv id       - Optional, sets provider id to be used with rest of commands, default 0\r\n"\
-                     "kdu -pse cmdline  - Launch program as PsProtectedSignerAntimalware-Light\r\n"\
-                     "kdu -psw cmdline  - Launch program as PsProtectedSignerWinTcb-Light\r\n"\
                      "kdu -dmp pid      - Dump virtual memory of the given process\r\n"\
                      "kdu -ps pid       - Disable ProtectedProcess for given pid\r\n"\
+                     "kdu -pse cmdline  - Launch program as PsProtectedSignerAntimalware-Light\r\n"\
+                     "kdu -psw cmdline  - Launch program as PsProtectedSignerWinTcb-Light\r\n"\
+                     "kdu -pm pid       - Disable Process Mitigations for given pid\r\n"\
                      "kdu -dse value    - Write user defined value to the system DSE state flags\r\n"\
                      "kdu -map filename - Map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
                      "-scv version      - Optional, select shellcode version, default 1\r\n"\
@@ -111,6 +113,38 @@ INT KDUProcessPSEObjectSwitch(
 
     if (provContext) {
         retVal = KDURunCommandPPL(provContext, CommandLine, HighestSigner);
+        KDUProviderRelease(provContext);
+    }
+
+    return retVal;
+}
+
+/*
+* KDUProcessPMObjectSwitch
+*
+* Purpose:
+*
+* Handle -pm switch.
+*
+*/
+INT KDUProcessPMObjectSwitch(
+    _In_ ULONG HvciEnabled,
+    _In_ ULONG NtBuildNumber,
+    _In_ ULONG ProviderId,
+    _In_ ULONG_PTR ProcessId
+)
+{
+    INT retVal = 0;
+    KDU_CONTEXT* provContext;
+
+    provContext = KDUProviderCreate(ProviderId,
+        HvciEnabled,
+        NtBuildNumber,
+        KDU_SHELLCODE_NONE,
+        ActionTypeDKOM);
+
+    if (provContext) {
+        retVal = KDUUnmitigateProcess(provContext, ProcessId, PS_NO_MITIGATIONS); // TODO: parametrize
         KDUProviderRelease(provContext);
     }
 
@@ -533,6 +567,20 @@ INT KDUProcessCommandLine(
                     processId = strtou64(szParameter);
 
                     retVal = KDUProcessPSObjectSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        processId);
+                }
+
+                else if (supGetCommandLineOption(CMD_PM,
+                    TRUE,
+                    szParameter,
+                    RTL_NUMBER_OF(szParameter),
+                    NULL))
+                {
+                    processId = strtou64(szParameter);
+
+                    retVal = KDUProcessPMObjectSwitch(HvciEnabled,
                         NtBuildNumber,
                         providerId,
                         processId);

@@ -29,11 +29,22 @@
 #define PsProtectionOffset_19041 (ULONG_PTR)0x87A //same for 19042..19045
 #define PsProtectionOffset_26100 (ULONG_PTR)0x5FA
 
+#define PsMitigationFlags1Offset_26100 (ULONG_PTR)0x750
+#define PsMitigationFlags2Offset_26100 (ULONG_PTR)0x754
+
 #define EPROCESS_TO_PROTECTION(Object, PsProtectionOffset) ((ULONG_PTR)Object + (ULONG_PTR)PsProtectionOffset)
+
+#define EPROCESS_TO_MITIGATIONFLAGS1(Object, PsMitigationOffset) ((ULONG_PTR)Object + (ULONG_PTR)PsMitigationOffset)
+#define EPROCESS_TO_MITIGATIONFLAGS2(Object, PsMitigationOffset) ((ULONG_PTR)Object + (ULONG_PTR)PsMitigationOffset)
 
 BOOL KDUUnprotectProcess(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId);
+
+BOOL KDUUnmitigateProcess(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG_PTR ProcessId,
+    _In_ ULONG PsNewMitigation);
 
 BOOL KDURunCommandPPL(
     _In_ PKDU_CONTEXT Context,
@@ -44,8 +55,13 @@ BOOL KDUDumpProcessMemory(
     _In_ PKDU_CONTEXT Context,
     _In_ HANDLE ProcessId);
 
-BOOL KDUControlProcess(
+BOOL KDUControlProcessProtections(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId,
     _In_ PS_PROTECTED_SIGNER PsProtectionSigner,
     _In_ PS_PROTECTED_TYPE PsProtectionType);
+
+BOOL KDUControlProcessMitigationFlags2(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG_PTR ProcessId,
+    _In_ ULONG PsMitigations);
