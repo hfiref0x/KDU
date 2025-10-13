@@ -33,6 +33,7 @@ It features:
 * -prv  - optional, select vulnerable driver provider;
 * -ps   - modify process object of given ProcessID, downgrading any protections;
 * -pse  - launch program as ProtectedProcessLight-AntiMalware (PPL);
+* -psw  - launch program as ProtectedProcessLight-WinTcb (PPL);
 * -dmp  - dump virtual memory of the given process;
 * -dse  - write user-defined value to the system DSE state flags;
 * -map  - map driver to the kernel and execute its entry point; this command has dependencies listed below;
@@ -51,6 +52,11 @@ Example:
 + kdu -dse 0
 + kdu -dse 6
 + kdu -pse "C:\Windows\System32\notepad.exe C:\TEMP\words.txt"
++ kdu -psw "C:\Windows\System32\cmd.exe"
+
+Run on Windows 11 24H2*
+
+<img width="1181" height="563" alt="image" src="https://github.com/user-attachments/assets/bbdf6d18-bc74-41e2-a7cf-297e439ec9df" />
 
 Run on Windows 10 20H2*
 
