@@ -128,7 +128,7 @@ INT KDUProcessPSEObjectSwitch(
 *
 * Purpose:
 *
-* Handle -pm and -pmm switch.
+* Handle -pm(1,2) switches.
 *
 */
 INT KDUProcessPMObjectSwitch(
@@ -589,7 +589,7 @@ INT KDUProcessCommandLine(
                         NtBuildNumber,
                         providerId,
                         processId,
-                        1 & 2);
+                        PS_MITIGATION_FLAGS1 | PS_MITIGATION_FLAGS2);
                 }
 
                 else if (supGetCommandLineOption(CMD_PM1,
@@ -604,7 +604,7 @@ INT KDUProcessCommandLine(
                         NtBuildNumber,
                         providerId,
                         processId,
-                        1);
+                        PS_MITIGATION_FLAGS1);
                 }
 
                 else if (supGetCommandLineOption(CMD_PM2,
@@ -619,7 +619,7 @@ INT KDUProcessCommandLine(
                         NtBuildNumber,
                         providerId,
                         processId,
-                        2);
+                        PS_MITIGATION_FLAGS2);
                 }
 
                 else if (supGetCommandLineOption(CMD_PSE,

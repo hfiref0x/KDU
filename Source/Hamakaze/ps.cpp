@@ -616,14 +616,16 @@ BOOL KDUControlProcessMitigationFlags(
 
                     Buffer1 = Buffer2 = PsNewMitigations;
 
-                    if (TargetedFlags & 1) {
+                    if (TargetedFlags & PS_MITIGATION_FLAGS1) {
+                        printf_s("[+] Overwriting MitigationFlags1\r\n");
                         bResult1 = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
                             VirtualAddress1,
                             &Buffer1,
                             sizeof(ULONG));
                     }
 
-                    if (TargetedFlags & 2) {
+                    if (TargetedFlags & PS_MITIGATION_FLAGS2) {
+                        printf_s("[+] Overwriting MitigationFlags2\r\n");
                         bResult2 = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
                             VirtualAddress2,
                             &Buffer2,
