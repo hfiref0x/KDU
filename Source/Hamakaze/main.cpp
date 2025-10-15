@@ -26,6 +26,8 @@
 #define CMD_PSE         L"-pse"
 #define CMD_PSW         L"-psw"
 #define CMD_PM          L"-pm"
+#define CMD_PM1         L"-pm1"
+#define CMD_PM2         L"-pm2"
 #define CMD_DMP         L"-dmp"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
@@ -46,7 +48,9 @@
                      "kdu -ps pid       - Disable ProtectedProcess for given pid\r\n"\
                      "kdu -pse cmdline  - Launch program as PsProtectedSignerAntimalware-Light\r\n"\
                      "kdu -psw cmdline  - Launch program as PsProtectedSignerWinTcb-Light\r\n"\
-                     "kdu -pm pid       - Disable Process Mitigations for given pid\r\n"\
+                     "kdu -pm pid       - Overwrites Process MitigationsFlags1 and 2 with 0x0 for given pid\r\n"\
+                     "kdu -pm1 pid      - Overwrites Process MitigationsFlags1 with 0x0 for given pid\r\n"\
+                     "kdu -pm2 pid      - Overwrites Process MitigationsFlags2 with 0x0 for given pid\r\n"\
                      "kdu -dse value    - Write user defined value to the system DSE state flags\r\n"\
                      "kdu -map filename - Map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
                      "-scv version      - Optional, select shellcode version, default 1\r\n"\
@@ -124,14 +128,15 @@ INT KDUProcessPSEObjectSwitch(
 *
 * Purpose:
 *
-* Handle -pm switch.
+* Handle -pm and -pmm switch.
 *
 */
 INT KDUProcessPMObjectSwitch(
     _In_ ULONG HvciEnabled,
     _In_ ULONG NtBuildNumber,
     _In_ ULONG ProviderId,
-    _In_ ULONG_PTR ProcessId
+    _In_ ULONG_PTR ProcessId,
+	_In_ INT TargetedFlags
 )
 {
     INT retVal = 0;
@@ -144,7 +149,7 @@ INT KDUProcessPMObjectSwitch(
         ActionTypeDKOM);
 
     if (provContext) {
-        retVal = KDUUnmitigateProcess(provContext, ProcessId, PS_NO_MITIGATIONS); // TODO: parametrize
+        retVal = KDUUnmitigateProcess(provContext, ProcessId, PS_NO_MITIGATIONS, TargetedFlags); // TODO: parametrize mitigations
         KDUProviderRelease(provContext);
     }
 
@@ -583,7 +588,38 @@ INT KDUProcessCommandLine(
                     retVal = KDUProcessPMObjectSwitch(HvciEnabled,
                         NtBuildNumber,
                         providerId,
-                        processId);
+                        processId,
+                        1 & 2);
+                }
+
+                else if (supGetCommandLineOption(CMD_PM1,
+                    TRUE,
+                    szParameter,
+                    RTL_NUMBER_OF(szParameter),
+                    NULL))
+                {
+                    processId = strtou64(szParameter);
+
+                    retVal = KDUProcessPMObjectSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        processId,
+                        1);
+                }
+
+                else if (supGetCommandLineOption(CMD_PM2,
+                    TRUE,
+                    szParameter,
+                    RTL_NUMBER_OF(szParameter),
+                    NULL))
+                {
+                    processId = strtou64(szParameter);
+
+                    retVal = KDUProcessPMObjectSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        processId,
+                        2);
                 }
 
                 else if (supGetCommandLineOption(CMD_PSE,

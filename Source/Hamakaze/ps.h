@@ -44,7 +44,8 @@ BOOL KDUUnprotectProcess(
 BOOL KDUUnmitigateProcess(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId,
-    _In_ ULONG PsNewMitigation);
+    _In_ ULONG PsNewMitigation,
+    _In_ INT TargetedFlags);
 
 BOOL KDURunCommandPPL(
     _In_ PKDU_CONTEXT Context,
@@ -61,7 +62,8 @@ BOOL KDUControlProcessProtections(
     _In_ PS_PROTECTED_SIGNER PsProtectionSigner,
     _In_ PS_PROTECTED_TYPE PsProtectionType);
 
-BOOL KDUControlProcessMitigationFlags2(
+BOOL KDUControlProcessMitigationFlags(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId,
-    _In_ ULONG PsMitigations);
+    _In_ ULONG PsMitigations,
+    _In_ INT TargetedFlags);
