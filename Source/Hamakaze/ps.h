@@ -32,6 +32,9 @@
 #define PsMitigationFlags1Offset_26100 (ULONG_PTR)0x750
 #define PsMitigationFlags2Offset_26100 (ULONG_PTR)0x754
 
+#define PS_MITIGATION_FLAGS1 0x00000001
+#define PS_MITIGATION_FLAGS2 0x00000002
+
 #define EPROCESS_TO_PROTECTION(Object, PsProtectionOffset) ((ULONG_PTR)Object + (ULONG_PTR)PsProtectionOffset)
 
 #define EPROCESS_TO_MITIGATIONFLAGS1(Object, PsMitigationOffset) ((ULONG_PTR)Object + (ULONG_PTR)PsMitigationOffset)

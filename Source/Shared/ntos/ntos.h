@@ -1466,8 +1466,6 @@ typedef enum _PS_PROTECTED_SIGNER {
 #define PS_PROTECTED_TYPE_MASK 0x07
 
 #define PS_NO_MITIGATIONS 0x00000000
-#define PS_MITIGATION_FLAGS1 0x00000001
-#define PS_MITIGATION_FLAGS2 0x00000002
 
 // from ph2
 #define PsProtectedValue(aSigner, aAudit, aType) ( \
