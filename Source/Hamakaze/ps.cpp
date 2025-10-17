@@ -300,9 +300,10 @@ BOOL KDUUnprotectProcess(
 BOOL KDUUnmitigateProcess(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId,
-    _In_ ULONG PsNewMitigations)
+    _In_ ULONG PsNewMitigations,
+    _In_ INT TargetedFlags)
 {
-    return KDUControlProcessMitigationFlags2(Context, ProcessId, PsNewMitigations);
+    return KDUControlProcessMitigationFlags(Context, ProcessId, PsNewMitigations, TargetedFlags);
 }
 
 
@@ -509,17 +510,18 @@ BOOL KDUControlProcessProtections(
 }
 
 /*
-* KDUControlProcessMitigationFlags2
+* KDUControlProcessMitigationFlags
 *
 * Purpose:
 *
-* Modify process object to remove process MitigationFlags2. TODO merge with KDUControlProcessProtections?
+* Modify process object to remove process MitigationFlags.
 *
 */
-BOOL KDUControlProcessMitigationFlags2(
+BOOL KDUControlProcessMitigationFlags(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId,
-    _In_ ULONG PsNewMitigations)
+    _In_ ULONG PsNewMitigations,
+    _In_ INT TargetedFlags)
 {
     BOOL       bResult1 = FALSE;
     BOOL       bResult2 = FALSE;
@@ -614,34 +616,40 @@ BOOL KDUControlProcessMitigationFlags2(
 
                     Buffer1 = Buffer2 = PsNewMitigations;
 
-                    bResult1 = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
-                        VirtualAddress1,
-                        &Buffer1,
-                        sizeof(UCHAR));
+                    if (TargetedFlags & PS_MITIGATION_FLAGS1) {
+                        printf_s("[+] Overwriting MitigationFlags1\r\n");
+                        bResult1 = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
+                            VirtualAddress1,
+                            &Buffer1,
+                            sizeof(ULONG));
+                    }
 
-                    bResult2 = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
-                        VirtualAddress2,
-                        &Buffer2,
-                        sizeof(UCHAR));
+                    if (TargetedFlags & PS_MITIGATION_FLAGS2) {
+                        printf_s("[+] Overwriting MitigationFlags2\r\n");
+                        bResult2 = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
+                            VirtualAddress2,
+                            &Buffer2,
+                            sizeof(ULONG));
+                    }
 
                     if (bResult1 && bResult2) {
-                        printf_s("[+] Process object modified\r\n");
+                        printf_s("[+] Process object(s) modified\r\n");
 
-                        ULONG verifyBuf1 = 0;
+						ULONG verifyBuf1 = 0xDEADBEEF; // if DEADBEEF is in output, read failed, this is a sanity check
                         if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
                             VirtualAddress1,
                             &verifyBuf1,
-                            sizeof(UCHAR)))
+                            sizeof(ULONG)))
                         {
                             printf_s("[+] Kernel memory read at %p succeeded\r\n", (void*)VirtualAddress1);
                             printMitigationFlags(1, verifyBuf1);
                         }
 
-                        ULONG verifyBuf2 = 0;
+                        ULONG verifyBuf2 = 0xDEADBEEF;
                         if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
                             VirtualAddress2,
                             &verifyBuf2,
-                            sizeof(UCHAR)))
+                            sizeof(ULONG)))
                         {
                             printf_s("[+] Kernel memory read at %p succeeded\r\n", (void*)VirtualAddress2);
                             printMitigationFlags(2, verifyBuf2);
