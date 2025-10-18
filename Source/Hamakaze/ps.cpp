@@ -428,6 +428,7 @@ BOOL KDUControlProcessProtections(
                 Offset = PsProtectionOffset_19041;
                 break;
             case NT_WIN11_24H2:
+            case NT_WIN11_25H2:
                 Offset = PsProtectionOffset_26100;
                 break;
             default:
@@ -573,6 +574,7 @@ BOOL KDUControlProcessMitigationFlags(
             case NT_WIN11_23H2:
                 break;
             case NT_WIN11_24H2:
+            case NT_WIN11_25H2:
                 Offset1 = PsMitigationFlags1Offset_26100;
                 Offset2 = PsMitigationFlags2Offset_26100;
                 break;
