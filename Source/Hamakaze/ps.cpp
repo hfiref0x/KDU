@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.44
 *
-*  DATE:        18 Sep 2025
+*  DATE:        01 Nov 2025
 *
 *  Processes DKOM related routines.
 *
@@ -20,7 +20,7 @@
 #include "global.h"
 #include <Dbghelp.h>
 
-typedef BOOL (WINAPI *pfnMiniDumpWriteDump)(
+typedef BOOL(WINAPI* pfnMiniDumpWriteDump)(
     _In_ HANDLE hProcess,
     _In_ DWORD ProcessId,
     _In_ HANDLE hFile,
@@ -29,71 +29,36 @@ typedef BOOL (WINAPI *pfnMiniDumpWriteDump)(
     _In_opt_ PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
     _In_opt_ PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
 
-LPSTR KDUGetProtectionTypeAsString(
+LPCSTR KDUGetProtectionTypeAsString(
     _In_ ULONG Type
 )
 {
-    LPSTR pStr;
+    LPCSTR typeStrings[] = {
+        "PsProtectedTypeNone",
+        "PsProtectedTypeProtectedLight",
+        "PsProtectedTypeProtected"
+    };
 
-    switch (Type) {
-
-    case PsProtectedTypeNone:
-        pStr = (LPSTR)"PsProtectedTypeNone";
-        break;
-    case PsProtectedTypeProtectedLight:
-        pStr = (LPSTR)"PsProtectedTypeProtectedLight";
-        break;
-    case PsProtectedTypeProtected:
-        pStr = (LPSTR)"PsProtectedTypeProtected";
-        break;
-    default:
-        pStr = (LPSTR)"Unknown Type";
-        break;
-    }
-
-    return pStr;
+    return (Type <= PsProtectedTypeProtected) ? typeStrings[Type] : "Unknown Type";
 }
 
-LPSTR KDUGetProtectionSignerAsString(
+LPCSTR KDUGetProtectionSignerAsString(
     _In_ ULONG Signer
 )
 {
-    LPSTR pStr;
+    static LPCSTR signerStrings[] = {
+        "PsProtectedSignerNone",
+        "PsProtectedSignerAuthenticode",
+        "PsProtectedSignerCodeGen",
+        "PsProtectedSignerAntimalware",
+        "PsProtectedSignerLsa",
+        "PsProtectedSignerWindows",
+        "PsProtectedSignerWinTcb",
+        "PsProtectedSignerWinSystem",
+        "PsProtectedSignerApp"
+    };
 
-    switch (Signer) {
-    case PsProtectedSignerNone:
-        pStr = (LPSTR)"PsProtectedSignerNone";
-        break;
-    case PsProtectedSignerAuthenticode:
-        pStr = (LPSTR)"PsProtectedSignerAuthenticode";
-        break;
-    case PsProtectedSignerCodeGen:
-        pStr = (LPSTR)"PsProtectedSignerCodeGen";
-        break;
-    case PsProtectedSignerAntimalware:
-        pStr = (LPSTR)"PsProtectedSignerAntimalware";
-        break;
-    case PsProtectedSignerLsa:
-        pStr = (LPSTR)"PsProtectedSignerLsa";
-        break;
-    case PsProtectedSignerWindows:
-        pStr = (LPSTR)"PsProtectedSignerWindows";
-        break;
-    case PsProtectedSignerWinTcb:
-        pStr = (LPSTR)"PsProtectedSignerWinTcb";
-        break;
-    case PsProtectedSignerWinSystem:
-        pStr = (LPSTR)"PsProtectedSignerWinSystem";
-        break;
-    case PsProtectedSignerApp:
-        pStr = (LPSTR)"PsProtectedSignerApp";
-        break;
-    default:
-        pStr = (LPSTR)"Unknown Value";
-        break;
-    }
-
-    return pStr;
+    return (Signer <= PsProtectedSignerApp) ? signerStrings[Signer] : "Unknown Value";
 }
 
 /*
@@ -110,34 +75,25 @@ BOOL KDUDumpProcessMemory(
 )
 {
     BOOL bResult = FALSE;
-    HMODULE dbgModule;
+    HMODULE dbgModule = NULL;
     HANDLE hFile = INVALID_HANDLE_VALUE;
     HANDLE processHandle = NULL;
     pfnMiniDumpWriteDump pMiniDumpWriteDump;
 
     WCHAR szOutputName[MAX_PATH];
-    union {
-        PSYSTEM_PROCESS_INFORMATION Process;
-        PBYTE ListRef;
-    } List;
-
     PSYSTEM_PROCESS_INFORMATION procEntry = NULL;
     PVOID procBuffer = supGetSystemInfo(SystemProcessInformation);
 
+    if (!procBuffer) {
+        supPrintfEvent(kduEventError, "Cannot allocate process list\r\n");
+        return FALSE;
+    }
+
     do {
-
-        List.ListRef = (PBYTE)procBuffer;
-        if (List.ListRef == NULL) {
-            supPrintfEvent(kduEventError, "Cannot allocate process list\r\n");
-            break;
-        }
-
-        if (!ntsupQueryProcessEntryById(ProcessId, List.ListRef, &procEntry)) {
-
+        if (!ntsupQueryProcessEntryById(ProcessId, (PBYTE)procBuffer, &procEntry)) {
             supPrintfEvent(kduEventError,
                 "The %lX process doesn't exist in process list\r\n",
                 HandleToUlong(ProcessId));
-
             break;
         }
 
@@ -190,11 +146,10 @@ BOOL KDUDumpProcessMemory(
 
     } while (FALSE);
 
-    if (procBuffer) supHeapFree(procBuffer);
+    supHeapFree(procBuffer);
     if (processHandle) NtClose(processHandle);
-
-    if (hFile != INVALID_HANDLE_VALUE)
-        CloseHandle(hFile);
+    if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
+    if (dbgModule) FreeLibrary(dbgModule);
 
     return bResult;
 }
@@ -212,19 +167,18 @@ BOOL KDURunCommandPPL(
     _In_ LPWSTR CommandLine,
     _In_ BOOL HighestSigner)
 {
-    BOOL       bResult = FALSE;
-    DWORD      dwThreadResumeCount = 0;
+    DWORD dwThreadResumeCount = 0;
 
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
 
-    ZeroMemory(&si, sizeof(si));
+    RtlZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
+    RtlZeroMemory(&pi, sizeof(pi));
 
     wprintf_s(L"[+] Creating Process '%s'\r\n", CommandLine);
 
-    bResult = CreateProcess(
+    if (!CreateProcess(
         NULL,               // No module name (use command line)
         CommandLine,        // Command line
         NULL,               // Process handle not inheritable
@@ -235,33 +189,40 @@ BOOL KDURunCommandPPL(
         NULL,               // Use parent's environment block
         NULL,               // Use parent's starting directory 
         &si,                // Pointer to STARTUPINFO structure
-        &pi);               // Pointer to PROCESS_INFORMATION structure
-    if (!bResult) {
+        &pi))
+    {
         supShowWin32Error("[!] Failed to create process", GetLastError());
-        return bResult;
+        return FALSE;
     }
+
     printf_s("[+] Created Process with PID %lu\r\n", pi.dwProcessId);
 
     PS_PROTECTED_SIGNER signer;
-	PS_PROTECTED_TYPE type;
-	if (HighestSigner) { // the highest observed protection is WinTcb(6)/ProtectedLight(1)
+    PS_PROTECTED_TYPE type;
+    if (HighestSigner) { // the highest observed protection is WinTcb(6)/ProtectedLight(1)
         signer = PsProtectedSignerWinTcb;
-		type = PsProtectedTypeProtectedLight;
+        type = PsProtectedTypeProtectedLight;
     }
     else {
         signer = PsProtectedSignerAntimalware;
         type = PsProtectedTypeProtectedLight;
     }
-    bResult = KDUControlProcessProtections(Context, pi.dwProcessId, signer, type);
-    if (!bResult) {
+
+    if (!KDUControlProcessProtections(Context, pi.dwProcessId, signer, type)) {
         supShowWin32Error("[!] Failed to set process as PPL", GetLastError());
-        return bResult;
+        TerminateProcess(pi.hProcess, 0);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        return FALSE;
     }
 
     dwThreadResumeCount = ResumeThread(pi.hThread);
     if (dwThreadResumeCount != 1) {
         printf_s("[!] Failed to resume process: %lu | 0x%lX\n", dwThreadResumeCount, GetLastError());
-        return bResult;
+        TerminateProcess(pi.hProcess, 0);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        return FALSE;
     }
 
     // Wait until child process exits.
@@ -271,7 +232,7 @@ BOOL KDURunCommandPPL(
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 
-    return bResult;
+    return TRUE;
 }
 
 /*
@@ -306,7 +267,6 @@ BOOL KDUUnmitigateProcess(
     return KDUControlProcessMitigationFlags(Context, ProcessId, PsNewMitigations, TargetedFlags);
 }
 
-
 /*
 * printProtection
 *
@@ -321,21 +281,16 @@ VOID printProtection(
 {
     PS_PROTECTION* PsProtection = (PS_PROTECTION*)&Buffer;
 
-    LPSTR pStr;
-
-    pStr = KDUGetProtectionTypeAsString(PsProtection->Type);
     printf_s("\tPsProtection->Type: %lu (%s)\r\n",
         PsProtection->Type,
-        pStr);
+        KDUGetProtectionTypeAsString(PsProtection->Type));
 
-    pStr = KDUGetProtectionSignerAsString(PsProtection->Signer);
     printf_s("\tPsProtection->Signer: %lu (%s)\r\n",
         PsProtection->Signer,
-        pStr);
+        KDUGetProtectionSignerAsString(PsProtection->Signer));
 
     printf_s("\tPsProtection->Audit: %lu\r\n", PsProtection->Audit);
 }
-
 
 /*
 * printProtection
@@ -346,12 +301,57 @@ VOID printProtection(
 *
 */
 VOID printMitigationFlags(
-	_In_ INT Index,
+    _In_ INT Index,
     _In_ ULONG Buffer
 )
 {
     // PS_MITIGATION* PsMitigation = (PS_MITIGATION*)&Buffer; // TODO parse?
     printf_s("\tPsMitigationFlags%i: 0x%lX\r\n", Index, Buffer);
+}
+
+/*
+* KDUGetProtectionOffset
+*
+* Purpose:
+*
+* Get PS_PROTECTION offset for specific Windows version.
+*
+*/
+ULONG_PTR KDUGetProtectionOffset(
+    _In_ ULONG NtBuildNumber
+)
+{
+    switch (NtBuildNumber) {
+    case NT_WIN8_BLUE:
+        return PsProtectionOffset_9600;
+    case NT_WIN10_THRESHOLD1:
+        return PsProtectionOffset_10240;
+    case NT_WIN10_THRESHOLD2:
+        return PsProtectionOffset_10586;
+    case NT_WIN10_REDSTONE1:
+        return PsProtectionOffset_14393;
+    case NT_WIN10_REDSTONE2:
+    case NT_WIN10_REDSTONE3:
+    case NT_WIN10_REDSTONE4:
+    case NT_WIN10_REDSTONE5:
+    case NT_WIN10_19H1:
+    case NT_WIN10_19H2:
+        return PsProtectionOffset_15063;
+    case NT_WIN10_20H1:
+    case NT_WIN10_20H2:
+    case NT_WIN10_21H1:
+    case NT_WIN10_21H2:
+    case NT_WIN10_22H2:
+    case NT_WIN11_21H2:
+    case NT_WIN11_22H2:
+    case NT_WIN11_23H2:
+        return PsProtectionOffset_19041;
+    case NT_WIN11_24H2:
+    case NT_WIN11_25H2:
+        return PsProtectionOffset_26100;
+    default:
+        return 0;
+    }
 }
 
 /*
@@ -396,46 +396,7 @@ BOOL KDUControlProcessProtections(
 
             printf_s("[+] Process object (EPROCESS) found, 0x%llX\r\n", ProcessObject);
 
-            switch (Context->NtBuildNumber) {
-            case NT_WIN8_BLUE:
-                Offset = PsProtectionOffset_9600;
-                break;
-            case NT_WIN10_THRESHOLD1:
-                Offset = PsProtectionOffset_10240;
-                break;
-            case NT_WIN10_THRESHOLD2:
-                Offset = PsProtectionOffset_10586;
-                break;
-            case NT_WIN10_REDSTONE1:
-                Offset = PsProtectionOffset_14393;
-                break;
-            case NT_WIN10_REDSTONE2:
-            case NT_WIN10_REDSTONE3:
-            case NT_WIN10_REDSTONE4:
-            case NT_WIN10_REDSTONE5:
-            case NT_WIN10_19H1:
-            case NT_WIN10_19H2:
-                Offset = PsProtectionOffset_15063;
-                break;
-            case NT_WIN10_20H1:
-            case NT_WIN10_20H2:
-            case NT_WIN10_21H1:
-            case NT_WIN10_21H2:
-            case NT_WIN10_22H2:
-            case NT_WIN11_21H2:
-            case NT_WIN11_22H2:
-            case NT_WIN11_23H2:
-                Offset = PsProtectionOffset_19041;
-                break;
-            case NT_WIN11_24H2:
-            case NT_WIN11_25H2:
-                Offset = PsProtectionOffset_26100;
-                break;
-            default:
-                Offset = 0;
-                break;
-            }
-
+            Offset = KDUGetProtectionOffset(Context->NtBuildNumber);
             if (Offset == 0) {
 
                 supPrintfEvent(kduEventError,
@@ -458,8 +419,7 @@ BOOL KDUControlProcessProtections(
                     printf_s("[+] Kernel memory read at %p succeeded\r\n", (void*)VirtualAddress);
                     printProtection(Buffer);
 
-                    Buffer &= 0xFFFFFF00;
-                    Buffer |= ((PsProtectionSigner << 4) | (PsProtectionType & 0x7));
+                    Buffer = (Buffer & 0xFFFFFF00) | ((PsProtectionSigner << 4) | (PsProtectionType & 0x7));
 
                     bResult = Context->Provider->Callbacks.WriteKernelVM(Context->DeviceHandle,
                         VirtualAddress,
@@ -475,7 +435,7 @@ BOOL KDUControlProcessProtections(
                             &verifyBuf,
                             sizeof(UCHAR)))
                         {
-                            printf_s("[+] Kernel memory read at %p succeeded\r\n", (void *)VirtualAddress);
+                            printf_s("[+] Kernel memory read at %p succeeded\r\n", (void*)VirtualAddress);
                             printf_s("\tNew PsProtection: 0x%02X\n", verifyBuf & 0xff);
                             printProtection(verifyBuf);
                         }
@@ -553,17 +513,22 @@ BOOL KDUControlProcessMitigationFlags(
 
             printf_s("[+] Process object (EPROCESS) found, 0x%llX\r\n", ProcessObject);
 
-            switch (Context->NtBuildNumber) { // TODO: other versions
-            case NT_WIN8_BLUE:
-            case NT_WIN10_THRESHOLD1:
-            case NT_WIN10_THRESHOLD2:
-            case NT_WIN10_REDSTONE1:
-            case NT_WIN10_REDSTONE2:
+            switch (Context->NtBuildNumber) {
+                //Started from RS3
             case NT_WIN10_REDSTONE3:
             case NT_WIN10_REDSTONE4:
+                Offset1 = PsMitigationFlags1Offset_RS3;
+                Offset2 = PsMitigationFlags2Offset_RS3;
+                break;
             case NT_WIN10_REDSTONE5:
+                Offset1 = PsMitigationFlags1Offset_RS5;
+                Offset2 = PsMitigationFlags2Offset_RS5;
+                break;
             case NT_WIN10_19H1:
             case NT_WIN10_19H2:
+                Offset1 = PsMitigationFlags1Offset_18362;
+                Offset2 = PsMitigationFlags2Offset_18362;
+                break;
             case NT_WIN10_20H1:
             case NT_WIN10_20H2:
             case NT_WIN10_21H1:
@@ -572,6 +537,8 @@ BOOL KDUControlProcessMitigationFlags(
             case NT_WIN11_21H2:
             case NT_WIN11_22H2:
             case NT_WIN11_23H2:
+                Offset1 = PsMitigationFlags1Offset_19041;
+                Offset2 = PsMitigationFlags2Offset_19041;
                 break;
             case NT_WIN11_24H2:
             case NT_WIN11_25H2:
@@ -591,8 +558,8 @@ BOOL KDUControlProcessMitigationFlags(
             }
             else {
 
-                VirtualAddress1 = EPROCESS_TO_MITIGATIONFLAGS1(ProcessObject, Offset1);
-                VirtualAddress2 = EPROCESS_TO_MITIGATIONFLAGS2(ProcessObject, Offset2);
+                VirtualAddress1 = EPROCESS_TO_MITIGATIONFLAGS(ProcessObject, Offset1);
+                VirtualAddress2 = EPROCESS_TO_MITIGATIONFLAGS(ProcessObject, Offset2);
 
                 printf_s("[+] EPROCESS->PS_MITIGATION_FLAGS1, 0x%llX\r\n", VirtualAddress1);
                 printf_s("[+] EPROCESS->PS_MITIGATION_FLAGS2, 0x%llX\r\n", VirtualAddress2);
@@ -637,7 +604,7 @@ BOOL KDUControlProcessMitigationFlags(
                     if (bResult1 && bResult2) {
                         printf_s("[+] Process object(s) modified\r\n");
 
-						ULONG verifyBuf1 = 0xDEADBEEF; // if DEADBEEF is in output, read failed, this is a sanity check
+                        ULONG verifyBuf1 = 0xDEADBEEF; // if DEADBEEF is in output, read failed, this is a sanity check
                         if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
                             VirtualAddress1,
                             &verifyBuf1,
