@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.01
 *
-*  DATE:        25 Jan 2022
+*  DATE:        30 Nov 2022
 *
 *  PCOMP - KDU's Provider Compressor.
 *
@@ -334,7 +334,9 @@ int main()
 
         if (nArgs > 1) {
             fNameParam = szArglist[1];
-            keyParam = szArglist[2];
+            if (nArgs > 2) {
+                keyParam = szArglist[2];
+            }
 
             if (keyParam) {
                 provKey = _strtoul(keyParam);

@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        19 Aug 2025
+*  DATE:        30 Nov 2025
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -1270,6 +1270,8 @@ VOID WINAPI KDUProviderRelease(
             supHeapFree(Context->DriverFileName);
             Context->DriverFileName = NULL;
         }
+
+        supHeapFree(Context);
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);

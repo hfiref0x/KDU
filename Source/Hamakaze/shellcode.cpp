@@ -4,9 +4,9 @@
 *
 *  TITLE:       SHELLCODE.CPP
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        18 Aug 2025
+*  DATE:        30 Nov 2025
 *
 *  Default driver mapping shellcode(s) implementation.
 *
@@ -1927,6 +1927,8 @@ PVOID ScAllocate(
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
         
+        ScFree(pvShellCode, scSize);
+
         supPrintfEvent(kduEventError, 
             "[!] Exception during building shellcode, 0x%lX\r\n", 
             GetExceptionCode());

@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        19 Aug 2025
+*  DATE:        30 Nov 2025
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -673,14 +673,6 @@ BOOL KDUControlDSE2(
             bResult = TRUE;
         }
 
-    }
-
-    //
-    // Ensure victim handle is closed.
-    //
-    if (victimDeviceHandle) {
-        NtClose(victimDeviceHandle);
-        victimDeviceHandle = NULL;
     }
 
     //

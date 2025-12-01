@@ -147,7 +147,7 @@ BOOL WINAPI MapMemQueryPML4Value(
     _Out_ ULONG_PTR* Value)
 {
     DWORD cbRead = 0x100000;
-    ULONG_PTR pbLowStub1M = NULL, PML4 = 0;
+    ULONG_PTR pbLowStub1M = 0, PML4 = 0;
 
     *Value = 0;
 

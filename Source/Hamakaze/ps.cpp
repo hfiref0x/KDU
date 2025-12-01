@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        01 Nov 2025
+*  DATE:        30 Nov 2025
 *
 *  Processes DKOM related routines.
 *
@@ -484,8 +484,8 @@ BOOL KDUControlProcessMitigationFlags(
     _In_ ULONG PsNewMitigations,
     _In_ INT TargetedFlags)
 {
-    BOOL       bResult1 = FALSE;
-    BOOL       bResult2 = FALSE;
+    BOOL       bResult1 = TRUE;
+    BOOL       bResult2 = TRUE;
     ULONG      Buffer1, Buffer2;
     NTSTATUS   ntStatus;
     ULONG_PTR  ProcessObject = 0, VirtualAddress1 = 0, VirtualAddress2 = 0, Offset1 = 0, Offset2 = 0;

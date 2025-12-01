@@ -264,7 +264,7 @@ VOID ProcessFile(
 
     } while (FALSE);
 
-    if (hKey) CryptDestroyKey(hKey); 
+    if (hKey) CryptDestroyKey(hKey);
     CryptReleaseContext(hProv, 0);
 
     printf_s("[G] Generating AsIo2 unlock resource\n");

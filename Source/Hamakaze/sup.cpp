@@ -2045,6 +2045,8 @@ BOOL supManageDummyDll(
                     if (LoadLibraryEx(lpFileName, NULL, 0))
                         bResult = TRUE;
                 }
+
+                supHeapFree(dataBuffer);
             }
             else {
                 SetLastError(ERROR_FILE_INVALID);

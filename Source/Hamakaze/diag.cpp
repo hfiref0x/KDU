@@ -4,9 +4,9 @@
 *
 *  TITLE:       DIAG.CPP
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        18 Aug 2025
+*  DATE:        30 Nov 2025
 *
 *  Hamakaze system diagnostics component.
 *
@@ -288,7 +288,7 @@ VOID KDUQueryProcessWorkingSet(
                         (LPCSTR)pvModules->Modules[moduleIndex].FullPathName,
                         &vaModuleName)))
                     {
-                        pcName = vaModuleName.Buffer;
+                        vaName = vaModuleName.Buffer;
                     }
                 }
 
@@ -601,6 +601,7 @@ VOID KDUListFilters()
 
         if (!NT_SUCCESS(ntStatus)) {
             supPrintfEvent(kduEventError, "Cannot open %wZ, NTSTATUS (0x%lX)\r\n", usDeviceName, ntStatus);
+            supHeapFree(buffer);
             return;
         }
 
