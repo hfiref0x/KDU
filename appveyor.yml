@@ -7,6 +7,5 @@ image: Visual Studio 2022
 configuration: Release
 platform: x64
 clone_folder: c:\projects\kdu
-build:
-  project: Source/kdu.sln
-  verbosity: normal
+build_script:
+  - msbuild Source/kdu.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
