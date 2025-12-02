@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        18 Aug 2025
+*  DATE:        02 Dec 2025
 *
 *  Global consts.
 *
@@ -21,8 +21,8 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       4
-#define KDU_VERSION_REVISION    4
-#define KDU_VERSION_BUILD       2508
+#define KDU_VERSION_REVISION    5
+#define KDU_VERSION_BUILD       2512
 #define KDU_COPYRIGHT_YEAR      2025
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
@@ -30,7 +30,7 @@
 
 #define IPC_GET_HANDLE          0x1337
 
-#define KDU_SYNC_MUTANT         0x2508
+#define KDU_SYNC_MUTANT         0x2512
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
@@ -157,6 +157,8 @@
 #define IDR_ASROCKDRV4                  153
 #define IDR_PMXDRV64                    154
 #define IDR_HWRWDRVX64                  155
+#define IDR_NEACSAFE64                  156
+#define IDR_THROTTLESTOP                157
 
 //
 // Vulnerable drivers providers id
@@ -216,6 +218,7 @@
 #define KDU_PROVIDER_INTEL_PMXDRV       52
 #define KDU_PROVIDER_HWRWDRVX64         53
 #define KDU_PROVIDER_NEACSAFE64         54
+#define KDU_PROVIDER_TPUP               55
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
@@ -295,6 +298,11 @@
 // Provider is FS filter, it must be handled differently.
 //
 #define KDUPROV_FLAGS_FS_FILTER            0x00002000
+
+//
+// Provider can use Superfetch, it must be handled differently.
+//
+#define KDUPROV_FLAGS_USE_SUPERFETCH       0x00004000
 
 //
 // KDU shellcode support flags

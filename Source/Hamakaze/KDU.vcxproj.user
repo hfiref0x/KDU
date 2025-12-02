@@ -1,11 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>-ps 444</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-test</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArgumentsHistory>-ps 444|-test|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>-prv 54 -map c:\install\dummy.sys</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-prv 55 -map c:\Install\dummy2.sys</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArgumentsHistory>-prv 54 -map c:\install\dummy.sys|-prv 53 -dse 0|-prv 53 -dse 6|-prv 55 -map c:\Install\dummy.sys|-prv 55 -map c:\Install\dummy2.sys|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
 </Project>

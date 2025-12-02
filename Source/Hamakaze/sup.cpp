@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        18 Aug 2025
+*  DATE:        02 Dec 2025
 *
 *  Program global support routines.
 *
@@ -3813,4 +3813,341 @@ VOID CALLBACK supIpcDuplicateHandleCallback(
     __except (EXCEPTION_EXECUTE_HANDLER) {
         return;
     }
+}
+
+/*
+* supQuerySuperfetchInformation
+*
+* Purpose:
+*
+* Query Superfetch information.
+*
+*/
+NTSTATUS supQuerySuperfetchInformation(
+    _In_ SUPERFETCH_INFORMATION_CLASS InfoClass,
+    _In_ PVOID Buffer,
+    _In_ ULONG Length,
+    _Out_opt_ PULONG ReturnLength)
+{
+    NTSTATUS ntStatus;
+    ULONG returnedLength = 0;
+
+    struct {
+        ULONG Version;
+        ULONG Magic;
+        ULONG InfoClass;
+        PVOID Data;
+        ULONG Length;
+    } superfetchInfo;
+
+    RtlSecureZeroMemory(&superfetchInfo, sizeof(superfetchInfo));
+    superfetchInfo.Version = SUPERFETCH_VERSION;
+    superfetchInfo.Magic = SUPERFETCH_MAGIC;
+    superfetchInfo.InfoClass = (ULONG)InfoClass;
+    superfetchInfo.Data = Buffer;
+    superfetchInfo.Length = Length;
+
+    ntStatus = NtQuerySystemInformation(
+        (SYSTEM_INFORMATION_CLASS)79,
+        &superfetchInfo,
+        sizeof(superfetchInfo),
+        &returnedLength);
+
+    if (ReturnLength)
+        *ReturnLength = returnedLength;
+
+    return ntStatus;
+}
+
+/*
+* supQuerySuperfetchMemoryRanges
+*
+* Purpose:
+*
+* Query physical memory ranges via Superfetch.
+* Automatically selects V1 or V2 based on OS version.
+*
+*/
+BOOL supQuerySuperfetchMemoryRanges(
+    _Out_ PVOID* RangeBuffer,
+    _Out_ PULONG RangeCount)
+{
+    NTSTATUS ntStatus;
+    ULONG bufferLength = 0;
+    ULONG ntBuildNumber;
+    PVOID buffer = NULL;
+
+    struct {
+        ULONG Version;
+        ULONG Flags;
+        ULONG RangeCount;
+    } rangeInfoV2;
+
+    struct {
+        ULONG Version;
+        ULONG RangeCount;
+    } rangeInfoV1;
+
+    *RangeBuffer = NULL;
+    *RangeCount = 0;
+
+    ntBuildNumber = NtCurrentPeb()->OSBuildNumber;
+
+    //
+    // Windows 10 1809 (17763) and later use V2
+    //
+    if (ntBuildNumber >= NT_WIN10_REDSTONE5) {
+
+        RtlSecureZeroMemory(&rangeInfoV2, sizeof(rangeInfoV2));
+        rangeInfoV2.Version = 2;
+
+        ntStatus = supQuerySuperfetchInformation(
+            SuperfetchMemoryRangesQuery,
+            &rangeInfoV2,
+            sizeof(rangeInfoV2),
+            &bufferLength);
+
+        if (ntStatus == STATUS_BUFFER_TOO_SMALL && bufferLength > 0) {
+
+            buffer = supHeapAlloc(bufferLength);
+            if (buffer == NULL)
+                return FALSE;
+
+            RtlSecureZeroMemory(buffer, bufferLength);
+            ((PPF_MEMORY_RANGE_INFO_V2)buffer)->Version = 2;
+
+            ntStatus = supQuerySuperfetchInformation(
+                SuperfetchMemoryRangesQuery,
+                buffer,
+                bufferLength,
+                NULL);
+
+            if (NT_SUCCESS(ntStatus)) {
+                *RangeBuffer = buffer;
+                *RangeCount = ((PPF_MEMORY_RANGE_INFO_V2)buffer)->RangeCount;
+                return TRUE;
+            }
+
+            supHeapFree(buffer);
+        }
+    }
+
+    //
+    // Older Windows or V2 failed - try V1
+    //
+    RtlSecureZeroMemory(&rangeInfoV1, sizeof(rangeInfoV1));
+    rangeInfoV1.Version = 1;
+    bufferLength = 0;
+
+    ntStatus = supQuerySuperfetchInformation(
+        SuperfetchMemoryRangesQuery,
+        &rangeInfoV1,
+        sizeof(rangeInfoV1),
+        &bufferLength);
+
+    if (ntStatus == STATUS_BUFFER_TOO_SMALL && bufferLength > 0) {
+
+        buffer = supHeapAlloc(bufferLength);
+        if (buffer == NULL)
+            return FALSE;
+
+        RtlSecureZeroMemory(buffer, bufferLength);
+        ((PPF_MEMORY_RANGE_INFO_V1)buffer)->Version = 1;
+
+        ntStatus = supQuerySuperfetchInformation(
+            SuperfetchMemoryRangesQuery,
+            buffer,
+            bufferLength,
+            NULL);
+
+        if (NT_SUCCESS(ntStatus)) {
+            *RangeBuffer = buffer;
+            *RangeCount = ((PPF_MEMORY_RANGE_INFO_V1)buffer)->RangeCount;
+            return TRUE;
+        }
+
+        supHeapFree(buffer);
+    }
+
+    return FALSE;
+}
+
+/*
+* supBuildSuperfetchMemoryMap
+*
+* Purpose:
+*
+* Build virtual-to-physical translation table using Superfetch.
+*
+*/
+BOOL supBuildSuperfetchMemoryMap(
+    _Out_ PSUPERFETCH_MEMORY_MAP MemoryMap)
+{
+    NTSTATUS ntStatus;
+    ULONG ntBuildNumber;
+    ULONG rangeCount = 0;
+    ULONG i, j;
+    ULONG_PTR basePfn, pageCount;
+    ULONG pfnBufferSize;
+    ULONG_PTR totalPages = 0;
+    ULONG_PTR currentEntry = 0;
+    BOOL useV2;
+    PVOID rangeBuffer = NULL;
+    PPF_PFN_PRIO_REQUEST pfnRequest = NULL;
+    PSUPERFETCH_TRANSLATION_ENTRY translationTable = NULL;
+
+    RtlSecureZeroMemory(MemoryMap, sizeof(SUPERFETCH_MEMORY_MAP));
+
+    if (!supQuerySuperfetchMemoryRanges(&rangeBuffer, &rangeCount))
+        return FALSE;
+
+    ntBuildNumber = NtCurrentPeb()->OSBuildNumber;
+    useV2 = (ntBuildNumber >= NT_WIN10_REDSTONE5);
+
+    //
+    // Calculate total pages
+    //
+    for (i = 0; i < rangeCount; i++) {
+        if (useV2) {
+            pageCount = ((PPF_MEMORY_RANGE_INFO_V2)rangeBuffer)->Ranges[i].PageCount;
+        }
+        else {
+            pageCount = ((PPF_MEMORY_RANGE_INFO_V1)rangeBuffer)->Ranges[i].PageCount;
+        }
+        totalPages += pageCount;
+    }
+
+    if (totalPages == 0) {
+        supHeapFree(rangeBuffer);
+        return FALSE;
+    }
+
+    translationTable = (PSUPERFETCH_TRANSLATION_ENTRY)supHeapAlloc(
+        totalPages * sizeof(SUPERFETCH_TRANSLATION_ENTRY));
+
+    if (translationTable == NULL) {
+        supHeapFree(rangeBuffer);
+        return FALSE;
+    }
+
+    //
+    // Query PFN information for each range
+    //
+    for (i = 0; i < rangeCount; i++) {
+
+        if (useV2) {
+            basePfn = ((PPF_MEMORY_RANGE_INFO_V2)rangeBuffer)->Ranges[i].BasePfn;
+            pageCount = ((PPF_MEMORY_RANGE_INFO_V2)rangeBuffer)->Ranges[i].PageCount;
+        }
+        else {
+            basePfn = ((PPF_MEMORY_RANGE_INFO_V1)rangeBuffer)->Ranges[i].BasePfn;
+            pageCount = ((PPF_MEMORY_RANGE_INFO_V1)rangeBuffer)->Ranges[i].PageCount;
+        }
+
+        pfnBufferSize = (ULONG)(FIELD_OFFSET(PF_PFN_PRIO_REQUEST, PageData) +
+            (pageCount * sizeof(MMPFN_IDENTITY)));
+
+        pfnRequest = (PPF_PFN_PRIO_REQUEST)supHeapAlloc(pfnBufferSize);
+        if (pfnRequest == NULL)
+            continue;
+
+        RtlSecureZeroMemory(pfnRequest, pfnBufferSize);
+        pfnRequest->Version = 1;
+        pfnRequest->RequestFlags = 1;
+        pfnRequest->PfnCount = pageCount;
+
+        for (j = 0; j < pageCount; j++) {
+            pfnRequest->PageData[j].PageFrameIndex = basePfn + j;
+        }
+
+        ntStatus = supQuerySuperfetchInformation(
+            SuperfetchPfnQuery,
+            pfnRequest,
+            pfnBufferSize,
+            NULL);
+
+        if (NT_SUCCESS(ntStatus)) {
+
+            for (j = 0; j < pageCount; j++) {
+
+                ULONG_PTR virtAddr = (ULONG_PTR)pfnRequest->PageData[j].u2.VirtualAddress;
+
+                if (virtAddr != 0 && (virtAddr & 0xFFFF800000000000ULL)) {
+                    translationTable[currentEntry].VirtualAddress = virtAddr & ~(PAGE_SIZE - 1);
+                    translationTable[currentEntry].PhysicalAddress = (basePfn + j) << PAGE_SHIFT;
+                    currentEntry++;
+                }
+            }
+        }
+
+        supHeapFree(pfnRequest);
+    }
+
+    supHeapFree(rangeBuffer);
+
+    if (currentEntry > 0) {
+        MemoryMap->TranslationTable = translationTable;
+        MemoryMap->TableSize = currentEntry;
+        MemoryMap->RangeCount = rangeCount;
+        return TRUE;
+    }
+
+    supHeapFree(translationTable);
+    return FALSE;
+}
+
+/*
+* supFreeSuperfetchMemoryMap
+*
+* Purpose:
+*
+* Free Superfetch memory map resources.
+*
+*/
+VOID supFreeSuperfetchMemoryMap(
+    _In_ PSUPERFETCH_MEMORY_MAP MemoryMap)
+{
+    if (MemoryMap->TranslationTable) {
+        supHeapFree(MemoryMap->TranslationTable);
+        MemoryMap->TranslationTable = NULL;
+    }
+    MemoryMap->TableSize = 0;
+    MemoryMap->RangeCount = 0;
+}
+
+/*
+* supSuperfetchVirtualToPhysical
+*
+* Purpose:
+*
+* Translate virtual address to physical using pre-built memory map.
+*
+*/
+BOOL supSuperfetchVirtualToPhysical(
+    _In_ PSUPERFETCH_MEMORY_MAP MemoryMap,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ PULONG_PTR PhysicalAddress)
+{
+    ULONG_PTR i;
+    ULONG_PTR alignedVA;
+    ULONG_PTR pageOffset;
+    PSUPERFETCH_TRANSLATION_ENTRY table;
+
+    *PhysicalAddress = 0;
+
+    if (MemoryMap == NULL || MemoryMap->TranslationTable == NULL)
+        return FALSE;
+
+    alignedVA = VirtualAddress & ~(PAGE_SIZE - 1);
+    pageOffset = VirtualAddress & (PAGE_SIZE - 1);
+    table = MemoryMap->TranslationTable;
+
+    for (i = 0; i < MemoryMap->TableSize; i++) {
+        if (table[i].VirtualAddress == alignedVA) {
+            *PhysicalAddress = table[i].PhysicalAddress + pageOffset;
+            return TRUE;
+        }
+    }
+
+    return FALSE;
 }

@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.H
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        01 Nov 2025
+*  DATE:        01 Dec 2025
 *
 *  Processes support prototypes and definitions.
 *
@@ -48,6 +48,7 @@
 #define PsMitigationFlags1Offset_26100 0x750
 #define PsMitigationFlags2Offset_26100 0x754
 
+#define PS_NO_MITIGATIONS    0x00000000
 #define PS_MITIGATION_FLAGS1 0x00000001
 #define PS_MITIGATION_FLAGS2 0x00000002
 

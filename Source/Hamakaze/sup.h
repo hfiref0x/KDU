@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        18 Aug 2025
+*  DATE:        02 Dec 2025
 *
 *  Support routines header file.
 *
@@ -403,3 +403,14 @@ VOID CALLBACK supIpcDuplicateHandleCallback(
     _In_ PCLIENT_ID ClientId,
     _In_ PKDU_MSG Message,
     _In_opt_ PVOID UserContext);
+
+BOOL supBuildSuperfetchMemoryMap(
+    _Out_ PSUPERFETCH_MEMORY_MAP MemoryMap);
+
+VOID supFreeSuperfetchMemoryMap(
+    _In_ PSUPERFETCH_MEMORY_MAP MemoryMap);
+
+BOOL supSuperfetchVirtualToPhysical(
+    _In_ PSUPERFETCH_MEMORY_MAP MemoryMap,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ PULONG_PTR PhysicalAddress);

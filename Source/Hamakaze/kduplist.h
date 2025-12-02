@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        18 Aug 2025
+*  DATE:        02 Dec 2025
 *
 *  Providers global list.
 *
@@ -49,6 +49,7 @@
 #include "idrv/rzpnk.h"
 #include "idrv/evga.h"
 #include "idrv/netease.h"
+#include "idrv/tpup.h"
 
 //
 // Victims public array.
@@ -1522,6 +1523,31 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provValidatePrerequisites)NULL,
 
         (provOpenProcess)NULL
-    }
+    },
 
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)TpupReadKernelVirtualMemory,
+        (provWriteKernelVM)TpupWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)NULL,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)TpupReadPhysicalMemory,
+        (provWritePhysicalMemory)TpupWritePhysicalMemory,
+
+        (provValidatePrerequisites)TpupValidatePrerequisites,
+
+        (provOpenProcess)NULL
+    }
 };

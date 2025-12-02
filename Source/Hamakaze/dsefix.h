@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2023
+*  (C) COPYRIGHT AUTHORS, 2014 - 2025
 *
 *  TITLE:       DSEFIX.H
 *
-*  VERSION:     1.31
+*  VERSION:     1.45
 *
-*  DATE:        08 Apr 2023
+*  DATE:        02 Dec 2025
 *
 *  CI DSE corruption prototypes and definitions.
 *
@@ -34,3 +34,4 @@ BOOL KDUControlDSE2(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG DSEValue,
     _In_ ULONG_PTR Address);
+

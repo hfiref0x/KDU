@@ -56,6 +56,7 @@
 #define IDR_PMXDRV64                    154
 #define IDR_HWRWDRVX64                  155
 #define IDR_NEACSAFE64                  156
+#define IDR_THROTTLESTOP                157
 #define IDR_DATA_DBUTILCAT              1000
 #define IDR_DATA_DBUTILINF              1001
 #define IDR_DATA_KMUEXE                 1002
@@ -69,7 +70,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        158
+#define _APS_NEXT_RESOURCE_VALUE        159
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           101

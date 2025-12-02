@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.23
+*  VERSION:     1.24
 *
-*  DATE:        10 Jul 2025
+*  DATE:        02 Dec 2025
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -849,6 +849,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"OWNeacSafePort",
         (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
     },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_THROTTLESTOP,
+        KDU_PROVIDER_TPUP,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_USE_SUPERFETCH,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"TechPowerUp ThrottleStop (CVE-2025-7771)",
+        (LPWSTR)L"ThrottleStop",
+        (LPWSTR)L"ThrottleStop",
+        (LPWSTR)L"TechPowerUp"
+    }
 
 };
 

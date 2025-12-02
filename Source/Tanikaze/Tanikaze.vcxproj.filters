@@ -229,6 +229,9 @@
     <None Include="data\NeacSafe64Cat.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\ThrottleStop.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

