@@ -186,6 +186,8 @@ VOID TestSuperfetch(PKDU_CONTEXT Context)
     ULONG_PTR ntosBase;
     ULONG_PTR physAddress;
 
+    UNREFERENCED_PARAMETER(Context);
+
     RtlAdjustPrivilege(SE_PROF_SINGLE_PROCESS_PRIVILEGE, TRUE, FALSE, &oldValue);
     RtlAdjustPrivilege(SE_DEBUG_PRIVILEGE, TRUE, FALSE, &oldValue);
 
