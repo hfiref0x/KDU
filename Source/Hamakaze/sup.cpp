@@ -19,7 +19,6 @@
 
 #include "global.h"
 
-
 /*
 * supHeapAlloc
 *
@@ -160,6 +159,9 @@ NTSTATUS supCallDriverEx(
         ntStatus = NtWaitForSingleObject(DeviceHandle,
             FALSE,
             NULL);
+
+        if (NT_SUCCESS(ntStatus))
+            ntStatus = ioStatus.Status;
 
     }
 
@@ -3986,7 +3988,8 @@ BOOL supBuildSuperfetchMemoryMap(
     NTSTATUS ntStatus;
     ULONG ntBuildNumber;
     ULONG rangeCount = 0;
-    ULONG i, j;
+    ULONG i;
+    SIZE_T j;
     ULONG_PTR basePfn, pageCount;
     ULONG pfnBufferSize;
     ULONG_PTR totalPages = 0;

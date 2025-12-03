@@ -22,7 +22,6 @@
 
 static SUPERFETCH_MEMORY_MAP g_TpupMemoryMap = { 0 };
 static BOOL g_TpupMemoryMapInitialized = FALSE;
-static DWORD g_dwNtBuildNumber = 0;
 
 /*
 * TpupEnsureMemoryMap
@@ -43,7 +42,7 @@ BOOL TpupEnsureMemoryMap(VOID)
     g_TpupMemoryMapInitialized = TRUE;
 
     supPrintfEvent(kduEventInformation,
-        "[+] Memory map built: %llu entries from %lu ranges\r\n",
+        "[+] Superfetch memory map built: %llu entries from %lu ranges\r\n",
         g_TpupMemoryMap.TableSize,
         g_TpupMemoryMap.RangeCount);
 
@@ -65,17 +64,18 @@ BOOL TpupReadWritePhysicalMemory(
     _In_ ULONG NumberOfBytes,
     _In_ BOOL DoWrite)
 {
-    BOOL bResult;
-    DWORD bytesIO = 0;
-    ULONG_PTR offset = 0;
+    NTSTATUS ntStatus;
     ULONG chunkSize;
+    ULONG ioctl;
+    ULONG_PTR offset = 0;
     UCHAR inputBuffer[16];
     UCHAR outputBuffer[8];
+    IO_STATUS_BLOCK ioStatus;
 
     if (NumberOfBytes == 0 || Buffer == NULL)
         return FALSE;
 
-    bResult = TRUE;
+    ioctl = DoWrite ? IOCTL_TPUP_WRITE_PHYSICAL_MEMORY : IOCTL_TPUP_READ_PHYSICAL_MEMORY;
 
     while (offset < NumberOfBytes) {
 
@@ -86,45 +86,46 @@ BOOL TpupReadWritePhysicalMemory(
         RtlSecureZeroMemory(inputBuffer, sizeof(inputBuffer));
         RtlSecureZeroMemory(outputBuffer, sizeof(outputBuffer));
 
+        *(PULONG64)inputBuffer = PhysicalAddress + offset;
+
         if (DoWrite) {
 
-            *(PULONG64)inputBuffer = PhysicalAddress + offset;
             RtlCopyMemory(&inputBuffer[8], RtlOffsetToPointer(Buffer, offset), chunkSize);
 
-            bResult = DeviceIoControl(DeviceHandle,
-                IOCTL_TPUP_WRITE_PHYSICAL_MEMORY,
+            ntStatus = supCallDriverEx(DeviceHandle,
+                ioctl,
                 inputBuffer,
                 8 + chunkSize,
                 NULL,
                 0,
-                &bytesIO,
-                NULL);
+                &ioStatus);
+
+            if (!NT_SUCCESS(ntStatus))
+                return FALSE;
         }
         else {
 
-            *(PULONG64)inputBuffer = PhysicalAddress + offset;
-
-            bResult = DeviceIoControl(DeviceHandle,
-                IOCTL_TPUP_READ_PHYSICAL_MEMORY,
+            ntStatus = supCallDriverEx(DeviceHandle,
+                ioctl,
                 inputBuffer,
                 sizeof(ULONG64),
                 outputBuffer,
                 chunkSize,
-                &bytesIO,
-                NULL);
+                &ioStatus);
 
-            if (bResult && bytesIO == chunkSize) {
-                RtlCopyMemory(RtlOffsetToPointer(Buffer, offset), outputBuffer, chunkSize);
-            }
+            if (!NT_SUCCESS(ntStatus))
+                return FALSE;
+
+            if (ioStatus.Information != chunkSize)
+                return FALSE;
+
+            RtlCopyMemory(RtlOffsetToPointer(Buffer, offset), outputBuffer, chunkSize);
         }
-
-        if (!bResult)
-            break;
 
         offset += chunkSize;
     }
 
-    return bResult;
+    return TRUE;
 }
 
 /*
@@ -281,7 +282,7 @@ BOOL WINAPI TpupValidatePrerequisites(
     BOOLEAN oldValue = FALSE;
     NTSTATUS ntStatus;
 
-    g_dwNtBuildNumber = Context->NtBuildNumber;
+    UNREFERENCED_PARAMETER(Context);
 
     //
     // Only enable privilege, defer map building
