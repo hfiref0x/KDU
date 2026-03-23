@@ -1,0 +1,105 @@
+name: Build KDU
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+env:
+  BUILD_CONFIGURATION: Release
+  PLATFORM: x64
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v3
+
+      - name: Build Taigei Win32
+        working-directory: ./Source/Taigei
+        run: msbuild Taigei.vcxproj /m /p:Platform=Win32 /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143
+
+      - name: Build Taigei x64
+        working-directory: ./Source/Taigei
+        run: msbuild Taigei.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143
+
+      - name: Build PCOMP
+        working-directory: ./Source/Utils/PCOMP
+        run: msbuild PCOMP.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143
+
+      - name: Prepare compressed Taigei resources
+        shell: pwsh
+        run: |
+          $taigeiWin32Out = "Source\Taigei\output\Win32\${{ env.BUILD_CONFIGURATION }}"
+          $taigeiX64Out = "Source\Taigei\output\${{ env.PLATFORM }}\${{ env.BUILD_CONFIGURATION }}"
+          $pcompOut = "Source\Utils\PCOMP\output\${{ env.PLATFORM }}\${{ env.BUILD_CONFIGURATION }}"
+          $resOut = "Source\Hamakaze\res"
+
+          if (!(Test-Path "$taigeiWin32Out\Taigei32.dll")) {
+            throw "Taigei32.dll not found in $taigeiWin32Out"
+          }
+
+          if (!(Test-Path "$taigeiX64Out\Taigei64.dll")) {
+            throw "Taigei64.dll not found in $taigeiX64Out"
+          }
+
+          if (!(Test-Path "$pcompOut\PCOMP.exe")) {
+            throw "PCOMP.exe not found in $pcompOut"
+          }
+
+          Copy-Item "$taigeiWin32Out\Taigei32.dll" ".\Taigei32.dll" -Force
+          Copy-Item "$taigeiX64Out\Taigei64.dll" ".\SB_SMBUS_SDK.dll" -Force
+
+          & "$pcompOut\PCOMP.exe" ".\Taigei32.dll" 4130237664
+          & "$pcompOut\PCOMP.exe" ".\SB_SMBUS_SDK.dll" 4130237664
+
+          if (!(Test-Path ".\Taigei32.bin")) {
+            throw "Taigei32.bin was not created"
+          }
+
+          if (!(Test-Path ".\SB_SMBUS_SDK.bin")) {
+            throw "SB_SMBUS_SDK.bin was not created"
+          }
+
+          Copy-Item ".\Taigei32.bin" "$resOut\Taigei32.bin" -Force
+          Copy-Item ".\SB_SMBUS_SDK.bin" "$resOut\SB_SMBUS_SDK.bin" -Force
+
+      - name: Build Tanikaze
+        working-directory: ./Source/Tanikaze
+        run: msbuild Tanikaze.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143
+
+      - name: Build Hamakaze
+        working-directory: ./Source/Hamakaze
+        run: msbuild KDU.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143
+
+      - name: Collect snapshot files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path Package\Application | Out-Null
+
+          $tanikazeOut = "Source\Tanikaze\output\${{ env.PLATFORM }}\${{ env.BUILD_CONFIGURATION }}"
+          $hamakazeOut = "Source\Hamakaze\output\${{ env.PLATFORM }}\${{ env.BUILD_CONFIGURATION }}"
+
+          if (!(Test-Path "$tanikazeOut\drv64.dll")) {
+            throw "drv64.dll not found in $tanikazeOut"
+          }
+
+          if (!(Test-Path "$hamakazeOut\kdu.exe")) {
+            throw "kdu.exe not found in $hamakazeOut"
+          }
+
+          Copy-Item "$tanikazeOut\drv64.dll" "Package\Application\drv64.dll" -Force
+          Copy-Item "$hamakazeOut\kdu.exe" "Package\Application\KDU.exe" -Force
+
+      - name: Upload KDU snapshot
+        uses: actions/upload-artifact@v6
+        with:
+          name: kdu_snapshot.zip
+          path: Package\Application\*
