@@ -24,15 +24,15 @@ jobs:
 
       - name: Build Taigei Win32
         working-directory: ./Source/Taigei
-        run: msbuild Taigei.vcxproj /m /p:Platform=Win32 /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143
+        run: msbuild Taigei.vcxproj /m /p:Platform=Win32 /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143 /p:SolutionDir=..\
 
       - name: Build Taigei x64
         working-directory: ./Source/Taigei
-        run: msbuild Taigei.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143
+        run: msbuild Taigei.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143 /p:SolutionDir=..\
 
       - name: Build PCOMP
         working-directory: ./Source/Utils/PCOMP
-        run: msbuild PCOMP.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143
+        run: msbuild PCOMP.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143 /p:SolutionDir=..\..\
 
       - name: Prepare compressed Taigei resources
         shell: pwsh
@@ -73,11 +73,11 @@ jobs:
 
       - name: Build Tanikaze
         working-directory: ./Source/Tanikaze
-        run: msbuild Tanikaze.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143
+        run: msbuild Tanikaze.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143 /p:SolutionDir=..\
 
       - name: Build Hamakaze
         working-directory: ./Source/Hamakaze
-        run: msbuild KDU.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143
+        run: msbuild KDU.vcxproj /m /p:Platform=${{ env.PLATFORM }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:PlatformToolset=v143 /p:SolutionDir=..\
 
       - name: Collect snapshot files
         shell: pwsh
