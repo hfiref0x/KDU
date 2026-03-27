@@ -1,12 +1,12 @@
 ﻿/*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2025
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.45
+*  VERSION:     1.47
 *
-*  DATE:        30 Nov 2025
+*  DATE:        25 Mar 2026
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -231,6 +231,12 @@ VOID KDUProvList()
 
         if (provData->OpenProcessSupported)
             printf_s("\t->Driver can be used to open a handle for the specified process.\r\n");
+
+        if (provData->FsFilter)
+            printf_s("\t->Driver is file system filter.\r\n");
+
+        if (provData->UseSuperfetch)
+            printf_s("\t->Driver can be used with Superfetch for memory translation.\r\n");
 
         //
         // List "based" flags.
@@ -1271,8 +1277,50 @@ VOID WINAPI KDUProviderRelease(
             Context->DriverFileName = NULL;
         }
 
+        //
+        // Free provider specific globals.
+        //
+        if (Context->Provider->LoadData->UseSuperfetch)
+            supFreeSuperfetchMemoryMapCache();
+
         supHeapFree(Context);
     }
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);
+}
+
+/*
+* KDUValidatePrerequisitesForSuperfetch
+*
+* Purpose:
+*
+* Enable privilege for superfetch aware provider.
+*
+*/
+BOOL WINAPI KDUValidatePrerequisitesForSuperfetch(
+    _In_ PKDU_CONTEXT Context)
+{
+    BOOLEAN oldValue = FALSE;
+    NTSTATUS ntStatus;
+
+    //
+    // Only for superfetch aware providers.
+    //
+    if (Context->Provider->LoadData->UseSuperfetch) {
+
+        //
+        // Only enable privilege, defer map building.
+        //
+        ntStatus = RtlAdjustPrivilege(SE_PROF_SINGLE_PROCESS_PRIVILEGE, TRUE, FALSE, &oldValue);
+        if (!NT_SUCCESS(ntStatus)) {
+            supPrintfEvent(kduEventError,
+                "[-] Failed to enable SE_PROF_SINGLE_PROCESS_PRIVILEGE (0x%lX)\r\n", ntStatus);
+            return FALSE;
+        }
+
+        supPrintfEvent(kduEventInformation,
+            "[+] Superfetch prerequisites validated, SE_PROF_SINGLE_PROCESS_PRIVILEGE adjusted\r\n");
+
+    }
+    return TRUE;
 }

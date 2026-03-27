@@ -225,6 +225,7 @@
     <None Include="drv\KRegExp.bin" />
     <None Include="drv\LDD.bin" />
     <None Include="drv\lha.bin" />
+    <None Include="drv\LnvMSRIO.bin" />
     <None Include="drv\mimidrv.bin" />
     <None Include="drv\mktoolsx64.bin" />
     <None Include="drv\msio64.bin" />

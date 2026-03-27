@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2014 - 2025
+*  (C) COPYRIGHT AUTHORS, 2014 - 2026
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.44
+*  VERSION:     1.47
 *
-*  DATE:        19 Aug 2025
+*  DATE:        25 Mar 2026
 *
 *  Provider support routines.
 *
@@ -287,3 +287,6 @@ BOOL KDUProvStartVulnerableDriver(
 
 void KDUProvStopVulnerableDriver(
     _In_ KDU_CONTEXT* Context);
+
+BOOL WINAPI KDUValidatePrerequisitesForSuperfetch(
+    _In_ PKDU_CONTEXT Context);

@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2023
+*  (C) COPYRIGHT AUTHORS, 2023 - 2026
 *
 *  TITLE:       LENOVO.H
 *
-*  VERSION:     1.31
+*  VERSION:     1.47
 *
-*  DATE:        08 Apr 2023
+*  DATE:        25 Mar 2026
 *
-*  Lenovo driver interface header.
+*  Lenovo drivers interface header.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -19,6 +19,9 @@
 
 #pragma once
 
+//
+// CVE-2022-3699
+//
 
 #define LENOVO_DEVICE_TYPE       (DWORD)FILE_DEVICE_UNKNOWN
 
@@ -75,4 +78,65 @@ BOOL WINAPI LddWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+//
+// CVE-2025-8061
+//
+
+#define LNVMSRIO_DEVICE_TYPE            (DWORD)0x9C40
+
+#define LNVMSRIO_GET_VERSION_FUNCID     (DWORD)0x800   // 2048
+#define LNVMSRIO_READ_PHYSMEM_FUNCID    (DWORD)0x841   // 2113
+#define LNVMSRIO_WRITE_PHYSMEM_FUNCID   (DWORD)0x842   // 2114
+
+#define IOCTL_LNVMSRIO_GET_VERSION              \
+    CTL_CODE(LNVMSRIO_DEVICE_TYPE, LNVMSRIO_GET_VERSION_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS)   // 0x9C402000
+
+#define IOCTL_LNVMSRIO_READ_PHYSICAL_MEMORY     \
+    CTL_CODE(LNVMSRIO_DEVICE_TYPE, LNVMSRIO_READ_PHYSMEM_FUNCID, METHOD_BUFFERED, FILE_READ_DATA)   // 0x9C406104
+
+#define IOCTL_LNVMSRIO_WRITE_PHYSICAL_MEMORY    \
+    CTL_CODE(LNVMSRIO_DEVICE_TYPE, LNVMSRIO_WRITE_PHYSMEM_FUNCID, METHOD_BUFFERED, FILE_WRITE_DATA) // 0x9C40A108
+
+typedef struct _LNVMSRIO_PHYS_READ_REQUEST {
+    ULONG64 PhysicalAddress;
+    ULONG AccessSize;
+    ULONG Count;
+} LNVMSRIO_PHYS_READ_REQUEST, * PLNVMSRIO_PHYS_READ_REQUEST;
+
+typedef struct _LNVMSRIO_PHYS_WRITE_REQUEST {
+    ULONG64 PhysicalAddress;
+    ULONG AccessSize;
+    ULONG Count;
+    UCHAR Data[1];
+} LNVMSRIO_PHYS_WRITE_REQUEST, * PLNVMSRIO_PHYS_WRITE_REQUEST;
+
+BOOL WINAPI LnvMsrReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI LnvMsrWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI LnvMsrVirtualToPhysical(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress);
+
+BOOL WINAPI LnvMsrReadKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI LnvMsrWriteKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
     _In_ ULONG NumberOfBytes);

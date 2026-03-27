@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.46
+*  VERSION:     1.47
 *
-*  DATE:        12 Feb 2026
+*  DATE:        25 Mar 2026
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -39,14 +39,14 @@ extern "C" {
 #endif
 
 /*
-* KDUpValidateInstructionBlock
+* KDUValidateCiInitializeCode
 *
 * Purpose:
 *
 * Validate g_CiOptions call parameters block.
 *
 */
-ULONG KDUpValidateInstructionBlock(
+ULONG KDUValidateCiInitializeCode(
     _In_ PBYTE Code,
     _In_ ULONG Offset,
     _In_ ULONG MaxLength
@@ -275,7 +275,7 @@ NTSTATUS KDUQueryCiOptions(
                 //
                 // Parameters for the CipInitialize.
                 //
-                k = KDUpValidateInstructionBlock(ptrCode, offset, 256);
+                k = KDUValidateCiInitializeCode(ptrCode, offset, 256);
                 if (k != 0) {
 
                     expectedLength = 5;

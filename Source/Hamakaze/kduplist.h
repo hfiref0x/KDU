@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2025
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.45
+*  VERSION:     1.47
 *
-*  DATE:        02 Dec 2025
+*  DATE:        25 Mar 2026
 *
 *  Providers global list.
 *
@@ -1547,7 +1547,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provReadPhysicalMemory)TpupReadPhysicalMemory,
         (provWritePhysicalMemory)TpupWritePhysicalMemory,
 
-        (provValidatePrerequisites)TpupValidatePrerequisites,
+        (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
 
         (provOpenProcess)NULL
     },
@@ -1573,7 +1573,33 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provReadPhysicalMemory)TpwReadPhysicalMemory,
         (provWritePhysicalMemory)TpwWritePhysicalMemory,
 
-        (provValidatePrerequisites)TpupValidatePrerequisites,
+        (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
+
+        (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)LnvMsrReadKernelVirtualMemory,
+        (provWriteKernelVM)LnvMsrWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)LnvMsrVirtualToPhysical,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)LnvMsrReadPhysicalMemory,
+        (provWritePhysicalMemory)LnvMsrWritePhysicalMemory,
+
+        (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
 
         (provOpenProcess)NULL
     }

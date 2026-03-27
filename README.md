@@ -173,6 +173,7 @@ Note: Provider with Id 0 is assumed as default if no -prv command is specified.
 | 54     | NetEase        | NeacSafe64  | NeacSafe64 mini-filter driver    | 1.0.0.1 and below       |                      |
 | 55     | TechPowerUp    | ThrottleStop  | ThrottleStop                       | 3.0.0.0 and below             |                      |
 | 56     | Toshiba        | TPwSav        | Toshiba power saving driver for laptops | 2.0.0.2 and below             |                      |
+| 57     | Lenovo         | LvnMSRIO      | Lenovo filter driver | 3.1.0.35 and below             |                      |
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
@@ -239,6 +240,7 @@ MSFT blacklist types:
 |54|Original|CVE-2025-45737|**File(SHA1):** 7E6DD5F1363C3070C59378EC8B23B6EC7B5671B4<br>**Authenticode(SHA1):** 5C41FA80052C332F7D6323C91E84E1204BA1C1C7<br>**Page(SHA1):** 5670C9130CC8997FBA6BD1C615F0DA97DC1FD43C<br>**Page(SHA256):** 34B6E417ABA41F5C7D7EE260AF1F56D9A74519F64B8E15BB510A295D2F9ED464|
 |55|Original|CVE-2025-7771|**File(SHA1):** 82ED942A52CDCF120A8919730E00BA37619661A3<br>**Authenticode(SHA1):** 77BADFEEBC7F448E6B8A52DCF15F48506A0E9A58<br>**Page(SHA1):** 42E937C9E56931AFDE500D68CDA682F8A5997CAF<br>**Page(SHA256):** 05E896E9337F2F6119571B31F3E5C279B357631C439912172E07526A4B5C23A5|
 |56|Original||**File(SHA1):** C1130E09831C7A2E0CC8BA7335E702910B25F526<br>**Authenticode(SHA1):** 8057487B702996C56D4CBB96A0C63A6ED82271B5<br>**Page(SHA1):** 7A1F9284A89B31BF572487F3021415AA0B583F18<br>**Page(SHA256):** 8E141BAB9656CB687407C0BDF8488FCD80631DA8EDE60C12EDF5DDC6D76AF1EC|
+|57|WINRING0|CVE-2025-8061|**File(SHA1):** 0186912447648A5E4B9C9C31D718F605D5E5C925<br>**Authenticode(SHA1):** 68969B2B53412322917BE77774B3175155F28B71<br>**Page(SHA1):** 5285DC2862551EF8C3458E48B46552A912C6D4B2<br>**Page(SHA256):** 1B04665721DEDC651B75B2C1F33613E5332FA9077FEA9BD22B7D24573F615D38|
 
 ###### *At commit time, data may be inaccurate.
 
@@ -314,6 +316,7 @@ https://github.com/hfiref0x/KDU/tree/master/CHANGELOG.txt
 * CVE-2020-12928, https://h0mbre.github.io/RyzenMaster_CVE/
 * CVE-2025-45737, https://github.com/smallzhong/NeacController
 * CVE-2025-7771, https://securelist.com/av-killer-exploiting-throttlestop-sys/117026/
+* CVE-2025-8061, https://github.com/spawn451/CVE-2025-8061-Exploit
 
 # Wormhole drivers code
 

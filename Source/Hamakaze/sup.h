@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2025
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.45
+*  VERSION:     1.47
 *
-*  DATE:        02 Dec 2025
+*  DATE:        25 Mar 2026
 *
 *  Support routines header file.
 *
@@ -414,3 +414,43 @@ BOOL supSuperfetchVirtualToPhysical(
     _In_ PSUPERFETCH_MEMORY_MAP MemoryMap,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ PULONG_PTR PhysicalAddress);
+
+BOOL supEnsureSuperfetchMemoryMap(
+    _Out_ PSUPERFETCH_MEMORY_MAP* MemoryMap);
+
+BOOL supVirtualToPhysicalWithSuperfetch(
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress);
+
+//
+// Local callback types for Superfetch-backed generic helpers.
+// Must match provider physical memory callback signatures.
+//
+typedef BOOL(WINAPI* supReadPhysicalMemoryCallback)(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+typedef BOOL(WINAPI* supWritePhysicalMemoryCallback)(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL supReadKernelVirtualMemoryWithSuperfetch(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes,
+    _In_ supReadPhysicalMemoryCallback ReadPhysicalMemory);
+
+BOOL supWriteKernelVirtualMemoryWithSuperfetch(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes,
+    _In_ supWritePhysicalMemoryCallback WritePhysicalMemory);
+
+VOID supFreeSuperfetchMemoryMapCache(
+    VOID);

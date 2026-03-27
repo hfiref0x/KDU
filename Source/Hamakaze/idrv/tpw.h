@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2025
+*  (C) COPYRIGHT AUTHORS, 2025 - 2026
 *
 *  TITLE:       TPW.H
 *
-*  VERSION:     1.45
+*  VERSION:     1.47
 *
-*  DATE:        16 Dec 2025
+*  DATE:        25 Mar 2026
 *
 *  TOSHIBA laptop power saving driver interface header.
 *

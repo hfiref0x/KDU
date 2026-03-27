@@ -878,6 +878,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"TPwSav",
         (LPWSTR)L"EBIoDispatch",
         (LPWSTR)L"Compal Electronics"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_LENOVOMSRIO,
+        KDU_PROVIDER_LENOVOMSRIO,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseWinRing0,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SUPERFETCH,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Lenovo MSR I/O Driver (CVE-2025-8061)",
+        (LPWSTR)L"LnvMSRIO",
+        (LPWSTR)L"WinMsrDev",
+        (LPWSTR)L"Lenovo"
     }
 
 };

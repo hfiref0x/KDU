@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2025
+*  (C) COPYRIGHT AUTHORS, 2025 - 2026
 *
 *  TITLE:       TPUP.H
 *
-*  VERSION:     1.45
+*  VERSION:     1.47
 *
-*  DATE:        02 Dec 2025
+*  DATE:        25 Mar 2026
 *
 *  TechPowerUp ThrottleStop driver interface header.
 *
@@ -57,6 +57,3 @@ BOOL WINAPI TpupWriteKernelVirtualMemory(
     _In_ ULONG_PTR Address,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
-
-BOOL WINAPI TpupValidatePrerequisites(
-    _In_ PKDU_CONTEXT Context);

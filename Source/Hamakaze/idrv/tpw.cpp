@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2025
+*  (C) COPYRIGHT AUTHORS, 2025 - 2026
 *
 *  TITLE:       TPW.CPP
 *
-*  VERSION:     1.45
+*  VERSION:     1.47
 *
-*  DATE:        16 Dec 2025
+*  DATE:        25 Mar 2026
 *
 *  TOSHIBA laptop power saving driver routines.
 *
@@ -19,35 +19,6 @@
 
 #include "global.h"
 #include "idrv/tpw.h"
-
-static SUPERFETCH_MEMORY_MAP g_TpwMemoryMap = { 0 };
-static BOOL g_TpwMemoryMapInitialized = FALSE;
-
-/*
-* TpwEnsureMemoryMap
-*
-* Purpose:
-*
-* Initialize memory map (once). Only for stable memory layout, otherwise rebuild the map.
-*
-*/
-BOOL TpwEnsureMemoryMap(VOID)
-{
-    if (g_TpwMemoryMapInitialized)
-        return TRUE;
-
-    if (!supBuildSuperfetchMemoryMap(&g_TpwMemoryMap))
-        return FALSE;
-
-    g_TpwMemoryMapInitialized = TRUE;
-
-    supPrintfEvent(kduEventInformation,
-        "[+] Superfetch memory map built: %llu entries from %lu ranges\r\n",
-        g_TpwMemoryMap.TableSize,
-        g_TpwMemoryMap.RangeCount);
-
-    return TRUE;
-}
 
 /*
 * TpwReadWritePhysicalMemory
@@ -78,7 +49,7 @@ BOOL TpwReadWritePhysicalMemory(
         RtlSecureZeroMemory(buffer, sizeof(buffer));
         buffer[0].QuadPart = (ULONG_PTR)(PhysicalAddress + i);
         buffer[1].QuadPart = 0;
-        
+
         if (DoWrite) {
             buffer[1].QuadPart = pBuffer[i];
 
@@ -168,39 +139,11 @@ BOOL WINAPI TpwReadKernelVirtualMemory(
     _In_ PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
-    ULONG_PTR currentVA;
-    ULONG_PTR currentPA;
-    ULONG bytesToRead;
-    ULONG bytesRemaining;
-    ULONG offset;
-    PBYTE destBuffer;
-
-    if (!TpwEnsureMemoryMap())
-        return FALSE;
-
-    destBuffer = (PBYTE)Buffer;
-    currentVA = Address;
-    bytesRemaining = NumberOfBytes;
-    offset = 0;
-
-    while (bytesRemaining > 0) {
-
-        if (!supSuperfetchVirtualToPhysical(&g_TpwMemoryMap, currentVA, &currentPA))
-            return FALSE;
-
-        bytesToRead = PAGE_SIZE - (ULONG)(currentVA & (PAGE_SIZE - 1));
-        if (bytesToRead > bytesRemaining)
-            bytesToRead = bytesRemaining;
-
-        if (!TpwReadPhysicalMemory(DeviceHandle, currentPA, destBuffer + offset, bytesToRead))
-            return FALSE;
-
-        currentVA += bytesToRead;
-        offset += bytesToRead;
-        bytesRemaining -= bytesToRead;
-    }
-
-    return TRUE;
+    return supReadKernelVirtualMemoryWithSuperfetch(DeviceHandle,
+        Address,
+        Buffer,
+        NumberOfBytes,
+        TpwReadPhysicalMemory);
 }
 
 /*
@@ -217,50 +160,9 @@ BOOL WINAPI TpwWriteKernelVirtualMemory(
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
-    ULONG_PTR currentVA;
-    ULONG_PTR currentPA;
-    ULONG bytesToWrite;
-    ULONG bytesRemaining;
-    ULONG offset;
-    PBYTE srcBuffer;
-
-    if (!TpwEnsureMemoryMap())
-        return FALSE;
-
-    srcBuffer = (PBYTE)Buffer;
-    currentVA = Address;
-    bytesRemaining = NumberOfBytes;
-    offset = 0;
-
-    while (bytesRemaining > 0) {
-
-        if (!supSuperfetchVirtualToPhysical(&g_TpwMemoryMap, currentVA, &currentPA))
-            return FALSE;
-
-        bytesToWrite = PAGE_SIZE - (ULONG)(currentVA & (PAGE_SIZE - 1));
-        if (bytesToWrite > bytesRemaining)
-            bytesToWrite = bytesRemaining;
-
-        if (!TpwWritePhysicalMemory(DeviceHandle, currentPA, srcBuffer + offset, bytesToWrite))
-            return FALSE;
-
-        currentVA += bytesToWrite;
-        offset += bytesToWrite;
-        bytesRemaining -= bytesToWrite;
-    }
-
-    return TRUE;
-}
-
-/*
-* TpwFreeResources
-*
-* Purpose:
-*
-* Free provider resources (memory map).
-*
-*/
-VOID TpwFreeResources(VOID)
-{
-    supFreeSuperfetchMemoryMap(&g_TpwMemoryMap);
+    return supWriteKernelVirtualMemoryWithSuperfetch(DeviceHandle,
+        Address,
+        Buffer,
+        NumberOfBytes,
+        TpwWritePhysicalMemory);
 }

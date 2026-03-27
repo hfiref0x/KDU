@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2025
+*  (C) COPYRIGHT AUTHORS, 2025 - 2026
 *
 *  TITLE:       TPUP.CPP
 *
-*  VERSION:     1.45
+*  VERSION:     1.47
 *
-*  DATE:        02 Dec 2025
+*  DATE:        25 Mar 2026
 *
 *  TechPowerUp ThrottleStop driver routines.
 *
@@ -19,35 +19,6 @@
 
 #include "global.h"
 #include "idrv/tpup.h"
-
-static SUPERFETCH_MEMORY_MAP g_TpupMemoryMap = { 0 };
-static BOOL g_TpupMemoryMapInitialized = FALSE;
-
-/*
-* TpupEnsureMemoryMap
-*
-* Purpose:
-*
-* Initialize memory map (once). Only for stable memory layout, otherwise rebuild the map.
-*
-*/
-BOOL TpupEnsureMemoryMap(VOID)
-{
-    if (g_TpupMemoryMapInitialized)
-        return TRUE;
-
-    if (!supBuildSuperfetchMemoryMap(&g_TpupMemoryMap))
-        return FALSE;
-
-    g_TpupMemoryMapInitialized = TRUE;
-
-    supPrintfEvent(kduEventInformation,
-        "[+] Superfetch memory map built: %llu entries from %lu ranges\r\n",
-        g_TpupMemoryMap.TableSize,
-        g_TpupMemoryMap.RangeCount);
-
-    return TRUE;
-}
 
 /*
 * TpupReadWritePhysicalMemory
@@ -184,39 +155,11 @@ BOOL WINAPI TpupReadKernelVirtualMemory(
     _In_ PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
-    ULONG_PTR currentVA;
-    ULONG_PTR currentPA;
-    ULONG bytesToRead;
-    ULONG bytesRemaining;
-    ULONG offset;
-    PBYTE destBuffer;
-
-    if (!TpupEnsureMemoryMap())
-        return FALSE;
-
-    destBuffer = (PBYTE)Buffer;
-    currentVA = Address;
-    bytesRemaining = NumberOfBytes;
-    offset = 0;
-
-    while (bytesRemaining > 0) {
-
-        if (!supSuperfetchVirtualToPhysical(&g_TpupMemoryMap, currentVA, &currentPA))
-            return FALSE;
-
-        bytesToRead = PAGE_SIZE - (ULONG)(currentVA & (PAGE_SIZE - 1));
-        if (bytesToRead > bytesRemaining)
-            bytesToRead = bytesRemaining;
-
-        if (!TpupReadPhysicalMemory(DeviceHandle, currentPA, destBuffer + offset, bytesToRead))
-            return FALSE;
-
-        currentVA += bytesToRead;
-        offset += bytesToRead;
-        bytesRemaining -= bytesToRead;
-    }
-
-    return TRUE;
+    return supReadKernelVirtualMemoryWithSuperfetch(DeviceHandle,
+        Address,
+        Buffer,
+        NumberOfBytes,
+        TpupReadPhysicalMemory);
 }
 
 /*
@@ -233,82 +176,9 @@ BOOL WINAPI TpupWriteKernelVirtualMemory(
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes)
 {
-    ULONG_PTR currentVA;
-    ULONG_PTR currentPA;
-    ULONG bytesToWrite;
-    ULONG bytesRemaining;
-    ULONG offset;
-    PBYTE srcBuffer;
-
-    if (!TpupEnsureMemoryMap())
-        return FALSE;
-
-    srcBuffer = (PBYTE)Buffer;
-    currentVA = Address;
-    bytesRemaining = NumberOfBytes;
-    offset = 0;
-
-    while (bytesRemaining > 0) {
-
-        if (!supSuperfetchVirtualToPhysical(&g_TpupMemoryMap, currentVA, &currentPA))
-            return FALSE;
-
-        bytesToWrite = PAGE_SIZE - (ULONG)(currentVA & (PAGE_SIZE - 1));
-        if (bytesToWrite > bytesRemaining)
-            bytesToWrite = bytesRemaining;
-
-        if (!TpupWritePhysicalMemory(DeviceHandle, currentPA, srcBuffer + offset, bytesToWrite))
-            return FALSE;
-
-        currentVA += bytesToWrite;
-        offset += bytesToWrite;
-        bytesRemaining -= bytesToWrite;
-    }
-
-    return TRUE;
-}
-
-/*
-* TpupValidatePrerequisites
-*
-* Purpose:
-*
-* Check if Superfetch is available and build memory map.
-*
-*/
-BOOL WINAPI TpupValidatePrerequisites(
-    _In_ PKDU_CONTEXT Context)
-{
-    BOOLEAN oldValue = FALSE;
-    NTSTATUS ntStatus;
-
-    UNREFERENCED_PARAMETER(Context);
-
-    //
-    // Only enable privilege, defer map building
-    //
-    ntStatus = RtlAdjustPrivilege(SE_PROF_SINGLE_PROCESS_PRIVILEGE, TRUE, FALSE, &oldValue);
-    if (!NT_SUCCESS(ntStatus)) {
-        supPrintfEvent(kduEventError,
-            "[-] Failed to enable SE_PROF_SINGLE_PROCESS_PRIVILEGE (0x%lX)\r\n", ntStatus);
-        return FALSE;
-    }
-
-    supPrintfEvent(kduEventInformation,
-        "[+] Superfetch prerequisites validated\r\n");
-
-    return TRUE;
-}
-
-/*
-* TpupFreeResources
-*
-* Purpose:
-*
-* Free provider resources (memory map).
-*
-*/
-VOID TpupFreeResources(VOID)
-{
-    supFreeSuperfetchMemoryMap(&g_TpupMemoryMap);
+    return supWriteKernelVirtualMemoryWithSuperfetch(DeviceHandle,
+        Address,
+        Buffer,
+        NumberOfBytes,
+        TpupWritePhysicalMemory);
 }

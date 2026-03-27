@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.46
+*  VERSION:     1.47
 *
-*  DATE:        12 Feb 2026
+*  DATE:        25 Mar 2026
 *
 *  Global consts.
 *
@@ -21,8 +21,8 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       4
-#define KDU_VERSION_REVISION    6
-#define KDU_VERSION_BUILD       2602
+#define KDU_VERSION_REVISION    7
+#define KDU_VERSION_BUILD       2603
 #define KDU_COPYRIGHT_YEAR      2026
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
@@ -30,7 +30,7 @@
 
 #define IPC_GET_HANDLE          0x1337
 
-#define KDU_SYNC_MUTANT         0x2602
+#define KDU_SYNC_MUTANT         0x2603
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
@@ -159,6 +159,8 @@
 #define IDR_HWRWDRVX64                  155
 #define IDR_NEACSAFE64                  156
 #define IDR_THROTTLESTOP                157
+#define IDR_TPWSAV                      158
+#define IDR_LENOVOMSRIO                 159
 
 //
 // Vulnerable drivers providers id
@@ -220,6 +222,7 @@
 #define KDU_PROVIDER_NEACSAFE64         54
 #define KDU_PROVIDER_TPUP               55
 #define KDU_PROVIDER_TOSHIBA            56
+#define KDU_PROVIDER_LENOVOMSRIO        57
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

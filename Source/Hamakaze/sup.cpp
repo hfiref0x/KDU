@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2025
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.45
+*  VERSION:     1.47
 *
-*  DATE:        02 Dec 2025
+*  DATE:        25 Mar 2026
 *
 *  Program global support routines.
 *
@@ -18,6 +18,9 @@
 *******************************************************************************/
 
 #include "global.h"
+
+static SUPERFETCH_MEMORY_MAP g_SuperfetchMemoryMap = { 0 };
+static BOOL g_SuperfetchMemoryMapInitialized = FALSE;
 
 /*
 * supHeapAlloc
@@ -3833,19 +3836,12 @@ NTSTATUS supQuerySuperfetchInformation(
 {
     NTSTATUS ntStatus;
     ULONG returnedLength = 0;
-
-    struct {
-        ULONG Version;
-        ULONG Magic;
-        ULONG InfoClass;
-        PVOID Data;
-        ULONG Length;
-    } superfetchInfo;
+    SUPERFETCH_INFORMATION superfetchInfo;
 
     RtlSecureZeroMemory(&superfetchInfo, sizeof(superfetchInfo));
     superfetchInfo.Version = SUPERFETCH_VERSION;
     superfetchInfo.Magic = SUPERFETCH_MAGIC;
-    superfetchInfo.InfoClass = (ULONG)InfoClass;
+    superfetchInfo.InfoClass = InfoClass;
     superfetchInfo.Data = Buffer;
     superfetchInfo.Length = Length;
 
@@ -4153,4 +4149,190 @@ BOOL supSuperfetchVirtualToPhysical(
     }
 
     return FALSE;
+}
+
+/*
+* supEnsureSuperfetchMemoryMap
+*
+* Purpose:
+*
+* Initialize shared Superfetch memory map once and return pointer to it.
+*
+*/
+BOOL supEnsureSuperfetchMemoryMap(
+    _Out_ PSUPERFETCH_MEMORY_MAP* MemoryMap)
+{
+    if (MemoryMap == NULL)
+        return FALSE;
+
+    *MemoryMap = NULL;
+
+    if (!g_SuperfetchMemoryMapInitialized) {
+
+        if (!supBuildSuperfetchMemoryMap(&g_SuperfetchMemoryMap))
+            return FALSE;
+
+        g_SuperfetchMemoryMapInitialized = TRUE;
+
+        supPrintfEvent(kduEventInformation,
+            "[+] Superfetch memory map built: %llu entries from %lu ranges\r\n",
+            g_SuperfetchMemoryMap.TableSize,
+            g_SuperfetchMemoryMap.RangeCount);
+    }
+
+    *MemoryMap = &g_SuperfetchMemoryMap;
+    return TRUE;
+}
+
+/*
+* supVirtualToPhysicalWithSuperfetch
+*
+* Purpose:
+*
+* Translate virtual address to physical using shared Superfetch map.
+*
+*/
+BOOL supVirtualToPhysicalWithSuperfetch(
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress)
+{
+    PSUPERFETCH_MEMORY_MAP memoryMap;
+
+    if (PhysicalAddress == NULL)
+        return FALSE;
+
+    *PhysicalAddress = 0LL;
+    if (!supEnsureSuperfetchMemoryMap(&memoryMap))
+        return FALSE;
+
+    return supSuperfetchVirtualToPhysical(memoryMap,
+        VirtualAddress,
+        PhysicalAddress);
+}
+
+/*
+* supReadKernelVirtualMemoryWithSuperfetch
+*
+* Purpose:
+*
+* Read kernel virtual memory through Superfetch translation and provider physical read callback.
+*
+*/
+BOOL supReadKernelVirtualMemoryWithSuperfetch(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes,
+    _In_ supReadPhysicalMemoryCallback ReadPhysicalMemory)
+{
+    ULONG_PTR currentVA;
+    ULONG_PTR currentPA;
+    ULONG bytesToRead;
+    ULONG bytesRemaining;
+    ULONG offset;
+    PBYTE destination;
+
+    if (DeviceHandle == NULL || Buffer == NULL || NumberOfBytes == 0 || ReadPhysicalMemory == NULL)
+        return FALSE;
+
+    destination = (PBYTE)Buffer;
+    currentVA = Address;
+    bytesRemaining = NumberOfBytes;
+    offset = 0;
+
+    while (bytesRemaining > 0) {
+
+        if (!supVirtualToPhysicalWithSuperfetch(currentVA, &currentPA))
+            return FALSE;
+
+        bytesToRead = PAGE_SIZE - (ULONG)(currentVA & (PAGE_SIZE - 1));
+        if (bytesToRead > bytesRemaining)
+            bytesToRead = bytesRemaining;
+
+        if (!ReadPhysicalMemory(DeviceHandle,
+            currentPA,
+            destination + offset,
+            bytesToRead))
+        {
+            return FALSE;
+        }
+
+        currentVA += bytesToRead;
+        offset += bytesToRead;
+        bytesRemaining -= bytesToRead;
+    }
+
+    return TRUE;
+}
+
+/*
+* supWriteKernelVirtualMemoryWithSuperfetch
+*
+* Purpose:
+*
+* Write kernel virtual memory through Superfetch translation and provider physical write callback.
+*
+*/
+BOOL supWriteKernelVirtualMemoryWithSuperfetch(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes,
+    _In_ supWritePhysicalMemoryCallback WritePhysicalMemory)
+{
+    ULONG_PTR currentVA;
+    ULONG_PTR currentPA;
+    ULONG bytesToWrite;
+    ULONG bytesRemaining;
+    ULONG offset;
+    PBYTE source;
+
+    if (DeviceHandle == NULL || Buffer == NULL || NumberOfBytes == 0 || WritePhysicalMemory == NULL)
+        return FALSE;
+
+    source = (PBYTE)Buffer;
+    currentVA = Address;
+    bytesRemaining = NumberOfBytes;
+    offset = 0;
+
+    while (bytesRemaining > 0) {
+
+        if (!supVirtualToPhysicalWithSuperfetch(currentVA, &currentPA))
+            return FALSE;
+
+        bytesToWrite = PAGE_SIZE - (ULONG)(currentVA & (PAGE_SIZE - 1));
+        if (bytesToWrite > bytesRemaining)
+            bytesToWrite = bytesRemaining;
+
+        if (!WritePhysicalMemory(DeviceHandle,
+            currentPA,
+            source + offset,
+            bytesToWrite))
+        {
+            return FALSE;
+        }
+
+        currentVA += bytesToWrite;
+        offset += bytesToWrite;
+        bytesRemaining -= bytesToWrite;
+    }
+
+    return TRUE;
+}
+
+/*
+* supFreeSuperfetchMemoryMapCache
+*
+* Purpose:
+*
+* Free shared Superfetch memory map cache.
+*
+*/
+VOID supFreeSuperfetchMemoryMapCache(
+    VOID)
+{
+    if (g_SuperfetchMemoryMapInitialized) {
+        supFreeSuperfetchMemoryMap(&g_SuperfetchMemoryMap);
+        g_SuperfetchMemoryMapInitialized = FALSE;
+    }
 }

@@ -178,6 +178,8 @@ IDR_THROTTLESTOP        RCDATA                  "drv\\ThrottleStop.bin"
 
 IDR_TPWSAV              RCDATA                  "drv\\TPwSav.bin"
 
+IDR_LENOVOMSRIO         RCDATA                  "drv\\LnvMSRIO.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -185,8 +187,8 @@ IDR_TPWSAV              RCDATA                  "drv\\TPwSav.bin"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,4,6,2602
- PRODUCTVERSION 1,4,6,2602
+ FILEVERSION 1,4,7,2603
+ PRODUCTVERSION 1,4,7,2603
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -203,12 +205,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility Database"
-            VALUE "FileVersion", "1.4.6.2602"
+            VALUE "FileVersion", "1.4.7.2603"
             VALUE "InternalName", "Tanikaze.dll"
             VALUE "LegalCopyright", "Copyright (C) 2020 - 2026 KDU Project"
             VALUE "OriginalFilename", "Tanikaze.dll"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.4.6.2602"
+            VALUE "ProductVersion", "1.4.7.2603"
         END
     END
     BLOCK "VarFileInfo"

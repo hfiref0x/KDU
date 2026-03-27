@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022 - 2025
+*  (C) COPYRIGHT AUTHORS, 2022 - 2026
 *
 *  TITLE:       KDUBASE.H
 *
-*  VERSION:     1.44
+*  VERSION:     1.47
 *
-*  DATE:        19 Aug 2025
+*  DATE:        25 Mar 2026
 *
 *  Base KDU definitions.
 *
@@ -55,7 +55,8 @@ typedef struct _KDU_DB_ENTRY {
             ULONG UseSymbols : 1;
             ULONG OpenProcessSupported : 1;
             ULONG FsFilter : 1;
-            ULONG Reserved : 18;
+            ULONG UseSuperfetch : 1;
+            ULONG Reserved : 17;
         };
     };
     ULONG SupportedShellFlags;
