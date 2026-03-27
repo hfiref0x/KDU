@@ -173,7 +173,7 @@ Note: Provider with Id 0 is assumed as default if no -prv command is specified.
 | 54     | NetEase        | NeacSafe64  | NeacSafe64 mini-filter driver    | 1.0.0.1 and below       |                      |
 | 55     | TechPowerUp    | ThrottleStop  | ThrottleStop                       | 3.0.0.0 and below             |                      |
 | 56     | Toshiba        | TPwSav        | Toshiba power saving driver for laptops | 2.0.0.2 and below             |                      |
-| 57     | Lenovo         | LvnMSRIO      | Lenovo filter driver | 3.1.0.35 and below             |                      |
+| 57     | Lenovo         | LnvMSRIO      | Lenovo filter driver | 3.1.0.35 and below             |                      |
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
