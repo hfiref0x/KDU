@@ -59,6 +59,7 @@
 #define IDR_THROTTLESTOP                157
 #define IDR_TPWSAV                      158
 #define IDR_LENOVOMSRIO                 159
+#define IDR_TELEDYNE                    160
 #define IDR_DATA_DBUTILCAT              1000
 #define IDR_DATA_DBUTILINF              1001
 #define IDR_DATA_KMUEXE                 1002

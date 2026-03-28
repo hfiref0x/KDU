@@ -4,7 +4,7 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.47
+*  VERSION:     1.48
 *
 *  DATE:        25 Mar 2026
 *
@@ -21,7 +21,7 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       4
-#define KDU_VERSION_REVISION    7
+#define KDU_VERSION_REVISION    8
 #define KDU_VERSION_BUILD       2603
 #define KDU_COPYRIGHT_YEAR      2026
 
@@ -161,6 +161,7 @@
 #define IDR_THROTTLESTOP                157
 #define IDR_TPWSAV                      158
 #define IDR_LENOVOMSRIO                 159
+#define IDR_TELEDYNE                    160
 
 //
 // Vulnerable drivers providers id
@@ -223,6 +224,7 @@
 #define KDU_PROVIDER_TPUP               55
 #define KDU_PROVIDER_TOSHIBA            56
 #define KDU_PROVIDER_LENOVOMSRIO        57
+#define KDU_PROVIDER_TELEDYNE           58
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

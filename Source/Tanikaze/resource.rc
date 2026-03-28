@@ -180,6 +180,8 @@ IDR_TPWSAV              RCDATA                  "drv\\TPwSav.bin"
 
 IDR_LENOVOMSRIO         RCDATA                  "drv\\LnvMSRIO.bin"
 
+IDR_TELEDYNE            RCDATA                  "drv\\Cormem.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,4,7,2603
- PRODUCTVERSION 1,4,7,2603
+ FILEVERSION 1,4,8,2603
+ PRODUCTVERSION 1,4,8,2603
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -69,12 +69,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "UG North"
             VALUE "FileDescription", "Kernel Driver Utility"
-            VALUE "FileVersion", "1.4.7.2603"
+            VALUE "FileVersion", "1.4.8.2603"
             VALUE "InternalName", "Hamakaze.exe"
             VALUE "LegalCopyright", "Copyright © 2020 - 2026 KDU Project"
             VALUE "OriginalFilename", "Hamakaze.exe"
             VALUE "ProductName", "KDU"
-            VALUE "ProductVersion", "1.4.7.2603"
+            VALUE "ProductVersion", "1.4.8.2603"
         END
     END
     BLOCK "VarFileInfo"

@@ -4,9 +4,9 @@
 *
 *  TITLE:       TANIKAZE.H
 *
-*  VERSION:     1.46
+*  VERSION:     1.48
 *
-*  DATE:        12 Feb 2026
+*  DATE:        25 Mar 2026
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -893,6 +893,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"LnvMSRIO",
         (LPWSTR)L"WinMsrDev",
         (LPWSTR)L"Lenovo"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_TELEDYNE,
+        KDU_PROVIDER_TELEDYNE,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseMapMem,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Sapera Memory Manager",
+        (LPWSTR)L"CORMEM",
+        (LPWSTR)L"CORMEM",
+        (LPWSTR)L"Teledyne Digital Imaging Inc."
     }
 
 };

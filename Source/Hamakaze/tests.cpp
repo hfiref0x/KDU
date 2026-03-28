@@ -494,7 +494,7 @@ VOID KDUTest()
 
     // KDUTestLoad();
     // TestSymbols();
-    Context = KDUProviderCreate(KDU_PROVIDER_LENOVOMSRIO,
+    Context = KDUProviderCreate(KDU_PROVIDER_TELEDYNE,
         FALSE,
         NT_WIN10_20H1,
         KDU_SHELLCODE_V1,

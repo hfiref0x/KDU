@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       MAPMEM.H
 *
-*  VERSION:     1.26
+*  VERSION:     1.48
 *
-*  DATE:        15 Oct 2022
+*  DATE:        25 Mar 2026
 *
 *  MAPMEM driver interface header.
 *
@@ -74,11 +74,11 @@ typedef struct _GIO_VIRTUAL_TO_PHYSICAL {
 } GIO_VIRTUAL_TO_PHYSICAL, * PGIO_VIRTUAL_TO_PHYSICAL;
 
 typedef struct _MAPMEM_PHYSICAL_MEMORY_INFO {
-    INTERFACE_TYPE   InterfaceType; 
-    ULONG            BusNumber;     
+    INTERFACE_TYPE   InterfaceType;
+    ULONG            BusNumber;
     PHYSICAL_ADDRESS BusAddress;
-    ULONG            AddressSpace;  
-    ULONG            Length;        
+    ULONG            AddressSpace;
+    ULONG            Length;
 } MAPMEM_PHYSICAL_MEMORY_INFO, * PMAPMEM_PHYSICAL_MEMORY_INFO;
 
 BOOL WINAPI MapMemVirtualToPhysical(
@@ -117,3 +117,56 @@ BOOL WINAPI MapMemQueryPML4Value(
 BOOL WINAPI MapMemRegisterDriver(
     _In_ HANDLE DeviceHandle,
     _In_opt_ PVOID Param);
+
+//
+// These are specific to the Teledynes CORMEM.SYS driver.
+//
+
+#define CORMEM_DEVICE_TYPE  FILE_DEVICE_UNKNOWN
+#define CORMEM_MAP_FUNCID   (DWORD)0x803
+#define CORMEM_UNMAP_FUNCID (DWORD)0x804
+
+#define IOCTL_CORMEM_MAPBUFFER      \
+    CTL_CODE(CORMEM_DEVICE_TYPE, CORMEM_MAP_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS) // 0x22200C
+
+#define IOCTL_CORMEM_UNMAPBUFFER    \
+    CTL_CODE(CORMEM_DEVICE_TYPE, CORMEM_UNMAP_FUNCID, METHOD_BUFFERED, FILE_ANY_ACCESS) // 0x222010
+
+typedef struct _CORMEM_MAPBUFFER_REQUEST {
+    PHYSICAL_ADDRESS PhysicalAddress;
+    SIZE_T Size;
+    ULONGLONG Unused;
+} CORMEM_MAPBUFFER_REQUEST, * PCORMEM_MAPBUFFER_REQUEST;
+
+BOOL WINAPI CorMemQueryPML4Value(
+    _In_ HANDLE DeviceHandle,
+    _Out_ ULONG_PTR* Value);
+
+BOOL WINAPI CorMemVirtualToPhysical(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress);
+
+BOOL WINAPI CorMemReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI CorMemWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI CorMemWriteKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI CorMemReadKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
