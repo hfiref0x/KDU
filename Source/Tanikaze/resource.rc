@@ -182,6 +182,8 @@ IDR_LENOVOMSRIO         RCDATA                  "drv\\LnvMSRIO.bin"
 
 IDR_TELEDYNE            RCDATA                  "drv\\Cormem.bin"
 
+IDR_IPCTYPE             RCDATA                  "drv\\ipctype.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

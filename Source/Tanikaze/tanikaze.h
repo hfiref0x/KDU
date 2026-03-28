@@ -908,6 +908,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"CORMEM",
         (LPWSTR)L"CORMEM",
         (LPWSTR)L"Teledyne Digital Imaging Inc."
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_IPCTYPE,
+        KDU_PROVIDER_IPCTYPE,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_USE_SUPERFETCH,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"IPCType Device Driver for 64bit",
+        (LPWSTR)L"IPCType",
+        (LPWSTR)L"IPCType",
+        (LPWSTR)L"Digital Electronics Corporation"
     }
 
 };

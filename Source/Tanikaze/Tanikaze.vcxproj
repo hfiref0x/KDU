@@ -218,6 +218,7 @@
     <None Include="drv\HW64.bin" />
     <None Include="drv\HwRwDrv.x64.bin" />
     <None Include="drv\inpoutx64.bin" />
+    <None Include="drv\ipctype.bin" />
     <None Include="drv\iQVM64.bin" />
     <None Include="drv\irec.bin" />
     <None Include="drv\KExplore.bin" />
