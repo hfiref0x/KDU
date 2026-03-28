@@ -4,7 +4,7 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.47
+*  VERSION:     1.48
 *
 *  DATE:        25 Mar 2026
 *
@@ -51,6 +51,7 @@
 #include "idrv/netease.h"
 #include "idrv/tpup.h"
 #include "idrv/tpw.h"
+#include "idrv/ipcdec.h"
 
 //
 // Victims public array.
@@ -1602,5 +1603,56 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
 
         (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)CorMemReadKernelVirtualMemory,
+        (provWriteKernelVM)CorMemWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)CorMemVirtualToPhysical,
+        (provQueryPML4)CorMemQueryPML4Value,
+        (provReadPhysicalMemory)CorMemReadPhysicalMemory,
+        (provWritePhysicalMemory)CorMemWritePhysicalMemory,
+
+        (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+     },
+
+    {
+        NULL,
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)IpcReadKernelVirtualMemory,
+        (provWriteKernelVM)IpcWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)IpcVirtualToPhysical,
+        (provQueryPML4)NULL,
+
+        (provReadPhysicalMemory)IpcReadPhysicalMemory,
+        (provWritePhysicalMemory)IpcWritePhysicalMemory,
+
+        (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
+        (provOpenProcess)NULL
     }
+
 };

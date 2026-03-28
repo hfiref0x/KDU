@@ -4,7 +4,7 @@
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.47
+*  VERSION:     1.48
 *
 *  DATE:        25 Mar 2026
 *
@@ -494,7 +494,7 @@ VOID KDUTest()
 
     // KDUTestLoad();
     // TestSymbols();
-    Context = KDUProviderCreate(KDU_PROVIDER_LENOVOMSRIO,
+    Context = KDUProviderCreate(KDU_PROVIDER_IPCTYPE,
         FALSE,
         NT_WIN10_20H1,
         KDU_SHELLCODE_V1,

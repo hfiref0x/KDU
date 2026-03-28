@@ -238,6 +238,12 @@
     <None Include="drv\LnvMSRIO.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\Cormem.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="drv\ipctype.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

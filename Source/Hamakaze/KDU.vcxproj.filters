@@ -231,6 +231,9 @@
     <ClCompile Include="idrv\tpw.cpp">
       <Filter>Source Files\idrv</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\ipcdec.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -433,6 +436,9 @@
     </ClInclude>
     <ClInclude Include="idrv\tpw.h">
       <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\ipcdec.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
