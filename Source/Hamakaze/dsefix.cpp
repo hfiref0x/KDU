@@ -126,6 +126,47 @@ BOOL KDUInstructionIsRspStoreRax(
 }
 
 /*
+* BOOL KDUInstructionIsRipRelativeStore32
+*
+* Purpose:
+*
+* Validate mov [rip+disp32], r32 instruction form.
+*
+*/
+BOOL KDUInstructionIsRipRelativeStore32(
+    _In_ hde64s* Hs,
+    _In_ PBYTE Code
+)
+{
+    BYTE mod, rm;
+
+    if (Hs == NULL || Code == NULL)
+        return FALSE;
+
+    if (Hs->opcode != 0x89)
+        return FALSE;
+
+    if (!(Hs->flags & F_MODRM))
+        return FALSE;
+
+    if (!(Hs->flags & F_DISP32))
+        return FALSE;
+
+    //
+    // Skip 64-bit store form, e.g. mov [rip+disp32], rax.
+    //
+    if ((Hs->len > 1) && (Code[0] == 0x48))
+        return FALSE;
+
+    mod = (Hs->modrm >> 6) & 0x3;
+    rm = Hs->modrm & 0x7;
+    if (mod != 0 || rm != 5)
+        return FALSE;
+
+    return TRUE;
+}
+
+/*
 * KDUHDEIsRegToRegMov
 *
 * Purpose:
@@ -357,7 +398,6 @@ NTSTATUS KDUQueryCiOptions(
 )
 {
     BOOL        found = FALSE;
-    BYTE        mod, rm;
     PBYTE       ptrCode = NULL;
     ULONG       offset, k;
     LONG        relativeValue = 0;
@@ -425,6 +465,9 @@ NTSTATUS KDUQueryCiOptions(
                     if (hs.flags & F_ERROR)
                         break;
 
+                    if (hs.len == 0)
+                        break;
+
                     //
                     // call CipInitialize
                     //
@@ -460,18 +503,10 @@ NTSTATUS KDUQueryCiOptions(
         if (hs.len == 0)
             break;
 
-        if (hs.opcode == 0x89) {  // test if mov [rip+disp32], r32
-
-            if ((hs.flags & F_MODRM) && (hs.flags & F_DISP32)) {
-
-                mod = (hs.modrm >> 6) & 0x3;
-                rm = hs.modrm & 0x7;
-                if (mod == 0 && rm == 5) {
-                    relativeValue = hs.disp.disp32;
-                    found = TRUE;
-                    break;
-                }
-            }
+        if (KDUInstructionIsRipRelativeStore32(&hs, &ptrCode[offset])) {
+            relativeValue = hs.disp.disp32;
+            found = TRUE;
+            break;
         }
 
         offset += hs.len;
