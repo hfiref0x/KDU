@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.47
+*  VERSION:     1.48
 *
-*  DATE:        25 Mar 2026
+*  DATE:        29 May 2026
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -39,6 +39,134 @@ extern "C" {
 #endif
 
 /*
+* KDUInstuctionHasRexPrefix
+*
+* Purpose:
+*
+* Check instruction for REX prefix and compare it against
+* the given mask/value pair.
+*
+*/
+BOOL KDUInstuctionHasRexPrefix(
+    _In_ hde64s* Hs,
+    _In_ PBYTE Code,
+    _In_ BYTE RexMask,
+    _In_ BYTE RexValue
+)
+{
+    BYTE rex;
+
+    if (Hs == NULL || Code == NULL)
+        return FALSE;
+
+    //
+    // 3-byte expected to carry REX prefix in the first byte.
+    //
+    if (Hs->len != 3)
+        return FALSE;
+
+    rex = Code[0];
+    if ((rex & 0xF0) != 0x40)
+        return FALSE;
+
+    if ((rex & RexMask) != RexValue)
+        return FALSE;
+
+    return TRUE;
+}
+
+/*
+* KDUHDEIsRspStoreRax
+*
+* Purpose:
+*
+* Validate mov [rsp+disp], rax instruction form.
+*
+*/
+BOOL KDUInstructionIsRspStoreRax(
+    _In_ hde64s* Hs,
+    _In_ PBYTE Code
+)
+{
+    BYTE modrm;
+
+    if (Hs == NULL || Code == NULL)
+        return FALSE;
+
+    if (Code[0] != 0x48)
+        return FALSE;
+
+    if (Hs->opcode != 0x89)
+        return FALSE;
+
+    if (!(Hs->flags & F_MODRM))
+        return FALSE;
+
+    modrm = Hs->modrm;
+
+    //
+    // mov [rsp+disp8], rax
+    // 48 89 44 24 xx
+    //
+    if (Hs->len == 5) {
+        if ((modrm == 0x44) && (Code[3] == 0x24))
+            return TRUE;
+    }
+
+    //
+    // mov [rsp+disp32], rax
+    // 48 89 84 24 xx xx xx xx
+    //
+    if (Hs->len == 8) {
+        if ((modrm == 0x84) && (Code[3] == 0x24))
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*
+* KDUHDEIsRegToRegMov
+*
+* Purpose:
+*
+* Validate register-to-register mov instruction with the
+* given ModRM and REX prefix constraints.
+*
+*/
+BOOL KDUInstructionIsRegToRegMov(
+    _In_ hde64s* Hs,
+    _In_ PBYTE Code,
+    _In_ BYTE ModRm,
+    _In_ BYTE RexMask,
+    _In_ BYTE RexValue
+)
+{
+    if (Hs == NULL || Code == NULL)
+        return FALSE;
+
+    if (Hs->opcode != 0x8B)
+        return FALSE;
+
+    if (!(Hs->flags & F_MODRM))
+        return FALSE;
+
+    if (Hs->modrm != ModRm)
+        return FALSE;
+
+    // 2-byte form has no REX prefix, 
+    // accept it only when caller does not require any specific REX bits
+    if (Hs->len == 2) {
+        return ((RexMask == 0) && (RexValue == 0));
+    }
+
+    if (Hs->len != 3)
+        return FALSE;
+
+    return KDUInstuctionHasRexPrefix(Hs, Code, RexMask, RexValue);
+}
+
+/*
 * KDUValidateCiInitializeCode
 *
 * Purpose:
@@ -64,12 +192,15 @@ ULONG KDUValidateCiInitializeCode(
     //
     // 1) mov r9, rbx (4C 8B CB)
     //
-    RtlSecureZeroMemory(&hs, sizeof(hs));
-    hde64_disasm(&Code[offset], &hs);
-    if ((hs.flags & F_ERROR) || (hs.len != 3))
+    if ((offset + 3) > MaxLength)
         return 0;
 
-    if (!(Code[offset] == 0x4C && Code[offset + 1] == 0x8B))
+    RtlSecureZeroMemory(&hs, sizeof(hs));
+    hde64_disasm(&Code[offset], &hs);
+    if (hs.flags & F_ERROR)
+        return 0;
+
+    if (!KDUInstructionIsRegToRegMov(&hs, &Code[offset], 0xCB, 0x0C, 0x0C))
         return 0;
 
     offset += hs.len;
@@ -77,16 +208,18 @@ ULONG KDUValidateCiInitializeCode(
         return 0;
 
     //
-    // 2) mov r8, rdi(4C 8B C7)  OR mov r8d, edi(44 8B C7)
+    // 2) mov r8, rdi (4C 8B C7)  OR mov r8d, edi (44 8B C7)
     //
+    if ((offset + 3) > MaxLength)
+        return 0;
+
     RtlSecureZeroMemory(&hs, sizeof(hs));
     hde64_disasm(&Code[offset], &hs);
-    if ((hs.flags & F_ERROR) || (hs.len != 3)) {
+    if (hs.flags & F_ERROR)
         return 0;
-    }
 
-    if (!((Code[offset] == 0x4C && Code[offset + 1] == 0x8B) ||
-        (Code[offset] == 0x44 && Code[offset + 1] == 0x8B)))
+    if (!(KDUInstructionIsRegToRegMov(&hs, &Code[offset], 0xC7, 0x0C, 0x0C) ||
+        KDUInstructionIsRegToRegMov(&hs, &Code[offset], 0xC7, 0x04, 0x04)))
     {
         return 0;
     }
@@ -99,37 +232,35 @@ ULONG KDUValidateCiInitializeCode(
     // 3) Either:
     //      mov rdx, rsi            (48 8B D6) len=3
     //    OR
-    //      mov [rsp+..], rax       (48 89 ?? ??) len=5
+    //      mov [rsp+..], rax       (48 89 ?? ??) len=5/8
     //      mov rdx, rsi            (48 8B D6) len=3
     //
+    if ((offset + 3) > MaxLength)
+        return 0;
+
     RtlSecureZeroMemory(&hs, sizeof(hs));
     hde64_disasm(&Code[offset], &hs);
     if (hs.flags & F_ERROR)
         return 0;
 
-    if (hs.len == 3) {
-
-        if (!(Code[offset] == 0x48 && Code[offset + 1] == 0x8B))
-            return 0;
-
+    if (KDUInstructionIsRegToRegMov(&hs, &Code[offset], 0xD6, 0x08, 0x08)) {
         offset += hs.len;
-
     }
-    else if (hs.len == 5)
+    else if (KDUInstructionIsRspStoreRax(&hs, &Code[offset]))
     {
-        if (!(Code[offset] == 0x48 && Code[offset + 1] == 0x89))
-            return 0;
-
         offset += hs.len;
         if (offset >= MaxLength)
             return 0;
 
-        RtlSecureZeroMemory(&hs, sizeof(hs));
-        hde64_disasm(&Code[offset], &hs);
-        if (hs.flags & F_ERROR || hs.len != 3)
+        if ((offset + 3) > MaxLength)
             return 0;
 
-        if (!(Code[offset] == 0x48 && Code[offset + 1] == 0x8B))
+        RtlSecureZeroMemory(&hs, sizeof(hs));
+        hde64_disasm(&Code[offset], &hs);
+        if (hs.flags & F_ERROR)
+            return 0;
+
+        if (!KDUInstructionIsRegToRegMov(&hs, &Code[offset], 0xD6, 0x08, 0x08))
             return 0;
 
         offset += hs.len;
@@ -144,12 +275,24 @@ ULONG KDUValidateCiInitializeCode(
     //
     // 4) mov ecx, ebp (8B CD) len=2
     //
-    RtlSecureZeroMemory(&hs, sizeof(hs));
-    hde64_disasm(&Code[offset], &hs);
-    if ((hs.flags & F_ERROR) || (hs.len != 2))
+    if ((offset + 2) > MaxLength)
         return 0;
 
-    if (!(Code[offset] == 0x8B && Code[offset + 1] == 0xCD))
+    RtlSecureZeroMemory(&hs, sizeof(hs));
+    hde64_disasm(&Code[offset], &hs);
+    if (hs.flags & F_ERROR)
+        return 0;
+
+    if (hs.len != 2)
+        return 0;
+
+    if (!(hs.flags & F_MODRM))
+        return 0;
+
+    if (hs.opcode != 0x8B)
+        return 0;
+
+    if (hs.modrm != 0xCD)
         return 0;
 
     offset += hs.len;
@@ -213,8 +356,10 @@ NTSTATUS KDUQueryCiOptions(
     _In_ ULONG NtBuildNumber
 )
 {
+    BOOL        found = FALSE;
+    BYTE        mod, rm;
     PBYTE       ptrCode = NULL;
-    ULONG       offset, k, expectedLength;
+    ULONG       offset, k;
     LONG        relativeValue = 0;
     ULONG_PTR   resolvedAddress = 0;
 
@@ -234,24 +379,19 @@ NTSTATUS KDUQueryCiOptions(
     //
     if (NtBuildNumber < NT_WIN10_REDSTONE3) {
 
-        expectedLength = 5;
-
         do {
 
             hde64_disasm(&ptrCode[offset], &hs);
             if (hs.flags & F_ERROR)
                 break;
 
-            if (hs.len == expectedLength) { //test if jmp
+            if (hs.len == 0)
+                break;
 
-                //
-                // jmp CipInitialize
-                //
-                if (ptrCode[offset] == 0xE9) {
-                    relativeValue = *(PLONG)(ptrCode + offset + 1);
-                    break;
-                }
-
+            if (hs.opcode == 0xE9 && hs.len == 5) {
+                relativeValue = *(PLONG)(ptrCode + offset + 1);
+                found = TRUE;
+                break;
             }
 
             offset += hs.len;
@@ -262,7 +402,7 @@ NTSTATUS KDUQueryCiOptions(
         //
         // Everything above Win10 RS3.
         //
-        expectedLength = 3;
+        found = FALSE;
 
         do {
 
@@ -270,7 +410,10 @@ NTSTATUS KDUQueryCiOptions(
             if (hs.flags & F_ERROR)
                 break;
 
-            if (hs.len == expectedLength) {
+            if (hs.len == 0)
+                break;
+
+            if (hs.len == 3) {
 
                 //
                 // Parameters for the CipInitialize.
@@ -278,7 +421,6 @@ NTSTATUS KDUQueryCiOptions(
                 k = KDUValidateCiInitializeCode(ptrCode, offset, 256);
                 if (k != 0) {
 
-                    expectedLength = 5;
                     hde64_disasm(&ptrCode[k], &hs);
                     if (hs.flags & F_ERROR)
                         break;
@@ -286,16 +428,13 @@ NTSTATUS KDUQueryCiOptions(
                     //
                     // call CipInitialize
                     //
-                    if (hs.len == expectedLength) {
-                        if (ptrCode[k] == 0xE8) {
-                            offset = k;
-                            relativeValue = *(PLONG)(ptrCode + k + 1);
-                            break;
-                        }
+                    if (hs.opcode == 0xE8 && hs.len == 5) {
+                        offset = k;
+                        relativeValue = *(PLONG)(ptrCode + k + 1);
+                        found = TRUE;
+                        break;
                     }
-
                 }
-
             }
 
             offset += hs.len;
@@ -304,13 +443,13 @@ NTSTATUS KDUQueryCiOptions(
 
     }
 
-    if (relativeValue == 0)
+    if (!found)
         return STATUS_UNSUCCESSFUL;
 
     ptrCode = ptrCode + offset + hs.len + relativeValue;
     relativeValue = 0;
     offset = 0;
-    expectedLength = 6;
+    found = FALSE;
 
     do {
 
@@ -318,20 +457,28 @@ NTSTATUS KDUQueryCiOptions(
         if (hs.flags & F_ERROR)
             break;
 
-        if (hs.len == expectedLength) { //test if mov
+        if (hs.len == 0)
+            break;
 
-            if (*(PUSHORT)(ptrCode + offset) == 0x0d89) {
-                relativeValue = *(PLONG)(ptrCode + offset + 2);
-                break;
+        if (hs.opcode == 0x89) {  // test if mov [rip+disp32], r32
+
+            if ((hs.flags & F_MODRM) && (hs.flags & F_DISP32)) {
+
+                mod = (hs.modrm >> 6) & 0x3;
+                rm = hs.modrm & 0x7;
+                if (mod == 0 && rm == 5) {
+                    relativeValue = hs.disp.disp32;
+                    found = TRUE;
+                    break;
+                }
             }
-
         }
 
         offset += hs.len;
 
     } while (offset < 256);
 
-    if (relativeValue == 0)
+    if (!found)
         return STATUS_UNSUCCESSFUL;
 
     ptrCode = ptrCode + offset + hs.len + relativeValue;

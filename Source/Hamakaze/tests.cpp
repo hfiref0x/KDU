@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.48
 *
-*  DATE:        02 May 2026
+*  DATE:        29 May 2026
 *
 *  KDU tests.
 *
@@ -18,123 +18,6 @@
 *******************************************************************************/
 
 #include "global.h"
-
-NTSTATUS DebugQueryCiOptionsFromMappedImage(
-    _In_ HMODULE ImageMappedBase,
-    _In_ ULONG_PTR ImageLoadedBase,
-    _Out_ ULONG_PTR* ResolvedAddress,
-    _In_ ULONG NtBuildNumber)
-{
-    PBYTE ptrCode;
-    ULONG offset, k, expectedLength;
-    LONG relativeValue;
-    ULONG_PTR resolvedAddress;
-    hde64s hs;
-
-    if (ResolvedAddress == NULL)
-        return STATUS_INVALID_PARAMETER;
-
-    *ResolvedAddress = 0;
-
-    ptrCode = (PBYTE)GetProcAddress(ImageMappedBase, "CiInitialize");
-    if (ptrCode == NULL)
-        return STATUS_PROCEDURE_NOT_FOUND;
-
-    RtlSecureZeroMemory(&hs, sizeof(hs));
-    offset = 0;
-    relativeValue = 0;
-    resolvedAddress = 0;
-
-    if (NtBuildNumber < NT_WIN10_REDSTONE3) {
-
-        expectedLength = 5;
-
-        do {
-
-            hde64_disasm(&ptrCode[offset], &hs);
-            if (hs.flags & F_ERROR)
-                break;
-
-            if (hs.len == expectedLength) {
-                if (ptrCode[offset] == 0xE9) {
-                    relativeValue = *(PLONG)(ptrCode + offset + 1);
-                    break;
-                }
-            }
-
-            offset += hs.len;
-
-        } while (offset < 256);
-    }
-    else {
-
-        expectedLength = 3;
-
-        do {
-
-            hde64_disasm(&ptrCode[offset], &hs);
-            if (hs.flags & F_ERROR)
-                break;
-
-            if (hs.len == expectedLength) {
-
-                k = KDUValidateCiInitializeCode(ptrCode, offset, 256);
-                if (k != 0) {
-
-                    expectedLength = 5;
-                    hde64_disasm(&ptrCode[k], &hs);
-                    if (hs.flags & F_ERROR)
-                        break;
-
-                    if (hs.len == expectedLength) {
-                        if (ptrCode[k] == 0xE8) {
-                            offset = k;
-                            relativeValue = *(PLONG)(ptrCode + k + 1);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            offset += hs.len;
-
-        } while (offset < 256);
-    }
-
-    if (relativeValue == 0)
-        return STATUS_UNSUCCESSFUL;
-
-    ptrCode = ptrCode + offset + hs.len + relativeValue;
-    relativeValue = 0;
-    offset = 0;
-    expectedLength = 6;
-
-    do {
-
-        hde64_disasm(&ptrCode[offset], &hs);
-        if (hs.flags & F_ERROR)
-            break;
-
-        if (hs.len == expectedLength) {
-            if (*(PUSHORT)(ptrCode + offset) == 0x0d89) {
-                relativeValue = *(PLONG)(ptrCode + offset + 2);
-                break;
-            }
-        }
-
-        offset += hs.len;
-
-    } while (offset < 256);
-
-    if (relativeValue == 0)
-        return STATUS_UNSUCCESSFUL;
-
-    ptrCode = ptrCode + offset + hs.len + relativeValue;
-    resolvedAddress = ImageLoadedBase + (ULONG_PTR)(ptrCode - (PBYTE)ImageMappedBase);
-
-    *ResolvedAddress = resolvedAddress;
-    return STATUS_SUCCESS;
-}
 
 ULONG_PTR DebugQueryCurrentCiOptionsAddress(
     _In_ ULONG NtBuildNumber,
@@ -184,14 +67,14 @@ ULONG_PTR DebugQueryCurrentCiOptionsAddress(
         (PVOID)imageLoadedBase,
         loadedImageSize);
 
-    ntStatus = DebugQueryCiOptionsFromMappedImage(
+    ntStatus = KDUQueryCiOptions(
         mappedImageBase,
         imageLoadedBase,
         &kernelAddress,
         NtBuildNumber);
 
     if (!NT_SUCCESS(ntStatus)) {
-        printf_s("[!] DebugQueryCiOptionsFromMappedImage failed, ntstatus=0x%08lX\r\n", ntStatus);
+        printf_s("[!] KDUQueryCiOptions failed, ntstatus=0x%08lX\r\n", ntStatus);
         FreeLibrary(mappedImageBase);
         return 0;
     }
