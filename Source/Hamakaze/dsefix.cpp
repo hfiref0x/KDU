@@ -126,7 +126,7 @@ BOOL KDUInstructionIsRspStoreRax(
 }
 
 /*
-* BOOL KDUInstructionIsRipRelativeStore32
+* KDUInstructionIsRipRelativeStore32
 *
 * Purpose:
 *
