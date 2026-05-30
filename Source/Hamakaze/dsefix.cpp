@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.48
 *
-*  DATE:        29 May 2026
+*  DATE:        30 May 2026
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -375,24 +375,26 @@ NTSTATUS KDUQueryCiEnabled(
 }
 
 /*
-* KDUQueryCiOptions
+* KDUQueryCiOptionsEx
 *
 * Purpose:
 *
-* Find g_CiOptions variable address.
+* Find CI!g_CiOptions variable address.
 * Depending on current Windows version it will look for target value differently.
 *
 * Params:
 *
 *   ImageMappedBase - CI.dll user mode mapped base
 *   ImageLoadedBase - CI.dll kernel mode loaded base
+*   CiInitialize    - CI.dll function pointer
 *   ResolvedAddress - output variable to hold result value
 *   NtBuildNumber   - current NT build number for search pattern switch
 *
 */
-NTSTATUS KDUQueryCiOptions(
+NTSTATUS KDUQueryCiOptionsEx(
     _In_ HMODULE ImageMappedBase,
     _In_ ULONG_PTR ImageLoadedBase,
+    _In_ PBYTE CiInitialize,
     _Out_ ULONG_PTR* ResolvedAddress,
     _In_ ULONG NtBuildNumber
 )
@@ -407,7 +409,7 @@ NTSTATUS KDUQueryCiOptions(
 
     *ResolvedAddress = 0ULL;
 
-    ptrCode = (PBYTE)GetProcAddress(ImageMappedBase, (PCHAR)"CiInitialize");
+    ptrCode = (PBYTE)CiInitialize;
     if (ptrCode == NULL)
         return STATUS_PROCEDURE_NOT_FOUND;
 
@@ -415,7 +417,7 @@ NTSTATUS KDUQueryCiOptions(
     offset = 0;
 
     //
-    // For Win7, Win8/8.1, Win10 until RS3
+    // For Win8/8.1, Win10 until RS3
     //
     if (NtBuildNumber < NT_WIN10_REDSTONE3) {
 
@@ -489,6 +491,9 @@ NTSTATUS KDUQueryCiOptions(
     if (!found)
         return STATUS_UNSUCCESSFUL;
 
+    //
+    // Lookup g_CiOptions store instruction.
+    //
     ptrCode = ptrCode + offset + hs.len + relativeValue;
     relativeValue = 0;
     offset = 0;
@@ -522,6 +527,44 @@ NTSTATUS KDUQueryCiOptions(
     *ResolvedAddress = resolvedAddress;
 
     return STATUS_SUCCESS;
+}
+
+
+/*
+* KDUQueryCiOptions
+*
+* Purpose:
+*
+* Find CI!g_CiOptions variable address.
+* Wrapper around KDUQueryCiOptionsEx.
+*
+* Params:
+*
+*   ImageMappedBase - CI.dll user mode mapped base
+*   ImageLoadedBase - CI.dll kernel mode loaded base
+*   ResolvedAddress - output variable to hold result value
+*   NtBuildNumber   - current NT build number for search pattern switch
+*
+*/
+NTSTATUS KDUQueryCiOptions(
+    _In_ HMODULE ImageMappedBase,
+    _In_ ULONG_PTR ImageLoadedBase,
+    _Out_ ULONG_PTR* ResolvedAddress,
+    _In_ ULONG NtBuildNumber
+)
+{
+    PBYTE ptrCode;
+
+    ptrCode = (PBYTE)GetProcAddress(ImageMappedBase, (PCHAR)"CiInitialize");
+    if (ptrCode == NULL)
+        return STATUS_PROCEDURE_NOT_FOUND;
+
+    return KDUQueryCiOptionsEx(
+        ImageMappedBase,
+        ImageLoadedBase,
+        ptrCode,
+        ResolvedAddress,
+        NtBuildNumber);
 }
 
 /*

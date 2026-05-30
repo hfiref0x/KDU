@@ -25,9 +25,20 @@ ULONG_PTR KDUQueryCodeIntegrityVariableAddress(
 ULONG_PTR KDUQueryCodeIntegrityVariableSymbol(
     _In_ ULONG NtBuildNumber);
 
+BOOL KDUInstructionIsRipRelativeStore32(
+    _In_ hde64s* Hs,
+    _In_ PBYTE Code);
+
 NTSTATUS KDUQueryCiOptions(
     _In_ HMODULE ImageMappedBase,
     _In_ ULONG_PTR ImageLoadedBase,
+    _Out_ ULONG_PTR* ResolvedAddress,
+    _In_ ULONG NtBuildNumber);
+
+NTSTATUS KDUQueryCiOptionsEx(
+    _In_ HMODULE ImageMappedBase,
+    _In_ ULONG_PTR ImageLoadedBase,
+    _In_ PBYTE CiInitialize,
     _Out_ ULONG_PTR* ResolvedAddress,
     _In_ ULONG NtBuildNumber);
 
