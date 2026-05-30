@@ -37,6 +37,9 @@
     <Filter Include="thirdparty\whirlpool">
       <UniqueIdentifier>{a336b00d-e024-4c89-9e15-64de5a7c6257}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tests">
+      <UniqueIdentifier>{73ce73bb-a51e-4882-9f3b-b3caa4f0bb37}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -74,9 +77,6 @@
     </ClCompile>
     <ClCompile Include="idrv\mapmem.cpp">
       <Filter>Source Files\idrv</Filter>
-    </ClCompile>
-    <ClCompile Include="tests.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="idrv\atszio.cpp">
       <Filter>Source Files\idrv</Filter>
@@ -242,6 +242,12 @@
     </ClCompile>
     <ClCompile Include="provdb.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\test_dsefix.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\tests.cpp">
+      <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -457,6 +463,12 @@
     </ClInclude>
     <ClInclude Include="provdb.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\tests.h">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\test_dsefix.h">
+      <Filter>tests</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

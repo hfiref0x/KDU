@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.47
+*  VERSION:     1.48
 *
-*  DATE:        25 Mar 2026
+*  DATE:        30 May 2026
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -39,6 +39,175 @@ extern "C" {
 #endif
 
 /*
+* KDUInstuctionHasRexPrefix
+*
+* Purpose:
+*
+* Check instruction for REX prefix and compare it against
+* the given mask/value pair.
+*
+*/
+BOOL KDUInstuctionHasRexPrefix(
+    _In_ hde64s* Hs,
+    _In_ PBYTE Code,
+    _In_ BYTE RexMask,
+    _In_ BYTE RexValue
+)
+{
+    BYTE rex;
+
+    if (Hs == NULL || Code == NULL)
+        return FALSE;
+
+    //
+    // 3-byte expected to carry REX prefix in the first byte.
+    //
+    if (Hs->len != 3)
+        return FALSE;
+
+    rex = Code[0];
+    if ((rex & 0xF0) != 0x40)
+        return FALSE;
+
+    if ((rex & RexMask) != RexValue)
+        return FALSE;
+
+    return TRUE;
+}
+
+/*
+* KDUHDEIsRspStoreRax
+*
+* Purpose:
+*
+* Validate mov [rsp+disp], rax instruction form.
+*
+*/
+BOOL KDUInstructionIsRspStoreRax(
+    _In_ hde64s* Hs,
+    _In_ PBYTE Code
+)
+{
+    BYTE modrm;
+
+    if (Hs == NULL || Code == NULL)
+        return FALSE;
+
+    if (Code[0] != 0x48)
+        return FALSE;
+
+    if (Hs->opcode != 0x89)
+        return FALSE;
+
+    if (!(Hs->flags & F_MODRM))
+        return FALSE;
+
+    modrm = Hs->modrm;
+
+    //
+    // mov [rsp+disp8], rax
+    // 48 89 44 24 xx
+    //
+    if (Hs->len == 5) {
+        if ((modrm == 0x44) && (Code[3] == 0x24))
+            return TRUE;
+    }
+
+    //
+    // mov [rsp+disp32], rax
+    // 48 89 84 24 xx xx xx xx
+    //
+    if (Hs->len == 8) {
+        if ((modrm == 0x84) && (Code[3] == 0x24))
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*
+* BOOL KDUInstructionIsRipRelativeStore32
+*
+* Purpose:
+*
+* Validate mov [rip+disp32], r32 instruction form.
+*
+*/
+BOOL KDUInstructionIsRipRelativeStore32(
+    _In_ hde64s* Hs,
+    _In_ PBYTE Code
+)
+{
+    BYTE mod, rm;
+
+    if (Hs == NULL || Code == NULL)
+        return FALSE;
+
+    if (Hs->opcode != 0x89)
+        return FALSE;
+
+    if (!(Hs->flags & F_MODRM))
+        return FALSE;
+
+    if (!(Hs->flags & F_DISP32))
+        return FALSE;
+
+    //
+    // Skip 64-bit store form, e.g. mov [rip+disp32], rax.
+    //
+    if ((Hs->len > 1) && (Code[0] == 0x48))
+        return FALSE;
+
+    mod = (Hs->modrm >> 6) & 0x3;
+    rm = Hs->modrm & 0x7;
+    if (mod != 0 || rm != 5)
+        return FALSE;
+
+    return TRUE;
+}
+
+/*
+* KDUHDEIsRegToRegMov
+*
+* Purpose:
+*
+* Validate register-to-register mov instruction with the
+* given ModRM and REX prefix constraints.
+*
+*/
+BOOL KDUInstructionIsRegToRegMov(
+    _In_ hde64s* Hs,
+    _In_ PBYTE Code,
+    _In_ BYTE ModRm,
+    _In_ BYTE RexMask,
+    _In_ BYTE RexValue
+)
+{
+    if (Hs == NULL || Code == NULL)
+        return FALSE;
+
+    if (Hs->opcode != 0x8B)
+        return FALSE;
+
+    if (!(Hs->flags & F_MODRM))
+        return FALSE;
+
+    if (Hs->modrm != ModRm)
+        return FALSE;
+
+    // 2-byte form has no REX prefix, 
+    // accept it only when caller does not require any specific REX bits
+    if (Hs->len == 2) {
+        return ((RexMask == 0) && (RexValue == 0));
+    }
+
+    if (Hs->len != 3)
+        return FALSE;
+
+    return KDUInstuctionHasRexPrefix(Hs, Code, RexMask, RexValue);
+}
+
+/*
 * KDUValidateCiInitializeCode
 *
 * Purpose:
@@ -64,12 +233,15 @@ ULONG KDUValidateCiInitializeCode(
     //
     // 1) mov r9, rbx (4C 8B CB)
     //
-    RtlSecureZeroMemory(&hs, sizeof(hs));
-    hde64_disasm(&Code[offset], &hs);
-    if ((hs.flags & F_ERROR) || (hs.len != 3))
+    if ((offset + 3) > MaxLength)
         return 0;
 
-    if (!(Code[offset] == 0x4C && Code[offset + 1] == 0x8B))
+    RtlSecureZeroMemory(&hs, sizeof(hs));
+    hde64_disasm(&Code[offset], &hs);
+    if (hs.flags & F_ERROR)
+        return 0;
+
+    if (!KDUInstructionIsRegToRegMov(&hs, &Code[offset], 0xCB, 0x0C, 0x0C))
         return 0;
 
     offset += hs.len;
@@ -77,16 +249,18 @@ ULONG KDUValidateCiInitializeCode(
         return 0;
 
     //
-    // 2) mov r8, rdi(4C 8B C7)  OR mov r8d, edi(44 8B C7)
+    // 2) mov r8, rdi (4C 8B C7)  OR mov r8d, edi (44 8B C7)
     //
+    if ((offset + 3) > MaxLength)
+        return 0;
+
     RtlSecureZeroMemory(&hs, sizeof(hs));
     hde64_disasm(&Code[offset], &hs);
-    if ((hs.flags & F_ERROR) || (hs.len != 3)) {
+    if (hs.flags & F_ERROR)
         return 0;
-    }
 
-    if (!((Code[offset] == 0x4C && Code[offset + 1] == 0x8B) ||
-        (Code[offset] == 0x44 && Code[offset + 1] == 0x8B)))
+    if (!(KDUInstructionIsRegToRegMov(&hs, &Code[offset], 0xC7, 0x0C, 0x0C) ||
+        KDUInstructionIsRegToRegMov(&hs, &Code[offset], 0xC7, 0x04, 0x04)))
     {
         return 0;
     }
@@ -99,37 +273,35 @@ ULONG KDUValidateCiInitializeCode(
     // 3) Either:
     //      mov rdx, rsi            (48 8B D6) len=3
     //    OR
-    //      mov [rsp+..], rax       (48 89 ?? ??) len=5
+    //      mov [rsp+..], rax       (48 89 ?? ??) len=5/8
     //      mov rdx, rsi            (48 8B D6) len=3
     //
+    if ((offset + 3) > MaxLength)
+        return 0;
+
     RtlSecureZeroMemory(&hs, sizeof(hs));
     hde64_disasm(&Code[offset], &hs);
     if (hs.flags & F_ERROR)
         return 0;
 
-    if (hs.len == 3) {
-
-        if (!(Code[offset] == 0x48 && Code[offset + 1] == 0x8B))
-            return 0;
-
+    if (KDUInstructionIsRegToRegMov(&hs, &Code[offset], 0xD6, 0x08, 0x08)) {
         offset += hs.len;
-
     }
-    else if (hs.len == 5)
+    else if (KDUInstructionIsRspStoreRax(&hs, &Code[offset]))
     {
-        if (!(Code[offset] == 0x48 && Code[offset + 1] == 0x89))
-            return 0;
-
         offset += hs.len;
         if (offset >= MaxLength)
             return 0;
 
-        RtlSecureZeroMemory(&hs, sizeof(hs));
-        hde64_disasm(&Code[offset], &hs);
-        if (hs.flags & F_ERROR || hs.len != 3)
+        if ((offset + 3) > MaxLength)
             return 0;
 
-        if (!(Code[offset] == 0x48 && Code[offset + 1] == 0x8B))
+        RtlSecureZeroMemory(&hs, sizeof(hs));
+        hde64_disasm(&Code[offset], &hs);
+        if (hs.flags & F_ERROR)
+            return 0;
+
+        if (!KDUInstructionIsRegToRegMov(&hs, &Code[offset], 0xD6, 0x08, 0x08))
             return 0;
 
         offset += hs.len;
@@ -144,12 +316,24 @@ ULONG KDUValidateCiInitializeCode(
     //
     // 4) mov ecx, ebp (8B CD) len=2
     //
-    RtlSecureZeroMemory(&hs, sizeof(hs));
-    hde64_disasm(&Code[offset], &hs);
-    if ((hs.flags & F_ERROR) || (hs.len != 2))
+    if ((offset + 2) > MaxLength)
         return 0;
 
-    if (!(Code[offset] == 0x8B && Code[offset + 1] == 0xCD))
+    RtlSecureZeroMemory(&hs, sizeof(hs));
+    hde64_disasm(&Code[offset], &hs);
+    if (hs.flags & F_ERROR)
+        return 0;
+
+    if (hs.len != 2)
+        return 0;
+
+    if (!(hs.flags & F_MODRM))
+        return 0;
+
+    if (hs.opcode != 0x8B)
+        return 0;
+
+    if (hs.modrm != 0xCD)
         return 0;
 
     offset += hs.len;
@@ -191,12 +375,168 @@ NTSTATUS KDUQueryCiEnabled(
 }
 
 /*
+* KDUQueryCiOptionsEx
+*
+* Purpose:
+*
+* Find CI!g_CiOptions variable address.
+* Depending on current Windows version it will look for target value differently.
+*
+* Params:
+*
+*   ImageMappedBase - CI.dll user mode mapped base
+*   ImageLoadedBase - CI.dll kernel mode loaded base
+*   CiInitialize    - CI.dll function pointer
+*   ResolvedAddress - output variable to hold result value
+*   NtBuildNumber   - current NT build number for search pattern switch
+*
+*/
+NTSTATUS KDUQueryCiOptionsEx(
+    _In_ HMODULE ImageMappedBase,
+    _In_ ULONG_PTR ImageLoadedBase,
+    _In_ PBYTE CiInitialize,
+    _Out_ ULONG_PTR* ResolvedAddress,
+    _In_ ULONG NtBuildNumber
+)
+{
+    BOOL        found = FALSE;
+    PBYTE       ptrCode = NULL;
+    ULONG       offset, k;
+    LONG        relativeValue = 0;
+    ULONG_PTR   resolvedAddress = 0;
+
+    hde64s hs;
+
+    *ResolvedAddress = 0ULL;
+
+    ptrCode = (PBYTE)CiInitialize;
+    if (ptrCode == NULL)
+        return STATUS_PROCEDURE_NOT_FOUND;
+
+    RtlSecureZeroMemory(&hs, sizeof(hs));
+    offset = 0;
+
+    //
+    // For Win8/8.1, Win10 until RS3
+    //
+    if (NtBuildNumber < NT_WIN10_REDSTONE3) {
+
+        do {
+
+            hde64_disasm(&ptrCode[offset], &hs);
+            if (hs.flags & F_ERROR)
+                break;
+
+            if (hs.len == 0)
+                break;
+
+            if (hs.opcode == 0xE9 && hs.len == 5) {
+                relativeValue = *(PLONG)(ptrCode + offset + 1);
+                found = TRUE;
+                break;
+            }
+
+            offset += hs.len;
+
+        } while (offset < 256);
+    }
+    else {
+        //
+        // Everything above Win10 RS3.
+        //
+        found = FALSE;
+
+        do {
+
+            hde64_disasm(&ptrCode[offset], &hs);
+            if (hs.flags & F_ERROR)
+                break;
+
+            if (hs.len == 0)
+                break;
+
+            if (hs.len == 3) {
+
+                //
+                // Parameters for the CipInitialize.
+                //
+                k = KDUValidateCiInitializeCode(ptrCode, offset, 256);
+                if (k != 0) {
+
+                    hde64_disasm(&ptrCode[k], &hs);
+                    if (hs.flags & F_ERROR)
+                        break;
+
+                    if (hs.len == 0)
+                        break;
+
+                    //
+                    // call CipInitialize
+                    //
+                    if (hs.opcode == 0xE8 && hs.len == 5) {
+                        offset = k;
+                        relativeValue = *(PLONG)(ptrCode + k + 1);
+                        found = TRUE;
+                        break;
+                    }
+                }
+            }
+
+            offset += hs.len;
+
+        } while (offset < 256);
+
+    }
+
+    if (!found)
+        return STATUS_UNSUCCESSFUL;
+
+    //
+    // Lookup g_CiOptions store instruction.
+    //
+    ptrCode = ptrCode + offset + hs.len + relativeValue;
+    relativeValue = 0;
+    offset = 0;
+    found = FALSE;
+
+    do {
+
+        hde64_disasm(&ptrCode[offset], &hs);
+        if (hs.flags & F_ERROR)
+            break;
+
+        if (hs.len == 0)
+            break;
+
+        if (KDUInstructionIsRipRelativeStore32(&hs, &ptrCode[offset])) {
+            relativeValue = hs.disp.disp32;
+            found = TRUE;
+            break;
+        }
+
+        offset += hs.len;
+
+    } while (offset < 256);
+
+    if (!found)
+        return STATUS_UNSUCCESSFUL;
+
+    ptrCode = ptrCode + offset + hs.len + relativeValue;
+    resolvedAddress = ImageLoadedBase + ptrCode - (PBYTE)ImageMappedBase;
+
+    *ResolvedAddress = resolvedAddress;
+
+    return STATUS_SUCCESS;
+}
+
+
+/*
 * KDUQueryCiOptions
 *
 * Purpose:
 *
-* Find g_CiOptions variable address.
-* Depending on current Windows version it will look for target value differently.
+* Find CI!g_CiOptions variable address.
+* Wrapper around KDUQueryCiOptionsEx.
 *
 * Params:
 *
@@ -213,133 +553,18 @@ NTSTATUS KDUQueryCiOptions(
     _In_ ULONG NtBuildNumber
 )
 {
-    PBYTE       ptrCode = NULL;
-    ULONG       offset, k, expectedLength;
-    LONG        relativeValue = 0;
-    ULONG_PTR   resolvedAddress = 0;
-
-    hde64s hs;
-
-    *ResolvedAddress = 0ULL;
+    PBYTE ptrCode;
 
     ptrCode = (PBYTE)GetProcAddress(ImageMappedBase, (PCHAR)"CiInitialize");
     if (ptrCode == NULL)
         return STATUS_PROCEDURE_NOT_FOUND;
 
-    RtlSecureZeroMemory(&hs, sizeof(hs));
-    offset = 0;
-
-    //
-    // For Win7, Win8/8.1, Win10 until RS3
-    //
-    if (NtBuildNumber < NT_WIN10_REDSTONE3) {
-
-        expectedLength = 5;
-
-        do {
-
-            hde64_disasm(&ptrCode[offset], &hs);
-            if (hs.flags & F_ERROR)
-                break;
-
-            if (hs.len == expectedLength) { //test if jmp
-
-                //
-                // jmp CipInitialize
-                //
-                if (ptrCode[offset] == 0xE9) {
-                    relativeValue = *(PLONG)(ptrCode + offset + 1);
-                    break;
-                }
-
-            }
-
-            offset += hs.len;
-
-        } while (offset < 256);
-    }
-    else {
-        //
-        // Everything above Win10 RS3.
-        //
-        expectedLength = 3;
-
-        do {
-
-            hde64_disasm(&ptrCode[offset], &hs);
-            if (hs.flags & F_ERROR)
-                break;
-
-            if (hs.len == expectedLength) {
-
-                //
-                // Parameters for the CipInitialize.
-                //
-                k = KDUValidateCiInitializeCode(ptrCode, offset, 256);
-                if (k != 0) {
-
-                    expectedLength = 5;
-                    hde64_disasm(&ptrCode[k], &hs);
-                    if (hs.flags & F_ERROR)
-                        break;
-
-                    //
-                    // call CipInitialize
-                    //
-                    if (hs.len == expectedLength) {
-                        if (ptrCode[k] == 0xE8) {
-                            offset = k;
-                            relativeValue = *(PLONG)(ptrCode + k + 1);
-                            break;
-                        }
-                    }
-
-                }
-
-            }
-
-            offset += hs.len;
-
-        } while (offset < 256);
-
-    }
-
-    if (relativeValue == 0)
-        return STATUS_UNSUCCESSFUL;
-
-    ptrCode = ptrCode + offset + hs.len + relativeValue;
-    relativeValue = 0;
-    offset = 0;
-    expectedLength = 6;
-
-    do {
-
-        hde64_disasm(&ptrCode[offset], &hs);
-        if (hs.flags & F_ERROR)
-            break;
-
-        if (hs.len == expectedLength) { //test if mov
-
-            if (*(PUSHORT)(ptrCode + offset) == 0x0d89) {
-                relativeValue = *(PLONG)(ptrCode + offset + 2);
-                break;
-            }
-
-        }
-
-        offset += hs.len;
-
-    } while (offset < 256);
-
-    if (relativeValue == 0)
-        return STATUS_UNSUCCESSFUL;
-
-    ptrCode = ptrCode + offset + hs.len + relativeValue;
-    resolvedAddress = ImageLoadedBase + ptrCode - (PBYTE)ImageMappedBase;
-
-    *ResolvedAddress = resolvedAddress;
-
-    return STATUS_SUCCESS;
+    return KDUQueryCiOptionsEx(
+        ImageMappedBase,
+        ImageLoadedBase,
+        ptrCode,
+        ResolvedAddress,
+        NtBuildNumber);
 }
 
 /*

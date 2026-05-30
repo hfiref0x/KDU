@@ -1,13 +1,13 @@
 /************************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2015 - 2025
+*  (C) COPYRIGHT AUTHORS, 2015 - 2026
 *  Translated from Microsoft sources/debugger or mentioned elsewhere.
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.240
+*  VERSION:     1.242
 *
-*  DATE:        02 Dec 2025
+*  DATE:        21 May 2026
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -254,7 +254,10 @@ char _RTL_CONSTANT_STRING_type_check(const void *s);
 //
 // Valid values for the OBJECT_ATTRIBUTES.Attributes field
 //
+#define OBJ_PROTECT_CLOSE                   0x00000001L
 #define OBJ_INHERIT                         0x00000002L
+#define OBJ_AUDIT_OBJECT_CLOSE              0x00000004L
+#define OBJ_NO_RIGHTS_UPGRADE               0x00000008L
 #define OBJ_PERMANENT                       0x00000010L
 #define OBJ_EXCLUSIVE                       0x00000020L
 #define OBJ_CASE_INSENSITIVE                0x00000040L
@@ -265,9 +268,6 @@ char _RTL_CONSTANT_STRING_type_check(const void *s);
 #define OBJ_IGNORE_IMPERSONATED_DEVICEMAP   0x00000800L
 #define OBJ_DONT_REPARSE                    0x00001000L
 #define OBJ_VALID_ATTRIBUTES                0x00001FF2L
-
-#define OBJ_PROTECT_CLOSE                   0x00000001L
-#define OBJ_AUDIT_OBJECT_CLOSE              0x00000004L
 
 //
 // Callback Object Rights
@@ -408,7 +408,7 @@ char _RTL_CONSTANT_STRING_type_check(const void *s);
 #define SYMBOLIC_LINK_QUERY 0x0001
 #define SYMBOLIC_LINK_SET   0x0002
 #define SYMBOLIC_LINK_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYMBOLIC_LINK_QUERY)
-#define SYMBOLIC_LINK_ALL_ACCESS_EX (STANDARD_RIGHTS_REQUIRED | 0xFFFF)
+#define SYMBOLIC_LINK_ALL_ACCESS_EX (STANDARD_RIGHTS_REQUIRED | SPECIFIC_RIGHTS_ALL)
 
 //
 // Thread Object Access Rights
@@ -1934,6 +1934,9 @@ typedef enum _SYSTEM_INFORMATION_CLASS {
     SystemRefTraceInformationEx = 251,
     SystemBasicProcessInformation = 252,
     SystemHandleCountInformation = 253,
+    SystemRuntimeAttestationReport = 254,
+    SystemPoolTagInformation2 = 255,
+    SystemCodeIntegrityEndpointSecurityInformation = 256,
     MaxSystemInfoClass
 } SYSTEM_INFORMATION_CLASS, * PSYSTEM_INFORMATION_CLASS;
 
@@ -2068,6 +2071,11 @@ typedef struct _SYSTEM_CODEINTEGRITY_INFORMATION {
     ULONG  Length;
     ULONG  CodeIntegrityOptions;
 } SYSTEM_CODEINTEGRITY_INFORMATION, *PSYSTEM_CODEINTEGRITY_INFORMATION;
+
+typedef struct _SYSTEM_CODE_INTEGRITY_POLICIES_FULL_INFORMATION {
+    ULONG PolicyCount;
+    UCHAR PolicyBlobs[ANYSIZE_ARRAY];
+} SYSTEM_CODE_INTEGRITY_POLICIES_FULL_INFORMATION, * PSYSTEM_CODE_INTEGRITY_POLICIES_FULL_INFORMATION;
 
 #define CODEINTEGRITY_OPTION_ENABLED                      0x01
 #define CODEINTEGRITY_OPTION_TESTSIGN                     0x02
@@ -7806,6 +7814,9 @@ typedef struct _PF_PHYSICAL_MEMORY_RANGE {
     ULONG_PTR PageCount;
 } PF_PHYSICAL_MEMORY_RANGE, * PPF_PHYSICAL_MEMORY_RANGE;
 
+#pragma warning(push)
+#pragma warning(disable: 4324)
+
 typedef struct __declspec(align(8)) _PF_MEMORY_RANGE_INFO_V1 {
     ULONG Version;
     ULONG RangeCount;
@@ -7819,6 +7830,8 @@ typedef struct __declspec(align(8))  _PF_MEMORY_RANGE_INFO_V2 {
     ULONG RangeCount;
     PF_PHYSICAL_MEMORY_RANGE Ranges[ANYSIZE_ARRAY];
 } PF_MEMORY_RANGE_INFO_V2, * PPF_MEMORY_RANGE_INFO_V2;
+
+#pragma warning(pop)
 
 typedef struct _PF_MEMORY_RANGE_V2 {
     ULONG_PTR BasePfn;
@@ -11997,6 +12010,14 @@ typedef struct _OBJECT_HANDLE_FLAG_INFORMATION {
     BOOLEAN Inherit;
     BOOLEAN ProtectFromClose;
 } OBJECT_HANDLE_FLAG_INFORMATION, *POBJECT_HANDLE_FLAG_INFORMATION;
+
+typedef struct _OBJECT_SET_REF_TRACE_INFORMATION {
+    BOOLEAN Enable;
+    BOOLEAN EtwMode;
+    UCHAR Reserved[6];
+    UNICODE_STRING ProcessName;
+    UNICODE_STRING PoolTags;
+} OBJECT_SET_REF_TRACE_INFORMATION, * POBJECT_SET_REF_TRACE_INFORMATION;
 
 NTSYSAPI
 NTSTATUS

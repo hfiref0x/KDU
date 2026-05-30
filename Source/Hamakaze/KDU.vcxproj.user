@@ -3,11 +3,11 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>-test</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArgumentsHistory>-dsefix 0|-dse 0|-dse 6|-list|-test|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerCommandArgumentsHistory>-dse 0|-dse 6|-list|-prv 29 -dse 0|-test|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>-map c:\Install\dummy.sys</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-dse 6</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArgumentsHistory>-prv 2 -map c:\Install\dummy.sys|-prv 58 -map c:\Install\dummy.sys|-prv 59 -map c:\Install\dummy.sys|-prv 60 -map c:\Install\dummy.sys|-map c:\Install\dummy.sys|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerCommandArgumentsHistory>-prv 59 -map c:\Install\dummy.sys|-prv 60 -map c:\Install\dummy.sys|-map c:\Install\dummy.sys|-dse 0|-dse 6|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
 </Project>

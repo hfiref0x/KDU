@@ -180,7 +180,8 @@
     <ClCompile Include="sup.cpp" />
     <ClCompile Include="diag.cpp" />
     <ClCompile Include="sym.cpp" />
-    <ClCompile Include="tests.cpp" />
+    <ClCompile Include="tests\tests.cpp" />
+    <ClCompile Include="tests\test_dsefix.cpp" />
     <ClCompile Include="victim.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -246,6 +247,8 @@
     <ClInclude Include="diag.h" />
     <ClInclude Include="sig.h" />
     <ClInclude Include="sym.h" />
+    <ClInclude Include="tests\tests.h" />
+    <ClInclude Include="tests\test_dsefix.h" />
     <ClInclude Include="wdksup.h" />
     <ClInclude Include="kduplist.h" />
     <ClInclude Include="kduprov.h" />
