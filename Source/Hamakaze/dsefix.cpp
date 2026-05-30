@@ -76,7 +76,7 @@ BOOL KDUInstuctionHasRexPrefix(
 }
 
 /*
-* KDUHDEIsRspStoreRax
+* KDUInstructionIsRspStoreRax
 *
 * Purpose:
 *
@@ -167,7 +167,7 @@ BOOL KDUInstructionIsRipRelativeStore32(
 }
 
 /*
-* KDUHDEIsRegToRegMov
+* KDUInstructionIsRegToRegMov
 *
 * Purpose:
 *
