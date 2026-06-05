@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        26 Mar 2026
+*  DATE:        04 Jun 2026
 *
 *  Tanikaze helper dll (part of KDU project).
 *

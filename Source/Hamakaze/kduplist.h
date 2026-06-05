@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        25 Mar 2026
+*  DATE:        04 Jun 2026
 *
 *  Providers global list.
 *
@@ -1652,6 +1652,7 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWritePhysicalMemory)IpcWritePhysicalMemory,
 
         (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
+
         (provOpenProcess)NULL
     },
 
@@ -1676,6 +1677,33 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWritePhysicalMemory)WRZeroWritePhysicalMemory,
 
         (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
+
+        (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)AffReadKernelVirtualMemory,
+        (provWriteKernelVM)AffWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)AffVirtualToPhysical,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)AffReadPhysicalMemory,
+        (provWritePhysicalMemory)AffWritePhysicalMemory,
+
+        (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
+
         (provOpenProcess)NULL
     }
 

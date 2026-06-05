@@ -187,6 +187,7 @@
     <None Include="data\KMUEXE.bin" />
     <None Include="data\KMUSIG.bin" />
     <None Include="data\NeacSafe64Cat.bin" />
+    <None Include="drv\affdriver.bin" />
     <None Include="drv\ALSysIO64.bin" />
     <None Include="drv\AMDRyzenMasterDriver.bin" />
     <None Include="drv\amsdk.bin" />

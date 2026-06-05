@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        02 May 2026
+*  DATE:        04 Jun 2026
 *
 *  Global consts.
 *
@@ -21,8 +21,8 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       4
-#define KDU_VERSION_REVISION    8
-#define KDU_VERSION_BUILD       2605
+#define KDU_VERSION_REVISION    9
+#define KDU_VERSION_BUILD       2606
 #define KDU_COPYRIGHT_YEAR      2026
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
@@ -30,7 +30,7 @@
 
 #define IPC_GET_HANDLE          0x1337
 
-#define KDU_SYNC_MUTANT         0x2605
+#define KDU_SYNC_MUTANT         0x2606
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
@@ -164,6 +164,7 @@
 #define IDR_TELEDYNE                    160
 #define IDR_IPCTYPE                     161
 #define IDR_SHANGKE_WND                 162
+#define IDR_AMD_AFFDRIVER               163
 
 //
 // Vulnerable drivers providers id
@@ -229,6 +230,7 @@
 #define KDU_PROVIDER_TELEDYNE           58
 #define KDU_PROVIDER_IPCTYPE            59
 #define KDU_PROVIDER_SHANGKE_WHD        60
+#define KDU_PROVIDER_AMD_AFFDRIVER      61
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

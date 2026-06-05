@@ -4,9 +4,9 @@
 *
 *  TITLE:       TANIKAZE.H
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        26 Mar 2026
+*  DATE:        04 Jun 2026
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -938,6 +938,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"WinHwDriver",
         (LPWSTR)L"WinHwDriver",
         (LPWSTR)L"Guangzhou Shangke Information Technology"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_AMD_AFFDRIVER,
+        KDU_PROVIDER_AMD_AFFDRIVER,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SUPERFETCH,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"AMD BIOS Flash Utility driver",
+        (LPWSTR)L"affdriver",
+        (LPWSTR)L"BiosToolCommonDriver",
+        (LPWSTR)L"Advanced Micro Devices Inc."
     }
 
 };
