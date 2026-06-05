@@ -177,6 +177,7 @@ Note: Provider with Id 0 is assumed as default if no -prv command is specified.
 | 58     | Teledyne       | CorMem      | Sapera Memory Manager | 9.0.0 and below             |                      |
 | 59     | Digital Elect. Corp | Ipctype     | IPCType Device Driver | 1.0.2.0 and below             |                      |
 | 60     | Shangke        | WinHwDrv    | Undefined | Undefined             |                      |
+| 61     | AMD        | affdriver    | Undefined | 1.1.3.0 and below            |     
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
@@ -247,6 +248,7 @@ MSFT blacklist types:
 |58|MAPMEM||**File(SHA1):** BCEAE6DC87C9C6C33555A4A9008BE14C66FD1E20<br>**Authenticode(SHA1):** 505B7C56888009AB3B9531CAEEE6FA9A9B88916A<br>**Page(SHA1):** 893BDCE0398C15B4549D060DC552799CEAF39802<br>**Page(SHA256):** 1568C603C299383A7F36B8EDA6BC656748737778787B9987F27BB6AD3A718A8F|
 |59|Original||**File(SHA1):** 96611A3D59EA7DF9453E194FB7C19D0F944BCEFC<br>**Authenticode(SHA1):** 5FE6C6CDE2DC32666EFC70A4008D9F987DDF4A63<br>**Page(SHA1):** BF1AE9D0981F4E5868CE8037C8F17FAF8A68F76A<br>**Page(SHA256):** 8171DCA918DE3A9E0AF0F9FE90AFCAA91E245A425BA38D8A11754ACD3CF3FEE2|
 |60|WINRING0||**File(SHA1):** B980DEC0BDF7B0925240D002626E56876AFEEC72<br>**Authenticode(SHA1):** 96C3B210C05511481B8490535828D4EF2EE73A09<br>**Page(SHA1):** A759E2A83CA0D54779DC3FB484549CBEFE6F8B59<br>**Page(SHA256):** FE3123D84B41F372D3A05CED25AE1CD5FF3E09A701610BB4DEC197B5EBB43621|
+|61|Original||**File(SHA1):** D4C584732FA9ABD7D7EB83E169686764C500F2E0<br>**Authenticode(SHA1):** 129F2F059513AE62D0F63E3644CBFA7B671B938B<br>**Page(SHA1):** DD5BCF7C1F992314B0CC95035408D87DAEE385CB<br>**Page(SHA256):** 7E1AFF6BED0E2478655C3E0B69CD614743715E986C52A079FD8B3B8F9979D1A2|
 
 ###### *At commit time, data may be inaccurate.
 
