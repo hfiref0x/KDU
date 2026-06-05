@@ -1,4 +1,11 @@
-v 1.4.7 (Mar 27, 2026)
+v1.4.8 (May 04, 2026)
+Added Teledyne CorMem driver as provider 58
+Added Digital Electronics Corp. Ipctype driver as provider 59
+Added Guangzhou Shangke Information Technology Co., Ltd. WinHwDrv driver as provider 60
+Improve diagnostics and fix some bugs
+Readme update
+
+v1.4.7 (Mar 27, 2026)
 Added GitHub Actions workflow for building fully functional KDU snapshot
 Added Lenovo LnvMSRIO (CVE-2025-8061) as provider 57
 Centralized Superfetch-based virtual->physical translation and per-page kernel read/write logic for providers 55, 56 and 57
