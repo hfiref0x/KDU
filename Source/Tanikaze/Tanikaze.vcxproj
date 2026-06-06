@@ -232,6 +232,7 @@
     <None Include="drv\mimidrv.bin" />
     <None Include="drv\mktoolsx64.bin" />
     <None Include="drv\msio64.bin" />
+    <None Include="drv\mtxC9CB.bin" />
     <None Include="drv\NeacSafe64.bin" />
     <None Include="drv\nvoclock.bin" />
     <None Include="drv\pcdsrvc_x64.bin" />

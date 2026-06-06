@@ -2,13 +2,13 @@
 *
 *  (C) COPYRIGHT AUTHORS, 2026
 *
-*  TITLE:       IPCDEC.CPP
+*  TITLE:       MATROX.CPP
 *
 *  VERSION:     1.49
 *
 *  DATE:        05 Jun 2026
 *
-*  IPCTYPE driver routines.
+*  Matrox Graphics Inc. driver routines.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -18,55 +18,63 @@
 *******************************************************************************/
 
 #include "global.h"
-#include "idrv/ipcdec.h"
+#include "idrv/matrox.h"
 
 /*
-* IpcMapMemory
+* MatroxMapMemory
 *
 * Purpose:
 *
-* Map physical memory to the user mode (MmMapIoSpace + MmMapLockedPagesSpecifyCache).
+* Map physical memory to the user mode.
 *
 */
-PVOID IpcMapMemory(
+PVOID MatroxMapMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_ ULONG NumberOfBytes)
 {
-    IPCTYPE_MAP_MEMORY request = { 0 };
-    request.Length = NumberOfBytes;
-    request.PhysicalAddress.QuadPart = PhysicalAddress;
+    MATROX_MAP_MEMORY_INPUT request;
+    MATROX_MAP_MEMORY_OUTPUT reply;
+
+    RtlSecureZeroMemory(&request, sizeof(request));
+    RtlSecureZeroMemory(&reply, sizeof(reply));
+
+    request.SectionOffset.QuadPart = PhysicalAddress;
+    request.ViewSize = NumberOfBytes;
+    request.MemoryCachingType = 0; //PAGE_READWRITE
 
     if (supCallDriver(DeviceHandle,
-        IOCTL_IPCTYPE_MAPBUFFER,
+        IOCTL_MATROX_MAP_MEMORY,
         &request,
         sizeof(request),
-        &request,
-        sizeof(request)))
+        &reply,
+        sizeof(reply)))
     {
-        return (PVOID)request.UserMapping;
+        return reply.BaseAddress;
     }
 
     return NULL;
 }
 
 /*
-* IpcUnmapMemory
+* MatroxUnmapMemory
 *
 * Purpose:
 *
 * Unmap previously mapped physical memory.
 *
 */
-VOID IpcUnmapMemory(
+VOID MatroxUnmapMemory(
     _In_ HANDLE DeviceHandle,
-    _In_ PVOID SectionToUnmap)
+    _In_ PVOID BaseAddress)
 {
-    IPCTYPE_UNMAP_MEMORY request = { 0 };
-    request.UserMapping = (ULONGLONG)SectionToUnmap;
+    MATROX_UNMAP_MEMORY_INPUT request;
+
+    RtlSecureZeroMemory(&request, sizeof(request));
+    request.BaseAddress = BaseAddress;
 
     supCallDriver(DeviceHandle,
-        IOCTL_IPCTYPE_UNMAPBUFFER,
+        IOCTL_MATROX_UNMAP_MEMORY,
         &request,
         sizeof(request),
         NULL,
@@ -74,17 +82,17 @@ VOID IpcUnmapMemory(
 }
 
 /*
-* IpcVirtualToPhysical
+* MatroxVirtualToPhysical
 *
 * Purpose:
 *
 * Translate virtual address to the physical.
 *
 */
-BOOL WINAPI IpcVirtualToPhysical(
-    HANDLE DeviceHandle,
-    ULONG_PTR VirtualAddress,
-    ULONG_PTR* PhysicalAddress)
+BOOL WINAPI MatroxVirtualToPhysical(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress)
 {
     UNREFERENCED_PARAMETER(DeviceHandle);
 
@@ -92,14 +100,14 @@ BOOL WINAPI IpcVirtualToPhysical(
 }
 
 /*
-* IpcReadPhysicalMemory
+* MatroxReadPhysicalMemory
 *
 * Purpose:
 *
 * Read from physical memory.
 *
 */
-BOOL WINAPI IpcReadPhysicalMemory(
+BOOL WINAPI MatroxReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
@@ -109,7 +117,7 @@ BOOL WINAPI IpcReadPhysicalMemory(
     DWORD dwError = ERROR_SUCCESS;
     PVOID mappedSection = NULL;
     ULONG_PTR pageBase, offset;
-    ULONG_PTR  mapSize;
+    ULONG_PTR mapSize;
 
     supCalcPhysMapParams(PhysicalAddress,
         NumberOfBytes,
@@ -117,7 +125,7 @@ BOOL WINAPI IpcReadPhysicalMemory(
         &offset,
         &mapSize);
 
-    mappedSection = IpcMapMemory(DeviceHandle, pageBase, (ULONG)mapSize);
+    mappedSection = MatroxMapMemory(DeviceHandle, pageBase, (ULONG)mapSize);
     if (mappedSection) {
 
         __try {
@@ -131,24 +139,25 @@ BOOL WINAPI IpcReadPhysicalMemory(
             dwError = GetExceptionCode();
         }
 
-        IpcUnmapMemory(DeviceHandle, mappedSection);
+        MatroxUnmapMemory(DeviceHandle, mappedSection);
     }
     else {
         dwError = GetLastError();
     }
+
     SetLastError(dwError);
     return bResult;
 }
 
 /*
-* IpcWritePhysicalMemory
+* MatroxWritePhysicalMemory
 *
 * Purpose:
 *
 * Write to physical memory.
 *
 */
-BOOL WINAPI IpcWritePhysicalMemory(
+BOOL WINAPI MatroxWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
@@ -166,7 +175,7 @@ BOOL WINAPI IpcWritePhysicalMemory(
         &offset,
         &mapSize);
 
-    mappedSection = IpcMapMemory(DeviceHandle, pageBase, (ULONG)mapSize);
+    mappedSection = MatroxMapMemory(DeviceHandle, pageBase, (ULONG)mapSize);
     if (mappedSection) {
 
         __try {
@@ -180,24 +189,25 @@ BOOL WINAPI IpcWritePhysicalMemory(
             dwError = GetExceptionCode();
         }
 
-        IpcUnmapMemory(DeviceHandle, mappedSection);
+        MatroxUnmapMemory(DeviceHandle, mappedSection);
     }
     else {
         dwError = GetLastError();
     }
+
     SetLastError(dwError);
     return bResult;
 }
 
 /*
-* IpcWriteKernelVirtualMemory
+* MatroxWriteKernelVirtualMemory
 *
 * Purpose:
 *
 * Write virtual memory.
 *
 */
-BOOL WINAPI IpcWriteKernelVirtualMemory(
+BOOL WINAPI MatroxWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _In_ PVOID Buffer,
@@ -207,18 +217,18 @@ BOOL WINAPI IpcWriteKernelVirtualMemory(
         Address,
         Buffer,
         NumberOfBytes,
-        IpcWritePhysicalMemory);
+        MatroxWritePhysicalMemory);
 }
 
 /*
-* IpcReadKernelVirtualMemory
+* MatroxReadKernelVirtualMemory
 *
 * Purpose:
 *
 * Read virtual memory.
 *
 */
-BOOL WINAPI IpcReadKernelVirtualMemory(
+BOOL WINAPI MatroxReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _In_ PVOID Buffer,
@@ -228,5 +238,5 @@ BOOL WINAPI IpcReadKernelVirtualMemory(
         Address,
         Buffer,
         NumberOfBytes,
-        IpcReadPhysicalMemory);
+        MatroxReadPhysicalMemory);
 }

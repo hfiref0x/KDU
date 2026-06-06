@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.47
+*  VERSION:     1.49
 *
-*  DATE:        25 Mar 2026
+*  DATE:        05 Jun 2026
 *
 *  Support routines header file.
 *
@@ -454,3 +454,10 @@ BOOL supWriteKernelVirtualMemoryWithSuperfetch(
 
 VOID supFreeSuperfetchMemoryMapCache(
     VOID);
+
+VOID supCalcPhysMapParams(
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ ULONG NumberOfBytes,
+    _Out_ ULONG_PTR* PageBase,
+    _Out_ ULONG_PTR* Offset,
+    _Out_ ULONG_PTR* MapSize);

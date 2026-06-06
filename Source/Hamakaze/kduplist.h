@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        04 Jun 2026
+*  DATE:        05 Jun 2026
 *
 *  Providers global list.
 *
@@ -52,6 +52,7 @@
 #include "idrv/tpup.h"
 #include "idrv/tpw.h"
 #include "idrv/ipcdec.h"
+#include "idrv/matrox.h"
 
 //
 // Victims public array.
@@ -1701,6 +1702,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provQueryPML4)NULL,
         (provReadPhysicalMemory)AffReadPhysicalMemory,
         (provWritePhysicalMemory)AffWritePhysicalMemory,
+
+        (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
+
+        (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)MatroxReadKernelVirtualMemory,
+        (provWriteKernelVM)MatroxWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)MatroxVirtualToPhysical,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)MatroxReadPhysicalMemory,
+        (provWritePhysicalMemory)MatroxWritePhysicalMemory,
 
         (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
 

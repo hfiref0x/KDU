@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        01 Apr 2026
+*  DATE:        05 Jun 2026
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -22,6 +22,7 @@
 #include "kduplist.h"
 #include "hvdetect.h"
 #include "envdetect.h"
+#include "hash.h"
 
 typedef struct _KDU_PROV_FLAG_DESC {
     ULONG Mask;
@@ -29,19 +30,19 @@ typedef struct _KDU_PROV_FLAG_DESC {
 } KDU_PROV_FLAG_DESC, * PKDU_PROV_FLAG_DESC;
 
 static const KDU_PROV_FLAG_DESC g_KduProvFlagDescs[] = {
-    { KDUPROV_FLAGS_SIGNATURE_WHQL,        "\t->Driver is WHQL signed.\r\n" },
-    { KDUPROV_FLAGS_IGNORE_CHECKSUM,       "\t->Ignore invalid image checksum.\r\n" },
-    { KDUPROV_FLAGS_NO_UNLOAD_SUP,         "\t->Driver does not support unload procedure.\r\n" },
-    { KDUPROV_FLAGS_PML4_FROM_LOWSTUB,     "\t->Virtual to physical addresses translation require PML4 query from low stub.\r\n" },
-    { KDUPROV_FLAGS_NO_VICTIM,             "\t->No victim required.\r\n" },
-    { KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,  "\t->Provider supports only physical memory brute-force.\r\n" },
-    { KDUPROV_FLAGS_PREFER_PHYSICAL,       "\t->Physical memory access is preferred.\r\n" },
-    { KDUPROV_FLAGS_PREFER_VIRTUAL,        "\t->Virtual memory access is preferred.\r\n" },
-    { KDUPROV_FLAGS_COMPANION_REQUIRED,    "\t->Provider expects companion to be loaded.\r\n" },
-    { KDUPROV_FLAGS_USE_SYMBOLS,           "\t->MS symbols are required to query internal information.\r\n" },
-    { KDUPROV_FLAGS_OPENPROCESS_SUPPORTED, "\t->Driver can be used to open a handle for the specified process.\r\n" },
-    { KDUPROV_FLAGS_FS_FILTER,             "\t->Driver is file system filter.\r\n" },
-    { KDUPROV_FLAGS_USE_SUPERFETCH,        "\t->Driver can be used with Superfetch for memory translation.\r\n" }
+    { KDUPROV_FLAGS_SIGNATURE_WHQL,        "\t\t->Driver is WHQL signed.\r\n" },
+    { KDUPROV_FLAGS_IGNORE_CHECKSUM,       "\t\t->Ignore invalid image checksum.\r\n" },
+    { KDUPROV_FLAGS_NO_UNLOAD_SUP,         "\t\t->Driver does not support unload procedure.\r\n" },
+    { KDUPROV_FLAGS_PML4_FROM_LOWSTUB,     "\t\t->Virtual to physical addresses translation require PML4 query from low stub.\r\n" },
+    { KDUPROV_FLAGS_NO_VICTIM,             "\t\t->No victim required.\r\n" },
+    { KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,  "\t\t->Provider supports only physical memory brute-force.\r\n" },
+    { KDUPROV_FLAGS_PREFER_PHYSICAL,       "\t\t->Physical memory access is preferred.\r\n" },
+    { KDUPROV_FLAGS_PREFER_VIRTUAL,        "\t\t->Virtual memory access is preferred.\r\n" },
+    { KDUPROV_FLAGS_COMPANION_REQUIRED,    "\t\t->Provider expects companion to be loaded.\r\n" },
+    { KDUPROV_FLAGS_USE_SYMBOLS,           "\t\t->MS symbols are required to query internal information.\r\n" },
+    { KDUPROV_FLAGS_OPENPROCESS_SUPPORTED, "\t\t->Driver can be used to open a handle for the specified process.\r\n" },
+    { KDUPROV_FLAGS_FS_FILTER,             "\t\t->Driver is file system filter.\r\n" },
+    { KDUPROV_FLAGS_USE_SUPERFETCH,        "\t\t->Driver can be used with Superfetch for memory translation.\r\n" }
 };
 
 PKDU_DB gProvTable = NULL;
@@ -267,6 +268,63 @@ VOID KDUProvList()
         else {
             printf_s("\tMaximum supported Windows build: %lu\r\n",
                 provData->MaxNtBuildNumberSupport);
+        }
+
+        //
+        // Show image size and hashes.
+        //
+        ULONG resourceSize;
+        PBYTE drvBuffer;
+        KDU_IMAGE_HASH_INFO hashInfo;
+
+        resourceSize = 0;
+
+        drvBuffer = (PBYTE)KDULoadResource(provData->ResourceId,
+            hProv,
+            &resourceSize,
+            PROVIDER_RES_KEY,
+            provData->IgnoreChecksum ? FALSE : TRUE);
+
+        if (drvBuffer) {
+
+            printf_s("\tImage size: %lu bytes\r\n", resourceSize);
+
+            if (KDUCalcImageHashes(drvBuffer, resourceSize, &hashInfo)) {
+
+                if (hashInfo.FileHashSha1Valid) {
+                    printf_s("\tFile hash (SHA1): ");
+                    KDUPrintHashValue(hashInfo.FileHashSha1, sizeof(hashInfo.FileHashSha1));
+                    printf_s("\r\n");
+                }
+
+                if (hashInfo.AuthenticodeHashSha1Valid) {
+                    printf_s("\tAuthenticode hash (SHA1): ");
+                    KDUPrintHashValue(hashInfo.AuthenticodeHashSha1, sizeof(hashInfo.AuthenticodeHashSha1));
+                    printf_s("\r\n");
+                }
+
+                if (hashInfo.PageHashSha1Valid) {
+                    printf_s("\tPage hash (SHA1): ");
+                    KDUPrintHashValue(hashInfo.PageHashSha1, sizeof(hashInfo.PageHashSha1));
+                    printf_s("\r\n");
+                }
+
+                if (hashInfo.PageHashSha256Valid) {
+                    printf_s("\tPage hash (SHA256): ");
+                    KDUPrintHashValue(hashInfo.PageHashSha256, sizeof(hashInfo.PageHashSha256));
+                    printf_s("\r\n");
+                }
+
+            }
+            else {
+                printf_s("\tHashes: unavailable\r\n");
+            }
+
+            supHeapFree(drvBuffer);
+        }
+        else {
+            printf_s("\tImage size: unavailable\r\n");
+            printf_s("\tHashes: resource load failed\r\n");
         }
 
     }

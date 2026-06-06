@@ -4,9 +4,9 @@
 *
 *  TITLE:       GLOBAL.H
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        30 May 2026
+*  DATE:        05 Jun 2026
 *
 *  Common include header file.
 *

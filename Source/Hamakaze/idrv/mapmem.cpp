@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAPMEM.CPP
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        25 Mar 2026
+*  DATE:        05 Jun 2026
 *
 *  MAPMEM driver routines.
 *
@@ -51,16 +51,18 @@ PVOID MapMemMapMemory(
 {
     PVOID pMapSection = NULL;
     MAPMEM_PHYSICAL_MEMORY_INFO request;
-    ULONG_PTR offset;
-    ULONG mapSize;
+    ULONG_PTR pageBase, offset, mapSize;
 
     RtlSecureZeroMemory(&request, sizeof(request));
 
-    offset = PhysicalAddress & ~(PAGE_SIZE - 1);
-    mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
+    supCalcPhysMapParams(PhysicalAddress,
+        NumberOfBytes,
+        &pageBase,
+        &offset,
+        &mapSize);
 
-    request.BusAddress.QuadPart = offset;
-    request.Length = mapSize;
+    request.BusAddress.QuadPart = pageBase;
+    request.Length = (ULONG)mapSize;
 
     if (supCallDriver(DeviceHandle,
         g_MapMem_MapIoctl,
@@ -439,16 +441,18 @@ PVOID CorMemMapMemory(
 {
     PVOID pMapSection = NULL;
     CORMEM_MAPBUFFER_REQUEST request;
-    ULONG_PTR offset;
-    ULONG mapSize;
+    ULONG_PTR pageBase, offset, mapSize;
 
     RtlSecureZeroMemory(&request, sizeof(request));
 
-    offset = PhysicalAddress & ~(PAGE_SIZE - 1);
-    mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
+    supCalcPhysMapParams(PhysicalAddress,
+        NumberOfBytes,
+        &pageBase,
+        &offset,
+        &mapSize);
 
-    request.PhysicalAddress.QuadPart = offset;
-    request.Size = mapSize;
+    request.PhysicalAddress.QuadPart = pageBase;
+    request.Size = (ULONG)mapSize;
 
     if (supCallDriver(DeviceHandle,
         IOCTL_CORMEM_MAPBUFFER,

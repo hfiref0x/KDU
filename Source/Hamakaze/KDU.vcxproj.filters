@@ -249,6 +249,12 @@
     <ClCompile Include="tests\tests.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="idrv\matrox.cpp">
+      <Filter>Source Files\idrv</Filter>
+    </ClCompile>
+    <ClCompile Include="hash.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -469,6 +475,12 @@
     </ClInclude>
     <ClInclude Include="tests\test_dsefix.h">
       <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="idrv\matrox.h">
+      <Filter>Source Files\idrv</Filter>
+    </ClInclude>
+    <ClInclude Include="hash.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

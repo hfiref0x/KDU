@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        01 Apr 2026
+*  DATE:        05 Jun 2026
 *
 *  Program global support routines.
 *
@@ -4368,4 +4368,30 @@ VOID supFreeSuperfetchMemoryMapCache(
         supFreeSuperfetchMemoryMap(&g_SuperfetchMemoryMap);
         g_SuperfetchMemoryMapInitialized = FALSE;
     }
+}
+
+/*
+* supCalcPhysMapParams
+*
+* Purpose:
+*
+* Map-size/page-offset calculation helper for some providers.
+*
+*/
+VOID supCalcPhysMapParams(
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ ULONG NumberOfBytes,
+    _Out_ ULONG_PTR* PageBase,
+    _Out_ ULONG_PTR* Offset,
+    _Out_ ULONG_PTR* MapSize)
+{
+    ULONG_PTR pageBase;
+    ULONG_PTR offset;
+
+    pageBase = PhysicalAddress & ~(PAGE_SIZE - 1);
+    offset = PhysicalAddress - pageBase;
+
+    *PageBase = pageBase;
+    *Offset = offset;
+    *MapSize = offset + NumberOfBytes;
 }

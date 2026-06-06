@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       ATSZIO.CPP
 *
-*  VERSION:     1.13
+*  VERSION:     1.49
 *
-*  DATE:        05 Feb 2022
+*  DATE:        05 Jun 2026
 *
 *  ASUSTeK ATSZIO WinFlash driver routines.
 *
@@ -42,19 +42,21 @@ PVOID AtszioMapMemory(
     _Out_ HANDLE* SectionHandle
 )
 {
-    ULONG_PTR offset;
-    ULONG mapSize;
+    ULONG_PTR pageBase, offset, mapSize;
     ATSZIO_PHYSICAL_MEMORY_INFO request;
 
     *SectionHandle = NULL;
 
     RtlSecureZeroMemory(&request, sizeof(request));
 
-    offset = PhysicalAddress & ~(PAGE_SIZE - 1);
-    mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
+    supCalcPhysMapParams(PhysicalAddress,
+        NumberOfBytes,
+        &pageBase,
+        &offset,
+        &mapSize);
 
-    request.Offset.QuadPart = offset;
-    request.ViewSize = mapSize;
+    request.Offset.QuadPart = pageBase;
+    request.ViewSize = (ULONG)mapSize;
 
     if (supCallDriver(DeviceHandle,
         IOCTL_ATSZIO_MAP_USER_PHYSICAL_MEMORY,

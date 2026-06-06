@@ -165,6 +165,7 @@
 #define IDR_IPCTYPE                     161
 #define IDR_SHANGKE_WND                 162
 #define IDR_AMD_AFFDRIVER               163
+#define IDR_MATROX_MTXC9CB              164
 
 //
 // Vulnerable drivers providers id
@@ -231,6 +232,7 @@
 #define KDU_PROVIDER_IPCTYPE            59
 #define KDU_PROVIDER_SHANGKE_WHD        60
 #define KDU_PROVIDER_AMD_AFFDRIVER      61
+#define KDU_PROVIDER_MATROX_MTXC9CB     62
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

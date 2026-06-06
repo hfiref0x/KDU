@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       DIRECTIO64.CPP
 *
-*  VERSION:     1.27
+*  VERSION:     1.49
 *
-*  DATE:        12 Nov 2022
+*  DATE:        05 Jun 2026
 *
 *  PassMark DIRECTIO driver routines.
 *
@@ -43,16 +43,20 @@ PVOID DI64MapMemory(
     _In_ BOOLEAN MapForWrite)
 {
     DIRECTIO_PHYSICAL_MEMORY_INFO request;
+    ULONG_PTR pageBase, offset, mapSize;
 
     *SectionHandle = NULL;
     *AllocatedMdl = NULL;
 
-    ULONG_PTR offset = PhysicalAddress & ~(PAGE_SIZE - 1);
-    ULONG mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
+    supCalcPhysMapParams(PhysicalAddress,
+        NumberOfBytes,
+        &pageBase,
+        &offset,
+        &mapSize);
 
     RtlSecureZeroMemory(&request, sizeof(request));
-    request.ViewSize = mapSize;
-    request.Offset.QuadPart = offset;
+    request.ViewSize = (ULONG)mapSize;
+    request.Offset.QuadPart = pageBase;
     request.Writeable = MapForWrite;
 
     if (supCallDriver(DeviceHandle,
@@ -60,7 +64,7 @@ PVOID DI64MapMemory(
         &request,
         sizeof(request),
         &request,
-        sizeof(request))) 
+        sizeof(request)))
     {
         *SectionHandle = request.SectionHandle;
         *AllocatedMdl = request.AllocatedMdl;

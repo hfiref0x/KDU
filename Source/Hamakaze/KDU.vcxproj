@@ -135,6 +135,7 @@
     <ClCompile Include="drvmap.cpp" />
     <ClCompile Include="dsefix.cpp" />
     <ClCompile Include="envdetect.cpp" />
+    <ClCompile Include="hash.cpp" />
     <ClCompile Include="hde\hde64.c" />
     <ClCompile Include="hvdetect.cpp" />
     <ClCompile Include="idrv\alcpu.cpp" />
@@ -155,6 +156,7 @@
     <ClCompile Include="idrv\lha.cpp" />
     <ClCompile Include="idrv\mapmem.cpp" />
     <ClCompile Include="idrv\marvinhw.cpp" />
+    <ClCompile Include="idrv\matrox.cpp" />
     <ClCompile Include="idrv\mimidrv.cpp" />
     <ClCompile Include="idrv\netease.cpp" />
     <ClCompile Include="idrv\nvidia.cpp" />
@@ -205,6 +207,7 @@
     <ClInclude Include="dsefix.h" />
     <ClInclude Include="envdetect.h" />
     <ClInclude Include="global.h" />
+    <ClInclude Include="hash.h" />
     <ClInclude Include="hde\hde64.h" />
     <ClInclude Include="hvdetect.h" />
     <ClInclude Include="idrv\alcpu.h" />
@@ -226,6 +229,7 @@
     <ClInclude Include="idrv\lha.h" />
     <ClInclude Include="idrv\mapmem.h" />
     <ClInclude Include="idrv\marvinhw.h" />
+    <ClInclude Include="idrv\matrox.h" />
     <ClInclude Include="idrv\mimidrv.h" />
     <ClInclude Include="idrv\netease.h" />
     <ClInclude Include="idrv\nvidia.h" />

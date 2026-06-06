@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2023
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       WINIO.CPP
 *
-*  VERSION:     1.41
+*  VERSION:     1.49
 *
-*  DATE:        02 Dec 2023
+*  DATE:        05 Jun 2026
 *
 *  WINIO based drivers routines.
 *
@@ -326,19 +326,21 @@ PVOID RedFoxMapMemory(
     _Out_ PVOID* ReferencedObject)
 {
     WINIO_REDFOX request;
-    ULONG_PTR offset;
-    ULONG mapSize;
+    ULONG_PTR pageBase, offset, mapSize;
 
     *SectionHandle = NULL;
     *ReferencedObject = NULL;
 
     RtlSecureZeroMemory(&request, sizeof(request));
 
-    offset = PhysicalAddress & ~(PAGE_SIZE - 1);
-    mapSize = (ULONG)(PhysicalAddress - offset) + NumberOfBytes;
+    supCalcPhysMapParams(PhysicalAddress,
+        NumberOfBytes,
+        &pageBase,
+        &offset,
+        &mapSize);
 
-    request.BusAddress = offset;
-    request.ViewSize = mapSize;
+    request.BusAddress = pageBase;
+    request.ViewSize = (ULONG)mapSize;
 
     if (supCallDriver(DeviceHandle,
         g_WinIoMapIOCTL,

@@ -953,6 +953,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"affdriver",
         (LPWSTR)L"BiosToolCommonDriver",
         (LPWSTR)L"Advanced Micro Devices Inc."
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_MATROX_MTXC9CB,
+        KDU_PROVIDER_MATROX_MTXC9CB,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SUPERFETCH,
+        KDUPROV_SC_ALL_DEFAULT,
+        (LPWSTR)L"Matrox Graphics driver",
+        (LPWSTR)L"mtxC9CB",
+        (LPWSTR)L"MtxVxd",
+        (LPWSTR)L"Matrox Graphics Inc."
     }
 
 };
