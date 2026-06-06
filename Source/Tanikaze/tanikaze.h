@@ -35,9 +35,9 @@ KDU_DB_ENTRY gProvEntry[] = {
         KDUPROV_FLAGS_PREFER_PHYSICAL,
         KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2015-2291",
+        (LPWSTR)L"Intel NAL driver",
         (LPWSTR)L"NalDrv",
-        (LPWSTR)L"Nal",
-        (LPWSTR)L"Intel Corporation"
+        (LPWSTR)L"Nal"
     },
 
     {
@@ -50,9 +50,9 @@ KDU_DB_ENTRY gProvEntry[] = {
         KDUPROV_FLAGS_NONE,
         KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2019-16098",
+        (LPWSTR)L"MSI RTCore64 driver",
         (LPWSTR)L"RTCore64",
-        (LPWSTR)L"RTCore64",
-        (LPWSTR)L"MICRO-STAR INTERNATIONAL CO., LTD."
+        (LPWSTR)L"RTCore64"
     },
 
     {
@@ -65,9 +65,9 @@ KDU_DB_ENTRY gProvEntry[] = {
         KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2018-19320",
+        (LPWSTR)L"Gigabyte GDRV driver",
         (LPWSTR)L"Gdrv",
-        (LPWSTR)L"GIO",
-        (LPWSTR)L"Giga-Byte Technology"
+        (LPWSTR)L"GIO"
     },
 
     {
@@ -79,10 +79,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"ASUSTeK WinFlash",
         (LPWSTR)L"ATSZIO",
-        (LPWSTR)L"ATSZIO",
-        (LPWSTR)L"ASUSTeK Computer Inc."
+        (LPWSTR)L"ATSZIO"
     },
 
     {
@@ -95,9 +95,9 @@ KDU_DB_ENTRY gProvEntry[] = {
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2019-18845",
+        (LPWSTR)L"MICSYS RGB driver",
         (LPWSTR)L"MsIo64",
-        (LPWSTR)L"MsIo",
-        (LPWSTR)L"MICSYS Technology Co., Ltd."
+        (LPWSTR)L"MsIo"
     },
 
     {
@@ -109,10 +109,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinIo,
         KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"ASRock Polychrome RGB, multiple CVE ids",
         (LPWSTR)L"GLCKIo2",
-        (LPWSTR)L"GLCKIo2",
-        (LPWSTR)L"ASUSTeK Computer Inc."
+        (LPWSTR)L"GLCKIo2"
     },
 
     {
@@ -124,10 +124,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinIo,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"G.SKILL Trident Z Lighting Control",
         (LPWSTR)L"EneIo64",
-        (LPWSTR)L"EneIo",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+        (LPWSTR)L"EneIo"
     },
 
     {
@@ -139,10 +139,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinRing0,
         KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"EVGA Precision X1",
         (LPWSTR)L"WinRing0x64",
-        (LPWSTR)L"WinRing0_1_2_0",
-        (LPWSTR)L"EVGA"
+        (LPWSTR)L"WinRing0_1_2_0"
     },
 
     {
@@ -154,10 +154,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinIo,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Thermaltake TOUGHRAM Software",
         (LPWSTR)L"EneTechIo64",
-        (LPWSTR)L"EneTechIo",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+        (LPWSTR)L"EneTechIo"
     },
 
     {
@@ -169,10 +169,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinIo,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Huawei MateBook Manager",
         (LPWSTR)L"phymemx64",
-        (LPWSTR)L"PhyMem",
-        (LPWSTR)L"Huawei Technologies Co.,Ltd."
+        (LPWSTR)L"PhyMem"
     },
 
     {
@@ -184,10 +184,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBasePhyMem,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Realtek Dash Client Utility",
         (LPWSTR)L"rtkio64",
-        (LPWSTR)L"rtkio",
-        (LPWSTR)L"Realtek Semiconductor Corp."
+        (LPWSTR)L"rtkio"
     },
 
     {
@@ -199,10 +199,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinIo,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"MSI Dragon Center",
         (LPWSTR)L"EneTechIo64",
-        (LPWSTR)L"EneTechIo",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+        (LPWSTR)L"EneTechIo"
     },
 
     {
@@ -215,9 +215,9 @@ KDU_DB_ENTRY gProvEntry[] = {
         KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2019-8372",
+        (LPWSTR)L"LG LHA driver",
         (LPWSTR)L"lha",
-        (LPWSTR)L"{E8F2FF20-6AF7-4914-9398-CE2132FE170F}",
-        (LPWSTR)L"LG Electronics Inc."
+        (LPWSTR)L"{E8F2FF20-6AF7-4914-9398-CE2132FE170F}"
     },
 
     {
@@ -229,10 +229,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinIo,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"ASUS GPU Tweak",
         (LPWSTR)L"AsIO2",
-        (LPWSTR)L"Asusgio2",
-        (LPWSTR)L"ASUSTeK Computer Inc."
+        (LPWSTR)L"Asusgio2"
     },
 
     {
@@ -244,10 +244,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"PassMark DirectIO",
         (LPWSTR)L"DirectIo64",
-        (LPWSTR)L"DIRECTIO64",
-        (LPWSTR)L"PassMark Software Pty Ltd"
+        (LPWSTR)L"DIRECTIO64"
     },
 
     {
@@ -259,10 +259,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_NO_FORCED_SD,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Gmer 'Antirootkit'",
         (LPWSTR)L"gmerdrv",
-        (LPWSTR)L"gmerdrv",
-        (LPWSTR)L"GMEREK Systemy Komputerowe Przemyslaw Gmerek"
+        (LPWSTR)L"gmerdrv"
     },
 
     {
@@ -275,9 +275,9 @@ KDU_DB_ENTRY gProvEntry[] = {
         KDUPROV_FLAGS_NO_UNLOAD_SUP,
         KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2021-21551",
+        (LPWSTR)L"Dell DBUtil 2.3 driver",
         (LPWSTR)L"DBUtil23",
-        (LPWSTR)L"DBUtil_2_3",
-        (LPWSTR)L"Dell Inc."
+        (LPWSTR)L"DBUtil_2_3"
     },
 
     {
@@ -289,10 +289,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_NONE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Mimikatz mimidrv",
         (LPWSTR)L"mimidrv",
-        (LPWSTR)L"mimidrv",
-        (LPWSTR)L"Benjamin Delpy"
+        (LPWSTR)L"mimidrv"
     },
 
     {
@@ -304,10 +304,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_OPENPROCESS_SUPPORTED,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
+        (LPWSTR)L"KProcessHacker driver",
         (LPWSTR)L"KProcessHacker",
-        (LPWSTR)L"KProcessHacker",
-        (LPWSTR)L"KProcessHacker2",
-        (LPWSTR)L"Wen Jia Liu"
+        (LPWSTR)L"KProcessHacker2"
     },
 
     {
@@ -319,10 +319,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_NO_VICTIM | KDUPROV_FLAGS_OPENPROCESS_SUPPORTED,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)PROCEXP1627_DESC,
         (LPWSTR)PROCEXP152,
-        (LPWSTR)PROCEXP152,
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+        (LPWSTR)PROCEXP152
     },
 
     {
@@ -335,9 +335,9 @@ KDU_DB_ENTRY gProvEntry[] = {
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD,
         KDUPROV_SC_ALL_DEFAULT,
         (LPWSTR)L"CVE-2021-36276",
+        (LPWSTR)L"Dell DBUtil 2.5 driver",
         (LPWSTR)L"DBUtilDrv2",
-        (LPWSTR)L"DBUtil_2_5",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+        (LPWSTR)L"DBUtil_2_5"
     },
 
     {
@@ -349,10 +349,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_NO_VICTIM | KDUPROV_FLAGS_OPENPROCESS_SUPPORTED,
         KDUPROV_SC_V4,
+        NULL,
         (LPWSTR)L"Cheat Engine Dbk64",
         (LPWSTR)L"CEDRIVER73",
-        (LPWSTR)L"CEDRIVER73",
-        (LPWSTR)L"Cheat Engine"
+        (LPWSTR)L"CEDRIVER73"
     },
 
     {
@@ -364,10 +364,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinIo,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"ASUS GPU Tweak II",
         (LPWSTR)L"AsIO3",
-        (LPWSTR)L"Asusgio3",
-        (LPWSTR)L"ASUSTeK Computer Inc."
+        (LPWSTR)L"Asusgio3"
     },
 
     {
@@ -379,10 +379,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Marvin Hardware Access Driver for Windows",
         (LPWSTR)L"hw64",
-        (LPWSTR)L"hw",
-        (LPWSTR)L"Marvin Test Solutions, Inc."
+        (LPWSTR)L"hw"
     },
 
     {
@@ -394,10 +394,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseMapMem,
         KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_NO_UNLOAD_SUP,
         KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"CODESYS SysDrv3S (CVE-2022-22516)",
+        (LPWSTR)L"CVE-2022-22516",
+        (LPWSTR)L"CODESYS SysDrv3S driver",
         (LPWSTR)L"SysDrv3S",
-        (LPWSTR)L"SysDrv3S",
-        (LPWSTR)L"3S-Smart Software Solutions GmbH."
+        (LPWSTR)L"SysDrv3S"
     },
 
     {
@@ -409,10 +409,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_OPENPROCESS_SUPPORTED,
         KDUPROV_SC_V4,
-        (LPWSTR)L"Zemana (CVE-2021-31728, CVE-2022-42045)",
+        (LPWSTR)L"CVE-2021-31728, CVE-2022-42045",
+        (LPWSTR)L"Zemana AntiMalware driver",
         (LPWSTR)L"ZemanaAntimalware",
-        (LPWSTR)L"amsdk",
-        (LPWSTR)L"WATCHDOGDEVELOPMENT.COM, LLC"
+        (LPWSTR)L"amsdk"
     },
 
     {
@@ -424,10 +424,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinIo,
         KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"inpoutx64 Driver Version 1.2",
         (LPWSTR)L"inpoutx64",
-        (LPWSTR)L"inpoutx64",
-        (LPWSTR)L"Red Fox UK Limited"
+        (LPWSTR)L"inpoutx64"
      },
 
      {
@@ -439,10 +439,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"PassMark OSForensics DirectIO",
         (LPWSTR)L"DirectIo64",
-        (LPWSTR)L"DIRECTIO64",
-        (LPWSTR)L"PassMark Software Pty Ltd"
+        (LPWSTR)L"DIRECTIO64"
      },
 
      {
@@ -454,10 +454,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseRWEverything,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"ASRock IO Driver",
         (LPWSTR)L"AsrDrv106",
-        (LPWSTR)L"AsrDrv106",
-        (LPWSTR)L"ASROCK Incorporation"
+        (LPWSTR)L"AsrDrv106"
      },
 
      {
@@ -469,10 +469,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Core Temp",
         (LPWSTR)L"ALSysIO64",
-        (LPWSTR)L"ALSysIO",
-        (LPWSTR)L"ALCPU (Arthur Liberman)"
+        (LPWSTR)L"ALSysIO"
      },
 
      {
@@ -484,10 +484,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"AMD Ryzen Master Service Driver",
         (LPWSTR)L"AMDRyzenMasterDriver",
-        (LPWSTR)L"AMDRyzenMasterDriverV20",
-        (LPWSTR)L"Advanced Micro Devices Inc."
+        (LPWSTR)L"AMDRyzenMasterDriverV20"
      },
 
      {
@@ -499,10 +499,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Physical Memory Access Driver",
         (LPWSTR)L"physmem",
-        (LPWSTR)L"PHYSMEMVIEWER",
-        (LPWSTR)L"Hilscher Gesellschaft fuer Systemautomation mbH"
+        (LPWSTR)L"PHYSMEMVIEWER"
      },
 
      {
@@ -514,10 +514,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SYMBOLS,
         KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"Lenovo Diagnostics Driver for Windows 10 and later (CVE-2022-3699)",
+        (LPWSTR)L"CVE-2022-3699",
+        (LPWSTR)L"Lenovo Diagnostics Driver for Windows 10 and later",
         (LPWSTR)L"LenovoDiagnosticsDriver",
-        (LPWSTR)L"LenovoDiagnosticsDriver",
-        (LPWSTR)L"Lenovo"
+        (LPWSTR)L"LenovoDiagnosticsDriver"
      },
 
      {
@@ -529,10 +529,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"PC-Doctor (CVE-2019-12280)",
+        (LPWSTR)L"CVE-2019-12280",
+        (LPWSTR)L"PC-Doctor driver",
         (LPWSTR)L"pcdsrvc_x64",
-        (LPWSTR)L"pcdsrvc_x64",
-        (LPWSTR)L"PC-Doctor, Inc."
+        (LPWSTR)L"pcdsrvc_x64"
      },
 
      {
@@ -544,10 +544,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinIo,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"MSI Foundation Service",
         (LPWSTR)L"WinIo",
-        (LPWSTR)L"WinIo",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+        (LPWSTR)L"WinIo"
      },
 
      {
@@ -559,10 +559,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_VIRTUAL,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"ETDi Support Driver",
         (LPWSTR)L"EtdSupport",
-        (LPWSTR)L"EtdSupport_18.0",
-        (LPWSTR)L"HP Inc."
+        (LPWSTR)L"EtdSupport_18.0"
      },
 
      {
@@ -574,10 +574,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_PREFER_VIRTUAL,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Kernel Explorer Driver",
         (LPWSTR)L"KExplore",
-        (LPWSTR)L"KExplore",
-        (LPWSTR)L"Pavel Yosifovich"
+        (LPWSTR)L"KExplore"
      },
 
     {
@@ -589,10 +589,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_PREFER_PHYSICAL,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Kernel Object Explorer Driver",
         (LPWSTR)L"KObjExp",
-        (LPWSTR)L"KObjExp",
-        (LPWSTR)L"Pavel Yosifovich"
+        (LPWSTR)L"KObjExp"
     },
 
     {
@@ -604,10 +604,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_PML4_FROM_LOWSTUB | KDUPROV_FLAGS_PREFER_PHYSICAL,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Kernel Registry Explorer Driver",
         (LPWSTR)L"KRegExp",
-        (LPWSTR)L"KRegExp",
-        (LPWSTR)L"Pavel Yosifovich"
+        (LPWSTR)L"KRegExp"
     },
 
     {
@@ -619,10 +619,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_VIRTUAL | KDUPROV_FLAGS_OPENPROCESS_SUPPORTED,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Echo AntiCheat",
         (LPWSTR)L"EchoDrv",
-        (LPWSTR)L"EchoDrv",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+        (LPWSTR)L"EchoDrv"
     },
 
     {
@@ -634,10 +634,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"NVidia System Utility Driver",
         (LPWSTR)L"nvoclock",
-        (LPWSTR)L"NVR0Internal",
-        (LPWSTR)L"NVIDIA Corporation"
+        (LPWSTR)L"NVR0Internal"
     },
 
     {
@@ -649,10 +649,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_VICTIM | KDUPROV_FLAGS_OPENPROCESS_SUPPORTED,
         KDUPROV_SC_NONE,
-        (LPWSTR)L"Binalyze CVE-2023-41444",
+        (LPWSTR)L"CVE-2023-41444",
+        (LPWSTR)L"Binalyze driver",
         (LPWSTR)L"IREC",
-        (LPWSTR)L"IREC",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+        (LPWSTR)L"IREC"
     },
 
     {
@@ -664,10 +664,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinRing0,
         KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"SLIC ToolKit",
         (LPWSTR)L"PhyDMACC",
-        (LPWSTR)L"PhyDMACC_1_2_0",
-        (LPWSTR)L"Suzhou Ind. Park ShiSuanKeJi Co., Ltd."
+        (LPWSTR)L"PhyDMACC_1_2_0"
     },
 
     {
@@ -679,10 +679,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_NO_VICTIM | KDUPROV_FLAGS_OPENPROCESS_SUPPORTED,
         KDUPROV_SC_NONE,
-        (LPWSTR)L"Razer Overlay Support driver CVE-2017-9769",
+        (LPWSTR)L"CVE-2017-9769",
+        (LPWSTR)L"Razer Overlay Support driver",
         (LPWSTR)L"rzpnk",
-        (LPWSTR)L"47CD78C9-64C3-47C2-B80F-677B887CF095",
-        (LPWSTR)L"Razer USA Ltd."
+        (LPWSTR)L"47CD78C9-64C3-47C2-B80F-677B887CF095"
     },
 
     {
@@ -694,10 +694,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_VIRTUAL,
         KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"AMD USB-C Power Delivery Firmware Update Utility CVE-2023-20598",
+        (LPWSTR)L"CVE-2023-20598",
+        (LPWSTR)L"AMD USB-C Power Delivery Firmware Update Utility",
         (LPWSTR)L"PdFwKrnl",
-        (LPWSTR)L"PdFwKrnl",
-        (LPWSTR)L"Advanced Micro Devices Inc."
+        (LPWSTR)L"PdFwKrnl"
     },
 
     {
@@ -709,10 +709,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"AMD OverDrive Driver (same as CVE-2020-12928)",
+        (LPWSTR)L"CVE-2020-12928",
+        (LPWSTR)L"AMD OverDrive Driver",
         (LPWSTR)L"AODDriver",
-        (LPWSTR)L"AODDriver",
-        (LPWSTR)L"Advanced Micro Devices Inc."
+        (LPWSTR)L"AODDriver"
     },
 
     {
@@ -724,10 +724,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinIo,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"WnBios Driver",
         (LPWSTR)L"wnBios64",
-        (LPWSTR)L"WNBIOS",
-        (LPWSTR)L"Wincor Nixdorf International GmbH"
+        (LPWSTR)L"WNBIOS"
     },
 
     {
@@ -739,10 +739,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"EVGA Low Level Driver",
         (LPWSTR)L"EleetX1",
-        (LPWSTR)L"EleetX1",
-        (LPWSTR)L"EVGA Corp."
+        (LPWSTR)L"EleetX1"
     },
 
      {
@@ -754,10 +754,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseRWEverything,
         KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"RW-Everything Read & Write Driver",
         (LPWSTR)L"AxtuDrv",
-        (LPWSTR)L"AxtuDrv",
-        (LPWSTR)L"ASROCK Incorporation"
+        (LPWSTR)L"AxtuDrv"
      },
 
      {
@@ -769,10 +769,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseRWEverything,
         KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"AppShopDrv103 Driver",
         (LPWSTR)L"AppShopDrv103",
-        (LPWSTR)L"AppShopDrv103",
-        (LPWSTR)L"ASROCK Incorporation"
+        (LPWSTR)L"AppShopDrv103"
      },
 
      {
@@ -784,10 +784,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseRWEverything,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"ASRock IO Driver",
         (LPWSTR)L"AsrDrv107n",
-        (LPWSTR)L"AsrDrv107n",
-        (LPWSTR)L"ASROCK INC."
+        (LPWSTR)L"AsrDrv107n"
      },
 
      {
@@ -799,10 +799,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseRWEverything,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"ASRock IO Driver",
         (LPWSTR)L"AsrDrv107",
-        (LPWSTR)L"AsrDrv107",
-        (LPWSTR)L"ASROCK INC."
+        (LPWSTR)L"AsrDrv107"
      },
 
     {
@@ -814,10 +814,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Intel(R) Management Engine Tools Driver",
         (LPWSTR)L"PMxDrv",
-        (LPWSTR)L"Pmxdrv",
-        (LPWSTR)L"Intel(R) Embedded Subsystems and IP Blocks Group"
+        (LPWSTR)L"Pmxdrv"
     },
 
     {
@@ -829,10 +829,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinRing0,
         KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Hardware read & write driver",
         (LPWSTR)L"HwRwDrv.x64",
-        (LPWSTR)L"HwRwDrv",
-        (LPWSTR)L"Open Source Developer, Jun Liu"
+        (LPWSTR)L"HwRwDrv"
     },
 
     {
@@ -844,10 +844,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_NO_FORCED_SD | KDUPROV_FLAGS_FS_FILTER,
         KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"NeacSafe64 mini-filter driver (CVE-2025-45737)",
+        (LPWSTR)L"CVE-2025-45737",
+        (LPWSTR)L"NeacSafe64 mini-filter driver",
         (LPWSTR)L"NeacSafe64",
-        (LPWSTR)L"OWNeacSafePort",
-        (LPWSTR)L"Microsoft Windows Hardware Compatibility Publisher"
+        (LPWSTR)L"OWNeacSafePort"
     },
 
     {
@@ -859,10 +859,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_USE_SUPERFETCH,
         KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"TechPowerUp ThrottleStop (CVE-2025-7771)",
+        (LPWSTR)L"CVE-2025-7771",
+        (LPWSTR)L"TechPowerUp ThrottleStop",
         (LPWSTR)L"ThrottleStop",
-        (LPWSTR)L"ThrottleStop",
-        (LPWSTR)L"TechPowerUp"
+        (LPWSTR)L"ThrottleStop"
     },
 
     {
@@ -874,10 +874,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_USE_SUPERFETCH,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Toshiba power saving driver for laptops",
         (LPWSTR)L"TPwSav",
-        (LPWSTR)L"EBIoDispatch",
-        (LPWSTR)L"Compal Electronics"
+        (LPWSTR)L"EBIoDispatch"
     },
 
     {
@@ -889,10 +889,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinRing0,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SUPERFETCH,
         KDUPROV_SC_ALL_DEFAULT,
-        (LPWSTR)L"Lenovo MSR I/O Driver (CVE-2025-8061)",
+        (LPWSTR)L"CVE-2025-8061",
+        (LPWSTR)L"Lenovo MSR I/O Driver",
         (LPWSTR)L"LnvMSRIO",
-        (LPWSTR)L"WinMsrDev",
-        (LPWSTR)L"Lenovo"
+        (LPWSTR)L"WinMsrDev"
     },
 
     {
@@ -904,10 +904,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseMapMem,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Sapera Memory Manager",
         (LPWSTR)L"CORMEM",
-        (LPWSTR)L"CORMEM",
-        (LPWSTR)L"Teledyne Digital Imaging Inc."
+        (LPWSTR)L"CORMEM"
     },
 
     {
@@ -919,10 +919,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_USE_SUPERFETCH,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"IPCType Device Driver for 64bit",
         (LPWSTR)L"IPCType",
-        (LPWSTR)L"IPCType",
-        (LPWSTR)L"Digital Electronics Corporation"
+        (LPWSTR)L"IPCType"
     },
 
     {
@@ -934,10 +934,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseWinRing0,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SUPERFETCH,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Guangzhou Shangke Information Technology giveio driver",
         (LPWSTR)L"WinHwDriver",
-        (LPWSTR)L"WinHwDriver",
-        (LPWSTR)L"Guangzhou Shangke Information Technology"
+        (LPWSTR)L"WinHwDriver"
     },
 
     {
@@ -949,10 +949,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SUPERFETCH,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"AMD BIOS Flash Utility driver",
         (LPWSTR)L"affdriver",
-        (LPWSTR)L"BiosToolCommonDriver",
-        (LPWSTR)L"Advanced Micro Devices Inc."
+        (LPWSTR)L"BiosToolCommonDriver"
     },
 
     {
@@ -964,10 +964,10 @@ KDU_DB_ENTRY gProvEntry[] = {
         SourceBaseNone,
         KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SUPERFETCH,
         KDUPROV_SC_ALL_DEFAULT,
+        NULL,
         (LPWSTR)L"Matrox Graphics driver",
         (LPWSTR)L"mtxC9CB",
-        (LPWSTR)L"MtxVxd",
-        (LPWSTR)L"Matrox Graphics Inc."
+        (LPWSTR)L"MtxVxd"
     }
 
 };

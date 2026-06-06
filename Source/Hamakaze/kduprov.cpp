@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        05 Jun 2026
+*  DATE:        06 Jun 2026
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -22,28 +22,7 @@
 #include "kduplist.h"
 #include "hvdetect.h"
 #include "envdetect.h"
-#include "hash.h"
-
-typedef struct _KDU_PROV_FLAG_DESC {
-    ULONG Mask;
-    LPCSTR Text;
-} KDU_PROV_FLAG_DESC, * PKDU_PROV_FLAG_DESC;
-
-static const KDU_PROV_FLAG_DESC g_KduProvFlagDescs[] = {
-    { KDUPROV_FLAGS_SIGNATURE_WHQL,        "\t\t->Driver is WHQL signed.\r\n" },
-    { KDUPROV_FLAGS_IGNORE_CHECKSUM,       "\t\t->Ignore invalid image checksum.\r\n" },
-    { KDUPROV_FLAGS_NO_UNLOAD_SUP,         "\t\t->Driver does not support unload procedure.\r\n" },
-    { KDUPROV_FLAGS_PML4_FROM_LOWSTUB,     "\t\t->Virtual to physical addresses translation require PML4 query from low stub.\r\n" },
-    { KDUPROV_FLAGS_NO_VICTIM,             "\t\t->No victim required.\r\n" },
-    { KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,  "\t\t->Provider supports only physical memory brute-force.\r\n" },
-    { KDUPROV_FLAGS_PREFER_PHYSICAL,       "\t\t->Physical memory access is preferred.\r\n" },
-    { KDUPROV_FLAGS_PREFER_VIRTUAL,        "\t\t->Virtual memory access is preferred.\r\n" },
-    { KDUPROV_FLAGS_COMPANION_REQUIRED,    "\t\t->Provider expects companion to be loaded.\r\n" },
-    { KDUPROV_FLAGS_USE_SYMBOLS,           "\t\t->MS symbols are required to query internal information.\r\n" },
-    { KDUPROV_FLAGS_OPENPROCESS_SUPPORTED, "\t\t->Driver can be used to open a handle for the specified process.\r\n" },
-    { KDUPROV_FLAGS_FS_FILTER,             "\t\t->Driver is file system filter.\r\n" },
-    { KDUPROV_FLAGS_USE_SUPERFETCH,        "\t\t->Driver can be used with Superfetch for memory translation.\r\n" }
-};
+#include "provlist.h"
 
 PKDU_DB gProvTable = NULL;
 static KDU_DB_SOURCE_TYPE g_KduDbSource = KduDbSourceAuto;
@@ -63,24 +42,6 @@ PKDU_DB_ENTRY KDUProviderToDbEntry(
     }
 
     return NULL;
-}
-
-VOID KDUProvDumpCapabilities(
-    _In_ KDU_DB_ENTRY* Entry
-)
-{
-    ULONG i;
-
-    if (Entry->Flags == KDUPROV_FLAGS_NONE)
-        return;
-
-    printf_s("\tProvider capabilities: \r\n");
-
-    for (i = 0; i < RTL_NUMBER_OF(g_KduProvFlagDescs); i++) {
-        if (Entry->Flags & g_KduProvFlagDescs[i].Mask) {
-            printf_s("%s", g_KduProvFlagDescs[i].Text);
-        }
-    }
 }
 
 /*
@@ -175,161 +136,6 @@ KDU_DB_SOURCE_TYPE KDUProviderGetDbSource(
 PKDU_DB KDUReferenceLoadDB()
 {
     return gProvTable;
-}
-
-/*
-* KDUProvList
-*
-* Purpose:
-*
-* Output available providers.
-*
-*/
-VOID KDUProvList()
-{
-    KDU_DB_ENTRY* provData;
-    CONST CHAR* pszDesc;
-
-    HINSTANCE hProv;
-
-    FUNCTION_ENTER_MSG(__FUNCTION__);
-
-    hProv = KDUProviderLoadDB();
-    if (hProv == NULL)
-        return;
-
-    for (ULONG i = 0; i < gProvTable->NumberOfEntries; i++) {
-        provData = &gProvTable->Entries[i];
-
-        printf_s("Provider # %lu, ResourceId # %lu\r\n\t%ws, DriverName \"%ws\", DeviceName \"%ws\"\r\n",
-            provData->ProviderId,
-            provData->ResourceId,
-            provData->Description,
-            provData->DriverName,
-            provData->DeviceName);
-
-        //
-        // Show signer.
-        //
-        printf_s("\tSigned by: \"%ws\"\r\n",
-            provData->SignerName);
-
-        //
-        // Shellcode support
-        //
-        printf_s("\tShellcode support mask: 0x%08x\r\n", provData->SupportedShellFlags);
-
-        //
-        // List provider flags.
-        //
-        KDUProvDumpCapabilities(provData);
-
-        //
-        // List "based" flags.
-        //
-        if (provData->DrvSourceBase != SourceBaseNone)
-        {
-            switch (provData->DrvSourceBase) {
-            case SourceBaseWinIo:
-                pszDesc = WINIO_BASE_DESC;
-                break;
-            case SourceBaseWinRing0:
-                pszDesc = WINRING0_BASE_DESC;
-                break;
-            case SourceBasePhyMem:
-                pszDesc = PHYMEM_BASE_DESC;
-                break;
-            case SourceBaseMapMem:
-                pszDesc = MAPMEM_BASE_DESC;
-                break;
-            case SourceBaseRWEverything:
-                pszDesc = RWEVERYTHING_BASE_DESC;
-                break;
-            default:
-                pszDesc = "Unknown";
-                break;
-            }
-
-            printf_s("\tBased on: %s\r\n", pszDesc);
-        }
-
-        //
-        // Minimum support Windows build.
-        //
-        printf_s("\tMinimum supported Windows build: %lu\r\n",
-            provData->MinNtBuildNumberSupport);
-
-        //
-        // Maximum support Windows build.
-        //
-        if (provData->MaxNtBuildNumberSupport == KDU_MAX_NTBUILDNUMBER) {
-            printf_s("\tMaximum Windows build undefined, no restrictions\r\n");
-        }
-        else {
-            printf_s("\tMaximum supported Windows build: %lu\r\n",
-                provData->MaxNtBuildNumberSupport);
-        }
-
-        //
-        // Show image size and hashes.
-        //
-        ULONG resourceSize;
-        PBYTE drvBuffer;
-        KDU_IMAGE_HASH_INFO hashInfo;
-
-        resourceSize = 0;
-
-        drvBuffer = (PBYTE)KDULoadResource(provData->ResourceId,
-            hProv,
-            &resourceSize,
-            PROVIDER_RES_KEY,
-            provData->IgnoreChecksum ? FALSE : TRUE);
-
-        if (drvBuffer) {
-
-            printf_s("\tImage size: %lu bytes\r\n", resourceSize);
-
-            if (KDUCalcImageHashes(drvBuffer, resourceSize, &hashInfo)) {
-
-                if (hashInfo.FileHashSha1Valid) {
-                    printf_s("\tFile hash (SHA1): ");
-                    KDUPrintHashValue(hashInfo.FileHashSha1, sizeof(hashInfo.FileHashSha1));
-                    printf_s("\r\n");
-                }
-
-                if (hashInfo.AuthenticodeHashSha1Valid) {
-                    printf_s("\tAuthenticode hash (SHA1): ");
-                    KDUPrintHashValue(hashInfo.AuthenticodeHashSha1, sizeof(hashInfo.AuthenticodeHashSha1));
-                    printf_s("\r\n");
-                }
-
-                if (hashInfo.PageHashSha1Valid) {
-                    printf_s("\tPage hash (SHA1): ");
-                    KDUPrintHashValue(hashInfo.PageHashSha1, sizeof(hashInfo.PageHashSha1));
-                    printf_s("\r\n");
-                }
-
-                if (hashInfo.PageHashSha256Valid) {
-                    printf_s("\tPage hash (SHA256): ");
-                    KDUPrintHashValue(hashInfo.PageHashSha256, sizeof(hashInfo.PageHashSha256));
-                    printf_s("\r\n");
-                }
-
-            }
-            else {
-                printf_s("\tHashes: unavailable\r\n");
-            }
-
-            supHeapFree(drvBuffer);
-        }
-        else {
-            printf_s("\tImage size: unavailable\r\n");
-            printf_s("\tHashes: resource load failed\r\n");
-        }
-
-    }
-
-    FUNCTION_LEAVE_MSG(__FUNCTION__);
 }
 
 /*

@@ -177,8 +177,10 @@
     <ClCompile Include="kduprov.cpp" />
     <ClCompile Include="pagewalk.cpp" />
     <ClCompile Include="provdb.cpp" />
+    <ClCompile Include="provlist.cpp" />
     <ClCompile Include="ps.cpp" />
     <ClCompile Include="shellcode.cpp" />
+    <ClCompile Include="sigcheck.cpp" />
     <ClCompile Include="sup.cpp" />
     <ClCompile Include="diag.cpp" />
     <ClCompile Include="sym.cpp" />
@@ -247,9 +249,11 @@
     <ClInclude Include="idrv\zodiacon.h" />
     <ClInclude Include="ipcsvc.h" />
     <ClInclude Include="provdb.h" />
+    <ClInclude Include="provlist.h" />
     <ClInclude Include="shellcode.h" />
     <ClInclude Include="diag.h" />
     <ClInclude Include="sig.h" />
+    <ClInclude Include="sigcheck.h" />
     <ClInclude Include="sym.h" />
     <ClInclude Include="tests\tests.h" />
     <ClInclude Include="tests\test_dsefix.h" />

@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        01 Apr 2026
+*  DATE:        06 Jun 2026
 *
 *  Provider support routines.
 *
@@ -255,7 +255,6 @@ typedef enum _KDU_DB_SOURCE_TYPE {
 
 ULONG KDUProvGetCount();
 PKDU_DB KDUReferenceLoadDB();
-VOID KDUProvList();
 
 BOOL WINAPI KDUProviderPostOpen(
     _In_ PVOID Param);

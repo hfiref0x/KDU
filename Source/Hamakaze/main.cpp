@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2025
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.44
+*  VERSION:     1.49
 *
-*  DATE:        19 Aug 2025
+*  DATE:        06 Jun 2026
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -31,6 +31,7 @@
 #define CMD_DMP         L"-dmp"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
+#define CMD_LISTCSV     L"-listcsv"
 #define CMD_SI          L"-diag"
 #define CMD_TEST        L"-test"
 #define CMD_RNG         L"-rng"
@@ -41,21 +42,22 @@
 #define T_KDUUSAGE   "[?] No valid parameters combination specified or command is not recognized, see Usage for help\r\n"\
                      "[?] Usage: kdu [Provider][Command]\r\n\n"\
                      "Parameters: \r\n"\
-                     "kdu -list         - List available providers\r\n"\
-                     "kdu -diag         - Run system diagnostic for troubleshooting\r\n"\
-                     "kdu -prv id       - Optional, sets provider id to be used with rest of commands, default 0\r\n"\
-                     "kdu -dmp pid      - Dump virtual memory of the given process\r\n"\
-                     "kdu -ps pid       - Disable ProtectedProcess for given pid\r\n"\
-                     "kdu -pse cmdline  - Launch program as PsProtectedSignerAntimalware-Light\r\n"\
-                     "kdu -psw cmdline  - Launch program as PsProtectedSignerWinTcb-Light\r\n"\
-                     "kdu -pm pid       - Overwrites Process MitigationsFlags1 and 2 with 0x0 for given pid\r\n"\
-                     "kdu -pm1 pid      - Overwrites Process MitigationsFlags1 with 0x0 for given pid\r\n"\
-                     "kdu -pm2 pid      - Overwrites Process MitigationsFlags2 with 0x0 for given pid\r\n"\
-                     "kdu -dse value    - Write user defined value to the system DSE state flags\r\n"\
-                     "kdu -map filename - Map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
-                     "-scv version      - Optional, select shellcode version, default 1\r\n"\
-                     "-drvn name        - Driver object name (only valid for shellcode version 3)\r\n"\
-                     "-drvr name        - Optional, driver registry key name (only valid for shellcode version 3)\r\n"
+                     "kdu -list           - List available providers\r\n"\
+                     "kdu -listcsv [file] - List available providers in CSV format, optionally write to file\r\n"\
+                     "kdu -diag           - Run system diagnostic for troubleshooting\r\n"\
+                     "kdu -prv id         - Optional, sets provider id to be used with rest of commands, default 0\r\n"\
+                     "kdu -dmp pid        - Dump virtual memory of the given process\r\n"\
+                     "kdu -ps pid         - Disable ProtectedProcess for given pid\r\n"\
+                     "kdu -pse cmdline    - Launch program as PsProtectedSignerAntimalware-Light\r\n"\
+                     "kdu -psw cmdline    - Launch program as PsProtectedSignerWinTcb-Light\r\n"\
+                     "kdu -pm pid         - Overwrites Process MitigationsFlags1 and 2 with 0x0 for given pid\r\n"\
+                     "kdu -pm1 pid        - Overwrites Process MitigationsFlags1 with 0x0 for given pid\r\n"\
+                     "kdu -pm2 pid        - Overwrites Process MitigationsFlags2 with 0x0 for given pid\r\n"\
+                     "kdu -dse value      - Write user defined value to the system DSE state flags\r\n"\
+                     "kdu -map filename   - Map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
+                     "-scv version        - Optional, select shellcode version, default 1\r\n"\
+                     "-drvn name          - Driver object name (only valid for shellcode version 3)\r\n"\
+                     "-drvr name          - Optional, driver registry key name (only valid for shellcode version 3)\r\n"
 
 #define T_PRNTDEFAULT   "%s\r\n"
 
@@ -419,6 +421,29 @@ INT KDUProcessCommandLine(
         {
             KDUProvList();
             retVal = 1;
+            break;
+        }
+
+        //
+        // List providers in CSV format.
+        //
+        if (supGetCommandLineOption(CMD_LISTCSV,
+            TRUE,
+            szParameter,
+            RTL_NUMBER_OF(szParameter),
+            &paramLength))
+        {
+            lpParam1 = (paramLength != 0) ? szParameter : NULL;
+
+            if (!KDUProvListCsv(lpParam1)) {
+                supShowWin32Error("[!] Cannot generate providers CSV", GetLastError());
+                retVal = 0;
+            }
+            else {
+                printf_s("[+] CSV file %S generated\r\n", lpParam1);
+                retVal = 1;
+            }
+
             break;
         }
 

@@ -255,6 +255,12 @@
     <ClCompile Include="hash.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sigcheck.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="provlist.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -480,6 +486,12 @@
       <Filter>Source Files\idrv</Filter>
     </ClInclude>
     <ClInclude Include="hash.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sigcheck.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="provlist.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

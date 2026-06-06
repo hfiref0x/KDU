@@ -46,7 +46,11 @@
 #include <SetupAPI.h>
 #include <newdev.h>
 #include <Bcrypt.h>
+#include <wincrypt.h>
+#include <WinTrust.h>
 #include<fltuser.h>
+
+#pragma comment(lib, "Crypt32.lib")
 
 #if defined(__cplusplus)
 extern "C" {
@@ -91,6 +95,7 @@ extern "C" {
 #include "pagewalk.h"
 #include "dsefix.h"
 #include "diag.h"
+#include "provlist.h"
 #include "tests\tests.h"
 
 #define ASSERT_RESOLVED_FUNC(FunctionPtr) { if (FunctionPtr == 0) break; }

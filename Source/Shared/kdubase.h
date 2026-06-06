@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUBASE.H
 *
-*  VERSION:     1.47
+*  VERSION:     1.49
 *
-*  DATE:        25 Mar 2026
+*  DATE:        06 Jun 2026
 *
 *  Base KDU definitions.
 *
@@ -60,13 +60,13 @@ typedef struct _KDU_DB_ENTRY {
         };
     };
     ULONG SupportedShellFlags;
+    LPWSTR AdvisoryId;
     LPWSTR Description;
     LPWSTR DriverName; //only file name, e.g. PROCEXP
     union {
         LPWSTR DeviceName; //device name, e.g. PROCEXP152
         LPWSTR PortName;
     };
-    LPWSTR SignerName;
 } KDU_DB_ENTRY, * PKDU_DB_ENTRY;
 
 typedef struct _KDU_DB {
