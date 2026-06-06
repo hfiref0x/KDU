@@ -71,6 +71,11 @@ Note: Provider with Id 0 is assumed as default if no -prv command is specified.
 | 61     | AMD        | affdriver    | Undefined | 1.1.3.0 and below            |     
 | 62     | Matrox        | mtxC9CB    | Undefined | Undefined           |     
 
+MSFT blacklist types:
+* Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
+* Name - by original filename entry stored inside VERSION_INFO file resources, this type of bans are only possible with cross-checking of file version otherwise it will cause false-positives in case if the driver has "fixed/unaffected" version. 
+* Hash/Page hash - by authenticode hash/page hash, allows MSFT to ban exact driver file.
+
 
 ## Detailed provider metadata
 
