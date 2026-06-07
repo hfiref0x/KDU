@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        06 Jun 2026
+*  DATE:        07 Jun 2026
 *
 *  In-memory signature parsing support.
 * 
@@ -31,7 +31,7 @@ typedef struct _KDU_SIGN_INFO {
 
 _Success_(return != FALSE)
 BOOL KDUQueryImageSignInfo(
-    _In_reads_bytes_(ImageSize) PVOID ImageBase,
+    _In_ PVOID ImageBase,
     _In_ ULONG ImageSize,
     _Out_ PKDU_SIGN_INFO SignInfo);
 

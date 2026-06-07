@@ -668,7 +668,6 @@ BOOL KDUProvListCsv(
                     provData->IgnoreChecksum ? FALSE : TRUE);
 
                 if (drvBuffer) {
-
                     KDUCalcImageHashes(drvBuffer, resourceSize, &hashInfo);
                     KDUQueryImageSignInfo(drvBuffer, resourceSize, &signInfo);
 

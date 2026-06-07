@@ -128,6 +128,7 @@
     <ClCompile Include="..\Shared\minirtl\_strlen.c" />
     <ClCompile Include="..\Shared\minirtl\_strncmp.c" />
     <ClCompile Include="..\Shared\minirtl\_strncpy.c" />
+    <ClCompile Include="..\Shared\minirtl\_strstri.c" />
     <ClCompile Include="..\Shared\ntos\ntsup.c" />
     <ClCompile Include="..\Shared\thirdparty\tinyaes\aes.c" />
     <ClCompile Include="..\Shared\thirdparty\whirlpool\whirlpool.c" />
