@@ -190,6 +190,8 @@ IDR_AMD_AFFDRIVER       RCDATA                  "drv\\affdriver.bin"
 
 IDR_MATROX_MTXC9CB      RCDATA                  "drv\\mtxC9CB.bin"
 
+IDR_FLIR_PGRHOSTCONTROL RCDATA                  "drv\\PGRHostControl.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

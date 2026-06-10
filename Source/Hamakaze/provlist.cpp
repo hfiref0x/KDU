@@ -618,10 +618,13 @@ BOOL KDUProvListCsv(
                 break;
             }
 
+#pragma warning(push)
+#pragma warning(disable:6054)
             if (!KDUProvCsvWriteA(&csvOutput, (LPCSTR)utf8Bom, sizeof(utf8Bom))) {
                 break;
             }
         }
+#pragma warning(pop)
 
         hProv = KDUProviderLoadDB();
         if (hProv == NULL)

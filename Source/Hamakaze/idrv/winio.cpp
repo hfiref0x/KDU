@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        05 Jun 2026
+*  DATE:        08 Jun 2026
 *
 *  WINIO based drivers routines.
 *
@@ -931,6 +931,7 @@ BOOL WINAPI WinIoRegisterDriver(
 
     case IDR_MSI_WINIO:
     case IDR_WNBIOS64:
+    case IDR_FLIR_PGRHOSTCONTROL:
     default:
         g_WinIoMapMemoryRoutine = WinIoMapMemory;
         g_WinIoUnmapMemoryRoutine = WinIoUnmapMemory;

@@ -237,6 +237,7 @@
     <None Include="drv\nvoclock.bin" />
     <None Include="drv\pcdsrvc_x64.bin" />
     <None Include="drv\PdFwKrnl.bin" />
+    <None Include="drv\PGRHostControl.bin" />
     <None Include="drv\PhyDMACC.bin" />
     <None Include="drv\phymemx64.bin" />
     <None Include="drv\phymem_panda.bin" />

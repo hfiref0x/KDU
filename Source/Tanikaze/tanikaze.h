@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        04 Jun 2026
+*  DATE:        08 Jun 2026
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -968,7 +968,22 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"Matrox Graphics driver",
         (LPWSTR)L"mtxC9CB",
         (LPWSTR)L"MtxVxd"
-    }
+    },
+
+     {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_FLIR_PGRHOSTCONTROL,
+        KDU_PROVIDER_FLIR_PGRHOSTCTRL,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseWinIo,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
+        KDUPROV_SC_ALL_DEFAULT,
+        NULL,
+        (LPWSTR)L"PRGHostControl driver",
+        (LPWSTR)L"PGRHostControl",
+        (LPWSTR)L"PGRHostControl"
+     },
 
 };
 

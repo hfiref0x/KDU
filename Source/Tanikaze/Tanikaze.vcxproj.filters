@@ -253,6 +253,9 @@
     <None Include="drv\mtxC9CB.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="drv\PGRHostControl.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        04 Jun 2026
+*  DATE:        08 Jun 2026
 *
 *  Global consts.
 *
@@ -166,6 +166,7 @@
 #define IDR_SHANGKE_WND                 162
 #define IDR_AMD_AFFDRIVER               163
 #define IDR_MATROX_MTXC9CB              164
+#define IDR_FLIR_PGRHOSTCONTROL         165
 
 //
 // Vulnerable drivers providers id
@@ -233,6 +234,7 @@
 #define KDU_PROVIDER_SHANGKE_WHD        60
 #define KDU_PROVIDER_AMD_AFFDRIVER      61
 #define KDU_PROVIDER_MATROX_MTXC9CB     62
+#define KDU_PROVIDER_FLIR_PGRHOSTCTRL   63
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
