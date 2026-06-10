@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        08 Jun 2026
+*  DATE:        10 Jun 2026
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -980,7 +980,7 @@ KDU_DB_ENTRY gProvEntry[] = {
         KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_PML4_FROM_LOWSTUB,
         KDUPROV_SC_ALL_DEFAULT,
         NULL,
-        (LPWSTR)L"PRGHostControl driver",
+        (LPWSTR)L"PGRHostControl driver",
         (LPWSTR)L"PGRHostControl",
         (LPWSTR)L"PGRHostControl"
      },
