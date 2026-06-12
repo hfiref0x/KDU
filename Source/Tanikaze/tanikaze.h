@@ -928,7 +928,7 @@ KDU_DB_ENTRY gProvEntry[] = {
     {
         KDU_MIN_NTBUILDNUMBER,
         KDU_MAX_NTBUILDNUMBER,
-        IDR_SHANGKE_WHD,
+        IDR_SHANGKE_WND,
         KDU_PROVIDER_SHANGKE_WHD,
         KDU_VICTIM_DEFAULT,
         SourceBaseWinRing0,

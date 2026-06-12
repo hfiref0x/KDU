@@ -2,9 +2,9 @@
 // Microsoft Visual C++ generated include file.
 // Used by resource.rc
 //
-#define IDI_ICON1                       1001
-#define IDR_TAIGEI32                    2000
-#define IDR_TAIGEI64                    2001
+#define IDI_ICON1                       10001
+#define IDR_TAIGEI32                    20000
+#define IDR_TAIGEI64                    20001
 
 // Next default values for new objects
 // 

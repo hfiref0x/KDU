@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        08 Jun 2026
+*  DATE:        11 Jun 2026
 *
 *  Global consts.
 *
@@ -98,6 +98,11 @@
 #define IDR_DATA_KMUSIG                 1003
 #define IDR_DATA_ASUSCERTSERVICE        1004
 #define IDR_DATA_NEACSAFEINF            1005
+
+//
+// Database id
+//
+#define IDR_KDUDB                       7000
 
 //
 // Driver id table

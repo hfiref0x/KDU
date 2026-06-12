@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2015 - 2021
+*  (C) COPYRIGHT AUTHORS, 2015 - 2026
 *
 *  TITLE:       COMPRESS.H
 *
-*  VERSION:     1.11
+*  VERSION:     1.49
 *
-*  DATE:        18 Apr 2021
+*  DATE:        11 Jun 2026
 *
 *  Compression support routines.
 *
@@ -25,7 +25,7 @@ VOID EncodeBuffer(
     _In_ ULONG Key);
 
 PVOID KDULoadResource(
-    _In_ ULONG_PTR ResourceId,
+    _In_ ULONG ResourceId,
     _In_ PVOID DllHandle,
     _In_ PULONG DataSize,
     _In_ ULONG DecryptKey,

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2015 - 2023
+*  (C) COPYRIGHT AUTHORS, 2015 - 2026
 *
 *  TITLE:       COMPRESS.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.49
 *
-*  DATE:        08 Apr 2023
+*  DATE:        10 Jun 2026
 *
 *  Compression support routines.
 *
@@ -21,6 +21,61 @@
 #include <msdelta.h>
 
 #pragma comment(lib, "msdelta.lib")
+
+/*
+* KDULookupResourceFromDatabase
+*
+* Purpose:
+*
+* Query KDU db entry by id.
+*
+*/
+PVOID KDULookupResourceFromDatabase(
+    _In_ PVOID Database,
+    _In_ DWORD ResourceId,
+    _In_ DWORD* Size
+)
+{
+    RESOURCE_DB_HEADER* Header;
+    RESOURCE_DB_ENTRY* Entries;
+
+    LONG Left;
+    LONG Right;
+
+    Header = (RESOURCE_DB_HEADER*)Database;
+
+    if (Header->Signature != RESOURCE_DB_SIGNATURE) {
+        return NULL;
+    }
+
+    Entries = (RESOURCE_DB_ENTRY*)(Header + 1);
+
+    Left = 0;
+    Right = (LONG)Header->EntryCount - 1;
+
+    while (Left <= Right) {
+
+        LONG Mid;
+        Mid = (Left + Right) / 2;
+        if (Entries[Mid].Id == ResourceId) {
+            if (Size)
+                *Size = Entries[Mid].Size;
+            return ((PBYTE)Database) + Entries[Mid].Offset;
+        }
+
+        if (Entries[Mid].Id <
+            ResourceId)
+        {
+            Left = Mid + 1;
+        }
+        else
+        {
+            Right = Mid - 1;
+        }
+    }
+
+    return NULL;
+}
 
 /*
 * EncodeBuffer
@@ -65,25 +120,34 @@ VOID EncodeBuffer(
 *
 */
 PVOID KDULoadResource(
-    _In_ ULONG_PTR ResourceId,
+    _In_ ULONG ResourceId,
     _In_ PVOID DllHandle,
     _In_ PULONG DataSize,
     _In_ ULONG DecryptKey,
     _In_ BOOLEAN VerifyChecksum
 )
 {
+    BOOL bSelf;
     PBYTE dataPtr;
     ULONG dataSize = 0;
     SIZE_T decompressedSize = 0;
+    ULONG resKey;
 
     if (DataSize)
         *DataSize = 0;
 
-    dataPtr = supQueryResourceData(ResourceId,
+    bSelf = DllHandle == NtCurrentPeb()->ImageBaseAddress;
+    resKey = (bSelf) ? ResourceId : IDR_KDUDB;
+
+    dataPtr = supQueryResourceData(resKey,
         DllHandle,
         &dataSize);
 
     if (dataPtr && dataSize) {
+
+        if (!bSelf) {
+            dataPtr = (PBYTE)KDULookupResourceFromDatabase(dataPtr, ResourceId, &dataSize);
+        }
 
         dataPtr = (PBYTE)KDUDecompressResource(dataPtr,
             dataSize,
@@ -95,7 +159,6 @@ PVOID KDULoadResource(
             *DataSize = (ULONG)decompressedSize;
 
         return dataPtr;
-
     }
 
     return NULL;
@@ -125,6 +188,8 @@ PVOID KDUDecompressResource(
     PVOID resultPtr = NULL, dataBlob;
 
     *DecompressedSize = 0;
+    if (ResourcePtr == NULL)
+        return NULL;
 
     RtlSecureZeroMemory(&diSource, sizeof(DELTA_INPUT));
     RtlSecureZeroMemory(&diDelta, sizeof(DELTA_INPUT));

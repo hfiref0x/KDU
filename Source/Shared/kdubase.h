@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        06 Jun 2026
+*  DATE:        12 Jun 2026
 *
 *  Base KDU definitions.
 *
@@ -80,3 +80,28 @@ typedef struct _KDU_DB_VERSION {
     WORD Revision;
     WORD Build;
 } KDU_DB_VERSION, * PKDU_DB_VERSION;
+
+#define RESOURCE_DB_SIGNATURE 'XDMR'
+#define RESOURCE_DB_VERSION   1
+#define MAX_PACK_ITEMS 256
+
+#pragma pack(push, 1)
+typedef struct _RESOURCE_DB_HEADER {
+    DWORD Signature;
+    DWORD Version;
+    DWORD EntryCount;
+} RESOURCE_DB_HEADER;
+
+typedef struct _RESOURCE_DB_ENTRY {
+    DWORD Id;
+    DWORD Offset;
+    DWORD Size;
+} RESOURCE_DB_ENTRY;
+#pragma pack(pop)
+
+typedef struct _PACK_ITEM {
+    DWORD Id;
+    CHAR Path[MAX_PATH];
+    DWORD Offset;
+    DWORD Size;
+} PACK_ITEM;

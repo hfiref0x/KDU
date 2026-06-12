@@ -437,9 +437,6 @@ VOID KDUProvList()
 
     for (ULONG i = 0; i < provTable->NumberOfEntries; i++) {
 
-        if (i == 60)
-            Beep(0, 0);
-
         ULONG resourceSize;
         PBYTE drvBuffer;
         KDU_IMAGE_HASH_INFO hashInfo;

@@ -1,3 +1,5 @@
+Dbpack is a special utility used to generate single KDU database file which is next embedded into Tanikaze dll.
+
 GenAsIo2Unlock is a special utility used to generate the "unlocking" resource required for working with the AsIO2 driver. The full source for this utility is included in Source\Utils\GenAsIo2Unlock. The compiled version is located in Sources\Hamakaze\Utils\GenAsIo2Unlock.exe. **Warning:** This utility is set to execute as a post-build event for both Debug and Release configurations. If you do not want to run the precompiled version, replace it with a newly compiled version from the sources. If you remove this post-build event, newly compiled KDU will NOT BE ABLE to use the AsIO2 driver (provider #13).
 
 PCOMP is an auxiliary utility used to compress provider files. It is not intended for general use and is only used when you need to generate new binary blobs for provider DLLs.
