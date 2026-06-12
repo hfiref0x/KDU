@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        10 Jun 2026
+*  DATE:        11 Jun 2026
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -970,7 +970,7 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"MtxVxd"
     },
 
-     {
+    {
         KDU_MIN_NTBUILDNUMBER,
         KDU_MAX_NTBUILDNUMBER,
         IDR_FLIR_PGRHOSTCONTROL,
@@ -983,7 +983,22 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"PGRHostControl driver",
         (LPWSTR)L"PGRHostControl",
         (LPWSTR)L"PGRHostControl"
-     },
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_LECOMA,
+        KDU_PROVIDER_LECOMA,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SUPERFETCH,
+        KDUPROV_SC_ALL_DEFAULT,
+        NULL,
+        (LPWSTR)L"LECO(R) LECOMA Device Driver",
+        (LPWSTR)L"LECOMAx",
+        (LPWSTR)L"LECOMA64_2"
+    }
 
 };
 

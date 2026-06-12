@@ -227,6 +227,7 @@
     <None Include="drv\kprocesshacker.bin" />
     <None Include="drv\KRegExp.bin" />
     <None Include="drv\LDD.bin" />
+    <None Include="drv\LECOMAx.bin" />
     <None Include="drv\lha.bin" />
     <None Include="drv\LnvMSRIO.bin" />
     <None Include="drv\mimidrv.bin" />

@@ -192,6 +192,8 @@ IDR_MATROX_MTXC9CB      RCDATA                  "drv\\mtxC9CB.bin"
 
 IDR_FLIR_PGRHOSTCONTROL RCDATA                  "drv\\PGRHostControl.bin"
 
+IDR_LECOMA              RCDATA                  "drv\\LECOMAx.bin"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

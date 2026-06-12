@@ -153,6 +153,7 @@
     <ClCompile Include="idrv\hp.cpp" />
     <ClCompile Include="idrv\ipcdec.cpp" />
     <ClCompile Include="idrv\kph.cpp" />
+    <ClCompile Include="idrv\leco.cpp" />
     <ClCompile Include="idrv\lenovo.cpp" />
     <ClCompile Include="idrv\lha.cpp" />
     <ClCompile Include="idrv\mapmem.cpp" />
@@ -228,6 +229,7 @@
     <ClInclude Include="idrv\directio64.h" />
     <ClInclude Include="idrv\gmer.h" />
     <ClInclude Include="idrv\kph.h" />
+    <ClInclude Include="idrv\leco.h" />
     <ClInclude Include="idrv\lenovo.h" />
     <ClInclude Include="idrv\lha.h" />
     <ClInclude Include="idrv\mapmem.h" />

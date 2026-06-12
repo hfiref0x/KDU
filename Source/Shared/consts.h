@@ -167,6 +167,7 @@
 #define IDR_AMD_AFFDRIVER               163
 #define IDR_MATROX_MTXC9CB              164
 #define IDR_FLIR_PGRHOSTCONTROL         165
+#define IDR_LECOMA                      166
 
 //
 // Vulnerable drivers providers id
@@ -235,6 +236,7 @@
 #define KDU_PROVIDER_AMD_AFFDRIVER      61
 #define KDU_PROVIDER_MATROX_MTXC9CB     62
 #define KDU_PROVIDER_FLIR_PGRHOSTCTRL   63
+#define KDU_PROVIDER_LECOMA             64
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

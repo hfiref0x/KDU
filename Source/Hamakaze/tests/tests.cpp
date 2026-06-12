@@ -288,7 +288,7 @@ VOID KDUTest()
     //KDUTestLoad();
     //TestSymbols();
     //KDUTestDSEQuery(NT_WIN11_24H2);
-    Context = KDUProviderCreate(KDU_PROVIDER_FLIR_PGRHOSTCTRL,
+    Context = KDUProviderCreate(KDU_PROVIDER_LECOMA,
         FALSE,
         NT_WIN10_20H1,
         KDU_SHELLCODE_V1,

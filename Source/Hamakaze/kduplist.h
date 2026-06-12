@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        05 Jun 2026
+*  DATE:        11 Jun 2026
 *
 *  Providers global list.
 *
@@ -53,6 +53,7 @@
 #include "idrv/tpw.h"
 #include "idrv/ipcdec.h"
 #include "idrv/matrox.h"
+#include "idrv/leco.h"
 
 //
 // Victims public array.
@@ -1756,6 +1757,32 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
         (provValidatePrerequisites)NULL,
+
+        (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)LecoReadKernelVirtualMemory,
+        (provWriteKernelVM)LecoWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)LecoVirtualToPhysical,
+        (provQueryPML4)NULL,
+        (provReadPhysicalMemory)LecoReadPhysicalMemory,
+        (provWritePhysicalMemory)LecoWritePhysicalMemory,
+
+        (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
 
         (provOpenProcess)NULL
     }
