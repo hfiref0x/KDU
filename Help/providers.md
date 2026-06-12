@@ -71,6 +71,7 @@ Note: Provider with Id 0 is assumed as default if no -prv command is specified.
 | 61     | AMD        | affdriver    | Undefined | 1.1.3.0 and below            |     
 | 62     | Matrox        | mtxC9CB    | Undefined | Undefined           |     
 | 63     | Point Grey Research        | PGRHostControl    | Development SDK | 2.7.0.0 and below           |     
+| 64     | LECO        | LECOMA    | Undefined | 2.3.1.0 and below           |     
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
@@ -146,6 +147,7 @@ MSFT blacklist types:
 |61        |163       |affdriver              |BiosToolCommonDriver                  |AMD BIOS Flash Utility driver                         |                              |Advanced Micro Devices Inc.                       |None        |7601      |ANY       |0x00004102|0x00000007   |48352    |D4C584732FA9ABD7D7EB83E169686764C500F2E0|129F2F059513AE62D0F63E3644CBFA7B671B938B|DD5BCF7C1F992314B0CC95035408D87DAEE385CB|7E1AFF6BED0E2478655C3E0B69CD614743715E986C52A079FD8B3B8F9979D1A2|
 |62        |164       |mtxC9CB                |MtxVxd                                |Matrox Graphics driver                                |                              |Matrox Graphics Inc.                              |None        |7601      |ANY       |0x00004100|0x00000007   |20744    |F0F325DC9B15FEF3781D01B6B14022A89C68CA46|A64EE7F9111BECDF289F3460DE1DD10BD0D739A6|584AB91AC1714D418A14C2326921A282BC13F29D|407A90A525270F64708BCF3C53E2062119B874566B2C57B49A0457F7606C04F0|
 |63        |165       |PGRHostControl         |PGRHostControl                        |PGRHostControl driver                                 |                              |FLIR Integrated Imaging Solutions, Inc.           |WinIo       |7601      |ANY       |0x00000122|0x00000007   |24824    |8D733095AC1CFCD799F58BE3B8A25800F31E6FE2|671F7A5E44856B3A785AD7824812435F43A1B73F|05E5E9F806933932CC2EE733F8D4A59F0D9FC99A|2007A5BC8617AFBB207E9FB98CC4A99DA533C6E4F059BB91D5A3B9626A87AFBD|
+|64        |166       |LECOMAx                |LECOMA64_2                            |LECO(R) LECOMA Device Driver                          |                              |LECO Corporation                                  |None        |7601      |ANY       |0x00004100|0x00000007   |18192    |EB817E8AF016F6A3ECE2B7CF421EC6D96970E285|8F21CD62CC6881811C1563930A13E7E98CE558D8|995BA4F995F0D362EEFA5AAAA81426378F12D034|22D2AA641E7E828E08E8FBA08A3DE10670C7F4134612AEA18B42FB1298EE9A5B|
 
 ## Notes
 
