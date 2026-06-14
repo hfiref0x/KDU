@@ -28,6 +28,8 @@
 #define CMD_PM          L"-pm"
 #define CMD_PM1         L"-pm1"
 #define CMD_PM2         L"-pm2"
+#define CMD_DPH         L"-dph"
+#define CMD_DCL         L"-dcl"
 #define CMD_DMP         L"-dmp"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
@@ -53,6 +55,8 @@
                      "kdu -pm pid         - Overwrites Process MitigationsFlags1 and 2 with 0x0 for given pid\r\n"\
                      "kdu -pm1 pid        - Overwrites Process MitigationsFlags1 with 0x0 for given pid\r\n"\
                      "kdu -pm2 pid        - Overwrites Process MitigationsFlags2 with 0x0 for given pid\r\n"\
+                     "kdu -dph trg      - Duplicate a csrss Process Handle (csrss->target) to the new command to be executed\r\n"\
+                     "kdu -dpc cmdline  - The Command Line to be executed with the Duplicated handle (or powershell.exe as default)\r\n"\
                      "kdu -dse value      - Write user defined value to the system DSE state flags\r\n"\
                      "kdu -map filename   - Map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
                      "-scv version        - Optional, select shellcode version, default 1\r\n"\
@@ -156,6 +160,40 @@ INT KDUProcessPMObjectSwitch(
     }
 
     return retVal;
+}
+
+/*
+* KDUDuplicateProcessHandleSwitch
+*
+* Purpose:
+*
+* Handle -dph switch.
+*
+*/
+INT KDUDuplicateProcessHandleSwitch(
+    _In_ ULONG HvciEnabled,
+    _In_ ULONG NtBuildNumber,
+    _In_ ULONG ProviderId,
+    _In_ ULONG_PTR TargetProcessId,
+    _In_ LPWSTR CommandLine
+)
+{
+    HANDLE retVal = NULL;
+    BOOL bResult = FALSE;
+    KDU_CONTEXT* provContext;
+
+    provContext = KDUProviderCreate(ProviderId,
+        HvciEnabled,
+        NtBuildNumber,
+        KDU_SHELLCODE_NONE,
+        ActionTypeDuplicateHandle);
+
+    if (provContext) {
+        bResult = KDURunCommandDup(provContext, CommandLine, TargetProcessId, &retVal);
+        KDUProviderRelease(provContext);
+    }
+
+    return retVal != 0;
 }
 
 /*
@@ -671,6 +709,32 @@ INT KDUProcessCommandLine(
                         providerId,
                         szParameter, 
                         TRUE);
+                }
+
+                else if (supGetCommandLineOption(CMD_DPH,
+                    TRUE,
+                    szParameter,
+                    RTL_NUMBER_OF(szParameter),
+                    NULL))
+                {
+                    processId = strtou64(szParameter);
+
+                    WCHAR szCmdLine[MAX_PATH] = { 0 };
+                    wcscpy_s(szCmdLine, L"powershell.exe"); // default command line
+
+                    if (supGetCommandLineOption(CMD_DCL,
+                        TRUE,
+                        szParameter,
+                        RTL_NUMBER_OF(szParameter),
+                        NULL))
+                    {
+                        wcscpy_s(szCmdLine, szParameter);
+                    }
+                    retVal = KDUDuplicateProcessHandleSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        processId,
+                        szCmdLine);
                 }
 
                 else if (supGetCommandLineOption(CMD_DMP,

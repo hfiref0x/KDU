@@ -796,6 +796,7 @@ BOOL KDUProviderVerifyActionType(
         break;
 
     case ActionTypeDumpProcess:
+    case ActionTypeDuplicateHandle:
 
         if (Provider->Callbacks.OpenProcess == NULL) {
 

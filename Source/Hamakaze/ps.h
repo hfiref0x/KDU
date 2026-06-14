@@ -95,3 +95,16 @@ BOOL KDUControlProcessMitigationFlags(
     _In_ ULONG_PTR ProcessId,
     _In_ ULONG PsMitigations,
     _In_ INT TargetedFlags);
+
+BOOL KDURunCommandDup(
+    _In_ PKDU_CONTEXT Context,
+    _In_ LPWSTR CommandLine,
+    _In_ ULONG_PTR TargetProcessId,
+    _Out_ HANDLE dupHandle);
+
+BOOL KDUDuplicateProcessHandle(
+    _In_ PKDU_CONTEXT Context,
+    _In_ HANDLE NewProcessId,
+    _In_ ULONG_PTR SourceProcessId,
+    _In_ ULONG_PTR TargetProcessId,
+    _Out_ PHANDLE DupHandle);
