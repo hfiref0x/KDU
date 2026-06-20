@@ -750,7 +750,22 @@ BOOL KDUProviderVerifyActionType(
         return FALSE;
     }
 
+    // TODO: why 2 separate switches?
+    // 1st check the relevant primitives
     switch (ActionType) {
+
+    case ActionTypeDuplicateHandle:
+
+        if (Provider->Callbacks.OpenProcess == NULL)
+        {
+            supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support arbitrary process handle acquisition or\r\n"\
+                "\tKDU interface is not implemented for this method.\r\n");
+            return FALSE;
+
+        }
+
+		// do not break, DupHandle also needs Read/Write primitives (I didn't find a more efficient way)
+
     case ActionTypeDKOM:
     case ActionTypeMapDriver:
     case ActionTypeDSECorruption:
@@ -796,7 +811,6 @@ BOOL KDUProviderVerifyActionType(
         break;
 
     case ActionTypeDumpProcess:
-    case ActionTypeDuplicateHandle:
 
         if (Provider->Callbacks.OpenProcess == NULL) {
 
@@ -812,6 +826,7 @@ BOOL KDUProviderVerifyActionType(
         break;
     }
 
+    // 2nd set callbacks
     switch (ActionType) {
 
     case ActionTypeDKOM:

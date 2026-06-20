@@ -1280,6 +1280,23 @@ typedef struct _PROCESS_HANDLE_TABLE_ENTRY_INFO {
     ULONG Reserved;
 } PROCESS_HANDLE_TABLE_ENTRY_INFO, *PPROCESS_HANDLE_TABLE_ENTRY_INFO;
 
+typedef struct _HANDLE_TABLE_ENTRY {
+    union {
+        VOID* Object;                    // Pointer to the object (e.g., _EPROCESS)
+        ULONG_PTR ObAttributes;          // Low bits contain object flags/attributes
+        ULONGLONG Value;                 // Whole 64-bit value representing the object info
+    };
+    union {
+        ULONG GrantedAccess;             // access mask
+        struct {
+            USHORT GrantedAccessBits : 16;
+            USHORT NoCPUCount : 1;
+            USHORT CheckedTransfer : 1;
+        };
+        LONG NextFreeHandleEntry;        // Used if the handle slot is closed/free
+    };
+} HANDLE_TABLE_ENTRY, *PHANDLE_TABLE_ENTRY;
+
 typedef struct _PROCESS_HANDLE_SNAPSHOT_INFORMATION {
     ULONG_PTR NumberOfHandles;
     ULONG_PTR Reserved;

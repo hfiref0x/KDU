@@ -52,13 +52,21 @@
 #define PS_MITIGATION_FLAGS1 0x00000001
 #define PS_MITIGATION_FLAGS2 0x00000002
 
+#define ObjectTableOffset_26100 0x300
+#define HandleTableOffset_26100 0x8
+
 #define EPROCESS_TO_PROTECTION(Object, Offset) ((ULONG_PTR)(Object) + (Offset))
 #define EPROCESS_TO_MITIGATIONFLAGS(Object, FlagsOffset) ((ULONG_PTR)(Object) + (FlagsOffset))
+
+#define EPROCESS_TO_OBJECTTABLE(Object, Offset) ((ULONG_PTR)(Object) + (Offset))
+#define HANDLE_TABLE_OFFSET(Object, Offset) ((ULONG_PTR)(Object) + (Offset))
 
 typedef struct _KDU_EPROCESS_OFFSETS {
     ULONG_PTR PsProtectionOffset;
     ULONG_PTR MitigationFlags1Offset;
     ULONG_PTR MitigationFlags2Offset;
+    ULONG_PTR ObjectHandleOffset;
+    ULONG_PTR HandleTableOffset;
 } KDU_EPROCESS_OFFSETS, * PKDU_EPROCESS_OFFSETS;
 
 BOOL KDUGetEprocessOffsets(
@@ -100,11 +108,4 @@ BOOL KDURunCommandDup(
     _In_ PKDU_CONTEXT Context,
     _In_ LPWSTR CommandLine,
     _In_ ULONG_PTR TargetProcessId,
-    _Out_ HANDLE dupHandle);
-
-BOOL KDUDuplicateProcessHandle(
-    _In_ PKDU_CONTEXT Context,
-    _In_ HANDLE NewProcessId,
-    _In_ ULONG_PTR SourceProcessId,
-    _In_ ULONG_PTR TargetProcessId,
-    _Out_ PHANDLE DupHandle);
+    _Out_ HANDLE *dupHandle);
