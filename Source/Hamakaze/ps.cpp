@@ -341,8 +341,8 @@ BOOL KDUGetEprocessOffsets(
     Offsets->PsProtectionOffset = 0;
     Offsets->MitigationFlags1Offset = 0;
     Offsets->MitigationFlags2Offset = 0;
-    Offsets->ObjectHandleOffset = 0;
-	Offsets->HandleTableOffset = 0;
+    Offsets->ObjectTableOffset = 0;
+	Offsets->HandleTableOffset = HandleTableOffset_all;
 
     switch (NtBuildNumber) {
 
@@ -398,6 +398,7 @@ BOOL KDUGetEprocessOffsets(
         Offsets->PsProtectionOffset = PsProtectionOffset_19041;
         Offsets->MitigationFlags1Offset = PsMitigationFlags1Offset_19041;
         Offsets->MitigationFlags2Offset = PsMitigationFlags2Offset_19041;
+        Offsets->ObjectTableOffset = ObjectTableOffset_19041;
         break;
 
     case NT_WIN11_24H2:
@@ -405,8 +406,7 @@ BOOL KDUGetEprocessOffsets(
         Offsets->PsProtectionOffset = PsProtectionOffset_26100;
         Offsets->MitigationFlags1Offset = PsMitigationFlags1Offset_26100;
         Offsets->MitigationFlags2Offset = PsMitigationFlags2Offset_26100;
-		Offsets->ObjectHandleOffset = ObjectTableOffset_26100;
-		Offsets->HandleTableOffset = HandleTableOffset_26100;
+		Offsets->ObjectTableOffset = ObjectTableOffset_26100;
         break;
 
     default:
@@ -810,7 +810,7 @@ BOOL KDUControlHandleAccess(
     }
 
     if (!KDUGetEprocessOffsets(Context->NtBuildNumber, &offsets) ||
-        offsets.ObjectHandleOffset == 0)
+        offsets.ObjectTableOffset == 0)
     {
         supPrintfEvent(kduEventError, 
             "[!] Unsupported WinNT version\r\n");
@@ -834,7 +834,7 @@ BOOL KDUControlHandleAccess(
 			
             // read the ObjectTable pointer from the EPROCESS structure
 			if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
-				EPROCESS_TO_OBJECTTABLE(ProcessObject, offsets.ObjectHandleOffset),
+				EPROCESS_TO_OBJECTTABLE(ProcessObject, offsets.ObjectTableOffset),
 				&HandleTable,
 				sizeof(ULONG_PTR))) 
             {

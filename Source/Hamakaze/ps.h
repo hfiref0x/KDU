@@ -52,8 +52,12 @@
 #define PS_MITIGATION_FLAGS1 0x00000001
 #define PS_MITIGATION_FLAGS2 0x00000002
 
-#define ObjectTableOffset_26100 0x300
-#define HandleTableOffset_26100 0x8
+// credits to https://www.vergiliusproject.com/kernels/x64/windows-11/25h2/_EPROCESS
+#define ObjectTableOffset_19041 0x570 // 2004, 20H2, ..., 23H2
+#define ObjectTableOffset_26100 0x300 // 24H2, 25H2
+
+// credits to https://www.vergiliusproject.com/kernels/x64/windows-11/25h2/_HANDLE_TABLE_ENTRY
+#define HandleTableOffset_all 0x8 // XP..25H2
 
 #define EPROCESS_TO_PROTECTION(Object, Offset) ((ULONG_PTR)(Object) + (Offset))
 #define EPROCESS_TO_MITIGATIONFLAGS(Object, FlagsOffset) ((ULONG_PTR)(Object) + (FlagsOffset))
@@ -65,7 +69,7 @@ typedef struct _KDU_EPROCESS_OFFSETS {
     ULONG_PTR PsProtectionOffset;
     ULONG_PTR MitigationFlags1Offset;
     ULONG_PTR MitigationFlags2Offset;
-    ULONG_PTR ObjectHandleOffset;
+    ULONG_PTR ObjectTableOffset;
     ULONG_PTR HandleTableOffset;
 } KDU_EPROCESS_OFFSETS, * PKDU_EPROCESS_OFFSETS;
 
