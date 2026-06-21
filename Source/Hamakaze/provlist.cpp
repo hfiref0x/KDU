@@ -185,7 +185,7 @@ LPCSTR KDUProvSourceBaseToString(
 VOID KDUProvFormatHex(
     _In_ PBYTE Data,
     _In_ ULONG DataSize,
-    _Out_ PCHAR OutputBuffer,
+    _Out_writes_bytes_(OutputBufferChars) PCHAR OutputBuffer,
     _In_ ULONG OutputBufferChars
 )
 {
