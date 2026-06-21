@@ -19,7 +19,6 @@
 
 #include "global.h"
 #include <Dbghelp.h>
-#include <TlHelp32.h>
 
 typedef BOOL(WINAPI* pfnMiniDumpWriteDump)(
     _In_ HANDLE hProcess,
