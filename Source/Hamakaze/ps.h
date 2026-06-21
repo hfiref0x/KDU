@@ -104,8 +104,8 @@ BOOL KDUControlProcessMitigationFlags(
     _In_ ULONG PsMitigations,
     _In_ INT TargetedFlags);
 
-BOOL KDURunCommandDup(
+BOOL KDURunCommandInheritee(
     _In_ PKDU_CONTEXT Context,
     _In_ LPWSTR CommandLine,
     _In_ ULONG_PTR TargetProcessId,
-    _Out_ HANDLE *dupHandle);
+    _In_ ULONG_PTR PPLLevel);

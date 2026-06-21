@@ -920,14 +920,12 @@ BOOL KDUControlHandleAccess(
 * Start a Process to duplicate a handle into
 *
 */
-BOOL KDURunCommandDup(
+BOOL KDURunCommandInheritee(
     _In_ PKDU_CONTEXT Context,
     _In_ LPWSTR CommandLine,
     _In_ ULONG_PTR TargetProcessId,
-    _Out_ HANDLE *dupHandle)
+    _In_ ULONG_PTR PPLLevel)
 {
-    BOOL   bResult = FALSE;
-	dupHandle = NULL;
 
 	if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) {
 		printf_s("[!] Provider does not support required callbacks for handle duplication\r\n");
@@ -998,25 +996,59 @@ BOOL KDURunCommandDup(
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
 
-    wprintf_s(L"[+] Creating Process '%s'\r\n", CommandLine);
+    DWORD creationOptions;
+    if (PPLLevel > 0) {
+        wprintf_s(L"[+] Creating suspended Process '%s'\r\n", CommandLine);
+        creationOptions = CREATE_SUSPENDED;
+    }
+    else {
+        wprintf_s(L"[+] Creating Process '%s'\r\n", CommandLine);
+        creationOptions = NULL;
+    }
+
 
     // process can be started directly, 
-    bResult = CreateProcess(
+    if (!CreateProcess(
         NULL,               // No module name (use command line)
         CommandLine,        // Command line
         NULL,               // Process handle not inheritable
         NULL,               // Thread handle not inheritable
         TRUE,               // Do inherit inheritable handles
-		NULL,               // Create Process running normally
+        creationOptions,
         NULL,               // Use parent's environment block
         NULL,               // Use parent's starting directory 
         &si,                // Pointer to STARTUPINFO structure
-        &pi);               // Pointer to PROCESS_INFORMATION structure
-    if (!bResult) {
+        &pi))               // Pointer to PROCESS_INFORMATION structure
+    {
         supShowWin32Error("[!] Failed to create process", GetLastError());
-        return bResult;
+        return FALSE;
     }
     printf_s("[+] Created Process with PID %lu\r\n", pi.dwProcessId);
+
+    // when suspended, patch PPL and resume
+    if (PPLLevel > 0 and PPLLevel < 8) {
+
+        DWORD dwThreadResumeCount = 0;
+        PS_PROTECTED_SIGNER signer = (PS_PROTECTED_SIGNER)PPLLevel;
+        PS_PROTECTED_TYPE type = PsProtectedTypeProtectedLight;
+
+        if (!KDUControlProcessProtections(Context, pi.dwProcessId, signer, type)) {
+            supShowWin32Error("[!] Failed to set process as PPL", GetLastError());
+            TerminateProcess(pi.hProcess, 0);
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+            return FALSE;
+        }
+
+        dwThreadResumeCount = ResumeThread(pi.hThread);
+        if (dwThreadResumeCount != 1) {
+            printf_s("[!] Failed to resume process: %lu | 0x%lX\n", dwThreadResumeCount, GetLastError());
+            TerminateProcess(pi.hProcess, 0);
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+            return FALSE;
+        }
+    }
 
     // Wait until child process exits.
     WaitForSingleObject(pi.hProcess, INFINITE);
@@ -1025,5 +1057,5 @@ BOOL KDURunCommandDup(
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 
-    return bResult;
+    return TRUE;
 }

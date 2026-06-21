@@ -28,8 +28,9 @@
 #define CMD_PM          L"-pm"
 #define CMD_PM1         L"-pm1"
 #define CMD_PM2         L"-pm2"
-#define CMD_DPH         L"-dph"
-#define CMD_DCL         L"-dcl"
+#define CMD_PHO         L"-pho"
+#define CMD_PHC         L"-phc"
+#define CMD_PHE         L"-phe"
 #define CMD_DMP         L"-dmp"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
@@ -55,8 +56,9 @@
                      "kdu -pm pid         - Overwrites Process MitigationsFlags1 and 2 with 0x0 for given pid\r\n"\
                      "kdu -pm1 pid        - Overwrites Process MitigationsFlags1 with 0x0 for given pid\r\n"\
                      "kdu -pm2 pid        - Overwrites Process MitigationsFlags2 with 0x0 for given pid\r\n"\
-                     "kdu -dph trg      - Duplicate a csrss Process Handle (csrss->target) to the new command to be executed\r\n"\
-                     "kdu -dpc cmdline  - The Command Line to be executed with the Duplicated handle (or powershell.exe as default)\r\n"\
+                     "kdu -pho pid        - Open a Process Handle to the given pid, patches the handle to full access in case of stripping, sets inherit to true and starts a child process, powershell default\r\n"\
+                     "kdu -phc cmdline    - The command line of the new child process that inherits the full access process handle, only with pho\r\n"\
+                     "kdu -phe ppllevel   - The ppl level of the new child process, (none) 0-6 (max), only with pho\r\n"\
                      "kdu -dse value      - Write user defined value to the system DSE state flags\r\n"\
                      "kdu -map filename   - Map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
                      "-scv version        - Optional, select shellcode version, default 1\r\n"\
@@ -170,11 +172,12 @@ INT KDUProcessPMObjectSwitch(
 * Handle -dph switch.
 *
 */
-INT KDUDuplicateProcessHandleSwitch(
+INT KDUOpenProcessInheritHandle(
     _In_ ULONG HvciEnabled,
     _In_ ULONG NtBuildNumber,
     _In_ ULONG ProviderId,
     _In_ ULONG_PTR TargetProcessId,
+    _In_ ULONG_PTR PPLLevel,
     _In_ LPWSTR CommandLine
 )
 {
@@ -189,7 +192,7 @@ INT KDUDuplicateProcessHandleSwitch(
         ActionTypeDuplicateHandle);
 
     if (provContext) {
-        bResult = KDURunCommandDup(provContext, CommandLine, TargetProcessId, &retVal);
+        bResult = KDURunCommandInheritee(provContext, CommandLine, TargetProcessId, PPLLevel);
         KDUProviderRelease(provContext);
     }
 
@@ -645,14 +648,14 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                {
-                    processId = strtou64(szParameter);
+                    {
+                        processId = strtou64(szParameter);
 
-                    retVal = KDUProcessPMObjectSwitch(HvciEnabled,
-                        NtBuildNumber,
-                        providerId,
-                        processId,
-                        PS_MITIGATION_FLAGS1 | PS_MITIGATION_FLAGS2);
+                        retVal = KDUProcessPMObjectSwitch(HvciEnabled,
+                            NtBuildNumber,
+                            providerId,
+                            processId,
+                            PS_MITIGATION_FLAGS1 | PS_MITIGATION_FLAGS2);
                 }
 
                 else if (supGetCommandLineOption(CMD_PM1,
@@ -660,14 +663,14 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                {
-                    processId = strtou64(szParameter);
+                    {
+                        processId = strtou64(szParameter);
 
-                    retVal = KDUProcessPMObjectSwitch(HvciEnabled,
-                        NtBuildNumber,
-                        providerId,
-                        processId,
-                        PS_MITIGATION_FLAGS1);
+                        retVal = KDUProcessPMObjectSwitch(HvciEnabled,
+                            NtBuildNumber,
+                            providerId,
+                            processId,
+                            PS_MITIGATION_FLAGS1);
                 }
 
                 else if (supGetCommandLineOption(CMD_PM2,
@@ -675,14 +678,14 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                {
-                    processId = strtou64(szParameter);
+                    {
+                        processId = strtou64(szParameter);
 
-                    retVal = KDUProcessPMObjectSwitch(HvciEnabled,
-                        NtBuildNumber,
-                        providerId,
-                        processId,
-                        PS_MITIGATION_FLAGS2);
+                        retVal = KDUProcessPMObjectSwitch(HvciEnabled,
+                            NtBuildNumber,
+                            providerId,
+                            processId,
+                            PS_MITIGATION_FLAGS2);
                 }
 
                 else if (supGetCommandLineOption(CMD_PSE,
@@ -690,12 +693,12 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                {
-                    retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
-                        NtBuildNumber,
-                        providerId,
-                        szParameter,
-                        FALSE);
+                    {
+                        retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
+                            NtBuildNumber,
+                            providerId,
+                            szParameter,
+                            FALSE);
                 }
 
                 else if (supGetCommandLineOption(CMD_PSW,
@@ -703,26 +706,28 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                {
-                    retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
-                        NtBuildNumber,
-                        providerId,
-                        szParameter, 
-                        TRUE);
+                    {
+                        retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
+                            NtBuildNumber,
+                            providerId,
+                            szParameter,
+                            TRUE);
                 }
 
-                else if (supGetCommandLineOption(CMD_DPH,
+                else if (supGetCommandLineOption(CMD_PHO,
                     TRUE,
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                {
+                    {
                     processId = strtou64(szParameter);
 
                     WCHAR szCmdLine[MAX_PATH] = { 0 };
                     wcscpy_s(szCmdLine, L"powershell.exe"); // default command line
 
-                    if (supGetCommandLineOption(CMD_DCL,
+                    ULONG_PTR level = 0;
+
+                    if (supGetCommandLineOption(CMD_PHC,
                         TRUE,
                         szParameter,
                         RTL_NUMBER_OF(szParameter),
@@ -730,10 +735,26 @@ INT KDUProcessCommandLine(
                     {
                         wcscpy_s(szCmdLine, szParameter);
                     }
-                    retVal = KDUDuplicateProcessHandleSwitch(HvciEnabled,
+
+                    if (supGetCommandLineOption(CMD_PHE,
+                        TRUE,
+                        szParameter,
+                        RTL_NUMBER_OF(szParameter),
+                        NULL))
+                    {
+                        level = strtou64(szParameter);
+                        if (level < 0 || level > 8) {
+                            supPrintfEvent(kduEventError,
+                                "[!] Unsupported PPL level for Open Process Handle\r\n");
+                            return 1;
+                        }
+                    }
+
+                    retVal = KDUOpenProcessInheritHandle(HvciEnabled,
                         NtBuildNumber,
                         providerId,
                         processId,
+                        level,
                         szCmdLine);
                 }
 
