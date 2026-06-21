@@ -189,7 +189,7 @@ INT KDUOpenProcessInheritHandle(
         HvciEnabled,
         NtBuildNumber,
         KDU_SHELLCODE_NONE,
-        ActionTypeDuplicateHandle);
+        ActionTypeOpenProcessHandle);
 
     if (provContext) {
         bResult = KDURunCommandInheritee(provContext, CommandLine, TargetProcessId, PPLLevel);

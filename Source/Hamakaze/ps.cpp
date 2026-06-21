@@ -1025,6 +1025,11 @@ BOOL KDURunCommandInheritee(
     }
     printf_s("[+] Created Process with PID %lu\r\n", pi.dwProcessId);
 
+    if (PPLLevel >= 7) {
+        PPLLevel = 7;
+        printf_s("[!] Capped the PPL level at 7\n");
+    }
+
     // when suspended, patch PPL and resume
     if (PPLLevel > 0 and PPLLevel < 8) {
 

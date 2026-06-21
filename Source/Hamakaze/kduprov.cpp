@@ -750,11 +750,10 @@ BOOL KDUProviderVerifyActionType(
         return FALSE;
     }
 
-    // TODO: why 2 separate switches?
     // 1st check the relevant primitives
     switch (ActionType) {
 
-    case ActionTypeDuplicateHandle:
+    case ActionTypeOpenProcessHandle:
 
         if (Provider->Callbacks.OpenProcess == NULL)
         {
@@ -765,8 +764,8 @@ BOOL KDUProviderVerifyActionType(
         }
 
         break; 
-        // in case the access rights need to be modified, DupHandle also needs to have read/write
-        // but I guess it's better to fail when r/w is required, then to fail here when r/w would maybe not be required
+        // in case the access rights need to be modified, -pho also needs to have read/write
+        // but I guess it's better to fail when r/w is required later, then to fail here when r/w would maybe not be required
 
     case ActionTypeDKOM:
     case ActionTypeMapDriver:
