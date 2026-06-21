@@ -648,14 +648,14 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                    {
-                        processId = strtou64(szParameter);
+                {
+                    processId = strtou64(szParameter);
 
-                        retVal = KDUProcessPMObjectSwitch(HvciEnabled,
-                            NtBuildNumber,
-                            providerId,
-                            processId,
-                            PS_MITIGATION_FLAGS1 | PS_MITIGATION_FLAGS2);
+                    retVal = KDUProcessPMObjectSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        processId,
+                        PS_MITIGATION_FLAGS1 | PS_MITIGATION_FLAGS2);
                 }
 
                 else if (supGetCommandLineOption(CMD_PM1,
@@ -663,14 +663,14 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                    {
-                        processId = strtou64(szParameter);
+                {
+                    processId = strtou64(szParameter);
 
-                        retVal = KDUProcessPMObjectSwitch(HvciEnabled,
-                            NtBuildNumber,
-                            providerId,
-                            processId,
-                            PS_MITIGATION_FLAGS1);
+                    retVal = KDUProcessPMObjectSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        processId,
+                        PS_MITIGATION_FLAGS1);
                 }
 
                 else if (supGetCommandLineOption(CMD_PM2,
@@ -678,14 +678,14 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                    {
-                        processId = strtou64(szParameter);
+                {
+                    processId = strtou64(szParameter);
 
-                        retVal = KDUProcessPMObjectSwitch(HvciEnabled,
-                            NtBuildNumber,
-                            providerId,
-                            processId,
-                            PS_MITIGATION_FLAGS2);
+                    retVal = KDUProcessPMObjectSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        processId,
+                        PS_MITIGATION_FLAGS2);
                 }
 
                 else if (supGetCommandLineOption(CMD_PSE,
@@ -693,12 +693,12 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                    {
-                        retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
-                            NtBuildNumber,
-                            providerId,
-                            szParameter,
-                            FALSE);
+                {
+                    retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        szParameter,
+                        FALSE);
                 }
 
                 else if (supGetCommandLineOption(CMD_PSW,
@@ -706,12 +706,12 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                    {
-                        retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
-                            NtBuildNumber,
-                            providerId,
-                            szParameter,
-                            TRUE);
+                {
+                    retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        szParameter,
+                        TRUE);
                 }
 
                 else if (supGetCommandLineOption(CMD_PHO,
@@ -719,7 +719,7 @@ INT KDUProcessCommandLine(
                     szParameter,
                     RTL_NUMBER_OF(szParameter),
                     NULL))
-                    {
+                {
                     processId = strtou64(szParameter);
 
                     WCHAR szCmdLine[MAX_PATH] = { 0 };
