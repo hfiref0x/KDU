@@ -995,6 +995,7 @@ BOOL KDURunCommandInheritee(
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
 
+    // check if process can be started (no PPL) or created suspended to patch PPL
     DWORD creationOptions;
     if (PPLLevel > 0) {
         wprintf_s(L"[+] Creating suspended Process '%s'\r\n", CommandLine);
@@ -1005,15 +1006,13 @@ BOOL KDURunCommandInheritee(
         creationOptions = NULL;
     }
 
-
-    // process can be started directly, 
     if (!CreateProcess(
         NULL,               // No module name (use command line)
         CommandLine,        // Command line
         NULL,               // Process handle not inheritable
         NULL,               // Thread handle not inheritable
         TRUE,               // Do inherit inheritable handles
-        creationOptions,
+        creationOptions,    // according to given PPL, see above
         NULL,               // Use parent's environment block
         NULL,               // Use parent's starting directory 
         &si,                // Pointer to STARTUPINFO structure
@@ -1029,7 +1028,7 @@ BOOL KDURunCommandInheritee(
         printf_s("[!] Capped the PPL level at 7\n");
     }
 
-    // when suspended, patch PPL and resume
+    // patch PPL and resume
     if (PPLLevel > 0 and PPLLevel < 8) {
 
         DWORD dwThreadResumeCount = 0;
