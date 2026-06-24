@@ -13,7 +13,7 @@
 
 The purpose of this tool is to provide a simple way to explore the Windows kernel/components without requiring extensive setup or a local debugger.
 It features:
-+ Protected Process Hijacking via Process object modification;
++ Protected Process Hijacking via arbitrary PPL or arbitrary Process Handles, both through EPROCESS object modification;
 + Driver Signature Enforcement Overrider (similar to DSEFix);
 + Driver loader for bypassing Driver Signature Enforcement (similar to TDL/Stryker);
 + Support for various vulnerable drivers used as functionality "providers".
@@ -26,6 +26,8 @@ It features:
 ###### KDU -prv ProviderID
 ###### KDU -ps ProcessID
 ###### KDU -pse Commandline
+###### KDU -psw Commandline
+###### KDU -pho ProcessID
 ###### KDU -dmp ProcessID
 ###### KDU -dse value
 ###### KDU -map filename
@@ -36,6 +38,9 @@ It features:
 * -ps   - modify process object of given ProcessID, downgrading any protections;
 * -pse  - launch program as ProtectedProcessLight-AntiMalware (PPL);
 * -psw  - launch program as ProtectedProcessLight-WinTcb (PPL);
+* -pho  - open an arbitrary process with full access
+  * -phc - commandline (child process) to inerit the flag, default powershell
+  * -phe - also start the child process as ppl
 * -dmp  - dump virtual memory of the given process;
 * -dse  - write user-defined value to the system DSE state flags;
 * -map  - map driver to the kernel and execute its entry point; this command has dependencies listed below;
@@ -55,6 +60,7 @@ Example:
 + kdu -dse 6
 + kdu -pse "C:\Windows\System32\notepad.exe C:\TEMP\words.txt"
 + kdu -psw "C:\Windows\System32\cmd.exe"
++ kdu -pho 1234 -phe 3
 + kdu -listcsv "c:\kdu\out.csv"
 
 Run on Windows 11 24H2*
