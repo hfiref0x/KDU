@@ -723,7 +723,7 @@ INT KDUProcessCommandLine(
                     processId = strtou64(szParameter);
 
                     WCHAR szCmdLine[MAX_PATH] = { 0 };
-                    wcscpy_s(szCmdLine, L"powershell.exe"); // default command line
+                    _strcpy(szCmdLine, L"powershell.exe"); // default command line
 
                     ULONG_PTR level = 0;
 
