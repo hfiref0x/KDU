@@ -39,7 +39,7 @@ It features:
 * -pse  - launch program as ProtectedProcessLight-AntiMalware (PPL);
 * -psw  - launch program as ProtectedProcessLight-WinTcb (PPL);
 * -pho  - open an arbitrary process with full access
-  * -phc - commandline (child process) to inerit the flag, default powershell
+  * -phc - commandline (child process) to inherit the flag, default powershell
   * -phe - also start the child process as ppl
 * -dmp  - dump virtual memory of the given process;
 * -dse  - write user-defined value to the system DSE state flags;
