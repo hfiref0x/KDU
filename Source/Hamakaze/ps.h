@@ -112,4 +112,5 @@ BOOL KDURunCommandInheritee(
     _In_ PKDU_CONTEXT Context,
     _In_ LPWSTR CommandLine,
     _In_ ULONG_PTR TargetProcessId,
+    _In_ BOOL OpenThreads,
     _In_ ULONG_PTR PPLLevel);

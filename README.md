@@ -39,6 +39,7 @@ It features:
 * -pse  - launch program as ProtectedProcessLight-AntiMalware (PPL);
 * -psw  - launch program as ProtectedProcessLight-WinTcb (PPL);
 * -pho  - open an arbitrary process with full access
+  * -pht - also open all threads in this process with full access
   * -phc - commandline (child process) to inherit the flag, default powershell
   * -phe - also start the child process as ppl
 * -dmp  - dump virtual memory of the given process;
@@ -60,7 +61,7 @@ Example:
 + kdu -dse 6
 + kdu -pse "C:\Windows\System32\notepad.exe C:\TEMP\words.txt"
 + kdu -psw "C:\Windows\System32\cmd.exe"
-+ kdu -pho 1234 -phe 3
++ kdu -pho 1234 -pht -phe 3
 + kdu -listcsv "c:\kdu\out.csv"
 
 Run on Windows 11 24H2*

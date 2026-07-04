@@ -29,6 +29,7 @@
 #define CMD_PM1         L"-pm1"
 #define CMD_PM2         L"-pm2"
 #define CMD_PHO         L"-pho"
+#define CMD_PHT         L"-pht"
 #define CMD_PHC         L"-phc"
 #define CMD_PHE         L"-phe"
 #define CMD_DMP         L"-dmp"
@@ -57,6 +58,7 @@
                      "kdu -pm1 pid        - Overwrites Process MitigationsFlags1 with 0x0 for given pid\r\n"\
                      "kdu -pm2 pid        - Overwrites Process MitigationsFlags2 with 0x0 for given pid\r\n"\
                      "kdu -pho pid        - Open a Process Handle to the given pid, patches the handle to full access in case of stripping, sets inherit to true and starts a child process, powershell default\r\n"\
+                     "kdu -pht            - Also open all threads in the given pid, patches the handles to with full access, only with pho\r\n"\
                      "kdu -phc cmdline    - The command line of the new child process that inherits the full access process handle, only with pho\r\n"\
                      "kdu -phe ppllevel   - The ppl level of the new child process, (none) 0-6 (max), only with pho\r\n"\
                      "kdu -dse value      - Write user defined value to the system DSE state flags\r\n"\
@@ -177,6 +179,7 @@ INT KDUOpenProcessInheritHandle(
     _In_ ULONG NtBuildNumber,
     _In_ ULONG ProviderId,
     _In_ ULONG_PTR TargetProcessId,
+    _In_ BOOL OpenThreads,
     _In_ ULONG_PTR PPLLevel,
     _In_ LPWSTR CommandLine
 )
@@ -192,7 +195,7 @@ INT KDUOpenProcessInheritHandle(
         ActionTypeOpenProcessHandle);
 
     if (provContext) {
-        bResult = KDURunCommandInheritee(provContext, CommandLine, TargetProcessId, PPLLevel);
+        bResult = KDURunCommandInheritee(provContext, CommandLine, TargetProcessId, OpenThreads, PPLLevel);
         KDUProviderRelease(provContext);
     }
 
@@ -726,6 +729,16 @@ INT KDUProcessCommandLine(
                     _strcpy(szCmdLine, L"powershell.exe"); // default command line
 
                     ULONG_PTR level = 0;
+					BOOL openThreads = FALSE;
+
+                    if (supGetCommandLineOption(CMD_PHT,
+                        FALSE,
+                        NULL,
+                        0,
+                        NULL))
+                    {
+                        openThreads = TRUE;
+                    }
 
                     if (supGetCommandLineOption(CMD_PHC,
                         TRUE,
@@ -754,6 +767,7 @@ INT KDUProcessCommandLine(
                         NtBuildNumber,
                         providerId,
                         processId,
+                        openThreads,
                         level,
                         szCmdLine);
                 }
