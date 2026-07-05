@@ -3,9 +3,9 @@ branches:
   only:
   - master
 skip_tags: true
-image: Visual Studio 2022
+image: Visual Studio 2026
 configuration: Release
 platform: x64
 clone_folder: c:\projects\kdu
 build_script:
-  - msbuild Source/kdu.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
+  - msbuild Source/kdu.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v145
