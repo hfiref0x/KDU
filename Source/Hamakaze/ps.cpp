@@ -958,11 +958,11 @@ BOOL KDUSetAccessRights(PKDU_CONTEXT Context, HANDLE hHandle, ACCESS_MASK access
 }
 
 /*
-* KDURunCommandDup
+* KDURunCommandInheritee
 *
 * Purpose:
 *
-* Start a Process to duplicate a handle into
+* Open handles and start a process which will inherit these handles
 *
 */
 BOOL KDURunCommandInheritee(

@@ -167,11 +167,11 @@ INT KDUProcessPMObjectSwitch(
 }
 
 /*
-* KDUDuplicateProcessHandleSwitch
+* KDUOpenProcessInheritHandle
 *
 * Purpose:
 *
-* Handle -dph switch.
+* Handle -pho switch.
 *
 */
 INT KDUOpenProcessInheritHandle(
