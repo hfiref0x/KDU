@@ -754,18 +754,9 @@ BOOL KDUProviderVerifyActionType(
     switch (ActionType) {
 
     case ActionTypeOpenProcessHandle:
-
-        if (Provider->Callbacks.OpenProcess == NULL)
-        {
-            supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support arbitrary process handle acquisition or\r\n"\
-                "\tKDU interface is not implemented for this method.\r\n");
-            return FALSE;
-
-        }
-
         break; 
-        // in case the access rights need to be modified, -pho also needs to have read/write
-        // but I guess it's better to fail when r/w is required later, then to fail here when r/w would maybe not be required
+		// the OpenProcess action may need Callbacks.OpenProcess, Callbacks.ReadKernelVM && Callbacks.WriteKernelVM, neither, or both
+		// this depends on the protection and context when running KDU, so only check on runtime, skip here (do not forget to check on runtime!)
 
     case ActionTypeDKOM:
     case ActionTypeMapDriver:

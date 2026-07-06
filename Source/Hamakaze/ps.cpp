@@ -920,15 +920,15 @@ BOOL KDUSetHandleInheritable(HANDLE hHandle)
 		printf("[!] GetHandleInformation failed. Error: %lu\n", GetLastError());
 		return FALSE; // safe exit instead of undefined continuation
 	}
-    if (flags & HANDLE_FLAG_INHERIT) {
-        printf("[+] Success: The handle %p is inheritable.\n", hHandle);
+	if (flags & HANDLE_FLAG_INHERIT) { // already inheritable
+        printf("[+] Ok: The handle %p is already inheritable.\n", hHandle);
         return TRUE;
     }
 	if (!SetHandleInformation(hHandle, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT)) {
 		printf("[!] SetHandleInformation failed. Error: %lu\n", GetLastError());
 		return FALSE;
 	}
-	printf("[+] Successfully set HANDLE_FLAG_INHERIT on the handle %p.\n", hHandle);
+	printf("[+] Success: Set HANDLE_FLAG_INHERIT on the handle %p.\n", hHandle);
 	return TRUE;
 }
 
@@ -941,21 +941,14 @@ BOOL KDUSetAccessRights(PKDU_CONTEXT Context, HANDLE hHandle, ACCESS_MASK access
     if (status == STATUS_SUCCESS) {
         POBJECT_BASIC_INFORMATION pBasicInfo = (POBJECT_BASIC_INFORMATION)buf;
         if ((pBasicInfo->GrantedAccess & accessMask) == accessMask) {
-            printf("[+] The handle %p already has the required rights 0x%lX to the target process.\n", hHandle, accessMask);
+            printf("[+] Ok: The handle %p already has the required rights 0x%lX to the target process.\n", hHandle, accessMask);
             return TRUE;
         }
         else {
             printf("[-] Warning: Handle %p only has access rights: 0x%lX. Attempting to modify...\n", hHandle, pBasicInfo->GrantedAccess);
 
             // attempt to modify the handle's access rights using KDUControlHandleAccess
-            if (KDUControlHandleAccess(Context, GetCurrentProcessId(), hHandle, PROCESS_ALL_ACCESS)) {
-                printf("[+] Success: Modified the handle's access rights to requested rights 0x%lX.\n", accessMask);
-                return TRUE;
-            }
-            else {
-                printf("[!] Failed to modify the handle's access rights.\n");
-                return FALSE;
-            }
+            return KDUControlHandleAccess(Context, GetCurrentProcessId(), hHandle, PROCESS_ALL_ACCESS);
         }
     }
     else {
@@ -979,35 +972,50 @@ BOOL KDURunCommandInheritee(
     _In_ BOOL OpenThreads,
     _In_ ULONG_PTR PPLLevel)
 {
-
-	if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) {
-		printf_s("[!] Provider does not support required callbacks for handle duplication\r\n");
-		return FALSE;
-	}
-
-	// open the target process with PROCESS_ALL_ACCESS and set the handle to be inheritable
+	// try to open the target process directly with PROCESS_ALL_ACCESS
     HANDLE hTargetProc;
-    if (KDUOpenProcess(Context, (HANDLE)TargetProcessId, PROCESS_ALL_ACCESS, &hTargetProc)) {
-		printf_s("[+] Opened target process with PID %llu and got hProc %p\r\n", TargetProcessId, hTargetProc);
-        if (!KDUSetHandleInheritable(hTargetProc)) {
-			printf("[!] Not continuing due to failure in setting handle inheritance.\n");
-            return FALSE;
+    hTargetProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)TargetProcessId);
+    if (hTargetProc == NULL) {
+        
+        // fallback to PROCESS_QUERY_LIMITED_INFORMATION
+        hTargetProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)TargetProcessId);
+        
+        if (hTargetProc == NULL) {
+            // fallback to KDUOpenProcess when user-mode cannot open target proc
+            printf_s("[-] Target process %llu cannot be opened via user-mode, fallback to KDUOpenProcess()\r\n", TargetProcessId);
+
+            if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) {
+                supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support arbitrary process handle acquisition.\r\n");
+                return FALSE;
+            }
+            if (!KDUOpenProcess(Context, (HANDLE)TargetProcessId, PROCESS_ALL_ACCESS, &hTargetProc)) {
+                printf("[!] Failed to open target process %llu via user- and kernel-mode.", TargetProcessId);
+                return FALSE;
+            }
+            printf_s("[+] Opened target process %llu via KDUOpenProcess and got hProc %p\r\n", TargetProcessId, hTargetProc);
+        }
+        else {
+            printf_s("[+] Opened target process %llu with PROCESS_QUERY_LIMITED_INFORMATION and got hProc %p\r\n", TargetProcessId, hTargetProc);
         }
     }
     else {
-		printf("[!] Failed to open target process with PID %llu.", TargetProcessId);
-		return FALSE;
+        printf_s("[+] Opened target process %llu with PROCESS_ALL_ACCESS and got hProc %p\r\n", TargetProcessId, hTargetProc);
     }
 
-    // check if handle has PROCESS_FULL_ACCESS rights
+    // now check if handle has PROCESS_FULL_ACCESS rights (requesting FULL_ACCESS may still lead to stripped access)
 	if (!KDUSetAccessRights(Context, hTargetProc, PROCESS_ALL_ACCESS)) {
 		printf("[!] Not continuing due to failure in setting handle access rights.\n");
 		return FALSE;
 	}
 
+	// check if handle is inheritable, if not, set it to be inheritable
+    if (!KDUSetHandleInheritable(hTargetProc)) {
+        printf("[!] Not continuing due to failure in setting handle inheritance.\n");
+        return FALSE;
+    }
+
 	// open all process threads if requested, set them to be inheritable and patch to THREAD_ALL_ACCESS
 	if (OpenThreads) {
-        printf("here\n");
 		std::vector<HANDLE> threadHandles;
 
 		HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -1031,7 +1039,7 @@ BOOL KDURunCommandInheritee(
 					}
                     if (KDUSetHandleInheritable(hThread)) {
 						threadHandles.push_back(hThread);
-                    } // else ignore the thread if not inheritable (rip us)
+                    } // else ignore the thread if not inheritable, should not happen, if still rip us
 				}
 			} while (Thread32Next(hThreadSnap, &te32));
             CloseHandle(hThreadSnap);
@@ -1042,14 +1050,14 @@ BOOL KDURunCommandInheritee(
 			return FALSE;
 		}
 
-        // check if the thread handles have THREAD_ALL_ACCESS rights, if not, use KDUSetAccessRights
+        // check if the thread handles have THREAD_ALL_ACCESS rights, if not, patch it
         int err = 0;
         for (auto& hThread : threadHandles) {
             if (!KDUSetAccessRights(Context, hThread, THREAD_ALL_ACCESS)) {
                 err++;
             }
         }
-        printf("[!] Continuing despite not having THREAD_ALL_ACCESS on %i thread(s).\n", err);
+        printf("[-] Continuing despite not having THREAD_ALL_ACCESS on %i out of %llu thread(s).\n", err, threadHandles.size());
 	}
 
     STARTUPINFO si;
