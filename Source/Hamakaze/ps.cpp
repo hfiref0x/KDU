@@ -19,7 +19,6 @@
 
 #include "global.h"
 #include <TlHelp32.h>
-#include <vector>
 #include <Dbghelp.h>
 
 typedef BOOL(WINAPI* pfnMiniDumpWriteDump)(
@@ -1017,7 +1016,9 @@ BOOL KDURunCommandInheritee(
 	// open all process threads if requested, set them to be inheritable and patch to THREAD_ALL_ACCESS
 	if (OpenThreads) {
 		printf("[+] Opening all threads of target process %llu, set inheritable and THREAD_ALL_ACCESS...\n", TargetProcessId);
-		std::vector<HANDLE> threadHandles;
+		
+        HANDLE threadHandles[MAX_THREADS]; // arbitrary limit
+        size_t threadCount = 0;
 
 		HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 		if (hThreadSnap == INVALID_HANDLE_VALUE) {
@@ -1054,8 +1055,14 @@ BOOL KDURunCommandInheritee(
 						printf("[!] Failed to open thread with TID %lu. Error: %lu\n", te32.th32ThreadID, GetLastError());
 						continue;
 					}
+                    
+                    if (threadCount >= MAX_THREADS) {
+                        printf_s("[-] Warning: Reached MAX_THREADS (%u), continuing to patching...\n", MAX_THREADS);
+                        CloseHandle(hThread);
+                        break;
+                    }
 
-					threadHandles.push_back(hThread);
+					threadHandles[threadCount++] = hThread;
 				}
 			} while (Thread32Next(hThreadSnap, &te32));
             CloseHandle(hThreadSnap);
@@ -1068,7 +1075,8 @@ BOOL KDURunCommandInheritee(
 
         // check if the thread handles have THREAD_ALL_ACCESS rights, if not, patch it
         int err = 0;
-        for (auto& hThread : threadHandles) {
+        for (size_t i = 0; i < threadCount; i++) {
+            HANDLE hThread = threadHandles[i];
             if (KDUSetHandleInheritable(hThread)) {
                 if (KDUSetAccessRights(Context, hThread, THREAD_ALL_ACCESS)) {
 					printf("[+] Thread handle %p set to THREAD_ALL_ACCESS and inheritable.\n", hThread);
@@ -1084,7 +1092,7 @@ BOOL KDURunCommandInheritee(
             }
         }
         if (err > 0) {
-            printf("[-] Continuing despite having %i incomplete threads out of %llu thread(s).\n", err, threadHandles.size());
+            printf("[-] Continuing despite having %i incomplete threads out of %llu thread(s).\n", err, threadCount);
         }
 	}
 
