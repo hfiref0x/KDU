@@ -18,7 +18,6 @@
 *******************************************************************************/
 
 #include "global.h"
-#include <TlHelp32.h>
 #include <Dbghelp.h>
 
 typedef BOOL(WINAPI* pfnMiniDumpWriteDump)(
@@ -962,6 +961,117 @@ BOOL KDUSetAccessRights(PKDU_CONTEXT Context, HANDLE hHandle, ACCESS_MASK access
     }
 }
 
+BOOL KDUOpenAndPatchThreads(KDU_CONTEXT* Context, ULONG_PTR TargetProcessId) {
+    ULONG bufferSize = 0x10000;
+    PVOID buffer = NULL;
+    NTSTATUS status = STATUS_INFO_LENGTH_MISMATCH;
+
+    // dynamically allocate and fetch system process/thread information
+    do {
+        buffer = malloc(bufferSize);
+        if (!buffer) {
+            supPrintfEvent(kduEventError, 
+                "[!] Out of memory allocating system info buffer.\n");
+            return FALSE;
+        }
+
+        status = NtQuerySystemInformation(SystemProcessInformation, buffer, bufferSize, &bufferSize);
+
+        if (status == STATUS_INFO_LENGTH_MISMATCH) {
+            free(buffer);
+            bufferSize *= 2; // double it and give it to the next loop
+        }
+        else if (status != STATUS_SUCCESS) {
+            free(buffer);
+            supPrintfEvent(kduEventError, 
+                "[!] NtQuerySystemInformation failed. Status: 0x%08X\n", status);
+            return FALSE;
+        }
+    } while (status == STATUS_INFO_LENGTH_MISMATCH);
+
+    // traverse the system information structures to find TargetProcessId
+    PSYSTEM_PROCESS_INFORMATION pCurrentProcess = (PSYSTEM_PROCESS_INFORMATION)buffer;
+    int threadCount = 0;
+    int err = 0;
+
+    while (TRUE) {
+        // check if this entry matches the target process
+        if ((ULONG_PTR)pCurrentProcess->UniqueProcessId == TargetProcessId) {
+            printf_s("[+] Found target process %llu, traversing its %lu threads...\n", TargetProcessId, pCurrentProcess->ThreadCount);
+
+            // iterate through all threads of this process, open and patch them
+            for (ULONG i = 0; i < pCurrentProcess->ThreadCount; i++) {
+                SYSTEM_THREAD_INFORMATION threadInfo = pCurrentProcess->Threads[i];
+                DWORD_PTR targetTid = (DWORD_PTR)threadInfo.ClientId.UniqueThread;
+
+                HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, (DWORD)targetTid);
+                if (hThread == NULL) {
+                    // first fallback: Query limited info
+                    hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)targetTid);
+
+                    if (hThread == NULL) {
+                        printf_s("[-] Target process %llu cannot be opened via user-mode, fallback to KDUOpenProcess()\r\n", TargetProcessId);
+
+                        // second fallback: KDU Kernel-mode open (and hope the primitive does not break on threads)
+                        if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) {
+                            printf_s("[-] Warning: Selected provider does not support arbitrary thread handle acquisition, skipping thread %lu.\r\n", (DWORD)targetTid);
+                            continue;
+                        }
+                        if (!KDUOpenProcess(Context, (HANDLE)TargetProcessId, THREAD_ALL_ACCESS, &hThread)) {
+                            printf_s("[-] Warning: Failed to open thread %lu via user- and kernel-mode, skipping.\n", (DWORD)targetTid);
+                            continue;
+                        }
+                    }
+                }
+
+                if (hThread == NULL) {
+                    printf_s("[!] Failed to open thread with TID %lu. Error: %lu\n", (DWORD)targetTid, GetLastError());
+                    continue;
+                }
+
+                // finally patch the found thread
+                threadCount++;
+
+                if (KDUSetHandleInheritable(hThread)) {
+                    if (KDUSetAccessRights(Context, hThread, THREAD_ALL_ACCESS)) {
+                        printf_s("[+] Thread handle %p (TID: %lu) set to THREAD_ALL_ACCESS and inheritable.\n", hThread, (DWORD)targetTid);
+                    }
+                    else {
+                        printf_s("[!] Failed to set thread handle %p to THREAD_ALL_ACCESS.\n", hThread);
+                        err++;
+                    }
+                }
+                else {
+                    printf_s("[!] Failed to set thread handle %p as inheritable.\n", hThread);
+                    err++;
+                }
+            }
+
+            // target process found and processed, returning from the function
+            free(buffer);
+            if (err > 0) {
+                printf_s("[-] Warning: Continuing despite having %i erroneous thread handle(s) out of %i in %llu.\n", err, threadCount, TargetProcessId);
+            }
+            else {
+                printf_s("[+] Success: Opened and patched all %i thread handle(s) in %llu.\n", threadCount, TargetProcessId);
+            }
+            return TRUE;
+        }
+
+        // move to the next process entry or exit if it's the last one
+        if (pCurrentProcess->NextEntryDelta == 0) {
+            break;
+        }
+        pCurrentProcess = (PSYSTEM_PROCESS_INFORMATION)((PBYTE)pCurrentProcess + pCurrentProcess->NextEntryDelta);
+    }
+
+    // target process not found -> return FALSE
+    free(buffer);
+    supPrintfEvent(kduEventError,
+        "[!] Target process %llu not found to open and patch threads.\n", TargetProcessId);
+    return FALSE;
+}
+
 /*
 * KDURunCommandInheritee
 *
@@ -1022,89 +1132,13 @@ BOOL KDURunCommandInheritee(
 	}
 
 	// open all process threads if requested, set them to be inheritable and patch to THREAD_ALL_ACCESS
-	if (OpenThreads) {
-		printf_s("[+] Opening all threads of target process %llu, set inheritable and THREAD_ALL_ACCESS...\n", TargetProcessId);
-		
-        HANDLE threadHandles[MAX_THREADS]; // arbitrary limit
-        size_t threadCount = 0;
+    if (OpenThreads) {
+        printf_s("[+] Opening all threads of target process %llu...\n", TargetProcessId);
 
-		HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-		if (hThreadSnap == INVALID_HANDLE_VALUE) {
-			supPrintfEvent(kduEventError, 
-                "[!] Failed to create thread snapshot. Error: %lu\n", GetLastError());
-			return FALSE;
-		}
-		THREADENTRY32 te32;
-		te32.dwSize = sizeof(THREADENTRY32);
-		if (Thread32First(hThreadSnap, &te32)) {
-			do {
-				if (te32.th32OwnerProcessID == TargetProcessId) {
-					
-                    HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, te32.th32ThreadID);
-                    if (hThread == NULL) {
-                        
-                        // fallback, should work for most
-						hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, te32.th32ThreadID);
-
-                        if (hThread == NULL) {
-                            printf_s("[-] Target process %llu cannot be opened via user-mode, fallback to KDUOpenProcess()\r\n", TargetProcessId);
-
-							// 2nd fallback also using KDU OpenProcess
-							if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) { // ignore a thread if the provider does not support arbitrary process handle acquisition
-                                printf_s("[-] Warning: Selected provider does not support arbitrary thread handle acquisition, not inheriting thread %lu.\r\n", te32.th32ThreadID);
-                                continue;
-                            }
-                            if (!KDUOpenProcess(Context, (HANDLE)TargetProcessId, THREAD_ALL_ACCESS, &hThread)) {
-                                printf_s("[-] Warning: Failed to open thread %lu via user- and kernel-mode, not inheriting it.", te32.th32ThreadID);
-                                continue;
-                            }
-                        }
-                    }
-					if (hThread == NULL) {
-						printf_s("[!] Failed to open thread with TID %lu. Error: %lu\n", te32.th32ThreadID, GetLastError());
-						continue;
-					}
-                    
-                    if (threadCount >= MAX_THREADS) {
-                        printf_s("[-] Warning: Reached MAX_THREADS (%u), continuing to patching...\n", MAX_THREADS);
-                        CloseHandle(hThread);
-                        break;
-                    }
-
-					threadHandles[threadCount++] = hThread;
-				}
-			} while (Thread32Next(hThreadSnap, &te32));
-            CloseHandle(hThreadSnap);
-		}
-		else {
-			supPrintfEvent(kduEventError, 
-                "[!] Invalid thread snapshot. Error: %lu\n", GetLastError());
-			CloseHandle(hThreadSnap);
-			return FALSE;
-		}
-
-        // check if the thread handles have THREAD_ALL_ACCESS rights, if not, patch it
-        int err = 0;
-        for (size_t i = 0; i < threadCount; i++) {
-            HANDLE hThread = threadHandles[i];
-            if (KDUSetHandleInheritable(hThread)) {
-                if (KDUSetAccessRights(Context, hThread, THREAD_ALL_ACCESS)) {
-					printf_s("[+] Thread handle %p set to THREAD_ALL_ACCESS and inheritable.\n", hThread);
-				}
-				else {
-				    printf_s("[!] Failed to set thread handle %p to THREAD_ALL_ACCESS.\n", hThread);
-					err++;
-				}
-            }
-            else {
-				printf_s("[!] Failed to set thread handle %p as inheritable.\n", hThread);
-                err++;
-            }
+        if (!KDUOpenAndPatchThreads(Context, TargetProcessId)) {
+            printf_s("[!] Continuing despite not being able to open and patch threads...\n");
         }
-        if (err > 0) {
-            printf_s("[-] Warning: Continuing despite having %i erroneous thread handle(s) out of %llu.\n", err, threadCount);
-        }
-	}
+    }
 
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
