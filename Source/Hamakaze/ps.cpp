@@ -705,9 +705,9 @@ BOOL KDUControlProcessMitigationFlags(
 
 ULONG_PTR LookupHandleEntry(
     _In_ PKDU_CONTEXT Context,
-    ULONG_PTR HandleTable,
-    HANDLE HandleValue,
-	KDU_EPROCESS_OFFSETS offsets
+    _In_ ULONG_PTR HandleTable,
+    _In_ HANDLE HandleValue,
+    _In_ KDU_EPROCESS_OFFSETS offsets
 )
 {
     ULONG_PTR TableCode;
@@ -793,13 +793,14 @@ BOOL KDUControlHandleAccess(
     _In_ PKDU_CONTEXT Context,
     _In_ ULONG_PTR ProcessId,
     _In_ HANDLE HandleValue,
-    _In_ ACCESS_MASK NewAccessMask)
+    _In_ ACCESS_MASK NewAccessMask,
+    _Inout_opt_ ULONG_PTR* ProcessHandleTable) // save process handle table for next handle manipulation
 {
-	BOOL       bResult = FALSE;
+	BOOL       bResult = FALSE, bReusedTable = FALSE;
 	NTSTATUS   ntStatus;
 	ULONG_PTR  ProcessObject = 0, HandleTable = 0, HandleEntry = 0;
 	HANDLE     hProcess = NULL;
-	CLIENT_ID clientId;
+	CLIENT_ID  clientId;
 	OBJECT_ATTRIBUTES obja;
 	KDU_EPROCESS_OFFSETS offsets;
 	
@@ -821,122 +822,147 @@ BOOL KDUControlHandleAccess(
 	InitializeObjectAttributes(&obja, NULL, 0, 0, 0);
 	clientId.UniqueProcess = (HANDLE)ProcessId;
 	clientId.UniqueThread = NULL;
-	
-    ntStatus = NtOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION,
-		&obja, &clientId);
-	
-    if (NT_SUCCESS(ntStatus)) {
-		printf_s("[+] Process with PID %llu opened (PROCESS_QUERY_LIMITED_INFORMATION)\r\n", ProcessId);
-		bResult = supQueryObjectFromHandle(hProcess, &ProcessObject);
-		
-        if (bResult && (ProcessObject != 0)) {
-			printf_s("[+] Process object (EPROCESS) found, 0x%llX\r\n", ProcessObject);
-			
-            // read the ObjectTable pointer from the EPROCESS structure
-			if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
-				EPROCESS_TO_OBJECTTABLE(ProcessObject, offsets.ObjectTableOffset),
-				&HandleTable,
-				sizeof(ULONG_PTR))) 
+
+    // check if previous HandleTable can be user
+    if (ProcessHandleTable != nullptr && *ProcessHandleTable != 0) {
+        HandleTable = *ProcessHandleTable; // reusing table
+        bReusedTable = TRUE;
+    }
+    else { // HandleTable of current process must be retrieved
+        ntStatus = NtOpenProcess(&hProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+            &obja, &clientId);
+
+        if (NT_SUCCESS(ntStatus)) {
+            printf_s("[+] Process with PID %llu opened (PROCESS_QUERY_LIMITED_INFORMATION)\r\n", ProcessId);
+            bResult = supQueryObjectFromHandle(hProcess, &ProcessObject);
+
+            if (bResult && (ProcessObject != 0)) {
+                printf_s("[+] Process object (EPROCESS) found, 0x%llX\r\n", ProcessObject);
+
+                // read the ObjectTable pointer from the EPROCESS structure
+                if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                    EPROCESS_TO_OBJECTTABLE(ProcessObject, offsets.ObjectTableOffset),
+                    &HandleTable,
+                    sizeof(ULONG_PTR)))
+                {
+                    printf_s("[+] ObjectTable pointer read: 0x%llX", HandleTable);
+                    if (ProcessHandleTable != nullptr) {
+                        *ProcessHandleTable = HandleTable; // save HandleTable for next call
+                        printf_s(" and saved for next call");
+                    }
+                    printf_s("\r\n");
+                }
+                else {
+                    supPrintfEvent(kduEventError,
+                        "[!] Cannot read ObjectTable pointer\r\n");
+                }
+            }
+            else {
+                supPrintfEvent(kduEventError,
+                    "[!] Cannot query process object\r\n");
+            }
+            NtClose(hProcess);
+        }
+        else {
+            supShowHardError("[!] Cannot open target process", ntStatus);
+        }
+    }
+
+    // check if the HandleTable was found
+    if (HandleTable != 0) {
+
+        // parse the layer type
+        HandleEntry = LookupHandleEntry(Context, HandleTable, HandleValue, offsets);
+        if (HandleEntry != 0) {
+            printf_s("[+] HandleEntry pointer read: 0x%llX", HandleEntry);
+            if (bReusedTable) {
+                printf_s(" via cached ObjectTable 0x%llX", HandleTable);
+            }
+            printf_s("\r\n");
+
+            // read the current access rights from the HandleTableEntry
+            HANDLE_TABLE_ENTRY entry = { 0 };
+            if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
+                HandleEntry,
+                &entry,
+                sizeof(entry)))
             {
-				printf_s("[+] ObjectTable pointer read: 0x%llX\r\n", HandleTable);
+                printf_s("[+] Current Handle access rights: 0x%lX\r\n", entry.GrantedAccess);
 
-                // parse the layer type
-				HandleEntry = LookupHandleEntry(Context, HandleTable, HandleValue, offsets);
-				if (HandleEntry != 0) {
-				    printf_s("[+] HandleEntry pointer read: 0x%llX\r\n", HandleEntry);
+                // modify the access rights
+                bResult = Context->Provider->Callbacks.WriteKernelVM(
+                    Context->DeviceHandle,
+                    HandleEntry + offsetof(HANDLE_TABLE_ENTRY, GrantedAccess),
+                    &NewAccessMask,
+                    sizeof(ULONG)
+                );
 
-				    // read the current access rights from the HandleTableEntry
-				    HANDLE_TABLE_ENTRY entry = { 0 };
+                if (bResult) { // and verify
+                    printf_s("[+] Handle access rights modified successfully.\r\n");
                     if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
                         HandleEntry,
                         &entry,
                         sizeof(entry)))
                     {
-                        printf_s("[+] Current Handle access rights: 0x%lX\r\n", entry.GrantedAccess);
-
-                        // modify the access rights
-                        bResult = Context->Provider->Callbacks.WriteKernelVM(
-                            Context->DeviceHandle,
-                            HandleEntry + offsetof(HANDLE_TABLE_ENTRY, GrantedAccess),
-                            &NewAccessMask,
-                            sizeof(ULONG)
-                        );
-
-                        if (bResult) { // and verify
-                            printf_s("[+] Handle access rights modified successfully.\r\n");
-                            if (Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
-                                HandleEntry,
-                                &entry,
-                                sizeof(entry)))
-                            {
-                                if ((entry.GrantedAccess & NewAccessMask) == NewAccessMask) {
-                                    printf_s("[+] Verified: Handle access rights updated to 0x%lX.\r\n", entry.GrantedAccess);
-                                }
-                                else {
-                                    bResult = FALSE; // 
-                                    supPrintfEvent(kduEventError, 
-                                        "[!] Verification failed: Handle access rights are 0x%lX, expected 0x%lX.\r\n", entry.GrantedAccess, NewAccessMask);
-                                }
-                            }
-                            else {
-                                printf_s("[!] Warning: Failed to read back HandleTableEntry after modification, continuing...\r\n");
-                            }
+                        if ((entry.GrantedAccess & NewAccessMask) == NewAccessMask) {
+                            printf_s("[+] Verified: Handle access rights updated to 0x%lX.\r\n", entry.GrantedAccess);
                         }
                         else {
-                            supPrintfEvent(kduEventError, 
-                                "[!] Failed to modify handle access rights\r\n");
+                            bResult = FALSE; // reset to false
+                            supPrintfEvent(kduEventError,
+                                "[!] Verification failed: Handle access rights are 0x%lX, expected 0x%lX.\r\n", entry.GrantedAccess, NewAccessMask);
                         }
                     }
                     else {
-						supPrintfEvent(kduEventError, 
-                            "[!] Cannot read HandleTableEntry\r\n");
+                        printf_s("[!] Warning: Failed to read back HandleTableEntry after modification, continuing...\r\n");
                     }
-				}
-				else {
-					supPrintfEvent(kduEventError, 
-                        "[!] Cannot read HandleTableEntry\r\n");
-				}
-			}
-			else {
-				supPrintfEvent(kduEventError,
-					"[!] Cannot read ObjectTable pointer\r\n");
-			}
-		}
-		else {
-			supPrintfEvent(kduEventError,
-				"[!] Cannot query process object\r\n");
-		}
-		NtClose(hProcess);
-	}
-	else {
-		supShowHardError("[!] Cannot open target process", ntStatus);
-	}
+                }
+                else {
+                    supPrintfEvent(kduEventError,
+                        "[!] Failed to modify handle access rights\r\n");
+                }
+            }
+            else {
+                supPrintfEvent(kduEventError,
+                    "[!] Cannot read HandleTableEntry\r\n");
+            }
+        }
+        else {
+            supPrintfEvent(kduEventError,
+                "[!] Cannot read HandleTableEntry\r\n");
+        }
+    }
 
 	FUNCTION_LEAVE_MSG(__FUNCTION__);
 
 	return bResult;
 }
 
-BOOL KDUSetHandleInheritable(HANDLE hHandle)
+BOOL KDUSetHandleInheritable(
+    _In_ HANDLE hHandle)
 {
 	DWORD flags = 0;
 	if (!GetHandleInformation(hHandle, &flags)) {
-		printf_s("[!] GetHandleInformation failed. Error: %lu\n", GetLastError());
+		printf_s("[!] GetHandleInformation failed. Error: %lu\r\n", GetLastError());
 		return FALSE; // safe exit instead of undefined continuation
 	}
 	if (flags & HANDLE_FLAG_INHERIT) { // already inheritable
-        printf_s("[+] Ok: The handle %p is already inheritable.\n", hHandle);
+        printf_s("[+] Ok: The handle %p is already inheritable.\r\n", hHandle);
         return TRUE;
     }
 	if (!SetHandleInformation(hHandle, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT)) {
 		printf_s("[!] SetHandleInformation failed. Error: %lu\n", GetLastError());
 		return FALSE;
 	}
-	printf_s("[+] Success: Set HANDLE_FLAG_INHERIT on the handle %p.\n", hHandle);
+	printf_s("[+] Success: Set HANDLE_FLAG_INHERIT on the handle %p.\r\n", hHandle);
 	return TRUE;
 }
 
-BOOL KDUSetAccessRights(PKDU_CONTEXT Context, HANDLE hHandle, ACCESS_MASK accessMask)
+BOOL KDUSetAccessRights(
+    _In_ PKDU_CONTEXT Context,
+    _In_ HANDLE hHandle,
+    _In_ ACCESS_MASK accessMask,
+    _Inout_opt_ ULONG_PTR* ProcessHandleTable)
 {
     unsigned char buf[sizeof(OBJECT_BASIC_INFORMATION)] = {};
     ULONG returnLength;
@@ -945,23 +971,27 @@ BOOL KDUSetAccessRights(PKDU_CONTEXT Context, HANDLE hHandle, ACCESS_MASK access
     if (status == STATUS_SUCCESS) {
         POBJECT_BASIC_INFORMATION pBasicInfo = (POBJECT_BASIC_INFORMATION)buf;
         if ((pBasicInfo->GrantedAccess & accessMask) == accessMask) {
-            printf_s("[+] Ok: The handle %p already has the required rights 0x%lX to the target process.\n", hHandle, accessMask);
+            printf_s("[+] Ok: The handle %p already has the required rights 0x%lX to the target process.\r\n", hHandle, accessMask);
             return TRUE;
         }
         else {
-            printf_s("[-] Warning: Handle %p only has access rights: 0x%lX. Attempting to modify...\n", hHandle, pBasicInfo->GrantedAccess);
+            printf_s("[-] Warning: Handle %p only has access rights: 0x%lX. Attempting to modify...\r\n", hHandle, pBasicInfo->GrantedAccess);
 
             // attempt to modify the handle's access rights using KDUControlHandleAccess
-            return KDUControlHandleAccess(Context, GetCurrentProcessId(), hHandle, PROCESS_ALL_ACCESS);
+            return KDUControlHandleAccess(Context, GetCurrentProcessId(), hHandle, PROCESS_ALL_ACCESS, ProcessHandleTable);
         }
     }
     else {
-        printf_s("[!] Failed to query handle information with status: 0x%lX\n", status);
+        printf_s("[!] Failed to query handle information with status: 0x%lX\r\n", status);
         return FALSE;
     }
 }
 
-BOOL KDUOpenAndPatchThreads(KDU_CONTEXT* Context, ULONG_PTR TargetProcessId) {
+BOOL KDUOpenAndPatchThreads(
+    _In_ KDU_CONTEXT* Context,
+    _In_ ULONG_PTR TargetProcessId,
+    _Inout_opt_ ULONG_PTR* ProcessHandleTable)
+{
     ULONG bufferSize = 0x10000;
     PVOID buffer = NULL;
     NTSTATUS status = STATUS_INFO_LENGTH_MISMATCH;
@@ -971,7 +1001,7 @@ BOOL KDUOpenAndPatchThreads(KDU_CONTEXT* Context, ULONG_PTR TargetProcessId) {
         buffer = malloc(bufferSize);
         if (!buffer) {
             supPrintfEvent(kduEventError, 
-                "[!] Out of memory allocating system info buffer.\n");
+                "[!] Out of memory allocating system info buffer.\r\n");
             return FALSE;
         }
 
@@ -984,7 +1014,7 @@ BOOL KDUOpenAndPatchThreads(KDU_CONTEXT* Context, ULONG_PTR TargetProcessId) {
         else if (status != STATUS_SUCCESS) {
             free(buffer);
             supPrintfEvent(kduEventError, 
-                "[!] NtQuerySystemInformation failed. Status: 0x%08X\n", status);
+                "[!] NtQuerySystemInformation failed. Status: 0x%08X\r\n", status);
             return FALSE;
         }
     } while (status == STATUS_INFO_LENGTH_MISMATCH);
@@ -997,7 +1027,7 @@ BOOL KDUOpenAndPatchThreads(KDU_CONTEXT* Context, ULONG_PTR TargetProcessId) {
     while (TRUE) {
         // check if this entry matches the target process
         if ((ULONG_PTR)pCurrentProcess->UniqueProcessId == TargetProcessId) {
-            printf_s("[+] Found target process %llu, traversing its %lu threads...\n", TargetProcessId, pCurrentProcess->ThreadCount);
+            printf_s("[+] Found target process %llu, traversing its %lu threads...\r\n", TargetProcessId, pCurrentProcess->ThreadCount);
 
             // iterate through all threads of this process, open and patch them
             for (ULONG i = 0; i < pCurrentProcess->ThreadCount; i++) {
@@ -1010,7 +1040,7 @@ BOOL KDUOpenAndPatchThreads(KDU_CONTEXT* Context, ULONG_PTR TargetProcessId) {
                     hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)targetTid);
 
                     if (hThread == NULL) {
-                        printf_s("[-] Target process %llu cannot be opened via user-mode, fallback to KDUOpenProcess()\r\n", TargetProcessId);
+                        printf_s("[-] Target thread %llu cannot be opened via user-mode, fallback to KDUOpenProcess()\r\n", TargetProcessId);
 
                         // second fallback: KDU Kernel-mode open (and hope the primitive does not break on threads)
                         if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) {
@@ -1018,14 +1048,14 @@ BOOL KDUOpenAndPatchThreads(KDU_CONTEXT* Context, ULONG_PTR TargetProcessId) {
                             continue;
                         }
                         if (!KDUOpenProcess(Context, (HANDLE)TargetProcessId, THREAD_ALL_ACCESS, &hThread)) {
-                            printf_s("[-] Warning: Failed to open thread %lu via user- and kernel-mode, skipping.\n", (DWORD)targetTid);
+                            printf_s("[-] Warning: Failed to open thread %lu via user- and kernel-mode, skipping.\r\n", (DWORD)targetTid);
                             continue;
                         }
                     }
                 }
 
                 if (hThread == NULL) {
-                    printf_s("[!] Failed to open thread with TID %lu. Error: %lu\n", (DWORD)targetTid, GetLastError());
+                    printf_s("[!] Failed to open thread with TID %lu. Error: %lu\r\n", (DWORD)targetTid, GetLastError());
                     continue;
                 }
 
@@ -1033,16 +1063,16 @@ BOOL KDUOpenAndPatchThreads(KDU_CONTEXT* Context, ULONG_PTR TargetProcessId) {
                 threadCount++;
 
                 if (KDUSetHandleInheritable(hThread)) {
-                    if (KDUSetAccessRights(Context, hThread, THREAD_ALL_ACCESS)) {
-                        printf_s("[+] Thread handle %p (TID: %lu) set to THREAD_ALL_ACCESS and inheritable.\n", hThread, (DWORD)targetTid);
+                    if (KDUSetAccessRights(Context, hThread, THREAD_ALL_ACCESS, ProcessHandleTable)) {
+                        printf_s("[+] Thread handle %p (TID: %lu) set to THREAD_ALL_ACCESS and inheritable.\r\n", hThread, (DWORD)targetTid);
                     }
                     else {
-                        printf_s("[!] Failed to set thread handle %p to THREAD_ALL_ACCESS.\n", hThread);
+                        printf_s("[!] Failed to set thread handle %p to THREAD_ALL_ACCESS.\r\n", hThread);
                         err++;
                     }
                 }
                 else {
-                    printf_s("[!] Failed to set thread handle %p as inheritable.\n", hThread);
+                    printf_s("[!] Failed to set thread handle %p as inheritable.\r\n", hThread);
                     err++;
                 }
             }
@@ -1050,10 +1080,10 @@ BOOL KDUOpenAndPatchThreads(KDU_CONTEXT* Context, ULONG_PTR TargetProcessId) {
             // target process found and processed, returning from the function
             free(buffer);
             if (err > 0) {
-                printf_s("[-] Warning: Continuing despite having %i erroneous thread handle(s) out of %i in %llu.\n", err, threadCount, TargetProcessId);
+                printf_s("[-] Warning: Continuing despite having %i erroneous thread handle(s) out of %i in %llu.\r\n", err, threadCount, TargetProcessId);
             }
             else {
-                printf_s("[+] Success: Opened and patched all %i thread handle(s) in %llu.\n", threadCount, TargetProcessId);
+                printf_s("[+] Success: Opened and patched all %i thread handle(s) in %llu.\r\n", threadCount, TargetProcessId);
             }
             return TRUE;
         }
@@ -1068,7 +1098,7 @@ BOOL KDUOpenAndPatchThreads(KDU_CONTEXT* Context, ULONG_PTR TargetProcessId) {
     // target process not found -> return FALSE
     free(buffer);
     supPrintfEvent(kduEventError,
-        "[!] Target process %llu not found to open and patch threads.\n", TargetProcessId);
+        "[!] Target process %llu not found to open and patch threads.\r\n", TargetProcessId);
     return FALSE;
 }
 
@@ -1103,8 +1133,8 @@ BOOL KDURunCommandInheritee(
                 supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support arbitrary process handle acquisition.\r\n");
                 return FALSE;
             }
-            if (!KDUOpenProcess(Context, (HANDLE)TargetProcessId, PROCESS_ALL_ACCESS, &hTargetProc)) {
-                printf_s("[!] Failed to open target process %llu via user- and kernel-mode.", TargetProcessId);
+            if (!KDUOpenProcess(Context, (HANDLE)TargetProcessId, PROCESS_ALL_ACCESS, &hTargetProc) || hTargetProc == NULL) {
+                printf_s("[!] Failed to open target process %llu via user- and kernel-mode.\r\n", TargetProcessId);
                 return FALSE;
             }
             printf_s("[+] Opened target process %llu via KDUOpenProcess and got hProc %p\r\n", TargetProcessId, hTargetProc);
@@ -1120,14 +1150,16 @@ BOOL KDURunCommandInheritee(
     // check if handle is inheritable, if not, set it to be inheritable
     if (!KDUSetHandleInheritable(hTargetProc)) {
         supPrintfEvent(kduEventError, 
-            "[!] Not continuing due to failure in setting handle inheritance.\n");
+            "[!] Not continuing due to failure in setting handle inheritance.\r\n");
         return FALSE;
     }
 
+    ULONG_PTR ProcessHandleTable = 0; // save for later patches, if needed
+
     // check if handle has PROCESS_FULL_ACCESS rights (requesting FULL_ACCESS may still lead to stripped access)
-	if (!KDUSetAccessRights(Context, hTargetProc, PROCESS_ALL_ACCESS)) {
+	if (!KDUSetAccessRights(Context, hTargetProc, PROCESS_ALL_ACCESS, &ProcessHandleTable)) {
 		supPrintfEvent(kduEventError, 
-            "[!] Not continuing due to failure in setting handle access rights.\n");
+            "[!] Not continuing due to failure in setting handle access rights.\r\n");
 		return FALSE;
 	}
 
@@ -1135,8 +1167,8 @@ BOOL KDURunCommandInheritee(
     if (OpenThreads) {
         printf_s("[+] Opening all threads of target process %llu...\n", TargetProcessId);
 
-        if (!KDUOpenAndPatchThreads(Context, TargetProcessId)) {
-            printf_s("[!] Continuing despite not being able to open and patch threads...\n");
+        if (!KDUOpenAndPatchThreads(Context, TargetProcessId, &ProcessHandleTable)) {
+            printf_s("[!] Continuing despite not being able to open and patch threads...\r\n");
         }
     }
 
@@ -1177,7 +1209,7 @@ BOOL KDURunCommandInheritee(
 
     if (PPLLevel >= 7) {
         PPLLevel = 7;
-        printf_s("[!] Capped the PPL level at 7\n");
+        printf_s("[!] Capped the PPL level at 7\r\n");
     }
 
     // patch PPL and resume
@@ -1198,7 +1230,7 @@ BOOL KDURunCommandInheritee(
         dwThreadResumeCount = ResumeThread(pi.hThread);
         if (dwThreadResumeCount != 1) {
             supPrintfEvent(kduEventError, 
-                "[!] Failed to resume process: %lu | 0x%lX\n", dwThreadResumeCount, GetLastError());
+                "[!] Failed to resume process: %lu | 0x%lX\r\n", dwThreadResumeCount, GetLastError());
             TerminateProcess(pi.hProcess, 0);
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
