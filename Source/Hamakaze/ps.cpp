@@ -232,7 +232,7 @@ BOOL KDURunCommandPPL(
 
     dwThreadResumeCount = ResumeThread(pi.hThread);
     if (dwThreadResumeCount != 1) {
-        printf_s("[!] Failed to resume process: %lu | 0x%lX\n", dwThreadResumeCount, GetLastError());
+        printf_s("[!] Failed to resume process: %lu | 0x%lX\r\n", dwThreadResumeCount, GetLastError());
         TerminateProcess(pi.hProcess, 0);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
@@ -514,7 +514,7 @@ BOOL KDUControlProcessProtections(
                             sizeof(UCHAR)))
                         {
                             printf_s("[+] Kernel memory read at %p succeeded\r\n", (void*)VirtualAddress);
-                            printf_s("\tNew PsProtection: 0x%02X\n", verifyBuf & 0xff);
+                            printf_s("\tNew PsProtection: 0x%02X\r\n", verifyBuf & 0xff);
                             printProtection(verifyBuf);
                         }
                     }
@@ -951,7 +951,7 @@ BOOL KDUSetHandleInheritable(
         return TRUE;
     }
 	if (!SetHandleInformation(hHandle, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT)) {
-		printf_s("[!] SetHandleInformation failed. Error: %lu\n", GetLastError());
+		printf_s("[!] SetHandleInformation failed. Error: %lu\r\n", GetLastError());
 		return FALSE;
 	}
 	printf_s("[+] Success: Set HANDLE_FLAG_INHERIT on the handle %p.\r\n", hHandle);
@@ -1165,7 +1165,7 @@ BOOL KDURunCommandInheritee(
 
 	// open all process threads if requested, set them to be inheritable and patch to THREAD_ALL_ACCESS
     if (OpenThreads) {
-        printf_s("[+] Opening all threads of target process %llu...\n", TargetProcessId);
+        printf_s("[+] Opening all threads of target process %llu...\r\n", TargetProcessId);
 
         if (!KDUOpenAndPatchThreads(Context, TargetProcessId, &ProcessHandleTable)) {
             printf_s("[!] Continuing despite not being able to open and patch threads...\r\n");
