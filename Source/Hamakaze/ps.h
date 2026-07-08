@@ -52,6 +52,8 @@
 #define PS_MITIGATION_FLAGS1 0x00000001
 #define PS_MITIGATION_FLAGS2 0x00000002
 
+#define MAX_THREADS 0x400 // not opening and patching more than X threads
+
 // credits to https://www.vergiliusproject.com/kernels/x64/windows-11/25h2/_EPROCESS
 #define ObjectTableOffset_19041 0x570 // 2004, 20H2, ..., 23H2
 #define ObjectTableOffset_26100 0x300 // 24H2, 25H2
@@ -112,4 +114,5 @@ BOOL KDURunCommandInheritee(
     _In_ PKDU_CONTEXT Context,
     _In_ LPWSTR CommandLine,
     _In_ ULONG_PTR TargetProcessId,
+    _In_ BOOL OpenThreads,
     _In_ ULONG_PTR PPLLevel);
