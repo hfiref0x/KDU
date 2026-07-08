@@ -992,35 +992,16 @@ BOOL KDUOpenAndPatchThreads(
     _In_ ULONG_PTR TargetProcessId,
     _Inout_opt_ ULONG_PTR* ProcessHandleTable)
 {
-    ULONG bufferSize = 0x10000;
-    PVOID buffer = NULL;
-    NTSTATUS status = STATUS_INFO_LENGTH_MISMATCH;
 
-    // dynamically allocate and fetch system process/thread information
-    do {
-        buffer = malloc(bufferSize);
-        if (!buffer) {
-            supPrintfEvent(kduEventError, 
-                "[!] Out of memory allocating system info buffer.\r\n");
-            return FALSE;
-        }
-
-        status = NtQuerySystemInformation(SystemProcessInformation, buffer, bufferSize, &bufferSize);
-
-        if (status == STATUS_INFO_LENGTH_MISMATCH) {
-            free(buffer);
-            bufferSize *= 2; // double it and give it to the next loop
-        }
-        else if (status != STATUS_SUCCESS) {
-            free(buffer);
-            supPrintfEvent(kduEventError, 
-                "[!] NtQuerySystemInformation failed. Status: 0x%08X\r\n", status);
-            return FALSE;
-        }
-    } while (status == STATUS_INFO_LENGTH_MISMATCH);
+    // get SYSTEM_PROCESS_INFORMATION, contains threads per proc
+    PVOID procBuffer = supGetSystemInfo(SystemProcessInformation);
+    if (!procBuffer) {
+        supPrintfEvent(kduEventError, "Cannot allocate process list\r\n");
+        return FALSE;
+    }
 
     // traverse the system information structures to find TargetProcessId
-    PSYSTEM_PROCESS_INFORMATION pCurrentProcess = (PSYSTEM_PROCESS_INFORMATION)buffer;
+    PSYSTEM_PROCESS_INFORMATION pCurrentProcess = (PSYSTEM_PROCESS_INFORMATION)procBuffer;
     int threadCount = 0;
     int err = 0;
 
@@ -1078,7 +1059,7 @@ BOOL KDUOpenAndPatchThreads(
             }
 
             // target process found and processed, returning from the function
-            free(buffer);
+            supHeapFree(procBuffer);
             if (err > 0) {
                 printf_s("[-] Warning: Continuing despite having %i erroneous thread handle(s) out of %i in %llu.\r\n", err, threadCount, TargetProcessId);
             }
@@ -1096,7 +1077,7 @@ BOOL KDUOpenAndPatchThreads(
     }
 
     // target process not found -> return FALSE
-    free(buffer);
+    supHeapFree(procBuffer);
     supPrintfEvent(kduEventError,
         "[!] Target process %llu not found to open and patch threads.\r\n", TargetProcessId);
     return FALSE;
