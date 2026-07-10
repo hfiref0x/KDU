@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.46
+*  VERSION:     1.49
 *
-*  DATE:        12 Feb 2026
+*  DATE:        10 Jul 2026
 *
 *  Processes DKOM related routines.
 *
@@ -89,10 +89,10 @@ BOOL KDUDumpProcessMemory(
     HANDLE processHandle = NULL;
     pfnMiniDumpWriteDump pMiniDumpWriteDump;
 
-	if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) {
-		supPrintfEvent(kduEventError, "Provider does not support OpenProcess callback\r\n");
-		return FALSE;
-	}
+    if (!KDUVerifyProviderCallbacksForOpenProcess(Context)) {
+        supPrintfEvent(kduEventError, "Provider does not support OpenProcess callback\r\n");
+        return FALSE;
+    }
 
     WCHAR szOutputName[MAX_PATH];
     PSYSTEM_PROCESS_INFORMATION procEntry = NULL;
@@ -341,7 +341,7 @@ BOOL KDUGetEprocessOffsets(
     Offsets->MitigationFlags1Offset = 0;
     Offsets->MitigationFlags2Offset = 0;
     Offsets->ObjectTableOffset = 0;
-	Offsets->HandleTableOffset = HandleTableOffset_all;
+    Offsets->HandleTableOffset = HandleTableOffset_all;
 
     switch (NtBuildNumber) {
 
@@ -405,7 +405,7 @@ BOOL KDUGetEprocessOffsets(
         Offsets->PsProtectionOffset = PsProtectionOffset_26100;
         Offsets->MitigationFlags1Offset = PsMitigationFlags1Offset_26100;
         Offsets->MitigationFlags2Offset = PsMitigationFlags2Offset_26100;
-		Offsets->ObjectTableOffset = ObjectTableOffset_26100;
+        Offsets->ObjectTableOffset = ObjectTableOffset_26100;
         break;
 
     default:
@@ -715,7 +715,7 @@ ULONG_PTR LookupHandleEntry(
     ULONG_PTR Base;
     ULONG_PTR Index;
 
-	// get the redirection level and base address from the handle table
+    // get the redirection level and base address from the handle table
     if (!Context->Provider->Callbacks.ReadKernelVM(Context->DeviceHandle,
         HANDLE_TABLE_OFFSET(HandleTable, offsets.HandleTableOffset),
         &TableCode,
@@ -782,11 +782,11 @@ ULONG_PTR LookupHandleEntry(
 }
 
 /*
-* 
+*
 * KDUControlHandleAccess
-* 
+*
 * Purpose:
-* 
+*
 * Modify an existing handle's access rights
 */
 BOOL KDUControlHandleAccess(
@@ -796,16 +796,16 @@ BOOL KDUControlHandleAccess(
     _In_ ACCESS_MASK NewAccessMask,
     _Inout_opt_ ULONG_PTR* ProcessHandleTable) // save process handle table for next handle manipulation
 {
-	BOOL       bResult = FALSE, bReusedTable = FALSE;
-	NTSTATUS   ntStatus;
-	ULONG_PTR  ProcessObject = 0, HandleTable = 0, HandleEntry = 0;
-	HANDLE     hProcess = NULL;
-	CLIENT_ID  clientId;
-	OBJECT_ATTRIBUTES obja;
-	KDU_EPROCESS_OFFSETS offsets;
-	
+    BOOL       bResult = FALSE, bReusedTable = FALSE;
+    NTSTATUS   ntStatus;
+    ULONG_PTR  ProcessObject = 0, HandleTable = 0, HandleEntry = 0;
+    HANDLE     hProcess = NULL;
+    CLIENT_ID  clientId;
+    OBJECT_ATTRIBUTES obja;
+    KDU_EPROCESS_OFFSETS offsets;
+
     if (!KDUVerifyProviderCallbacksForPsPatch(Context)) {
-		supPrintfEvent(kduEventError, 
+        supPrintfEvent(kduEventError,
             "[!] Provider does not support required callbacks for handle access control\r\n");
         return FALSE;
     }
@@ -813,15 +813,15 @@ BOOL KDUControlHandleAccess(
     if (!KDUGetEprocessOffsets(Context->NtBuildNumber, &offsets) ||
         offsets.ObjectTableOffset == 0)
     {
-        supPrintfEvent(kduEventError, 
+        supPrintfEvent(kduEventError,
             "[!] Unsupported WinNT version\r\n");
         return FALSE;
     }
 
-	FUNCTION_ENTER_MSG(__FUNCTION__);
-	InitializeObjectAttributes(&obja, NULL, 0, 0, 0);
-	clientId.UniqueProcess = (HANDLE)ProcessId;
-	clientId.UniqueThread = NULL;
+    FUNCTION_ENTER_MSG(__FUNCTION__);
+    InitializeObjectAttributes(&obja, NULL, 0, 0, 0);
+    clientId.UniqueProcess = (HANDLE)ProcessId;
+    clientId.UniqueThread = NULL;
 
     // check if previous HandleTable can be user
     if (ProcessHandleTable != nullptr && *ProcessHandleTable != 0) {
@@ -933,29 +933,29 @@ BOOL KDUControlHandleAccess(
         }
     }
 
-	FUNCTION_LEAVE_MSG(__FUNCTION__);
+    FUNCTION_LEAVE_MSG(__FUNCTION__);
 
-	return bResult;
+    return bResult;
 }
 
 BOOL KDUSetHandleInheritable(
     _In_ HANDLE hHandle)
 {
-	DWORD flags = 0;
-	if (!GetHandleInformation(hHandle, &flags)) {
-		printf_s("[!] GetHandleInformation failed. Error: %lu\r\n", GetLastError());
-		return FALSE; // safe exit instead of undefined continuation
-	}
-	if (flags & HANDLE_FLAG_INHERIT) { // already inheritable
+    DWORD flags = 0;
+    if (!GetHandleInformation(hHandle, &flags)) {
+        printf_s("[!] GetHandleInformation failed. Error: %lu\r\n", GetLastError());
+        return FALSE; // safe exit instead of undefined continuation
+    }
+    if (flags & HANDLE_FLAG_INHERIT) { // already inheritable
         printf_s("[+] Ok: The handle %p is already inheritable.\r\n", hHandle);
         return TRUE;
     }
-	if (!SetHandleInformation(hHandle, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT)) {
-		printf_s("[!] SetHandleInformation failed. Error: %lu\r\n", GetLastError());
-		return FALSE;
-	}
-	printf_s("[+] Success: Set HANDLE_FLAG_INHERIT on the handle %p.\r\n", hHandle);
-	return TRUE;
+    if (!SetHandleInformation(hHandle, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT)) {
+        printf_s("[!] SetHandleInformation failed. Error: %lu\r\n", GetLastError());
+        return FALSE;
+    }
+    printf_s("[+] Success: Set HANDLE_FLAG_INHERIT on the handle %p.\r\n", hHandle);
+    return TRUE;
 }
 
 BOOL KDUSetAccessRights(
@@ -1098,14 +1098,14 @@ BOOL KDURunCommandInheritee(
     _In_ BOOL OpenThreads,
     _In_ ULONG_PTR PPLLevel)
 {
-	// try to open the target process directly with PROCESS_ALL_ACCESS
+    // try to open the target process directly with PROCESS_ALL_ACCESS
     HANDLE hTargetProc;
     hTargetProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)TargetProcessId);
     if (hTargetProc == NULL) {
-        
+
         // fallback to PROCESS_QUERY_LIMITED_INFORMATION
         hTargetProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)TargetProcessId);
-        
+
         if (hTargetProc == NULL) {
             // fallback to KDUOpenProcess when user-mode cannot open target proc
             printf_s("[-] Target process %llu cannot be opened via user-mode, fallback to KDUOpenProcess()\r\n", TargetProcessId);
@@ -1130,7 +1130,7 @@ BOOL KDURunCommandInheritee(
 
     // check if handle is inheritable, if not, set it to be inheritable
     if (!KDUSetHandleInheritable(hTargetProc)) {
-        supPrintfEvent(kduEventError, 
+        supPrintfEvent(kduEventError,
             "[!] Not continuing due to failure in setting handle inheritance.\r\n");
         return FALSE;
     }
@@ -1138,13 +1138,13 @@ BOOL KDURunCommandInheritee(
     ULONG_PTR ProcessHandleTable = 0; // save for later patches, if needed
 
     // check if handle has PROCESS_FULL_ACCESS rights (requesting FULL_ACCESS may still lead to stripped access)
-	if (!KDUSetAccessRights(Context, hTargetProc, PROCESS_ALL_ACCESS, &ProcessHandleTable)) {
-		supPrintfEvent(kduEventError, 
+    if (!KDUSetAccessRights(Context, hTargetProc, PROCESS_ALL_ACCESS, &ProcessHandleTable)) {
+        supPrintfEvent(kduEventError,
             "[!] Not continuing due to failure in setting handle access rights.\r\n");
-		return FALSE;
-	}
+        return FALSE;
+    }
 
-	// open all process threads if requested, set them to be inheritable and patch to THREAD_ALL_ACCESS
+    // open all process threads if requested, set them to be inheritable and patch to THREAD_ALL_ACCESS
     if (OpenThreads) {
         printf_s("[+] Opening all threads of target process %llu...\r\n", TargetProcessId);
 
@@ -1210,7 +1210,7 @@ BOOL KDURunCommandInheritee(
 
         dwThreadResumeCount = ResumeThread(pi.hThread);
         if (dwThreadResumeCount != 1) {
-            supPrintfEvent(kduEventError, 
+            supPrintfEvent(kduEventError,
                 "[!] Failed to resume process: %lu | 0x%lX\r\n", dwThreadResumeCount, GetLastError());
             TerminateProcess(pi.hProcess, 0);
             CloseHandle(pi.hProcess);

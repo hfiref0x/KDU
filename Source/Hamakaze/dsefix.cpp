@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        30 May 2026
+*  DATE:        10 Jul 2026
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -800,6 +800,11 @@ BOOL KDUControlDSE2(
 
     KDU_PHYSMEM_ENUM_PARAMS enumParams;
     VICTIM_IMAGE_INFORMATION vi;
+
+#ifdef _DEBUG
+    supPrintfEvent(kduEventError, "[!] Debug Mode run, shellcode is unavailable, abort.\r\n");
+    return FALSE;
+#endif
 
     prov = Context->Provider;
     victimProv = Context->Victim;

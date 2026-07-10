@@ -4,9 +4,9 @@
 *
 *  TITLE:       SHELLCODE.CPP
 *
-*  VERSION:     1.48
+*  VERSION:     1.49
 *
-*  DATE:        01 Apr 2026
+*  DATE:        09 Jul 2026
 *
 *  Default driver mapping shellcode(s) implementation.
 *
@@ -1835,12 +1835,11 @@ PVOID ScAllocate(
     procSize = ScSizeOfProc(procPtr);
     if (procSize > bootstrapSize) {
 
-        supPrintfEvent(kduEventError, 
-            "[!] Bootstrap code size 0x%lX exceeds limit 0x%lX, abort\r\n", 
-            procSize, 
-            bootstrapSize);
-
 #ifndef _DEBUG
+        supPrintfEvent(kduEventError,
+            "[!] Bootstrap code size 0x%lX exceeds limit 0x%lX, abort\r\n",
+            procSize,
+            bootstrapSize);
         return NULL;
 #endif
     }

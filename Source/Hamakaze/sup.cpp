@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        05 Jun 2026
+*  DATE:        10 Jun 2026
 *
 *  Program global support routines.
 *
@@ -2178,6 +2178,9 @@ VOID supPrintfEvent(
     switch (Event) {
     case kduEventInformation:
         newColor = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+        break;
+    case kduEventWarning:
+        newColor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
         break;
     case kduEventError:
         newColor = FOREGROUND_RED | FOREGROUND_INTENSITY;

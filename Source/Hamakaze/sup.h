@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        05 Jun 2026
+*  DATE:        10 Jul 2026
 *
 *  Support routines header file.
 *
@@ -83,6 +83,7 @@ typedef enum _KDU_EVENT_TYPE {
     kduEventNone = 0,
     kduEventError,
     kduEventInformation,
+    kduEventWarning,
     kduEventMax
 } KDU_EVENT_TYPE, * PKDU_EVENT_TYPE;
 
@@ -255,8 +256,8 @@ ULONG_PTR supGetPML4FromLowStub1M(
     _In_ ULONG_PTR pbLowStub1M);
 
 NTSTATUS supCreateSystemAdminAccessSD(
-    _Out_ PSECURITY_DESCRIPTOR * SecurityDescriptor,
-    _Out_ PACL * DefaultAcl);
+    _Out_ PSECURITY_DESCRIPTOR* SecurityDescriptor,
+    _Out_ PACL* DefaultAcl);
 
 ULONG supGetTimeAsSecondsSince1970();
 
@@ -283,7 +284,7 @@ NTSTATUS supRegWriteValueString(
 
 NTSTATUS supLoadFileForMapping(
     _In_ LPCWSTR PayloadFileName,
-    _Out_ PVOID * LoadBase);
+    _Out_ PVOID* LoadBase);
 
 VOID supPrintfEvent(
     _In_ KDU_EVENT_TYPE Event,
@@ -310,7 +311,7 @@ BOOL supSetupManagePnpDriverPackage(
 
 BOOL supSetupRemoveDriver(
     _In_ HDEVINFO DeviceInfo,
-    _In_ SP_DEVINFO_DATA * DeviceInfoData);
+    _In_ SP_DEVINFO_DATA* DeviceInfoData);
 
 BOOL supQueryDeviceProperty(
     _In_ HDEVINFO hDevInfo,

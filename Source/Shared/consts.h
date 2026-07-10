@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        11 Jun 2026
+*  DATE:        10 Jul 2026
 *
 *  Global consts.
 *
@@ -22,7 +22,7 @@
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       4
 #define KDU_VERSION_REVISION    9
-#define KDU_VERSION_BUILD       2606
+#define KDU_VERSION_BUILD       2607
 #define KDU_COPYRIGHT_YEAR      2026
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
@@ -30,7 +30,7 @@
 
 #define IPC_GET_HANDLE          0x1337
 
-#define KDU_SYNC_MUTANT         0x2606
+#define KDU_SYNC_MUTANT         0x2607
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"

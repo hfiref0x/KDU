@@ -310,6 +310,12 @@ INT KDUProcessDrvMapSwitch(
     INT retVal = 0;
     KDU_CONTEXT* provContext;
 
+#ifdef _DEBUG
+    supPrintfEvent(kduEventError,
+        "[!] Debug Mode run, shellcode is unavailable, abort.\r\n");
+    return ERROR_INVALID_ENVIRONMENT;
+#endif
+
     if (!RtlDoesFileExists_U(DriverFileName)) {
 
         supPrintfEvent(kduEventError,
@@ -814,7 +820,7 @@ int KDUMain()
     OSVERSIONINFO osv;
 
 #ifdef _DEBUG
-    printf_s("[*] Debug Mode Run, several features (like a shellcode proper generation) will be unavailable\r\n");
+    supPrintfEvent(kduEventWarning, "[!] Debug Mode Run, several features (like a shellcode proper generation) will be unavailable\r\n");
 #endif
 
     FUNCTION_ENTER_MSG(__FUNCTION__);

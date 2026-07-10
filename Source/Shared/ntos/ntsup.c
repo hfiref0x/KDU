@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2011 - 2025 UGN/HE
+*  (C) COPYRIGHT AUTHORS, 2011 - 2026 UGN/HE
 *
 *  TITLE:       NTSUP.C
 *
-*  VERSION:     2.25
+*  VERSION:     2.27
 *
-*  DATE:        18 Aug 2025
+*  DATE:        27 Jun 2026
 *
 *  Native API support functions.
 *
@@ -72,12 +72,14 @@ VOID ntsupSha256Transform(
     ULONG W[64];
     ULONG a, b, c, d, e, f, g, h, t1, t2;
     ULONG i;
+
     for (i = 0; i < 16; i++) {
-        W[i] = (Block[i * 4] << 24) |
-            (Block[i * 4 + 1] << 16) |
-            (Block[i * 4 + 2] << 8) |
-            (Block[i * 4 + 3]);
+        W[i] = ((ULONG)Block[i * 4] << 24) |
+            ((ULONG)Block[i * 4 + 1] << 16) |
+            ((ULONG)Block[i * 4 + 2] << 8) |
+            ((ULONG)Block[i * 4 + 3]);
     }
+
     for (i = 16; i < 64; i++) {
         W[i] = NTSUP_SSIG1(W[i - 2]) + W[i - 7] + NTSUP_SSIG0(W[i - 15]) + W[i - 16];
     }
@@ -230,11 +232,11 @@ PVOID ntsupHeapAlloc(
 * Wrapper for RtlFreeHeap with process heap.
 *
 */
-VOID ntsupHeapFree(
+BOOL ntsupHeapFree(
     _In_ PVOID BaseAddress
 )
 {
-    RtlFreeHeap(ntsupProcessHeap(), 0, BaseAddress);
+    return RtlFreeHeap(ntsupProcessHeap(), 0, BaseAddress);
 }
 
 /*
@@ -386,6 +388,18 @@ SIZE_T ntsupWriteBufferToFile(
 
     if (Result)
         *Result = STATUS_UNSUCCESSFUL;
+
+    if (FileName == NULL) {
+        if (Result)
+            *Result = STATUS_INVALID_PARAMETER_1;
+        return 0;
+    }
+
+    if (Buffer == NULL && Size != 0) {
+        if (Result)
+            *Result = STATUS_INVALID_PARAMETER_2;
+        return 0;
+    }
 
     if (RtlDosPathNameToNtPathName_U(FileName, &ntFileName, NULL, NULL) == FALSE) {
         if (Result)
@@ -632,8 +646,7 @@ PVOID ntsupFindModuleNameByAddress(
             if (NT_SUCCESS(ntStatus)) {
 
                 copyLength = usConvertedName.Length / sizeof(WCHAR);
-                if (copyLength > (SIZE_T)(ccBuffer - 1))
-                    copyLength = ccBuffer - 1;
+                copyLength = MIN(copyLength, (SIZE_T)ccBuffer - 1);
 
                 _strncpy(
                     Buffer,
@@ -696,6 +709,55 @@ NTSTATUS ntsupConvertToAnsi(
 }
 
 /*
+* ntsupSetPrivilege
+*
+* Purpose:
+*
+* Adjust privilege for the token.
+*
+*/
+NTSTATUS ntsupSetPrivilege(
+    _In_ HANDLE TokenHandle,
+    _In_ DWORD Privilege,
+    _In_ BOOLEAN Enable,
+    _Out_opt_ PTOKEN_PRIVILEGES PreviousState,
+    _Out_opt_ PULONG ReturnLength
+)
+{
+    NTSTATUS ntStatus;
+    TOKEN_PRIVILEGES newState;
+    ULONG returnLength;
+
+    if (ReturnLength)
+        *ReturnLength = 0;
+
+    if (PreviousState) {
+        RtlSecureZeroMemory(PreviousState, sizeof(TOKEN_PRIVILEGES));
+    }
+
+    newState.PrivilegeCount = 1;
+    newState.Privileges[0].Luid = RtlConvertUlongToLuid(Privilege);
+    newState.Privileges[0].Attributes = Enable ? SE_PRIVILEGE_ENABLED : 0;
+
+    returnLength = 0;
+    ntStatus = NtAdjustPrivilegesToken(
+        TokenHandle,
+        FALSE,
+        &newState,
+        PreviousState ? sizeof(TOKEN_PRIVILEGES) : 0,
+        PreviousState,
+        &returnLength);
+
+    if (ReturnLength)
+        *ReturnLength = returnLength;
+
+    if (ntStatus == STATUS_NOT_ALL_ASSIGNED)
+        return STATUS_PRIVILEGE_NOT_HELD;
+
+    return ntStatus;
+}
+
+/*
 * ntsupEnablePrivilege
 *
 * Purpose:
@@ -714,9 +776,6 @@ BOOLEAN ntsupEnablePrivilege(
     NTSTATUS ntStatus;
     HANDLE tokenHandle;
 
-    PTOKEN_PRIVILEGES newState;
-    UCHAR rawBuffer[sizeof(TOKEN_PRIVILEGES) + sizeof(LUID_AND_ATTRIBUTES)];
-
     ntStatus = NtOpenProcessToken(
         NtCurrentProcess(),
         TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
@@ -724,23 +783,13 @@ BOOLEAN ntsupEnablePrivilege(
 
     if (NT_SUCCESS(ntStatus)) {
 
-        newState = (PTOKEN_PRIVILEGES)rawBuffer;
-
-        newState->PrivilegeCount = 1;
-        newState->Privileges[0].Luid = RtlConvertUlongToLuid(Privilege);
-        newState->Privileges[0].Attributes = Enable ? SE_PRIVILEGE_ENABLED : 0;
-
-        ntStatus = NtAdjustPrivilegesToken(
+        returnLength = 0;
+        ntStatus = ntsupSetPrivilege(
             tokenHandle,
-            FALSE,
-            newState,
-            sizeof(rawBuffer),
+            Privilege,
+            Enable,
             NULL,
             &returnLength);
-
-        if (ntStatus == STATUS_NOT_ALL_ASSIGNED) {
-            ntStatus = STATUS_PRIVILEGE_NOT_HELD;
-        }
 
         NtClose(tokenHandle);
 
@@ -1199,6 +1248,9 @@ BOOL ntsupResolveSymbolicLink(
         NULL);
 
     bResult = (NT_SUCCESS(ntStatus));
+    if (!bResult) {
+        RtlSetLastWin32Error(RtlNtStatusToDosError(ntStatus));
+    }
     NtClose(linkHandle);
     return bResult;
 }
@@ -1213,7 +1265,7 @@ BOOL ntsupResolveSymbolicLink(
 */
 BOOL ntsupQueryThreadWin32StartAddress(
     _In_ HANDLE ThreadHandle,
-    _Out_ PULONG_PTR Win32StartAddress
+    _Out_opt_ PULONG_PTR Win32StartAddress
 )
 {
     ULONG returnLength;
@@ -1806,10 +1858,7 @@ NTSTATUS ntsupOpenProcess(
         &objectAttributes,
         &ClientId);
 
-    if (NT_SUCCESS(ntStatus)) {
-        *ProcessHandle = processHandle;
-    }
-
+    *ProcessHandle = processHandle;
     return ntStatus;
 }
 
@@ -1837,9 +1886,7 @@ NTSTATUS ntsupOpenThread(
         &objectAttributes,
         ClientId);
 
-    if (NT_SUCCESS(ntStatus)) {
-        *ThreadHandle = threadHandle;
-    }
+    *ThreadHandle = threadHandle;
 
     return ntStatus;
 }
@@ -2262,22 +2309,102 @@ VOID ntsupPurgeSystemCache(
     VOID
 )
 {
+    ULONG returnLength;
+    NTSTATUS ntStatus;
+    HANDLE tokenHandle;
     SYSTEM_FILECACHE_INFORMATION sfc;
     SYSTEM_MEMORY_LIST_COMMAND smlc;
 
-    //flush file system cache
-    if (ntsupEnablePrivilege(SE_INCREASE_QUOTA_PRIVILEGE, TRUE)) {
+    TOKEN_PRIVILEGES newState;
+    TOKEN_PRIVILEGES oldStateIncreaseQuota;
+    TOKEN_PRIVILEGES oldStateSingleProcess;
+
+    BOOLEAN restoreIncreaseQuota = FALSE;
+    BOOLEAN restoreSingleProcess = FALSE;
+
+    ntStatus = NtOpenProcessToken(
+        NtCurrentProcess(),
+        TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+        &tokenHandle);
+
+    if (!NT_SUCCESS(ntStatus))
+        return;
+
+    newState.PrivilegeCount = 1;
+    newState.Privileges[0].Luid = RtlConvertUlongToLuid(SE_INCREASE_QUOTA_PRIVILEGE);
+    newState.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+    //
+    // Adjust a new privilege SE_INCREASE_QUOTA_PRIVILEGE and remember previous state.
+    //
+    returnLength = 0;
+    ntStatus = NtAdjustPrivilegesToken(
+        tokenHandle,
+        FALSE,
+        &newState,
+        sizeof(oldStateIncreaseQuota),
+        &oldStateIncreaseQuota,
+        &returnLength);
+
+    if (NT_SUCCESS(ntStatus) || ntStatus == STATUS_NOT_ALL_ASSIGNED) {
+
+        if (NT_SUCCESS(ntStatus))
+            restoreIncreaseQuota = TRUE;
+
         RtlSecureZeroMemory(&sfc, sizeof(SYSTEM_FILECACHE_INFORMATION));
         sfc.MaximumWorkingSet = (SIZE_T)-1;
         sfc.MinimumWorkingSet = (SIZE_T)-1;
         NtSetSystemInformation(SystemFileCacheInformation, (PVOID)&sfc, sizeof(sfc));
     }
 
-    //flush standby list
-    if (ntsupEnablePrivilege(SE_PROF_SINGLE_PROCESS_PRIVILEGE, TRUE)) {
+    newState.Privileges[0].Luid = RtlConvertUlongToLuid(SE_PROF_SINGLE_PROCESS_PRIVILEGE);
+    newState.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+    //
+    // Adjust a new privilege SE_PROF_SINGLE_PROCESS_PRIVILEGE and remember previous state.
+    //
+    returnLength = 0;
+    ntStatus = NtAdjustPrivilegesToken(
+        tokenHandle,
+        FALSE,
+        &newState,
+        sizeof(oldStateSingleProcess),
+        &oldStateSingleProcess,
+        &returnLength);
+
+    if (NT_SUCCESS(ntStatus) || ntStatus == STATUS_NOT_ALL_ASSIGNED) {
+
+        if (NT_SUCCESS(ntStatus))
+            restoreSingleProcess = TRUE;
+
         smlc = MemoryPurgeStandbyList;
         NtSetSystemInformation(SystemMemoryListInformation, (PVOID)&smlc, sizeof(smlc));
     }
+
+    //
+    // Restore original state of privileges.
+    //
+    if (restoreSingleProcess) {
+        NtAdjustPrivilegesToken(
+            tokenHandle,
+            FALSE,
+            &oldStateSingleProcess,
+            0,
+            NULL,
+            &returnLength);
+    }
+
+    if (restoreIncreaseQuota) {
+        NtAdjustPrivilegesToken(
+            tokenHandle,
+            FALSE,
+            &oldStateIncreaseQuota,
+            0,
+            NULL,
+            &returnLength);
+    }
+
+    NtClose(tokenHandle);
 }
 
 /*
@@ -2426,18 +2553,19 @@ NTSTATUS NTAPI ntsupDetectObjectCallback(
 *
 */
 NTSTATUS NTAPI ntsupEnumSystemObjects(
-    _In_opt_ LPCWSTR pwszRootDirectory,
-    _In_opt_ HANDLE hRootDirectory,
+    _In_opt_ LPCWSTR RootDirectory,
+    _In_opt_ HANDLE RootDirectoryHandle,
     _In_ PENUMOBJECTSCALLBACK CallbackProc,
     _In_opt_ PVOID CallbackParam
 )
 {
+    BOOLEAN             mustCloseDirectory = FALSE;
     ULONG               ctx, rlen;
-    HANDLE              hDirectory = NULL;
+    HANDLE              directoryHandle = NULL;
     NTSTATUS            status;
-    NTSTATUS            CallbackStatus;
-    OBJECT_ATTRIBUTES   attr;
-    UNICODE_STRING      sname;
+    NTSTATUS            callbackStatus;
+    OBJECT_ATTRIBUTES   objectAttributes;
+    UNICODE_STRING      usRootDirectory;
 
     POBJECT_DIRECTORY_INFORMATION    objinf;
 
@@ -2448,20 +2576,21 @@ NTSTATUS NTAPI ntsupEnumSystemObjects(
     status = STATUS_UNSUCCESSFUL;
 
     // We can use root directory.
-    if (pwszRootDirectory != NULL) {
-        RtlSecureZeroMemory(&sname, sizeof(sname));
-        RtlInitUnicodeString(&sname, pwszRootDirectory);
-        InitializeObjectAttributes(&attr, &sname, OBJ_CASE_INSENSITIVE, NULL, NULL);
-        status = NtOpenDirectoryObject(&hDirectory, DIRECTORY_QUERY, &attr);
+    if (RootDirectory != NULL) {
+        RtlInitEmptyUnicodeString(&usRootDirectory, NULL, 0);
+        RtlInitUnicodeString(&usRootDirectory, RootDirectory);
+        InitializeObjectAttributes(&objectAttributes, &usRootDirectory, OBJ_CASE_INSENSITIVE, NULL, NULL);
+        status = NtOpenDirectoryObject(&directoryHandle, DIRECTORY_QUERY, &objectAttributes);
         if (!NT_SUCCESS(status)) {
             return status;
         }
+        mustCloseDirectory = TRUE;
     }
     else {
-        if (hRootDirectory == NULL) {
+        if (RootDirectoryHandle == NULL) {
             return STATUS_INVALID_PARAMETER_2;
         }
-        hDirectory = hRootDirectory;
+        directoryHandle = RootDirectoryHandle;
     }
 
     // Enumerate objects in directory.
@@ -2469,7 +2598,7 @@ NTSTATUS NTAPI ntsupEnumSystemObjects(
     do {
 
         rlen = 0;
-        status = NtQueryDirectoryObject(hDirectory, NULL, 0, TRUE, FALSE, &ctx, &rlen);
+        status = NtQueryDirectoryObject(directoryHandle, NULL, 0, TRUE, FALSE, &ctx, &rlen);
         if (status != STATUS_BUFFER_TOO_SMALL)
             break;
 
@@ -2477,25 +2606,25 @@ NTSTATUS NTAPI ntsupEnumSystemObjects(
         if (objinf == NULL)
             break;
 
-        status = NtQueryDirectoryObject(hDirectory, objinf, rlen, TRUE, FALSE, &ctx, &rlen);
+        status = NtQueryDirectoryObject(directoryHandle, objinf, rlen, TRUE, FALSE, &ctx, &rlen);
         if (!NT_SUCCESS(status)) {
             ntsupHeapFree(objinf);
             break;
         }
 
-        CallbackStatus = CallbackProc(objinf, CallbackParam);
+        callbackStatus = CallbackProc(objinf, CallbackParam);
 
         ntsupHeapFree(objinf);
 
-        if (NT_SUCCESS(CallbackStatus)) {
+        if (NT_SUCCESS(callbackStatus)) {
             status = STATUS_SUCCESS;
             break;
         }
 
     } while (TRUE);
 
-    if (hDirectory != NULL) {
-        NtClose(hDirectory);
+    if (mustCloseDirectory && directoryHandle != NULL) {
+        NtClose(directoryHandle);
     }
 
     return status;
@@ -2588,6 +2717,207 @@ BOOLEAN ntsupUserIsFullAdmin(
         NtClose(hToken);
     }
     return bResult;
+}
+
+/*
+* ntsupDuplicateUnicodeString
+*
+* Purpose:
+*
+* Duplicates a given UNICODE_STRING.
+*
+* Allocated memory must be freed by called with supHeapFree.
+*
+*/
+NTSTATUS ntsupDuplicateUnicodeString(
+    _In_ PCUNICODE_STRING SourceString,
+    _Out_ PUNICODE_STRING DestinationString
+)
+{
+    NTSTATUS ntStatus;
+    PWSTR buffer;
+    USHORT maximumLength;
+    USHORT length;
+
+    if (SourceString == NULL || DestinationString == NULL)
+        return STATUS_INVALID_PARAMETER;
+
+    DestinationString->Buffer = NULL;
+    DestinationString->Length = 0;
+    DestinationString->MaximumLength = 0;
+
+    length = SourceString->Length;
+    maximumLength = SourceString->MaximumLength;
+
+    if (length > maximumLength)
+        return STATUS_INVALID_PARAMETER;
+
+    if (maximumLength < length)
+        return STATUS_INVALID_PARAMETER;
+
+    if (maximumLength == 0) {
+        if (length != 0 || SourceString->Buffer != NULL)
+            return STATUS_INVALID_PARAMETER;
+
+        return STATUS_SUCCESS;
+    }
+
+    if (SourceString->Buffer == NULL)
+        return STATUS_INVALID_PARAMETER;
+
+    buffer = (PWSTR)ntsupHeapAlloc(maximumLength);
+    if (buffer == NULL)
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    if (length != 0) {
+        RtlCopyMemory(buffer, SourceString->Buffer, length);
+    }
+
+    DestinationString->Buffer = buffer;
+    DestinationString->Length = length;
+    DestinationString->MaximumLength = maximumLength;
+
+    ntStatus = STATUS_SUCCESS;
+    return ntStatus;
+}
+
+/*
+* ntsupDuplicateAnsiString
+*
+* Purpose:
+*
+* Duplicates a given ANSI_STRING.
+*
+* Allocated memory must be freed by called with supHeapFree.
+*
+*/
+NTSTATUS ntsupDuplicateAnsiString(
+    _In_ PCANSI_STRING SourceString,
+    _Out_ PANSI_STRING DestinationString
+)
+{
+    NTSTATUS ntStatus;
+    PCHAR buffer;
+    USHORT maximumLength;
+    USHORT length;
+
+    if (SourceString == NULL || DestinationString == NULL)
+        return STATUS_INVALID_PARAMETER;
+
+    DestinationString->Buffer = NULL;
+    DestinationString->Length = 0;
+    DestinationString->MaximumLength = 0;
+
+    length = SourceString->Length;
+    maximumLength = SourceString->MaximumLength;
+
+    if (length > maximumLength)
+        return STATUS_INVALID_PARAMETER;
+
+    if (maximumLength < length)
+        return STATUS_INVALID_PARAMETER;
+
+    if (maximumLength == 0) {
+        if (length != 0 || SourceString->Buffer != NULL)
+            return STATUS_INVALID_PARAMETER;
+
+        return STATUS_SUCCESS;
+    }
+
+    if (SourceString->Buffer == NULL)
+        return STATUS_INVALID_PARAMETER;
+
+    buffer = (PCHAR)ntsupHeapAlloc(maximumLength);
+    if (buffer == NULL)
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    if (length != 0) {
+        RtlCopyMemory(buffer, SourceString->Buffer, length);
+    }
+
+    DestinationString->Buffer = buffer;
+    DestinationString->Length = length;
+    DestinationString->MaximumLength = maximumLength;
+
+    ntStatus = STATUS_SUCCESS;
+    return ntStatus;
+}
+
+/*
+* ntsupQueryProcessCommandLine
+*
+* Purpose:
+*
+* Reads command line from PEB of the target process.
+*
+* Allocated string must be freed by caller with RtlFreeUnicodeString.
+*
+*/
+NTSTATUS ntsupQueryProcessCommandLine(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PUNICODE_STRING CommandLine,
+    _In_ PNTSUPMEMALLOC AllocMem,
+    _In_ PNTSUPMEMFREE FreeMem
+)
+{
+    NTSTATUS ntStatus;
+    PUNICODE_STRING commandLine;
+    SIZE_T allocSize;
+    ULONG returnLength;
+
+    if (CommandLine == NULL || AllocMem == NULL || FreeMem == NULL)
+        return STATUS_INVALID_PARAMETER;
+
+    CommandLine->Buffer = NULL;
+    CommandLine->Length = 0;
+    CommandLine->MaximumLength = 0;
+
+    returnLength = 0;
+    commandLine = NULL;
+    allocSize = sizeof(UNICODE_STRING) + 0x800;
+
+    do {
+
+        commandLine = (PUNICODE_STRING)AllocMem(allocSize);
+        if (commandLine == NULL)
+            return STATUS_INSUFFICIENT_RESOURCES;
+
+        ntStatus = NtQueryInformationProcess(
+            ProcessHandle,
+            ProcessCommandLineInformation,
+            commandLine,
+            (ULONG)allocSize,
+            &returnLength);
+
+        if (ntStatus == STATUS_INFO_LENGTH_MISMATCH) {
+            FreeMem(commandLine);
+            commandLine = NULL;
+
+            if (returnLength <= allocSize || returnLength > MAX_NTSUP_BUFFER_SIZE)
+                return STATUS_UNSUCCESSFUL;
+
+            allocSize = returnLength;
+        }
+
+    } while (ntStatus == STATUS_INFO_LENGTH_MISMATCH);
+
+    if (!NT_SUCCESS(ntStatus)) {
+        if (commandLine != NULL)
+            FreeMem(commandLine);
+        return ntStatus;
+    }
+
+    if (commandLine->Length > commandLine->MaximumLength ||
+        commandLine->Buffer == NULL)
+    {
+        FreeMem(commandLine);
+        return STATUS_INVALID_BUFFER_SIZE;
+    }
+
+    ntStatus = ntsupDuplicateUnicodeString(commandLine, CommandLine);
+    FreeMem(commandLine);
+
+    return ntStatus;
 }
 
 /*

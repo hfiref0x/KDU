@@ -1,12 +1,12 @@
 /************************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2011 - 2025 UGN/HE
+*  (C) COPYRIGHT AUTHORS, 2011 - 2026 UGN/HE
 *
 *  TITLE:       NTSUP.H
 *
-*  VERSION:     2.25
+*  VERSION:     2.27
 *
-*  DATE:        18 Aug 2025
+*  DATE:        27 Jun 2026
 *
 *  Common header file for the NT API support functions and definitions.
 *
@@ -112,7 +112,7 @@ typedef enum _NTSUP_IMAGE_TYPE {
 PVOID ntsupHeapAlloc(
     _In_ SIZE_T Size);
 
-VOID ntsupHeapFree(
+BOOL ntsupHeapFree(
     _In_ PVOID BaseAddress);
 
 PVOID ntsupVirtualAllocEx(
@@ -173,6 +173,13 @@ NTSTATUS ntsupConvertToAnsi(
     _In_ LPCWSTR UnicodeString,
     _Inout_ PANSI_STRING AnsiString);
 
+NTSTATUS ntsupSetPrivilege(
+    _In_ HANDLE TokenHandle,
+    _In_ DWORD Privilege,
+    _In_ BOOLEAN Enable,
+    _Out_opt_ PTOKEN_PRIVILEGES PreviousState,
+    _Out_opt_ PULONG ReturnLength);
+
 BOOLEAN ntsupEnablePrivilege(
     _In_ DWORD Privilege,
     _In_ BOOLEAN Enable);
@@ -213,8 +220,8 @@ PVOID ntsupGetSystemInfo(
     _Out_opt_ PULONG ReturnLength);
 
 NTSTATUS NTAPI ntsupEnumSystemObjects(
-    _In_opt_ LPCWSTR pwszRootDirectory,
-    _In_opt_ HANDLE hRootDirectory,
+    _In_opt_ LPCWSTR RootDirectory,
+    _In_opt_ HANDLE RootDirectoryHandle,
     _In_ PENUMOBJECTSCALLBACK CallbackProc,
     _In_opt_ PVOID CallbackParam);
 
@@ -226,7 +233,13 @@ BOOL ntsupResolveSymbolicLink(
 
 BOOL ntsupQueryThreadWin32StartAddress(
     _In_ HANDLE ThreadHandle,
-    _Out_ PULONG_PTR Win32StartAddress);
+    _Out_opt_ PULONG_PTR Win32StartAddress);
+
+NTSTATUS ntsupQueryProcessCommandLine(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PUNICODE_STRING CommandLine,
+    _In_ PNTSUPMEMALLOC AllocMem,
+    _In_ PNTSUPMEMFREE FreeMem);
 
 _Success_(return)
 NTSTATUS ntsupOpenDirectoryEx(
@@ -362,6 +375,14 @@ BOOLEAN ntsupIsObjectExists(
 
 BOOLEAN ntsupUserIsFullAdmin(
     VOID);
+
+NTSTATUS ntsupDuplicateUnicodeString(
+    _In_ PCUNICODE_STRING SourceString,
+    _Out_ PUNICODE_STRING DestinationString);
+
+NTSTATUS ntsupDuplicateAnsiString(
+    _In_ PCANSI_STRING SourceString,
+    _Out_ PANSI_STRING DestinationString);
 
 NTSTATUS ntsupHashImageSections(
     _In_ PVOID ImageBase,
