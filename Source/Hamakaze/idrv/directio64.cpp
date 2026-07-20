@@ -4,9 +4,9 @@
 *
 *  TITLE:       DIRECTIO64.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        05 Jun 2026
+*  DATE:        19 Jul 2026
 *
 *  PassMark DIRECTIO driver routines.
 *
@@ -105,18 +105,18 @@ VOID DI64UnmapMemory(
 }
 
 /*
-* DI64QueryPML4Value
+* DI64QueryRootTableValue
 *
 * Purpose:
 *
-* Locate PML4.
+* Locate CR3 root paging table value.
 *
 */
-BOOL WINAPI DI64QueryPML4Value(
+BOOL WINAPI DI64QueryRootTableValue(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
-    ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
+    ULONG_PTR pbLowStub1M = 0ULL, rootTable = 0;
 
     ULONG cbRead = 0x100000;
 
@@ -136,9 +136,9 @@ BOOL WINAPI DI64QueryPML4Value(
 
     if (pbLowStub1M) {
 
-        PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
-        if (PML4)
-            *Value = PML4;
+        rootTable = supGetRootTableFromLowStub1M(pbLowStub1M);
+        if (rootTable)
+            *Value = rootTable;
 
         DI64UnmapMemory(DeviceHandle,
             (PVOID)pbLowStub1M,
@@ -147,7 +147,7 @@ BOOL WINAPI DI64QueryPML4Value(
 
     }
 
-    return (PML4 != 0);
+    return (rootTable != 0);
 }
 
 /*
@@ -271,8 +271,9 @@ BOOL WINAPI DI64VirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysical(DeviceHandle,
-        DI64QueryPML4Value,
+    return PwVirtualToPhysicalEx(g_UseLA57,
+        DeviceHandle,
+        DI64QueryRootTableValue,
         DI64ReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);

@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        10 Jul 2026
+*  DATE:        19 Jul 2026
 *
 *  Global consts.
 *
@@ -20,8 +20,8 @@
 #pragma once
 
 #define KDU_VERSION_MAJOR       1
-#define KDU_VERSION_MINOR       4
-#define KDU_VERSION_REVISION    9
+#define KDU_VERSION_MINOR       5
+#define KDU_VERSION_REVISION    0
 #define KDU_VERSION_BUILD       2607
 #define KDU_COPYRIGHT_YEAR      2026
 
@@ -282,9 +282,9 @@
 #define KDUPROV_FLAGS_NO_UNLOAD_SUP         0x00000010
 
 //
-// Virtual-to-physical addresses translation require low stub for PML4 query.
+// Virtual-to-physical addresses translation require low stub root table query.
 //
-#define KDUPROV_FLAGS_PML4_FROM_LOWSTUB     0x00000020
+#define KDUPROV_FLAG_ROOT_FROM_LOWSTUB      0x00000020
 
 //
 // Does not need victim

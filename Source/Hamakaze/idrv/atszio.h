@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       ATSZIO.H
 *
-*  VERSION:     1.01
+*  VERSION:     1.50
 *
-*  DATE:        12 Feb 2020
+*  DATE:        19 Jul 2026
 *
 *  ASUSTeK ATSZIO WinFlash driver interface header.
 *
@@ -46,10 +46,6 @@ typedef struct DECLSPEC_ALIGN(MEMORY_ALLOCATION_ALIGNMENT)_ATSZIO_PHYSICAL_MEMOR
     PVOID MappedBaseAddress;
 } ATSZIO_PHYSICAL_MEMORY_INFO, * PATSZIO_PHYSICAL_MEMORY_INFO;
 #pragma warning(pop)
-
-BOOL WINAPI AtszioQueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
 
 BOOL WINAPI AtszioVirtualToPhysical(
     _In_ HANDLE DeviceHandle,

@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        06 Jun 2026
+*  DATE:        19 Jul 2026
 *
 *  Provider support routines.
 *
@@ -68,9 +68,9 @@ typedef BOOL(WINAPI* provWritePhysicalMemory)(
     _In_ ULONG NumberOfBytes);
 
 //
-// Prototype for query PML4 value function.
+// Prototype for query page table base function.
 //
-typedef BOOL(WINAPI* provQueryPML4)(
+typedef BOOL(WINAPI* provQueryPageTableBase)(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value);
 
@@ -179,7 +179,6 @@ typedef struct _KDU_PROVIDER {
         provWriteKernelVM WriteKernelVM; //optional
 
         provVirtualToPhysical VirtualToPhysical; //optional
-        provQueryPML4 QueryPML4Value; //optional
         provReadPhysicalMemory ReadPhysicalMemory; //optional
         provWritePhysicalMemory WritePhysicalMemory; //optional
 

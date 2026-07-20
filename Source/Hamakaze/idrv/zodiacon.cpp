@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2023
+*  (C) COPYRIGHT AUTHORS, 2023 - 2026
 *
 *  TITLE:       ZODIACON.CPP
 *
-*  VERSION:     1.32
+*  VERSION:     1.50
 *
-*  DATE:        10 Jun 2022
+*  DATE:        18 Jul 2026
 *
 *  Zodiacon driver routines.
 *
@@ -118,18 +118,18 @@ BOOL WINAPI ZdcWritePhysicalMemory(
 }
 
 /*
-* ZdcQueryPML4Value
+* ZdcQueryRootTableValue
 *
 * Purpose:
 *
-* Locate PML4.
+* Locate CR3 root paging table value.
 *
 */
-BOOL WINAPI ZdcQueryPML4Value(
+BOOL WINAPI ZdcQueryRootTableValue(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
-    ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
+    ULONG_PTR pbLowStub1M = 0ULL, rootTable = 0;
     ULONG cbRead = 0x100000;
 
     UNREFERENCED_PARAMETER(DeviceHandle);
@@ -144,15 +144,15 @@ BOOL WINAPI ZdcQueryPML4Value(
 
     if (pbLowStub1M) {
 
-        PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
-        if (PML4)
-            *Value = PML4;
+        rootTable = supGetRootTableFromLowStub1M(pbLowStub1M);
+        if (rootTable)
+            *Value = rootTable;
 
         ZdcUnmapMemory((PVOID)pbLowStub1M);
 
     }
 
-    return (PML4 != 0);
+    return (rootTable != 0);
 }
 
 /*
@@ -168,8 +168,9 @@ BOOL WINAPI ZdcVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysical(DeviceHandle,
-        ZdcQueryPML4Value,
+    return PwVirtualToPhysicalEx(g_UseLA57, 
+        DeviceHandle,
+        ZdcQueryRootTableValue,
         ZdcReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);

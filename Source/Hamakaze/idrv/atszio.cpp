@@ -4,9 +4,9 @@
 *
 *  TITLE:       ATSZIO.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        05 Jun 2026
+*  DATE:        19 Jul 2026
 *
 *  ASUSTeK ATSZIO WinFlash driver routines.
 *
@@ -102,18 +102,18 @@ VOID AtszioUnmapMemory(
 }
 
 /*
-* AtszioQueryPML4Value
+* AtszioQueryRootTableValue
 *
 * Purpose:
 *
-* Locate PML4.
+* Locate CR3 root paging table value.
 *
 */
-BOOL WINAPI AtszioQueryPML4Value(
+BOOL WINAPI AtszioQueryRootTableValue(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
-    ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
+    ULONG_PTR pbLowStub1M = 0ULL, rootTable = 0;
     HANDLE sectionHandle = NULL;
 
     DWORD cbRead = 0x100000;
@@ -129,17 +129,16 @@ BOOL WINAPI AtszioQueryPML4Value(
 
     if (pbLowStub1M) {
 
-        PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
-        if (PML4)
-            *Value = PML4;
+        rootTable = supGetRootTableFromLowStub1M(pbLowStub1M);
+        if (rootTable)
+            *Value = rootTable;
 
         AtszioUnmapMemory(DeviceHandle,
             (PVOID)pbLowStub1M,
             sectionHandle);
-
     }
 
-    return (PML4 != 0);
+    return (rootTable != 0);
 }
 
 /*
@@ -262,8 +261,9 @@ BOOL WINAPI AtszioVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysical(DeviceHandle,
-        AtszioQueryPML4Value,
+    return PwVirtualToPhysicalEx(g_UseLA57,
+        DeviceHandle,
+        AtszioQueryRootTableValue,
         AtszioReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);

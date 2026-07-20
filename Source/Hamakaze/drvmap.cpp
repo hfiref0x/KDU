@@ -4,9 +4,9 @@
 *
 *  TITLE:       DRVMAP.CPP
 *
-*  VERSION:     1.48
+*  VERSION:     1.50
 *
-*  DATE:        01 Apr 2026
+*  DATE:        19 Jul 2026
 *
 *  Driver mapping routines.
 *
@@ -990,7 +990,7 @@ BOOL KDUMapDriver(
                 &enumParams);
         }
         else
-            if (Context->Provider->LoadData->PML4FromLowStub || Context->Provider->LoadData->PreferPhysical) {
+            if (Context->Provider->LoadData->RootTableFromLowStub || Context->Provider->LoadData->PreferPhysical) {
                 //
                 // 2. Physical section access type driver with virt2phys translation available.
                 //

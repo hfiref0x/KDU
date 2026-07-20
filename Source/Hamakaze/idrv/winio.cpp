@@ -4,9 +4,9 @@
 *
 *  TITLE:       WINIO.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        08 Jun 2026
+*  DATE:        19 Jul 2026
 *
 *  WINIO based drivers routines.
 *
@@ -388,19 +388,19 @@ VOID RedFoxUnmapMemory(
 }
 
 /*
-* WinIoQueryPML4Value
+* WinIoQueryRootTableValue
 *
 * Purpose:
 *
-* Locate PML4.
+* Locate CR3 root paging table value.
 *
 */
-BOOL WINAPI WinIoQueryPML4Value(
+BOOL WINAPI WinIoQueryRootTableValue(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
     DWORD cbRead = 0x100000;
-    ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
+    ULONG_PTR pbLowStub1M = 0ULL, rootTable = 0;
 
     PVOID refObject = NULL;
     HANDLE sectionHandle = NULL;
@@ -417,9 +417,9 @@ BOOL WINAPI WinIoQueryPML4Value(
 
     if (pbLowStub1M) {
 
-        PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
-        if (PML4)
-            *Value = PML4;
+        rootTable = supGetRootTableFromLowStub1M(pbLowStub1M);
+        if (rootTable)
+            *Value = rootTable;
 
         g_WinIoUnmapMemoryRoutine(DeviceHandle,
             (PVOID)pbLowStub1M,
@@ -427,7 +427,7 @@ BOOL WINAPI WinIoQueryPML4Value(
             refObject);
     }
 
-    return (PML4 != 0);
+    return (rootTable != 0);
 }
 
 /*
@@ -568,8 +568,9 @@ BOOL WINAPI WinIoVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysical(DeviceHandle,
-        WinIoQueryPML4Value,
+    return PwVirtualToPhysicalEx(g_UseLA57,
+        DeviceHandle,
+        WinIoQueryRootTableValue,
         WinIoReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);

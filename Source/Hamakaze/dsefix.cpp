@@ -4,9 +4,9 @@
 *
 *  TITLE:       DSEFIX.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        10 Jul 2026
+*  DATE:        17 Jul 2026
 *
 *  CI DSE corruption related routines.
 *  Based on DSEFix v1.3
@@ -952,7 +952,7 @@ BOOL KDUControlDSE(
             DSEValue);
 
         if (DSEValue == ulFlags) {
-            printf_s("[~] Warning, current value is identical to what you want to write\r\n");
+            supPrintfEvent(kduEventWarning, "[~] Warning, current value is identical to what you want to write\r\n");
         }
 
         DWORD dwLastError;

@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022 - 2023
+*  (C) COPYRIGHT AUTHORS, 2022 - 2026
 *
 *  TITLE:       KPH.CPP
 *
-*  VERSION:     1.40
+*  VERSION:     1.50
 *
-*  DATE:        20 Oct 2023
+*  DATE:        18 Jul 2026
 *
 *  KProcessHacker2 driver routines.
 *
@@ -123,18 +123,18 @@ BOOL WINAPI KphWritePhysicalMemory(
 }
 
 /*
-* KphQueryPML4Value
+* KphQueryRootTableValue
 *
 * Purpose:
 *
-* Locate PML4.
+* Locate CR3 root paging table value.
 *
 */
-BOOL WINAPI KphQueryPML4Value(
+BOOL WINAPI KphQueryRootTableValue(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
-    ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
+    ULONG_PTR pbLowStub1M = 0ULL, rootTable = 0;
     ULONG cbRead = 0x100000;
 
     UNREFERENCED_PARAMETER(DeviceHandle);
@@ -149,15 +149,15 @@ BOOL WINAPI KphQueryPML4Value(
 
     if (pbLowStub1M) {
 
-        PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
-        if (PML4)
-            *Value = PML4;
+        rootTable = supGetRootTableFromLowStub1M(pbLowStub1M);
+        if (rootTable)
+            *Value = rootTable;
 
         KphpUnmapMemory((PVOID)pbLowStub1M);
 
     }
 
-    return (PML4 != 0);
+    return (rootTable != 0);
 }
 
 /*
@@ -173,8 +173,9 @@ BOOL WINAPI KphVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysical(DeviceHandle,
-        KphQueryPML4Value,
+    return PwVirtualToPhysicalEx(g_UseLA57,
+        DeviceHandle,
+        KphQueryRootTableValue,
         KphReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);

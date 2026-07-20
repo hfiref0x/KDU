@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2026
 *
 *  TITLE:       MARVINHW.CPP
 *
-*  VERSION:     1.25
+*  VERSION:     1.50
 *
-*  DATE:        18 Aug 2022
+*  DATE:        19 Jul 2026
 *
 *  Marvin HW driver routines.
 *
@@ -80,18 +80,18 @@ VOID HwUnmapMemory(
 }
 
 /*
-* HwQueryPML4Value
+* HwQueryRootTableValue
 *
 * Purpose:
 *
-* Locate PML4.
+* Locate CR3 root paging table value.
 *
 */
-BOOL WINAPI HwQueryPML4Value(
+BOOL WINAPI HwQueryRootTableValue(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
-    ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
+    ULONG_PTR pbLowStub1M = 0ULL, rootTable = 0;
 
     DWORD cbRead = 0x100000;
 
@@ -105,16 +105,16 @@ BOOL WINAPI HwQueryPML4Value(
 
     if (pbLowStub1M) {
 
-        PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
-        if (PML4)
-            *Value = PML4;
+        rootTable = supGetRootTableFromLowStub1M(pbLowStub1M);
+        if (rootTable)
+            *Value = rootTable;
 
         HwUnmapMemory(DeviceHandle,
             (PVOID)pbLowStub1M);
 
     }
 
-    return (PML4 != 0);
+    return (rootTable != 0);
 }
 
 /*
@@ -231,8 +231,9 @@ BOOL WINAPI HwVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysical(DeviceHandle,
-        HwQueryPML4Value,
+    return PwVirtualToPhysicalEx(g_UseLA57, 
+        DeviceHandle,
+        HwQueryRootTableValue,
         HwReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);

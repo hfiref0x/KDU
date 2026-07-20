@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       LHA.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.50
 *
-*  DATE:        03 Apr 2021
+*  DATE:        19 Jul 2026
 *
 *  LG LHA driver interface header.
 *
@@ -61,10 +61,6 @@ BOOL WINAPI LHAWritePhysicalMemory(
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
-
-BOOL WINAPI LHAQueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
 
 BOOL WINAPI LHAVirtualToPhysical(
     _In_ HANDLE DeviceHandle,

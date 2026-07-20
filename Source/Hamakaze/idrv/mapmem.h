@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAPMEM.H
 *
-*  VERSION:     1.48
+*  VERSION:     1.50
 *
-*  DATE:        25 Mar 2026
+*  DATE:        19 Jul 2026
 *
 *  MAPMEM driver interface header.
 *
@@ -110,10 +110,6 @@ BOOL WINAPI MapMemReadKernelVirtualMemory(
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
 
-BOOL WINAPI MapMemQueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
-
 BOOL WINAPI MapMemRegisterDriver(
     _In_ HANDLE DeviceHandle,
     _In_opt_ PVOID Param);
@@ -137,10 +133,6 @@ typedef struct _CORMEM_MAPBUFFER_REQUEST {
     SIZE_T Size;
     ULONGLONG Unused;
 } CORMEM_MAPBUFFER_REQUEST, * PCORMEM_MAPBUFFER_REQUEST;
-
-BOOL WINAPI CorMemQueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
 
 BOOL WINAPI CorMemVirtualToPhysical(
     _In_ HANDLE DeviceHandle,

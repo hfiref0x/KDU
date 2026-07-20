@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022
+*  (C) COPYRIGHT AUTHORS, 2022 - 2026
 *
 *  TITLE:       MARVINHW.H
 *
-*  VERSION:     1.25
+*  VERSION:     1.50
 *
-*  DATE:        18 Aug 2022
+*  DATE:        19 Jul 2026
 *
 *  Marvin HW driver interface header.
 *
@@ -41,10 +41,6 @@ typedef struct tagHWMEMORYDESC {
     ULONG_PTR Length;
     PVOID VirtualAddress;
 } HWMEMORYDESC, * PHWMEMORYDESC;
-
-BOOL WINAPI HwQueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
 
 BOOL WINAPI HwVirtualToPhysical(
     _In_ HANDLE DeviceHandle,

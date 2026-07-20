@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2022
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       WINIO.H
 *
-*  VERSION:     1.27
+*  VERSION:     1.50
 *
-*  DATE:        11 Nov 2022
+*  DATE:        19 Jul 2026
 *
 *  WINIO based drivers interface header.
 *
@@ -144,10 +144,6 @@ typedef struct _WINIO_REDFOX {
     ULONG_PTR BusAddress;
     PVOID BaseAddress;
 } WINIO_REDFOX, * PWINIO_REDFOX;
-
-BOOL WINAPI WinIoQueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
 
 BOOL WINAPI WinIoReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,

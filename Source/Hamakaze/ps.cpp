@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        10 Jul 2026
+*  DATE:        19 Jul 2026
 *
 *  Processes DKOM related routines.
 *
@@ -1100,6 +1100,7 @@ BOOL KDURunCommandInheritee(
 {
     // try to open the target process directly with PROCESS_ALL_ACCESS
     HANDLE hTargetProc;
+
     hTargetProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)TargetProcessId);
     if (hTargetProc == NULL) {
 

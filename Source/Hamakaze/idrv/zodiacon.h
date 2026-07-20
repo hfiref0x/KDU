@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2023
+*  (C) COPYRIGHT AUTHORS, 2023 - 2026
 *
 *  TITLE:       ZODIACON.H
 *
-*  VERSION:     1.32
+*  VERSION:     1.50
 *
-*  DATE:        10 Jun 2023
+*  DATE:        18 Jul 2026
 *
 *  Zodiacon drivers interface header.
 *
@@ -79,10 +79,6 @@ BOOL WINAPI ZdcVirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress);
-
-BOOL WINAPI ZdcQueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
 
 BOOL WINAPI ZdcWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,

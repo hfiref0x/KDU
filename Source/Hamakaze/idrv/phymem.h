@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       PHYMEM.H
 *
-*  VERSION:     1.10
+*  VERSION:     1.50
 *
-*  DATE:        02 Apr 2021
+*  DATE:        19 Jul 2026
 *
 *  PhyMem based drivers interface header.
 *
@@ -43,10 +43,6 @@ typedef struct tagPHYMEM_MEM {
 	PVOID pvAddr;	//physical addr when mapping, virtual addr when unmapping
 	ULONG dwSize;	//memory size to map or unmap
 } PHYMEM_MEM, * PPHYMEM_MEM;
-
-BOOL WINAPI PhyMemQueryPML4Value(
-	_In_ HANDLE DeviceHandle,
-	_Out_ ULONG_PTR* Value);
 
 BOOL WINAPI PhyMemVirtualToPhysical(
 	_In_ HANDLE DeviceHandle,

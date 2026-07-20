@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUBASE.H
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        12 Jun 2026
+*  DATE:        18 Jul 2026
 *
 *  Base KDU definitions.
 *
@@ -46,7 +46,7 @@ typedef struct _KDU_DB_ENTRY {
             ULONG IgnoreChecksum : 1;
             ULONG NoForcedSD : 1;
             ULONG NoUnloadSupported : 1;
-            ULONG PML4FromLowStub : 1;
+            ULONG RootTableFromLowStub : 1;
             ULONG NoVictim : 1;
             ULONG PhysMemoryBruteForce : 1;
             ULONG PreferPhysical : 1;

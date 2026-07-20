@@ -4,9 +4,9 @@
 *
 *  TITLE:       PROVLIST.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        06 Jun 2026
+*  DATE:        19 Jul 2026
 *
 *  Provider list output support.
 *
@@ -36,7 +36,7 @@ static const KDU_PROV_FLAG_DESC g_KduProvFlagDescs[] = {
     { KDUPROV_FLAGS_SIGNATURE_WHQL,        "\t\t->Driver is WHQL signed.\r\n" },
     { KDUPROV_FLAGS_IGNORE_CHECKSUM,       "\t\t->Ignore invalid image checksum.\r\n" },
     { KDUPROV_FLAGS_NO_UNLOAD_SUP,         "\t\t->Driver does not support unload procedure.\r\n" },
-    { KDUPROV_FLAGS_PML4_FROM_LOWSTUB,     "\t\t->Virtual to physical addresses translation require PML4 query from low stub.\r\n" },
+    { KDUPROV_FLAG_ROOT_FROM_LOWSTUB,     "\t\t->Virtual to physical address translation requires CR3 query from low stub.\r\n" },
     { KDUPROV_FLAGS_NO_VICTIM,             "\t\t->No victim required.\r\n" },
     { KDUPROV_FLAGS_PHYSICAL_BRUTE_FORCE,  "\t\t->Provider supports only physical memory brute-force.\r\n" },
     { KDUPROV_FLAGS_PREFER_PHYSICAL,       "\t\t->Physical memory access is preferred.\r\n" },

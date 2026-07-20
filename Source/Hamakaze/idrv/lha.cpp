@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       LHA.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.50
 *
-*  DATE:        19 Apr 2021
+*  DATE:        19 Jul 2026
 *
 *  LG LHA driver routines.
 *
@@ -105,19 +105,19 @@ BOOL WINAPI LHAWritePhysicalMemory(
 }
 
 /*
-* LHAQueryPML4Value
+* LHAQueryRootTableValue
 *
 * Purpose:
 *
-* Locate PML4.
+* Locate CR3 root paging table value.
 *
 */
-BOOL WINAPI LHAQueryPML4Value(
+BOOL WINAPI LHAQueryRootTableValue(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
     DWORD dwError = ERROR_SUCCESS;
-    ULONG_PTR PML4 = 0;
+    ULONG_PTR rootTable = 0;
     UCHAR* pbLowStub1M;
     DWORD cbRead = 0x100000;
 
@@ -148,9 +148,9 @@ BOOL WINAPI LHAQueryPML4Value(
 
         if (dwError == ERROR_SUCCESS) {
 
-            PML4 = supGetPML4FromLowStub1M((ULONG_PTR)pbLowStub1M);
-            if (PML4)
-                *Value = PML4;
+            rootTable = supGetRootTableFromLowStub1M((ULONG_PTR)pbLowStub1M);
+            if (rootTable)
+                *Value = rootTable;
 
         }
 
@@ -160,7 +160,7 @@ BOOL WINAPI LHAQueryPML4Value(
         supHeapFree(pbLowStub1M);
 
     SetLastError(dwError);
-    return (PML4 != 0);
+    return (rootTable != 0);
 }
 
 /*
@@ -176,8 +176,9 @@ BOOL WINAPI LHAVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysical(DeviceHandle,
-        LHAQueryPML4Value,
+    return PwVirtualToPhysicalEx(g_UseLA57, 
+        DeviceHandle,
+        LHAQueryRootTableValue,
         LHAReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);

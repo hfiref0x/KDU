@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022 - 2023
+*  (C) COPYRIGHT AUTHORS, 2022 - 2026
 *
 *  TITLE:       PROCEXP.H
 *
-*  VERSION:     1.40
+*  VERSION:     1.50
 *
-*  DATE:        20 Oct 2023
+*  DATE:        19 Jul 2026
 *
 *  Process Explorer driver interface header.
 *
@@ -47,10 +47,6 @@ BOOL WINAPI PexRegisterDriver(
 
 BOOL WINAPI PexpUnregisterDriver(
     _In_ HANDLE DeviceHandle);
-
-BOOL WINAPI PexQueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
 
 BOOL WINAPI PexVirtualToPhysical(
     _In_ HANDLE DeviceHandle,

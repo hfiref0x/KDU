@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTSUP.C
 *
-*  VERSION:     2.27
+*  VERSION:     2.28
 *
-*  DATE:        27 Jun 2026
+*  DATE:        11 Jul 2026
 *
 *  Native API support functions.
 *
@@ -2346,11 +2346,8 @@ VOID ntsupPurgeSystemCache(
         &oldStateIncreaseQuota,
         &returnLength);
 
-    if (NT_SUCCESS(ntStatus) || ntStatus == STATUS_NOT_ALL_ASSIGNED) {
-
-        if (NT_SUCCESS(ntStatus))
-            restoreIncreaseQuota = TRUE;
-
+    if (NT_SUCCESS(ntStatus)) {
+        restoreIncreaseQuota = TRUE;
         RtlSecureZeroMemory(&sfc, sizeof(SYSTEM_FILECACHE_INFORMATION));
         sfc.MaximumWorkingSet = (SIZE_T)-1;
         sfc.MinimumWorkingSet = (SIZE_T)-1;
@@ -2372,11 +2369,8 @@ VOID ntsupPurgeSystemCache(
         &oldStateSingleProcess,
         &returnLength);
 
-    if (NT_SUCCESS(ntStatus) || ntStatus == STATUS_NOT_ALL_ASSIGNED) {
-
-        if (NT_SUCCESS(ntStatus))
-            restoreSingleProcess = TRUE;
-
+    if (NT_SUCCESS(ntStatus)) {
+        restoreSingleProcess = TRUE;
         smlc = MemoryPurgeStandbyList;
         NtSetSystemInformation(SystemMemoryListInformation, (PVOID)&smlc, sizeof(smlc));
     }
@@ -2752,9 +2746,6 @@ NTSTATUS ntsupDuplicateUnicodeString(
     if (length > maximumLength)
         return STATUS_INVALID_PARAMETER;
 
-    if (maximumLength < length)
-        return STATUS_INVALID_PARAMETER;
-
     if (maximumLength == 0) {
         if (length != 0 || SourceString->Buffer != NULL)
             return STATUS_INVALID_PARAMETER;
@@ -2814,9 +2805,6 @@ NTSTATUS ntsupDuplicateAnsiString(
     if (length > maximumLength)
         return STATUS_INVALID_PARAMETER;
 
-    if (maximumLength < length)
-        return STATUS_INVALID_PARAMETER;
-
     if (maximumLength == 0) {
         if (length != 0 || SourceString->Buffer != NULL)
             return STATUS_INVALID_PARAMETER;
@@ -2860,10 +2848,10 @@ NTSTATUS ntsupQueryProcessCommandLine(
     _In_ PNTSUPMEMFREE FreeMem
 )
 {
-    NTSTATUS ntStatus;
-    PUNICODE_STRING commandLine;
-    SIZE_T allocSize;
-    ULONG returnLength;
+    PVOID       buffer = NULL;
+    ULONG       bufferSize = PAGE_SIZE;
+    NTSTATUS    ntStatus;
+    ULONG       returnedLength = 0;
 
     if (CommandLine == NULL || AllocMem == NULL || FreeMem == NULL)
         return STATUS_INVALID_PARAMETER;
@@ -2872,50 +2860,46 @@ NTSTATUS ntsupQueryProcessCommandLine(
     CommandLine->Length = 0;
     CommandLine->MaximumLength = 0;
 
-    returnLength = 0;
-    commandLine = NULL;
-    allocSize = sizeof(UNICODE_STRING) + 0x800;
+    buffer = AllocMem((SIZE_T)bufferSize);
+    if (buffer == NULL)
+        return STATUS_INSUFFICIENT_RESOURCES;
 
-    do {
+    while ((ntStatus = NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessCommandLineInformation,
+        buffer,
+        bufferSize,
+        &returnedLength)) == STATUS_INFO_LENGTH_MISMATCH)
+    {
+        FreeMem(buffer);
+        buffer = NULL;
 
-        commandLine = (PUNICODE_STRING)AllocMem(allocSize);
-        if (commandLine == NULL)
+        if (returnedLength <= bufferSize || returnedLength > MAX_NTSUP_BUFFER_SIZE)
+            return STATUS_UNSUCCESSFUL;
+
+        bufferSize = returnedLength;
+
+        buffer = AllocMem((SIZE_T)bufferSize);
+        if (buffer == NULL)
             return STATUS_INSUFFICIENT_RESOURCES;
-
-        ntStatus = NtQueryInformationProcess(
-            ProcessHandle,
-            ProcessCommandLineInformation,
-            commandLine,
-            (ULONG)allocSize,
-            &returnLength);
-
-        if (ntStatus == STATUS_INFO_LENGTH_MISMATCH) {
-            FreeMem(commandLine);
-            commandLine = NULL;
-
-            if (returnLength <= allocSize || returnLength > MAX_NTSUP_BUFFER_SIZE)
-                return STATUS_UNSUCCESSFUL;
-
-            allocSize = returnLength;
-        }
-
-    } while (ntStatus == STATUS_INFO_LENGTH_MISMATCH);
+    }
 
     if (!NT_SUCCESS(ntStatus)) {
-        if (commandLine != NULL)
-            FreeMem(commandLine);
+        if (buffer != NULL)
+            FreeMem(buffer);
         return ntStatus;
     }
 
-    if (commandLine->Length > commandLine->MaximumLength ||
-        commandLine->Buffer == NULL)
+    if (((PUNICODE_STRING)buffer)->Length > ((PUNICODE_STRING)buffer)->MaximumLength ||
+        ((PUNICODE_STRING)buffer)->Buffer == NULL)
     {
-        FreeMem(commandLine);
+        FreeMem(buffer);
         return STATUS_INVALID_BUFFER_SIZE;
     }
 
-    ntStatus = ntsupDuplicateUnicodeString(commandLine, CommandLine);
-    FreeMem(commandLine);
+    ntStatus = ntsupDuplicateUnicodeString((PUNICODE_STRING)buffer, CommandLine);
+
+    FreeMem(buffer);
 
     return ntStatus;
 }

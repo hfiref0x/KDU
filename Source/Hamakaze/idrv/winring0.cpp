@@ -4,9 +4,9 @@
 *
 *  TITLE:       WINRING0.CPP
 *
-*  VERSION:     1.48
+*  VERSION:     1.50
 *
-*  DATE:        26 Mar 2026
+*  DATE:        19 Jul 2026
 *
 *  WinRing0 based drivers routines.
 *
@@ -108,20 +108,20 @@ BOOL WINAPI WRZeroWritePhysicalMemory(
 }
 
 /*
-* WRZeroQueryPML4Value
+* WRZeroQueryRootTableValue
 *
 * Purpose:
 *
-* Locate PML4.
+* Locate CR3 root paging table value.
 *
 */
-BOOL WINAPI WRZeroQueryPML4Value(
+BOOL WINAPI WRZeroQueryRootTableValue(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
     DWORD dwError = ERROR_SUCCESS;
     DWORD cbSize = 0x100000;
-    ULONG_PTR PML4 = 0;
+    ULONG_PTR rootTable = 0;
     UCHAR* pbLowStub1M;
 
     *Value = 0;
@@ -151,9 +151,9 @@ BOOL WINAPI WRZeroQueryPML4Value(
 
         if (dwError == ERROR_SUCCESS) {
 
-            PML4 = supGetPML4FromLowStub1M((ULONG_PTR)pbLowStub1M);
-            if (PML4)
-                *Value = PML4;
+            rootTable = supGetRootTableFromLowStub1M((ULONG_PTR)pbLowStub1M);
+            if (rootTable)
+                *Value = rootTable;
 
         }
 
@@ -163,7 +163,7 @@ BOOL WINAPI WRZeroQueryPML4Value(
         supHeapFree(pbLowStub1M);
 
     SetLastError(dwError);
-    return (PML4 != 0);
+    return (rootTable != 0);
 }
 
 /*
@@ -179,8 +179,9 @@ BOOL WINAPI WRZeroVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysical(DeviceHandle,
-        WRZeroQueryPML4Value,
+    return PwVirtualToPhysicalEx(g_UseLA57, 
+        DeviceHandle,
+        WRZeroQueryRootTableValue,
         WRZeroReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);

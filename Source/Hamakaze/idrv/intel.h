@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2024
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       INTEL.H
 *
-*  VERSION:     1.42
+*  VERSION:     1.50
 *
-*  DATE:        01 Apr 2024
+*  DATE:        19 Jul 2026
 *
 *  Intel drivers interface header.
 * 
@@ -154,10 +154,6 @@ BOOL WINAPI NalWriteVirtualMemoryEx(
     _In_ ULONG_PTR VirtualAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
-
-BOOL WINAPI PmxDrvQueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
 
 BOOL WINAPI PmxDrvVirtualToPhysical(
     _In_ HANDLE DeviceHandle,

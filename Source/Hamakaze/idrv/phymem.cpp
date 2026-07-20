@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2020 - 2021
+*  (C) COPYRIGHT AUTHORS, 2020 - 2026
 *
 *  TITLE:       PHYMEM.CPP
 *
-*  VERSION:     1.11
+*  VERSION:     1.50
 *
-*  DATE:        19 Apr 2021
+*  DATE:        19 Jul 2026
 *
 *  PhyMem based drivers routines.
 *
@@ -87,19 +87,19 @@ VOID PhyMemUnmapMemory(
 }
 
 /*
-* PhyMemQueryPML4Value
+* PhyMemQueryRootTableValue
 *
 * Purpose:
 *
-* Locate PML4.
+* Locate CR3 root paging table value.
 *
 */
-BOOL WINAPI PhyMemQueryPML4Value(
+BOOL WINAPI PhyMemQueryRootTableValue(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
     DWORD dwError = ERROR_SUCCESS;
-    ULONG_PTR PML4 = 0;
+    ULONG_PTR rootTable = 0;
     UCHAR* pbLowStub1M;
     ULONG cbSize = 0x100000;
 
@@ -130,9 +130,9 @@ BOOL WINAPI PhyMemQueryPML4Value(
 
         if (dwError == ERROR_SUCCESS) {
 
-            PML4 = supGetPML4FromLowStub1M((ULONG_PTR)pbLowStub1M);
-            if (PML4)
-                *Value = PML4;
+            rootTable = supGetRootTableFromLowStub1M((ULONG_PTR)pbLowStub1M);
+            if (rootTable)
+                *Value = rootTable;
 
         }
 
@@ -142,7 +142,7 @@ BOOL WINAPI PhyMemQueryPML4Value(
         supHeapFree(pbLowStub1M);
 
     SetLastError(dwError);
-    return (PML4 != 0);
+    return (rootTable != 0);
 }
 
 /*
@@ -158,8 +158,9 @@ BOOL WINAPI PhyMemVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysical(DeviceHandle,
-        PhyMemQueryPML4Value,
+    return PwVirtualToPhysicalEx(g_UseLA57,
+        DeviceHandle,
+        PhyMemQueryRootTableValue,
         PhyMemReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);

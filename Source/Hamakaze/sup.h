@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        10 Jul 2026
+*  DATE:        19 Jul 2026
 *
 *  Support routines header file.
 *
@@ -252,7 +252,7 @@ BOOL supReplaceDllEntryPoint(
     _In_ LPCSTR lpEntryPointName,
     _In_ BOOL fConvertToExe);
 
-ULONG_PTR supGetPML4FromLowStub1M(
+ULONG_PTR supGetRootTableFromLowStub1M(
     _In_ ULONG_PTR pbLowStub1M);
 
 NTSTATUS supCreateSystemAdminAccessSD(
@@ -462,3 +462,5 @@ VOID supCalcPhysMapParams(
     _Out_ ULONG_PTR* PageBase,
     _Out_ ULONG_PTR* Offset,
     _Out_ ULONG_PTR* MapSize);
+
+BOOL supIsLA57Enabled();

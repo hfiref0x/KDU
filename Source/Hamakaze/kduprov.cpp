@@ -765,7 +765,7 @@ BOOL KDUProviderVerifyActionType(
         //
         // Check if we can translate.
         //
-        if (Provider->LoadData->PML4FromLowStub && Provider->Callbacks.VirtualToPhysical == NULL) {
+        if (Provider->LoadData->RootTableFromLowStub && Provider->Callbacks.VirtualToPhysical == NULL) {
 
             supPrintfEvent(kduEventError, "[!] Abort: selected provider does not support memory translation or\r\n"\
                 "\tKDU interface is not implemented for these methods.\r\n");
@@ -1022,7 +1022,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             supPrintfEvent(kduEventNone, "[+] Firmware type (%s)\r\n",
                 KDUFirmwareToString(fmwType));
             /*
-            if (provLoadData->PML4FromLowStub)
+            if (provLoadData->RootFromLowStub)
                 if (fmwType != FirmwareTypeUefi) {
 
                     supPrintfEvent(kduEventError, "[!] Unsupported PC firmware type for this provider (req: %s, got: %s)\r\n",

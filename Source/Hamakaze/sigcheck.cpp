@@ -4,9 +4,9 @@
 *
 *  TITLE:       SIGCHECK.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        07 Jun 2026
+*  DATE:        19 Jul 2026
 *
 *  In-memory signature parsing support.
 * 
@@ -300,13 +300,9 @@ BOOL KDUQueryPrimarySignerName(
             break;
 
         *SignerName = subjectName;
-        subjectName = NULL;
         bResult = TRUE;
 
     } while (FALSE);
-
-    if (subjectName)
-        supHeapFree(subjectName);
 
     if (certContext)
         CertFreeCertificateContext(certContext);
@@ -353,7 +349,6 @@ BOOL KDUAsn1ReadLength(
     }
 
     // Long form: lower 7 bits of first byte encode how many octets follow for the length.
-    cbLength = first & 0x7F;
     cbLength = first & 0x7F;
     if (cbLength == 0 || cbLength > sizeof(ULONG))
         return FALSE;
@@ -516,7 +511,7 @@ BOOL KDUQueryImageSignInfo(
     HCERTSTORE hStore = NULL;
     HCRYPTMSG hMsg = NULL;
     LPWSTR signerName = NULL, preferredSubject = NULL;
-    LPWSTR generalSubject = NULL, selectedSubject = NULL;
+    LPWSTR generalSubject = NULL, selectedSubject;
     PIMAGE_NT_HEADERS ntHeaders = NULL;
     PIMAGE_DATA_DIRECTORY secDir = NULL;
     LPWIN_CERTIFICATE winCert = NULL;
@@ -629,18 +624,13 @@ BOOL KDUQueryImageSignInfo(
             break;
 
         SignInfo->SignerName = selectedSubject;
-        selectedSubject = NULL;
         SignInfo->State = KduSignInfoSigned;
         bResult = TRUE;
 
     } while (FALSE);
 
-    if (selectedSubject)
-        supHeapFree(selectedSubject);
     if (generalSubject)
         supHeapFree(generalSubject);
-    if (preferredSubject)
-        supHeapFree(preferredSubject);
     if (signerName)
         supHeapFree(signerName);
     if (hStore)

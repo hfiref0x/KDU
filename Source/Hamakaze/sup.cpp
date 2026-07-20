@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        10 Jun 2026
+*  DATE:        19 Jul 2026
 *
 *  Program global support routines.
 *
@@ -1759,20 +1759,21 @@ PBYTE supReadFileToBuffer(
 }
 
 /*
-* supGetPML4FromLowStub1M
+* supGetRootTableFromLowStub1M
 *
 * Purpose:
 *
-* Search for PML4 (CR3) entry in low stub.
+* Search low stub for CR3 root paging table raw address (PML4/PML5).
 *
-* Taken from MemProcFs, https://github.com/ufrisk/MemProcFS/blob/master/vmm/vmmwininit.c#L414
+* Taken from MemProcFs, https://github.com/ufrisk/MemProcFS/blob/master/vmm/vmmwininit.c
 *
 */
-ULONG_PTR supGetPML4FromLowStub1M(
+ULONG_PTR supGetRootTableFromLowStub1M(
     _In_ ULONG_PTR pbLowStub1M)
 {
     ULONG offset = 0;
-    ULONG_PTR PML4 = 0;
+    ULONG_PTR rootTableAddress = 0;
+    UINT64 lmTarget;
     ULONG cr3_offset = FIELD_OFFSET(PROCESSOR_START_BLOCK, ProcessorState) +
         FIELD_OFFSET(KSPECIAL_REGISTERS, Cr3);
 
@@ -1787,13 +1788,11 @@ ULONG_PTR supGetPML4FromLowStub1M(
             if (0x00000001000600E9 != (0xffffffffffff00ff & *(UINT64*)(pbLowStub1M + offset))) //PROCESSOR_START_BLOCK->Jmp
                 continue;
 
-            if (0xfffff80000000000 != (0xfffff80000000003 & *(UINT64*)(pbLowStub1M + offset + FIELD_OFFSET(PROCESSOR_START_BLOCK, LmTarget))))
+            lmTarget = *(UINT64*)(pbLowStub1M + offset + FIELD_OFFSET(PROCESSOR_START_BLOCK, LmTarget)); //HalpLMStub
+            if (!PwIsCanonicalAddress(g_UseLA57, lmTarget))
                 continue;
 
-            if (0xffffff0000000fff & *(UINT64*)(pbLowStub1M + offset + cr3_offset))
-                continue;
-
-            PML4 = *(UINT64*)(pbLowStub1M + offset + cr3_offset);
+            rootTableAddress = *(UINT64*)(pbLowStub1M + offset + cr3_offset);
             break;
         }
 
@@ -1804,7 +1803,7 @@ ULONG_PTR supGetPML4FromLowStub1M(
 
     SetLastError(ERROR_SUCCESS);
 
-    return PML4;
+    return rootTableAddress;
 }
 
 /*
@@ -3873,7 +3872,7 @@ NTSTATUS supQuerySuperfetchInformation(
 }
 
 /*
-* supQuerySuperfetchMemoryRanges
+* supxQuerySuperfetchMemoryRanges
 *
 * Purpose:
 *
@@ -3881,13 +3880,16 @@ NTSTATUS supQuerySuperfetchInformation(
 * Automatically selects V1 or V2 based on OS version.
 *
 */
-BOOL supQuerySuperfetchMemoryRanges(
+BOOL supxQuerySuperfetchMemoryRanges(
     _Out_ PVOID* RangeBuffer,
-    _Out_ PULONG RangeCount)
+    _Out_ PULONG RangeCount,
+    _Out_ PULONG Version
+)
 {
     NTSTATUS ntStatus;
-    ULONG bufferLength = 0;
+    ULONG bufferLength = 0, count = 0;
     ULONG ntBuildNumber;
+    SIZE_T requiredSize;
     PVOID buffer = NULL;
 
     struct {
@@ -3903,11 +3905,12 @@ BOOL supQuerySuperfetchMemoryRanges(
 
     *RangeBuffer = NULL;
     *RangeCount = 0;
+    *Version = 0;
 
     ntBuildNumber = NtCurrentPeb()->OSBuildNumber;
 
     //
-    // Windows 10 1809 (17763) and later use V2
+    // Windows 10 RS5 (17763) and later use V2
     //
     if (ntBuildNumber >= NT_WIN10_REDSTONE5) {
 
@@ -3936,8 +3939,29 @@ BOOL supQuerySuperfetchMemoryRanges(
                 NULL);
 
             if (NT_SUCCESS(ntStatus)) {
+
+                count = ((PPF_MEMORY_RANGE_INFO_V2)buffer)->RangeCount;
+                requiredSize =
+                    FIELD_OFFSET(PF_MEMORY_RANGE_INFO_V2, Ranges);
+
+                if (count > ((SIZE_T)-1 - requiredSize) /
+                    sizeof(PF_PHYSICAL_MEMORY_RANGE))
+                {
+                    supHeapFree(buffer);
+                    return FALSE;
+                }
+
+                requiredSize +=
+                    ((SIZE_T)count * sizeof(PF_PHYSICAL_MEMORY_RANGE));
+
+                if (requiredSize > bufferLength) {
+                    supHeapFree(buffer);
+                    return FALSE;
+                }
+
                 *RangeBuffer = buffer;
                 *RangeCount = ((PPF_MEMORY_RANGE_INFO_V2)buffer)->RangeCount;
+                *Version = 2;
                 return TRUE;
             }
 
@@ -3974,8 +3998,30 @@ BOOL supQuerySuperfetchMemoryRanges(
             NULL);
 
         if (NT_SUCCESS(ntStatus)) {
+
+            count = ((PPF_MEMORY_RANGE_INFO_V1)buffer)->RangeCount;
+
+            requiredSize =
+                FIELD_OFFSET(PF_MEMORY_RANGE_INFO_V1, Ranges);
+
+            if (count > ((SIZE_T)-1 - requiredSize) /
+                sizeof(PF_PHYSICAL_MEMORY_RANGE))
+            {
+                supHeapFree(buffer);
+                return FALSE;
+            }
+
+            requiredSize +=
+                ((SIZE_T)count * sizeof(PF_PHYSICAL_MEMORY_RANGE));
+
+            if (requiredSize > bufferLength) {
+                supHeapFree(buffer);
+                return FALSE;
+            }
+
             *RangeBuffer = buffer;
             *RangeCount = ((PPF_MEMORY_RANGE_INFO_V1)buffer)->RangeCount;
+            *Version = 1;
             return TRUE;
         }
 
@@ -3997,32 +4043,26 @@ BOOL supBuildSuperfetchMemoryMap(
     _Out_ PSUPERFETCH_MEMORY_MAP MemoryMap)
 {
     NTSTATUS ntStatus;
-    ULONG ntBuildNumber;
-    ULONG rangeCount = 0;
-    ULONG i, failedRanges = 0;
-    SIZE_T j;
-    ULONG_PTR basePfn, pageCount;
-    ULONG pfnBufferSize;
+    ULONG rangeCount = 0, memoryRangeVersion = 0;
+    ULONG i, failedRanges = 0, pfnBufferSize;
+    SIZE_T j, cb;
+    ULONG_PTR basePfn, pageCount = 0;
     ULONG_PTR totalPages = 0;
     ULONG_PTR currentEntry = 0;
-    BOOL useV2;
     PVOID rangeBuffer = NULL;
     PPF_PFN_PRIO_REQUEST pfnRequest = NULL;
     PSUPERFETCH_TRANSLATION_ENTRY translationTable = NULL;
 
     RtlSecureZeroMemory(MemoryMap, sizeof(SUPERFETCH_MEMORY_MAP));
 
-    if (!supQuerySuperfetchMemoryRanges(&rangeBuffer, &rangeCount))
+    if (!supxQuerySuperfetchMemoryRanges(&rangeBuffer, &rangeCount, &memoryRangeVersion))
         return FALSE;
-
-    ntBuildNumber = NtCurrentPeb()->OSBuildNumber;
-    useV2 = (ntBuildNumber >= NT_WIN10_REDSTONE5);
 
     //
     // Calculate total pages
     //
     for (i = 0; i < rangeCount; i++) {
-        if (useV2) {
+        if (memoryRangeVersion == 2) {
             pageCount = ((PPF_MEMORY_RANGE_INFO_V2)rangeBuffer)->Ranges[i].PageCount;
         }
         else {
@@ -4031,7 +4071,10 @@ BOOL supBuildSuperfetchMemoryMap(
         totalPages += pageCount;
     }
 
-    if (totalPages == 0) {
+    if ((totalPages == 0) ||
+        (totalPages > MAXULONG_PTR - pageCount) ||
+        (totalPages > (MAXSIZE_T / sizeof(SUPERFETCH_TRANSLATION_ENTRY))))
+    {
         supHeapFree(rangeBuffer);
         return FALSE;
     }
@@ -4049,7 +4092,7 @@ BOOL supBuildSuperfetchMemoryMap(
     //
     for (i = 0; i < rangeCount; i++) {
 
-        if (useV2) {
+        if (memoryRangeVersion == 2) {
             basePfn = ((PPF_MEMORY_RANGE_INFO_V2)rangeBuffer)->Ranges[i].BasePfn;
             pageCount = ((PPF_MEMORY_RANGE_INFO_V2)rangeBuffer)->Ranges[i].PageCount;
         }
@@ -4058,8 +4101,21 @@ BOOL supBuildSuperfetchMemoryMap(
             pageCount = ((PPF_MEMORY_RANGE_INFO_V1)rangeBuffer)->Ranges[i].PageCount;
         }
 
-        pfnBufferSize = (ULONG)(FIELD_OFFSET(PF_PFN_PRIO_REQUEST, PageData) +
-            (pageCount * sizeof(MMPFN_IDENTITY)));
+        if (pageCount > (MAXSIZE_T - 
+            FIELD_OFFSET(PF_PFN_PRIO_REQUEST, PageData)) / sizeof(MMPFN_IDENTITY)) 
+        {
+            failedRanges++;
+            continue;
+        }
+
+        cb = FIELD_OFFSET(PF_PFN_PRIO_REQUEST, PageData) +
+            ((SIZE_T)pageCount * sizeof(MMPFN_IDENTITY));
+        if (cb > ULONG_MAX) {
+            failedRanges++;
+            continue;
+        }
+
+        pfnBufferSize = (ULONG)cb;
 
         pfnRequest = (PPF_PFN_PRIO_REQUEST)supHeapAlloc(pfnBufferSize);
         if (pfnRequest == NULL) {
@@ -4397,4 +4453,39 @@ VOID supCalcPhysMapParams(
     *PageBase = pageBase;
     *Offset = offset;
     *MapSize = offset + NumberOfBytes;
+}
+
+/*
+* supIsLA57Enabled
+*
+* Purpose:
+*
+* Return LA57 state.
+*
+*/
+BOOL supIsLA57Enabled()
+{
+    INT cpuInfo[4] = { -1, -1, -1, -1 };
+    ULONG returnLength = 0;
+    SYSTEM_BASIC_INFORMATION sbi;
+
+    // max supported leaf
+    __cpuid(cpuInfo, 0);
+    if (cpuInfo[0] < 7) 
+        return FALSE;
+
+    __cpuidex(cpuInfo, 7, 0);
+    if ((cpuInfo[2] & (1 << 16)) == 0)
+        return FALSE;
+
+    RtlSecureZeroMemory(&sbi, sizeof(sbi));
+    if (!NT_SUCCESS(NtQuerySystemInformation(SystemBasicInformation,
+        &sbi,
+        sizeof(sbi),
+        &returnLength)))
+    {
+        return FALSE;
+    }
+
+    return (sbi.MaximumUserModeAddress > 0x00007FFFFFFFFFFFULL);
 }

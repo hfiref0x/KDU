@@ -1,3 +1,18 @@
+v1.4.9 (Jun 12, 2026)
+Added AMD affdriver (RPMC) as provider 61
+Added Matrox driver as provider 62
+Added FLIR PGRHostControl driver as provider 63
+Added LECO LECOMA driver as provider 64
+Refactor ci!g_CiOptions query to address #138 
+Added synthetic CI.dll tests for g_CiOptions query
+Update list command: display file SHA1, Authenticode SHA1, page SHA1, page SHA256 hashes for each provider in database
+Added new command -listcsv to export database metadata into csv file format
+KDUDB: introduce AdvisoryId to hold specific MITRE CVE id if present, update gProvEntry entries
+KDUDB: signer information now parsed in-memory from provider image during -list/-listcsv commands
+Tanikaze: database layout change - single drivers blob instead of multiple resources
+Introduce DBPACK tool and packed resource database support
+Readme update
+
 v1.4.8 (May 04, 2026)
 Added Teledyne CorMem driver as provider 58
 Added Digital Electronics Corp. Ipctype driver as provider 59

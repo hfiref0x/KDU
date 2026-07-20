@@ -4,9 +4,9 @@
 *
 *  TITLE:       MAIN.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        06 Jun 2026
+*  DATE:        19 Jul 2026
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -18,6 +18,9 @@
 *******************************************************************************/
 
 #include "global.h"
+
+//Indicates use of 5-level paging (LA57).
+BOOL g_UseLA57 = FALSE;
 
 #define CMD_PRV         L"-prv"
 #define CMD_MAP         L"-map"
@@ -184,8 +187,7 @@ INT KDUOpenProcessInheritHandle(
     _In_ LPWSTR CommandLine
 )
 {
-    HANDLE retVal = NULL;
-    BOOL bResult = FALSE;
+    INT retVal = 0;
     KDU_CONTEXT* provContext;
 
     provContext = KDUProviderCreate(ProviderId,
@@ -195,11 +197,11 @@ INT KDUOpenProcessInheritHandle(
         ActionTypeOpenProcessHandle);
 
     if (provContext) {
-        bResult = KDURunCommandInheritee(provContext, CommandLine, TargetProcessId, OpenThreads, PPLLevel);
+        retVal = KDURunCommandInheritee(provContext, CommandLine, TargetProcessId, OpenThreads, PPLLevel);
         KDUProviderRelease(provContext);
     }
 
-    return retVal != 0;
+    return retVal;
 }
 
 /*
@@ -483,7 +485,7 @@ INT KDUProcessCommandLine(
             RTL_NUMBER_OF(szParameter),
             &paramLength))
         {
-            lpParam1 = (paramLength != 0) ? szParameter : NULL;
+            lpParam1 = (paramLength != 0) ? szParameter : (LPWSTR)TEXT("output.txt");
 
             if (!KDUProvListCsv(lpParam1)) {
                 supShowWin32Error("[!] Cannot generate providers CSV", GetLastError());
@@ -762,7 +764,7 @@ INT KDUProcessCommandLine(
                         NULL))
                     {
                         level = strtou64(szParameter);
-                        if (level < 0 || level > 8) {
+                        if (level > 8) {
                             supPrintfEvent(kduEventError,
                                 "[!] Unsupported PPL level for Open Process Handle\r\n");
                             return 1;
@@ -833,14 +835,15 @@ int KDUMain()
         GET_CPU_VENDOR_STRING(vendorString);
         printf_s("[*] CPU vendor string: %s\r\n", vendorString);
 
+        g_UseLA57 = supIsLA57Enabled();
+        if (g_UseLA57) {
+            printf_s("[*] LA57 enabled\r\n");
+        }
+
         RtlSecureZeroMemory(&osv, sizeof(osv));
         osv.dwOSVersionInfoSize = sizeof(osv);
         RtlGetVersion((PRTL_OSVERSIONINFOW)&osv);
-        if ((osv.dwMajorVersion < 6) ||
-            (osv.dwMajorVersion == 6 && osv.dwMinorVersion == 0) ||
-            (osv.dwBuildNumber == NT_WIN7_RTM))
-        {
-
+        if (osv.dwBuildNumber < NT_WIN7_RTM) {
             supPrintfEvent(kduEventError,
                 "[!] Unsupported WinNT version\r\n");
 

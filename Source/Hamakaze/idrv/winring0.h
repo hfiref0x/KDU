@@ -4,9 +4,9 @@
 *
 *  TITLE:       WINRING0.H
 *
-*  VERSION:     1.48
+*  VERSION:     1.50
 *
-*  DATE:        26 Mar 2026
+*  DATE:        19 Jul 2026
 *
 *  WinRing0 based drivers interface header.
 *
@@ -83,10 +83,6 @@ BOOL WINAPI WRZeroWritePhysicalMemory(
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
     _In_ ULONG NumberOfBytes);
-
-BOOL WINAPI WRZeroQueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
 
 BOOL WINAPI WRZeroVirtualToPhysical(
     _In_ HANDLE DeviceHandle,

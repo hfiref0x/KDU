@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPLIST.H
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        11 Jun 2026
+*  DATE:        19 Jul 2026
 *
 *  Providers global list.
 *
@@ -113,7 +113,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NalWriteVirtualMemoryEx,
 
         (provVirtualToPhysical)NalVirtualToPhysical,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -139,7 +138,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)RTCoreWriteVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -165,7 +163,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)MapMemWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)MapMemVirtualToPhysical,
-        (provQueryPML4)MapMemQueryPML4Value,
         (provReadPhysicalMemory)MapMemReadPhysicalMemory,
         (provWritePhysicalMemory)MapMemWritePhysicalMemory,
 
@@ -191,7 +188,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)AtszioWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)AtszioVirtualToPhysical,
-        (provQueryPML4)AtszioQueryPML4Value,
         (provReadPhysicalMemory)AtszioReadPhysicalMemory,
         (provWritePhysicalMemory)AtszioWritePhysicalMemory,
 
@@ -217,7 +213,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -243,7 +238,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -269,7 +263,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -295,7 +288,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WRZeroWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WRZeroVirtualToPhysical,
-        (provQueryPML4)WRZeroQueryPML4Value,
         (provReadPhysicalMemory)WRZeroReadPhysicalMemory,
         (provWritePhysicalMemory)WRZeroWritePhysicalMemory,
 
@@ -321,7 +313,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -347,7 +338,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -373,7 +363,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)PhyMemWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)PhyMemVirtualToPhysical,
-        (provQueryPML4)PhyMemQueryPML4Value,
         (provReadPhysicalMemory)PhyMemReadPhysicalMemory,
         (provWritePhysicalMemory)PhyMemWritePhysicalMemory,
 
@@ -399,7 +388,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -425,7 +413,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)LHAWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)LHAVirtualToPhysical,
-        (provQueryPML4)LHAQueryPML4Value,
         (provReadPhysicalMemory)LHAReadPhysicalMemory,
         (provWritePhysicalMemory)LHAWritePhysicalMemory,
 
@@ -451,7 +438,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -477,7 +463,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)DI64WriteKernelVirtualMemory,
 
         (provVirtualToPhysical)DI64VirtualToPhysical,
-        (provQueryPML4)DI64QueryPML4Value,
         (provReadPhysicalMemory)DI64ReadPhysicalMemory,
         (provWritePhysicalMemory)DI64WritePhysicalMemory,
 
@@ -503,7 +488,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)GmerWriteVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -529,7 +513,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)DbUtilWriteVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -555,7 +538,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)MimidrvWriteVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -581,7 +563,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)KphWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)KphVirtualToPhysical,
-        (provQueryPML4)KphQueryPML4Value,
         (provReadPhysicalMemory)KphReadPhysicalMemory,
         (provWritePhysicalMemory)KphWritePhysicalMemory,
 
@@ -607,7 +588,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)PexWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)PexVirtualToPhysical,
-        (provQueryPML4)PexQueryPML4Value,
         (provReadPhysicalMemory)PexReadPhysicalMemory,
         (provWritePhysicalMemory)PexWritePhysicalMemory,
 
@@ -633,7 +613,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)DbUtilWriteVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -659,7 +638,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -685,7 +663,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -711,7 +688,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)HwWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)HwVirtualToPhysical,
-        (provQueryPML4)HwQueryPML4Value,
         (provReadPhysicalMemory)HwReadPhysicalMemory,
         (provWritePhysicalMemory)HwWritePhysicalMemory,
 
@@ -737,7 +713,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)MapMemWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)MapMemVirtualToPhysical,
-        (provQueryPML4)MapMemQueryPML4Value,
         (provReadPhysicalMemory)MapMemReadPhysicalMemory,
         (provWritePhysicalMemory)MapMemWritePhysicalMemory,
 
@@ -763,7 +738,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -789,7 +763,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -815,7 +788,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)DI64WriteKernelVirtualMemory,
 
         (provVirtualToPhysical)DI64VirtualToPhysical,
-        (provQueryPML4)DI64QueryPML4Value,
         (provReadPhysicalMemory)DI64ReadPhysicalMemory,
         (provWritePhysicalMemory)DI64WritePhysicalMemory,
 
@@ -841,7 +813,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)AsrReadPhysicalMemory,
         (provWritePhysicalMemory)AsrWritePhysicalMemory,
 
@@ -867,7 +838,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)AlcReadPhysicalMemory,
         (provWritePhysicalMemory)AlcWritePhysicalMemory,
 
@@ -893,7 +863,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)RmReadPhysicalMemory,
         (provWritePhysicalMemory)RmWritePhysicalMemory,
 
@@ -919,7 +888,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)PhmReadPhysicalMemory,
         (provWritePhysicalMemory)PhmWritePhysicalMemory,
 
@@ -945,7 +913,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)LddWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)LddpVirtualToPhysical,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)LddReadWritePhysicalMemoryStub,
         (provWritePhysicalMemory)LddReadWritePhysicalMemoryStub,
 
@@ -971,7 +938,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)DpdReadPhysicalMemory,
         (provWritePhysicalMemory)DpdWritePhysicalMemory,
 
@@ -997,7 +963,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -1023,7 +988,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)HpEtdWriteVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -1049,7 +1013,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)KObExpWriteVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -1075,7 +1038,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)ZdcWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)ZdcVirtualToPhysical,
-        (provQueryPML4)ZdcQueryPML4Value,
         (provReadPhysicalMemory)ZdcReadPhysicalMemory,
         (provWritePhysicalMemory)ZdcWritePhysicalMemory,
 
@@ -1101,7 +1063,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)ZdcWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)ZdcVirtualToPhysical,
-        (provQueryPML4)ZdcQueryPML4Value,
         (provReadPhysicalMemory)ZdcReadPhysicalMemory,
         (provWritePhysicalMemory)ZdcWritePhysicalMemory,
 
@@ -1127,7 +1088,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)EchoDrvWriteVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -1153,7 +1113,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NvoReadPhysicalMemory,
         (provWritePhysicalMemory)NvoWritePhysicalMemory,
 
@@ -1179,7 +1138,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -1205,7 +1163,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)WRZeroReadPhysicalMemory,
         (provWritePhysicalMemory)WRZeroWritePhysicalMemory,
 
@@ -1232,7 +1189,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -1258,7 +1214,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)PdFwWriteVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -1284,7 +1239,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)RmReadPhysicalMemory,
         (provWritePhysicalMemory)RmWritePhysicalMemory,
 
@@ -1310,7 +1264,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -1336,7 +1289,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)EvgaReadPhysicalMemory,
         (provWritePhysicalMemory)EvgaWritePhysicalMemory,
 
@@ -1362,7 +1314,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)RweReadPhysicalMemory,
         (provWritePhysicalMemory)RweWritePhysicalMemory,
 
@@ -1388,7 +1339,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)AsrReadPhysicalMemory,
         (provWritePhysicalMemory)AsrWritePhysicalMemory,
 
@@ -1415,7 +1365,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)RweReadPhysicalMemory,
         (provWritePhysicalMemory)RweWritePhysicalMemory,
 
@@ -1442,7 +1391,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)AsrReadPhysicalMemory,
         (provWritePhysicalMemory)AsrWritePhysicalMemory,
 
@@ -1468,7 +1416,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)PmxDrvWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)PmxDrvVirtualToPhysical,
-        (provQueryPML4)PmxDrvQueryPML4Value,
         (provReadPhysicalMemory)PmxDrvReadPhysicalMemory,
         (provWritePhysicalMemory)PmxDrvWritePhysicalMemory,
 
@@ -1494,7 +1441,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NULL,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)WRZeroReadPhysicalMemory,
         (provWritePhysicalMemory)WRZeroWritePhysicalMemory,
 
@@ -1520,7 +1466,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)NetEaseWriteVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)NULL,
         (provWritePhysicalMemory)NULL,
 
@@ -1546,7 +1491,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)TpupWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)TpupReadPhysicalMemory,
         (provWritePhysicalMemory)TpupWritePhysicalMemory,
 
@@ -1572,7 +1516,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)TpwWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)NULL,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)TpwReadPhysicalMemory,
         (provWritePhysicalMemory)TpwWritePhysicalMemory,
 
@@ -1598,7 +1541,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)LnvMsrWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)LnvMsrVirtualToPhysical,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)LnvMsrReadPhysicalMemory,
         (provWritePhysicalMemory)LnvMsrWritePhysicalMemory,
 
@@ -1624,7 +1566,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)CorMemWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)CorMemVirtualToPhysical,
-        (provQueryPML4)CorMemQueryPML4Value,
         (provReadPhysicalMemory)CorMemReadPhysicalMemory,
         (provWritePhysicalMemory)CorMemWritePhysicalMemory,
 
@@ -1648,8 +1589,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)IpcWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)IpcVirtualToPhysical,
-        (provQueryPML4)NULL,
-
         (provReadPhysicalMemory)IpcReadPhysicalMemory,
         (provWritePhysicalMemory)IpcWritePhysicalMemory,
 
@@ -1673,8 +1612,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinHdDrvWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinHdDrvVirtualToPhysical,
-        (provQueryPML4)NULL,
-
         (provReadPhysicalMemory)WRZeroReadPhysicalMemory,
         (provWritePhysicalMemory)WRZeroWritePhysicalMemory,
 
@@ -1700,7 +1637,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)AffWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)AffVirtualToPhysical,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)AffReadPhysicalMemory,
         (provWritePhysicalMemory)AffWritePhysicalMemory,
 
@@ -1726,7 +1662,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)MatroxWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)MatroxVirtualToPhysical,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)MatroxReadPhysicalMemory,
         (provWritePhysicalMemory)MatroxWritePhysicalMemory,
 
@@ -1752,7 +1687,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)WinIoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)WinIoVirtualToPhysical,
-        (provQueryPML4)WinIoQueryPML4Value,
         (provReadPhysicalMemory)WinIoReadPhysicalMemory,
         (provWritePhysicalMemory)WinIoWritePhysicalMemory,
 
@@ -1778,7 +1712,6 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provWriteKernelVM)LecoWriteKernelVirtualMemory,
 
         (provVirtualToPhysical)LecoVirtualToPhysical,
-        (provQueryPML4)NULL,
         (provReadPhysicalMemory)LecoReadPhysicalMemory,
         (provWritePhysicalMemory)LecoWritePhysicalMemory,
 

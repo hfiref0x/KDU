@@ -551,20 +551,19 @@ BOOL WINAPI PmxDrvWritePhysicalMemory(
 }
 
 /*
-* PmxDrvQueryPML4Value
+* PmxDrvQueryRootTableValue
 *
 * Purpose:
 *
-* Locate PML4.
+* Locate CR3 root paging table value.
 *
 */
-BOOL WINAPI PmxDrvQueryPML4Value(
+BOOL WINAPI PmxDrvQueryRootTableValue(
     _In_ HANDLE DeviceHandle,
     _Out_ ULONG_PTR* Value)
 {
-    ULONG_PTR pbLowStub1M = 0ULL, PML4 = 0;
-
     ULONG cbRead = 0x100000;
+    ULONG_PTR pbLowStub1M = 0ULL, rootTable = 0;
 
     *Value = 0;
 
@@ -576,16 +575,16 @@ BOOL WINAPI PmxDrvQueryPML4Value(
 
     if (pbLowStub1M) {
 
-        PML4 = supGetPML4FromLowStub1M(pbLowStub1M);
-        if (PML4)
-            *Value = PML4;
+        rootTable = supGetRootTableFromLowStub1M(pbLowStub1M);
+        if (rootTable)
+            *Value = rootTable;
 
         PmxDrvUnmapMemory(DeviceHandle,
             (PVOID)pbLowStub1M);
 
     }
 
-    return (PML4 != 0);
+    return (rootTable != 0);
 }
 
 /*
@@ -601,8 +600,9 @@ BOOL WINAPI PmxDrvVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysical(DeviceHandle,
-        PmxDrvQueryPML4Value,
+    return PwVirtualToPhysicalEx(g_UseLA57,
+        DeviceHandle,
+        PmxDrvQueryRootTableValue,
         PmxDrvReadPhysicalMemory,
         VirtualAddress,
         PhysicalAddress);

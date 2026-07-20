@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2021
+*  (C) COPYRIGHT AUTHORS, 2021 - 2026
 *
 *  TITLE:       DIRECTIO64.H
 *
-*  VERSION:     1.11
+*  VERSION:     1.50
 *
-*  DATE:        18 Apr 2021
+*  DATE:        18 Jul 2026
 *
 *  PassMark DIRECTIO driver interface header.
 *
@@ -49,10 +49,6 @@ BOOL WINAPI DI64VirtualToPhysical(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress);
-
-BOOL WINAPI DI64QueryPML4Value(
-    _In_ HANDLE DeviceHandle,
-    _Out_ ULONG_PTR* Value);
 
 BOOL WINAPI DI64ReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,

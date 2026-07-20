@@ -4,9 +4,9 @@
 *
 *  TITLE:       GLOBAL.H
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        05 Jun 2026
+*  DATE:        19 Jul 2026
 *
 *  Common include header file.
 *
@@ -97,6 +97,8 @@ extern "C" {
 #include "diag.h"
 #include "provlist.h"
 #include "tests\tests.h"
+
+extern BOOL g_UseLA57;
 
 #define ASSERT_RESOLVED_FUNC(FunctionPtr) { if (FunctionPtr == 0) break; }
 #define ASSERT_RESOLVED_FUNC_ABORT(FunctionPtr) { if (FunctionPtr == 0) return FALSE; }
