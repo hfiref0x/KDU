@@ -640,6 +640,9 @@ BOOL KDUControlProcessMitigationFlags(
                             &Buffer1,
                             sizeof(ULONG));
                     }
+                    else {
+                        bResult1 = TRUE;
+                    }
 
                     if (TargetedFlags & PS_MITIGATION_FLAGS2) {
                         printf_s("[+] Overwriting MitigationFlags2\r\n");
@@ -647,6 +650,9 @@ BOOL KDUControlProcessMitigationFlags(
                             VirtualAddress2,
                             &Buffer2,
                             sizeof(ULONG));
+                    }
+                    else {
+                        bResult2 = TRUE;
                     }
 
                     if (bResult1 && bResult2) {
