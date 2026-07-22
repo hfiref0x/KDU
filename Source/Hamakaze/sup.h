@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.50
 *
-*  DATE:        19 Jul 2026
+*  DATE:        22 Jul 2026
 *
 *  Support routines header file.
 *
@@ -61,7 +61,7 @@ typedef NTSTATUS(CALLBACK* pfnLoadDriverCallback)(
     );
 
 #define supEnablePrivilege ntsupEnablePrivilege
-#define supQueryHVCIState ntsupQueryHVCIState
+#define supQueryVBSState ntsupQueryVBSState
 #define supExpandEnvironmentStrings ntsupExpandEnvironmentStrings
 #define supQueryResourceData ntsupQueryResourceData
 #define supWriteBufferToFile ntsupWriteBufferToFile

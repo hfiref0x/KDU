@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTSUP.H
 *
-*  VERSION:     2.27
+*  VERSION:     2.29
 *
-*  DATE:        27 Jun 2026
+*  DATE:        22 Jul 2026
 *
 *  Common header file for the NT API support functions and definitions.
 *
@@ -286,10 +286,10 @@ BOOLEAN ntsupQueryVsmProtectionInformation(
     _Out_ PBOOLEAN pbHardwareMbecAvailable,
     _Out_ PBOOLEAN pbApicVirtualizationAvailable);
 
-BOOLEAN ntsupQueryHVCIState(
+BOOLEAN ntsupQueryVBSState(
+    _Out_ PBOOLEAN pbVBSRunning,
     _Out_ PBOOLEAN pbHVCIEnabled,
-    _Out_ PBOOLEAN pbHVCIStrictMode,
-    _Out_ PBOOLEAN pbHVCIIUMEnabled);
+    _Out_ PBOOLEAN pbHVCIStrictMode);
 
 PVOID ntsupLookupImageSectionByName(
     _In_ CHAR* SectionName,

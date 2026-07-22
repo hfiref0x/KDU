@@ -819,7 +819,12 @@ INT KDUProcessCommandLine(
 int KDUMain()
 {
     INT iResult = 0;
+    BOOLEAN bVBSRunning;
+    BOOLEAN bHVCIRunning;
+    BOOLEAN bHVCIStrict;
+    BOOLEAN bSecureBoot;
     OSVERSIONINFO osv;
+    CHAR szVersion[100];
 
 #ifdef _DEBUG
     supPrintfEvent(kduEventWarning, "[!] Debug Mode Run, several features (like a shellcode proper generation) will be unavailable\r\n");
@@ -858,8 +863,6 @@ int KDUMain()
             break;
         }
 
-        CHAR szVersion[100];
-
         StringCchPrintfA(szVersion, 100,
             "[*] Windows version: %u.%u build %u",
             osv.dwMajorVersion,
@@ -868,25 +871,16 @@ int KDUMain()
 
         printf_s(T_PRNTDEFAULT, szVersion);
 
-        BOOLEAN secureBoot;
-
-        if (supQuerySecureBootState(&secureBoot)) {
-            printf_s("[*] SecureBoot is %sbled on this machine\r\n", secureBoot ? "ena" : "disa");
+        if (supQuerySecureBootState(&bSecureBoot)) {
+            printf_s("[*] SecureBoot is %sbled on this machine\r\n", bSecureBoot ? "ena" : "disa");
         }
-
-        BOOLEAN hvciEnabled;
-        BOOLEAN hvciStrict;
-        BOOLEAN hvciIUM;
 
         //
         // Providers maybe *not* HVCI compatible.
         //
-        if (supQueryHVCIState(&hvciEnabled, &hvciStrict, &hvciIUM)) {
-
-            if (hvciEnabled) {
-                printf_s("[*] Windows HVCI mode detected\r\n");
-            }
-
+        if (supQueryVBSState(&bVBSRunning, &bHVCIRunning, &bHVCIStrict)) {
+            supPrintfEvent(kduEventInformation, "[*] Virtualization-based security: %s\r\n", bVBSRunning ? "Running" : "Not configured");
+            supPrintfEvent(kduEventInformation, "[*] Hypervisor enforced Code Integrity running: %s\r\n", bHVCIRunning ? "Yes" : "Not configured");
         }
 
         SYSTEM_CODEINTEGRITY_INFORMATION ciPolicy;
@@ -924,7 +918,7 @@ int KDUMain()
             }
         }
 
-        iResult = KDUProcessCommandLine(hvciEnabled, osv.dwBuildNumber);
+        iResult = KDUProcessCommandLine(bHVCIRunning, osv.dwBuildNumber);
 
     } while (FALSE);
 

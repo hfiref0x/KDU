@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.248
+*  VERSION:     1.249
 *
-*  DATE:        19 Jul 2026
+*  DATE:        22 Jul 2026
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -928,24 +928,25 @@ typedef struct _SYSTEM_BASIC_INFORMATION {
 } SYSTEM_BASIC_INFORMATION, *PSYSTEM_BASIC_INFORMATION;
 
 typedef struct _SYSTEM_ISOLATED_USER_MODE_INFORMATION {
-    BOOLEAN SecureKernelRunning : 1;
-    BOOLEAN HvciEnabled : 1;
-    BOOLEAN HvciStrictMode : 1;
-    BOOLEAN DebugEnabled : 1;
-    BOOLEAN FirmwarePageProtection : 1;
-    BOOLEAN EncryptionKeyAvailable : 1;
-    BOOLEAN SpareFlags : 2;
-    BOOLEAN TrustletRunning : 1;
-    BOOLEAN HvciDisableAllowed : 1;
-    BOOLEAN HardwareEnforcedVbs : 1;
-    BOOLEAN NoSecrets : 1;
-    BOOLEAN EncryptionKeyPersistent : 1;
-    BOOLEAN HardwareEnforcedHvpt : 1;
-    BOOLEAN HardwareHvptAvailable : 1;
-    BOOLEAN SpareFlags2 : 1;
-    BOOLEAN Spare0[6];
-    ULONGLONG Spare1;
-} SYSTEM_ISOLATED_USER_MODE_INFORMATION, *PSYSTEM_ISOLATED_USER_MODE_INFORMATION;
+	BOOLEAN SecureKernelRunning : 1;
+	BOOLEAN HvciEnabled : 1;
+	BOOLEAN HvciStrictMode : 1;
+	BOOLEAN DebugEnabled : 1;
+	BOOLEAN FirmwarePageProtection : 1;
+	BOOLEAN EncryptionKeyAvailable : 1;
+	BOOLEAN SpareFlags : 2;
+	BOOLEAN TrustletRunning : 1;
+	BOOLEAN HvciDisableAllowed : 1;
+	BOOLEAN HardwareEnforcedVbs : 1;
+	BOOLEAN NoSecrets : 1;
+	BOOLEAN EncryptionKeyPersistent : 1;
+	BOOLEAN HardwareEnforcedHvpt : 1;
+	BOOLEAN HardwareHvptAvailable : 1;
+	BOOLEAN SpareFlags2 : 1;
+	BOOLEAN EncryptionKeyTpmBound : 1;
+	BOOLEAN Spare0[5];
+	ULONGLONG Spare1;
+} SYSTEM_ISOLATED_USER_MODE_INFORMATION, * PSYSTEM_ISOLATED_USER_MODE_INFORMATION;
 
 typedef struct _SYSTEM_PROCESSOR_FEATURES_INFORMATION { //chappell
     ULONGLONG ProcessorFeatureBits;

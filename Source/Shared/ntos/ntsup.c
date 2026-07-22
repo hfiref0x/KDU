@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTSUP.C
 *
-*  VERSION:     2.28
+*  VERSION:     2.29
 *
-*  DATE:        11 Jul 2026
+*  DATE:        22 Jul 2026
 *
 *  Native API support functions.
 *
@@ -1595,28 +1595,36 @@ BOOLEAN ntsupQueryVsmProtectionInformation(
 }
 
 /*
-* ntsupQueryHVCIState
+* ntsupQueryVBSState
 *
 * Purpose:
 *
-* Query HVCI/IUM state.
+* Query VBS/HVCI state.
 *
 */
-BOOLEAN ntsupQueryHVCIState(
+BOOLEAN ntsupQueryVBSState(
+    _Out_ PBOOLEAN pbVBSRunning,
     _Out_ PBOOLEAN pbHVCIEnabled,
-    _Out_ PBOOLEAN pbHVCIStrictMode,
-    _Out_ PBOOLEAN pbHVCIIUMEnabled
+    _Out_ PBOOLEAN pbHVCIStrictMode
 )
 {
-    BOOLEAN hvciEnabled;
     ULONG returnLength;
     NTSTATUS ntStatus;
     SYSTEM_CODEINTEGRITY_INFORMATION ci;
+    SYSTEM_ISOLATED_USER_MODE_INFORMATION iumi;
 
-    if (pbHVCIEnabled) *pbHVCIEnabled = FALSE;
-    if (pbHVCIStrictMode) *pbHVCIStrictMode = FALSE;
-    if (pbHVCIIUMEnabled) *pbHVCIIUMEnabled = FALSE;
+    if (pbVBSRunning)
+        *pbVBSRunning = FALSE;
 
+    if (pbHVCIEnabled)
+        *pbHVCIEnabled = FALSE;
+
+    if (pbHVCIStrictMode)
+        *pbHVCIStrictMode = FALSE;
+
+    //
+    // Query Code Integrity configuration.
+    //
     ci.Length = sizeof(ci);
 
     ntStatus = NtQuerySystemInformation(
@@ -1625,28 +1633,48 @@ BOOLEAN ntsupQueryHVCIState(
         sizeof(ci),
         &returnLength);
 
-    if (NT_SUCCESS(ntStatus)) {
-
-        hvciEnabled = ((ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_ENABLED) &&
-            (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED));
-
-        if (pbHVCIEnabled)
-            *pbHVCIEnabled = hvciEnabled;
-
-        if (pbHVCIStrictMode)
-            *pbHVCIStrictMode = (hvciEnabled == TRUE) &&
-            (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_STRICTMODE_ENABLED);
-
-        if (pbHVCIIUMEnabled)
-            *pbHVCIIUMEnabled = (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_IUM_ENABLED) > 0;
-
-        return TRUE;
-    }
-    else {
+    if (!NT_SUCCESS(ntStatus)) {
         RtlSetLastWin32Error(RtlNtStatusToDosError(ntStatus));
+        return FALSE;
     }
 
-    return FALSE;
+    if (pbHVCIEnabled) {
+        *pbHVCIEnabled = ((ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_ENABLED) &&
+                (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED));
+    }
+
+    if (pbHVCIStrictMode) {
+        *pbHVCIStrictMode = ((ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_STRICTMODE_ENABLED) != 0);
+    }
+
+    //
+    // Query VBS / Isolated User Mode state.
+    //
+    RtlSecureZeroMemory(&iumi, sizeof(iumi));
+
+    ntStatus = NtQuerySystemInformation(
+        SystemIsolatedUserModeInformation,
+        &iumi,
+        sizeof(iumi),
+        &returnLength);
+
+    if (!NT_SUCCESS(ntStatus)) {
+        RtlSetLastWin32Error(RtlNtStatusToDosError(ntStatus));
+        return FALSE;
+    }
+
+    if (pbVBSRunning)
+        *pbVBSRunning = iumi.SecureKernelRunning;
+
+    //
+    // Prefer the isolated user mode information for HVCI state.
+    // It reflects the actual VBS-backed HVCI status.
+    //
+    if (pbHVCIEnabled) *pbHVCIEnabled = iumi.HvciEnabled;
+
+    if (pbHVCIStrictMode) *pbHVCIStrictMode = iumi.HvciStrictMode;
+
+    return TRUE;
 }
 
 /*
