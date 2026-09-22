@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.50
 *
-*  DATE:        19 Sep 2026
+*  DATE:        22 Sep 2026
 *
 *  Global consts.
 *
@@ -54,6 +54,8 @@
 
 #define ZODIACON_SYSEXP_EXE     L"SysExp.exe"
 #define ZODIACON_REGEXP_EXE     L"RegExp.exe"
+
+#define POWERSHELL_EXE          L"powershell.exe"
 
 #define CPU_VENDOR_INTEL        "GenuineIntel"
 #define CPU_VENDOR_INTEL_LENGTH sizeof(CPU_VENDOR_INTEL) - sizeof(CHAR)
@@ -174,6 +176,7 @@
 #define IDR_FLIR_PGRHOSTCONTROL         165
 #define IDR_LECOMA                      166
 #define IDR_ADLICE_ROOTLASER            167
+#define IDR_KONTRON_KTAPI               168
 
 //
 // Vulnerable drivers providers id
@@ -244,6 +247,7 @@
 #define KDU_PROVIDER_FLIR_PGRHOSTCTRL   63
 #define KDU_PROVIDER_LECOMA             64
 #define KDU_PROVIDER_ADLICE_ROOTLASER   65
+#define KDU_PROVIDER_KONTRON_KTAPI      66
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
