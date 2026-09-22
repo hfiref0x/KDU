@@ -4,9 +4,9 @@
 *
 *  TITLE:       LECO.H
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        11 Jun 2026
+*  DATE:        22 Sep 2026
 *
 *  LECO LECOMA driver definitions.
 *
@@ -43,9 +43,9 @@ typedef struct _LECO_REQUEST {
 #pragma pack(pop)
 
 BOOL WINAPI LecoVirtualToPhysical(
-    HANDLE DeviceHandle,
-    ULONG_PTR VirtualAddress,
-    ULONG_PTR* PhysicalAddress);
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress);
 
 BOOL WINAPI LecoReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,

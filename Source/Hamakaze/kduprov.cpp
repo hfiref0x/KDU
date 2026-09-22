@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        06 Jun 2026
+*  DATE:        22 Sep 2026
 *
 *  Vulnerable drivers provider abstraction layer.
 *
@@ -934,6 +934,31 @@ BOOL KDUIsSupportedShell(
 }
 
 /*
+* KDUEnsureProviderIdValid
+*
+* Purpose:
+*
+* Ensure supplied Provider id is supported.
+*
+*/
+ULONG KDUEnsureProviderIdValid(
+    _In_ ULONG ProviderId
+)
+{
+    if (ProviderId >= KDUProvGetCount()) {
+
+        supPrintfEvent(kduEventError,
+            "[!] Invalid provider id %lu specified, default will be used (%lu)\r\n",
+            ProviderId,
+            KDU_PROVIDER_DEFAULT);
+
+        return KDU_PROVIDER_DEFAULT;
+    }
+
+    return ProviderId;
+}
+
+/*
 * KDUProviderCreate
 *
 * Purpose:
@@ -949,7 +974,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
     _In_ KDU_ACTION_TYPE ActionType
 )
 {
-    ULONG victimId;
+    ULONG victimId, providerId;
     HINSTANCE moduleBase;
     KDU_CONTEXT* Context = NULL;
     KDU_DB_ENTRY* provLoadData = NULL;
@@ -961,6 +986,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
     do {
+        providerId = KDUEnsureProviderIdValid(ProviderId);
 
         //
         // Check Hypervisor presence.
@@ -983,15 +1009,15 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
         //
         // Load provider data.
         //
-        provLoadData = KDUProviderToDbEntry(ProviderId);
+        provLoadData = KDUProviderToDbEntry(providerId);
         if (provLoadData == NULL) {
-            if (ProviderId != KDU_PROVIDER_DEFAULT) {
+            if (providerId != KDU_PROVIDER_DEFAULT) {
                 supPrintfEvent(kduEventInformation,
                     "[+] Provider with id %lu was not found in active database, will be using default provider (0)\r\n",
-                    ProviderId);
+                    providerId);
 
-                ProviderId = KDU_PROVIDER_DEFAULT;
-                provLoadData = KDUProviderToDbEntry(ProviderId);
+                providerId = KDU_PROVIDER_DEFAULT;
+                provLoadData = KDUProviderToDbEntry(providerId);
             }
 
             if (provLoadData == NULL) {
@@ -1001,7 +1027,7 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             }
         }
 
-        prov = &g_KDUProviders[ProviderId];
+        prov = &g_KDUProviders[providerId];
         prov->LoadData = provLoadData;
 
         if (ShellCodeVersion != KDU_SHELLCODE_NONE) {
@@ -1018,20 +1044,8 @@ PKDU_CONTEXT WINAPI KDUProviderCreate(
             supShowHardError("[!] Failed to query firmware type", ntStatus);
         }
         else {
-
             supPrintfEvent(kduEventNone, "[+] Firmware type (%s)\r\n",
                 KDUFirmwareToString(fmwType));
-            /*
-            if (provLoadData->RootFromLowStub)
-                if (fmwType != FirmwareTypeUefi) {
-
-                    supPrintfEvent(kduEventError, "[!] Unsupported PC firmware type for this provider (req: %s, got: %s)\r\n",
-                        KDUFirmwareToString(FirmwareTypeUefi),
-                        KDUFirmwareToString(fmwType));
-
-                    break;
-                }
-            */
         }
 
         //

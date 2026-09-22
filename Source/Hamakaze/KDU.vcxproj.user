@@ -6,8 +6,8 @@
     <LocalDebuggerCommandArgumentsHistory>-dse 6 -prv 51|-dse 0 -prv 3|-dse 6 -prv 3|-dse 0 -prv 62|-test|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>-listcsv</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-prv 66 -map c:\install\dummy2.sys</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArgumentsHistory>-prv 51 -map c:\install\dummy.sys|-prv 64 -map c:\install\dummy.sys|-prv 65 -map c:\install\dummy.sys|-prv 65 -map c:\install\dummy2.sys|-listcsv|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerCommandArgumentsHistory>-prv 65 -map c:\install\dummy2.sys|-listcsv|-map -prv 66 c:\install\dummy.sys|-prv 66 -map c:\install\dummy.sys|-prv 66 -map c:\install\dummy2.sys|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
 </Project>

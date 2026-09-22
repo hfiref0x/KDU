@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.50
 *
-*  DATE:        19 Jul 2026
+*  DATE:        22 Sep 2026
 *
 *  MAPMEM driver interface header.
 *
@@ -161,4 +161,68 @@ BOOL WINAPI CorMemReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+//
+// These are specific for Kontron driver.
+//
+
+#define KONTRON_DEVICE_TYPE     (DWORD)0x8200
+#define KONTRON_MAP_FUNCID      (DWORD)0xC00
+#define KONTRON_UNMAP_FUNCID    (DWORD)0xC40
+
+#define KONTRON_IOCTL_MAP_MEMORY \
+    CTL_CODE(KONTRON_DEVICE_TYPE, KONTRON_MAP_FUNCID, METHOD_BUFFERED, FILE_READ_ACCESS) //0x82007000
+
+#define KONTRON_IOCTL_UNMAP_MEMORY \
+    CTL_CODE(KONTRON_DEVICE_TYPE, KONTRON_UNMAP_FUNCID, METHOD_BUFFERED, FILE_READ_ACCESS) //0x82007100
+
+#pragma pack(push, 1)
+typedef struct _KONTRON_MAP_MEMORY_REQUEST {
+    union {
+        struct {
+            ULONG InterfaceType;
+            ULONG BusNumber;
+            PHYSICAL_ADDRESS BusAddress;
+            ULONG AddressSpace;        // 0 = MMIO, 1 = I/O
+            ULONG ViewSize;
+        } In;
+        struct {
+            PVOID VirtualAddress;
+        } Out;
+    };
+} KONTRON_MAP_MEMORY_REQUEST, * PKONTRON_MAP_MEMORY_REQUEST;
+
+typedef struct _KONTRON_UNMAP_MEMORY_REQUEST {
+    PVOID BaseAddress;
+} KONTRON_UNMAP_MEMORY_REQUEST, * PKONTRON_UNMAP_MEMORY_REQUEST;
+#pragma pack(pop)
+
+BOOL WINAPI KontronVirtualToPhysical(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress);
+
+BOOL WINAPI KontronReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI KontronWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI KontronWriteKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI KontronReadKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
     _In_ ULONG NumberOfBytes);

@@ -4,9 +4,9 @@
 *
 *  TITLE:       LECO.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.50
 *
-*  DATE:        10 Jun 2026
+*  DATE:        22 Sep 2026
 *
 *  LECO LECOMA based drivers routines.
 *
@@ -97,9 +97,10 @@ VOID LecoUnmapMemory(
 *
 */
 BOOL WINAPI LecoVirtualToPhysical(
-    HANDLE DeviceHandle,
-    ULONG_PTR VirtualAddress,
-    ULONG_PTR* PhysicalAddress)
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress
+)
 {
     UNREFERENCED_PARAMETER(DeviceHandle);
 
@@ -118,7 +119,8 @@ BOOL WINAPI LecoReadPhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
-    _In_ ULONG NumberOfBytes)
+    _In_ ULONG NumberOfBytes
+)
 {
     BOOL bResult = FALSE;
     DWORD dwError = ERROR_SUCCESS;
@@ -167,7 +169,8 @@ BOOL WINAPI LecoWritePhysicalMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR PhysicalAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
-    _In_ ULONG NumberOfBytes)
+    _In_ ULONG NumberOfBytes
+)
 {
     BOOL bResult = FALSE;
     DWORD dwError = ERROR_SUCCESS;
@@ -216,7 +219,8 @@ BOOL WINAPI LecoWriteKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _In_ PVOID Buffer,
-    _In_ ULONG NumberOfBytes)
+    _In_ ULONG NumberOfBytes
+)
 {
     return supWriteKernelVirtualMemoryWithSuperfetch(DeviceHandle,
         Address,
@@ -237,7 +241,8 @@ BOOL WINAPI LecoReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _In_ PVOID Buffer,
-    _In_ ULONG NumberOfBytes)
+    _In_ ULONG NumberOfBytes
+)
 {
     return supReadKernelVirtualMemoryWithSuperfetch(DeviceHandle,
         Address,

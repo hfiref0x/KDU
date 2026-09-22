@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.50
 *
-*  DATE:        19 Jul 2026
+*  DATE:        22 Sep 2026
 *
 *  Hamakaze main logic and entrypoint.
 *
@@ -523,17 +523,6 @@ INT KDUProcessCommandLine(
             NULL))
         {
             providerId = _strtoul(szParameter);
-            if (providerId >= KDUProvGetCount()) {
-
-                supPrintfEvent(kduEventError,
-                    "[!] Invalid provider id %lu specified, default will be used (%lu)\r\n",
-                    providerId,
-                    KDU_PROVIDER_DEFAULT);
-
-                providerId = KDU_PROVIDER_DEFAULT;
-
-            }
-
             printf_s("[+] Selected provider: %lu\r\n", providerId);
         }
 
@@ -734,7 +723,7 @@ INT KDUProcessCommandLine(
                     processId = strtou64(szParameter);
 
                     WCHAR szCmdLine[MAX_PATH] = { 0 };
-                    _strcpy(szCmdLine, L"powershell.exe"); // default command line
+                    _strcpy(szCmdLine, POWERSHELL_EXE); // default command line
 
                     ULONG_PTR level = 0;
 					BOOL openThreads = FALSE;
@@ -754,7 +743,7 @@ INT KDUProcessCommandLine(
                         RTL_NUMBER_OF(szParameter),
                         NULL))
                     {
-                        wcscpy_s(szCmdLine, szParameter);
+                        _strcpy(szCmdLine, szParameter);
                     }
 
                     if (supGetCommandLineOption(CMD_PHE,

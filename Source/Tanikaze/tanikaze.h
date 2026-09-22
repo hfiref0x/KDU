@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.50
 *
-*  DATE:        19 Sep 2026
+*  DATE:        22 Sep 2026
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -1013,6 +1013,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"Adlice RootLaser",
         (LPWSTR)L"RootLaser",
         (LPWSTR)L"RootLaser"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_KONTRON_KTAPI,
+        KDU_PROVIDER_KONTRON_KTAPI,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseMapMem,
+        KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SUPERFETCH,
+        KDUPROV_SC_ALL_DEFAULT,
+        NULL,
+        (LPWSTR)L"Kontron AG",
+        (LPWSTR)L"ktapi",
+        (LPWSTR)L"ktapi"
     }
 
 };
