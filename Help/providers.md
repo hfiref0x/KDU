@@ -73,6 +73,7 @@ Note: Provider with Id 0 is assumed as default if no -prv command is specified.
 | 63     | Point Grey Research        | PGRHostControl    | Development SDK | 2.7.0.0 and below           |     
 | 64     | LECO        | LECOMA    | Undefined | 2.3.1.0 and below           |     
 | 65     | Adlice        | RootLaser    | Adlice Protect | 3.4.1.0 and below           |   
+| 66     | Kontron AG        | KtAPI    | Undefined | Undefined           |   
 
 MSFT blacklist types:
 * Cert - by certificate used to sign the driver which makes it possible to ban huge number of files at one time.
@@ -150,6 +151,7 @@ MSFT blacklist types:
 |63        |165       |PGRHostControl         |PGRHostControl                        |PGRHostControl driver                                 |                              |FLIR Integrated Imaging Solutions, Inc.           |WinIo       |7601      |ANY       |0x00000122|0x00000007   |24824    |8D733095AC1CFCD799F58BE3B8A25800F31E6FE2|671F7A5E44856B3A785AD7824812435F43A1B73F|05E5E9F806933932CC2EE733F8D4A59F0D9FC99A|2007A5BC8617AFBB207E9FB98CC4A99DA533C6E4F059BB91D5A3B9626A87AFBD|
 |64        |166       |LECOMAx                |LECOMA64_2                            |LECO(R) LECOMA Device Driver                          |                              |LECO Corporation                                  |None        |7601      |ANY       |0x00004100|0x00000007   |18192    |EB817E8AF016F6A3ECE2B7CF421EC6D96970E285|8F21CD62CC6881811C1563930A13E7E98CE558D8|995BA4F995F0D362EEFA5AAAA81426378F12D034|22D2AA641E7E828E08E8FBA08A3DE10670C7F4134612AEA18B42FB1298EE9A5B|
 |65        |167       |RootLaser              |RootLaser                             |Adlice RootLaser                                      |                              |Microsoft Windows Hardware Compatibility Publisher|None        |7601      |ANY       |0x00000202|0x00000007   |43192    |2E70E73B9A700336EEA20E92B916817E00F053D1|6A90728AFB865D1E791C00690E7C5B3B5EF92975|10B3D478043639D6CCCE5A4623900B961AC4F299|8C0FFDABD2BAB44CB59BD50A2509F267CD744800457B9EE5E24AE0923A0DAF02|
+|66        |168       |ktapi                  |ktapi                                 |Kontron AG                                            |                              |Kontron AG                                        |None        |7601      |ANY       |0x00004100|0x00000007   |14728    |8B5CF43FBA2C2226E6146EE065490DAD17ACC820|DA72619DB2843AA91E5BA8B3467386E194F93C18|E7347EF98A98B39801C46001584CDE147DC1A142|BABFFB978EB6D993E1F6856844BB241B04F5666E7A5E6BCC91648CCC29901863|
 
 ## Notes
 
