@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.49
 *
-*  DATE:        08 Jun 2026
+*  DATE:        19 Sep 2026
 *
 *  KDU tests.
 *
@@ -288,7 +288,7 @@ VOID KDUTest()
     //KDUTestLoad();
     //TestSymbols();
     //KDUTestDSEQuery(NT_WIN11_24H2);
-    Context = KDUProviderCreate(KDU_PROVIDER_LECOMA,
+    Context = KDUProviderCreate(KDU_PROVIDER_ADLICE_ROOTLASER,
         FALSE,
         NT_WIN10_20H1,
         KDU_SHELLCODE_V1,

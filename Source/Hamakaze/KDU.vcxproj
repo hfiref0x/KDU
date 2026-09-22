@@ -139,6 +139,7 @@
     <ClCompile Include="hash.cpp" />
     <ClCompile Include="hde\hde64.c" />
     <ClCompile Include="hvdetect.cpp" />
+    <ClCompile Include="idrv\adlice.cpp" />
     <ClCompile Include="idrv\alcpu.cpp" />
     <ClCompile Include="idrv\asrdrv.cpp" />
     <ClCompile Include="idrv\atszio.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="hash.h" />
     <ClInclude Include="hde\hde64.h" />
     <ClInclude Include="hvdetect.h" />
+    <ClInclude Include="idrv\adlice.h" />
     <ClInclude Include="idrv\alcpu.h" />
     <ClInclude Include="idrv\asrdrv.h" />
     <ClInclude Include="idrv\atszio.h" />

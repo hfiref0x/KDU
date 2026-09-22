@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.50
 *
-*  DATE:        19 Jul 2026
+*  DATE:        19 Sep 2026
 *
 *  Tanikaze helper dll (part of KDU project).
 *
@@ -998,6 +998,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"LECO(R) LECOMA Device Driver",
         (LPWSTR)L"LECOMAx",
         (LPWSTR)L"LECOMA64_2"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_ADLICE_ROOTLASER,
+        KDU_PROVIDER_ADLICE_ROOTLASER,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_VIRTUAL,
+        KDUPROV_SC_ALL_DEFAULT,
+        NULL,
+        (LPWSTR)L"Adlice RootLaser",
+        (LPWSTR)L"RootLaser",
+        (LPWSTR)L"RootLaser"
     }
 
 };

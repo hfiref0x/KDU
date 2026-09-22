@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTBUILDS.H
 *
-*  VERSION:     1.29
+*  VERSION:     1.30
 *
-*  DATE:        21 May 2026
+*  DATE:        31 Jul 2026
 *
 *  Windows NT builds definition file.
 *
@@ -21,6 +21,41 @@
 //
 // Defines for Major Windows NT release builds
 //
+
+//
+// Archeology part START
+//
+
+// Windows NT 3.51
+#define NT_WIN_NT351            1057
+
+// Windows NT 4.0
+#define NT_WIN_NT4              1381
+
+// Windows 2000
+#define NT_WIN_2K               2195
+
+// Windows XP
+#define NT_WIN_XP               2600
+
+// Windows XP 64 uses same build as server
+#define NT_WIN_XP_64            3790
+
+// Windows 2003 (RTM/SP1)
+#define NT_WINSRV_2003          3790
+
+//
+// Archeology part END
+//
+
+// Windows Vista RTM
+#define NT_WIN_VISTA_RTM        6000
+
+// Windows Vista SP1
+#define NT_WIN_VISTA_SP1        6001
+
+// Windows Vista SP2
+#define NT_WIN_VISTA_SP2        6002
 
 // Windows 7 RTM
 #define NT_WIN7_RTM             7600

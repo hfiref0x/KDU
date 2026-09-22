@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.249
+*  VERSION:     1.252
 *
-*  DATE:        22 Jul 2026
+*  DATE:        12 Aug 2026
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -759,8 +759,46 @@ typedef struct _VM_COUNTERS {
     SIZE_T QuotaNonPagedPoolUsage;
     SIZE_T PagefileUsage;
     SIZE_T PeakPagefileUsage;
-    SIZE_T PrivatePageCount;
-} VM_COUNTERS;
+} VM_COUNTERS, *PVM_COUNTERS;
+
+typedef struct _VM_COUNTERS_EX {
+    SIZE_T PeakVirtualSize;             
+    SIZE_T VirtualSize;                 
+    ULONG PageFaultCount;               
+    SIZE_T PeakWorkingSetSize;          
+    SIZE_T WorkingSetSize;              
+    SIZE_T QuotaPeakPagedPoolUsage;     
+    SIZE_T QuotaPagedPoolUsage;         
+    SIZE_T QuotaPeakNonPagedPoolUsage;  
+    SIZE_T QuotaNonPagedPoolUsage;      
+    SIZE_T PagefileUsage;               
+    SIZE_T PeakPagefileUsage;           
+    SIZE_T PrivateUsage;                
+} VM_COUNTERS_EX, * PVM_COUNTERS_EX;
+
+typedef struct _VM_COUNTERS_EX2 {
+    union
+    {
+        VM_COUNTERS_EX CountersEx;
+        struct
+        {
+            SIZE_T PeakVirtualSize;             
+            SIZE_T VirtualSize;                 
+            ULONG PageFaultCount;               
+            SIZE_T PeakWorkingSetSize;          
+            SIZE_T WorkingSetSize;              
+            SIZE_T QuotaPeakPagedPoolUsage;     
+            SIZE_T QuotaPagedPoolUsage;         
+            SIZE_T QuotaPeakNonPagedPoolUsage;  
+            SIZE_T QuotaNonPagedPoolUsage;      
+            SIZE_T PagefileUsage;               
+            SIZE_T PeakPagefileUsage;           
+            SIZE_T PrivateUsage;                
+        };
+    };
+    SIZE_T PrivateWorkingSetSize;               
+    SIZE_T SharedCommitUsage;                   
+} VM_COUNTERS_EX2, * PVM_COUNTERS_EX2;
 
 typedef struct _SYSTEM_THREAD_INFORMATION {
     LARGE_INTEGER KernelTime;
@@ -804,8 +842,24 @@ typedef struct _SYSTEM_PROCESS_INFORMATION {
     ULONG HandleCount;
     ULONG SessionId;
     ULONG_PTR UniqueProcessKey;
-    VM_COUNTERS VmCounters;
-    IO_COUNTERS IoCounters;
+    SIZE_T PeakVirtualSize;                    
+    SIZE_T VirtualSize;                        
+    ULONG PageFaultCount;                      
+    SIZE_T PeakWorkingSetSize;                 
+    SIZE_T WorkingSetSize;                     
+    SIZE_T QuotaPeakPagedPoolUsage;            
+    SIZE_T QuotaPagedPoolUsage;                
+    SIZE_T QuotaPeakNonPagedPoolUsage;         
+    SIZE_T QuotaNonPagedPoolUsage;             
+    SIZE_T PagefileUsage;                      
+    SIZE_T PeakPagefileUsage;                  
+    SIZE_T PrivatePageCount;                   
+    LARGE_INTEGER ReadOperationCount;          
+    LARGE_INTEGER WriteOperationCount;         
+    LARGE_INTEGER OtherOperationCount;         
+    LARGE_INTEGER ReadTransferCount;           
+    LARGE_INTEGER WriteTransferCount;          
+    LARGE_INTEGER OtherTransferCount;           
     SYSTEM_THREAD_INFORMATION Threads[1]; //not a part of this structure
 } SYSTEM_PROCESS_INFORMATION, *PSYSTEM_PROCESS_INFORMATION;
 
@@ -927,26 +981,111 @@ typedef struct _SYSTEM_BASIC_INFORMATION {
     CCHAR NumberOfProcessors;
 } SYSTEM_BASIC_INFORMATION, *PSYSTEM_BASIC_INFORMATION;
 
+typedef struct _SYSTEM_PERFORMANCE_INFORMATION {
+    LARGE_INTEGER IdleProcessTime;
+    LARGE_INTEGER IoReadTransferCount;
+    LARGE_INTEGER IoWriteTransferCount;
+    LARGE_INTEGER IoOtherTransferCount;
+    ULONG IoReadOperationCount;
+    ULONG IoWriteOperationCount;
+    ULONG IoOtherOperationCount;
+    ULONG AvailablePages;
+    ULONG CommittedPages;
+    ULONG CommitLimit;
+    ULONG PeakCommitment;
+    ULONG PageFaultCount;
+    ULONG CopyOnWriteCount;
+    ULONG TransitionCount;
+    ULONG CacheTransitionCount;
+    ULONG DemandZeroCount;
+    ULONG PageReadCount;
+    ULONG PageReadIoCount;
+    ULONG CacheReadCount;
+    ULONG CacheIoCount;
+    ULONG DirtyPagesWriteCount;
+    ULONG DirtyWriteIoCount;
+    ULONG MappedPagesWriteCount;
+    ULONG MappedWriteIoCount;
+    ULONG PagedPoolPages;
+    ULONG NonPagedPoolPages;
+    ULONG PagedPoolAllocs;
+    ULONG PagedPoolFrees;
+    ULONG NonPagedPoolAllocs;
+    ULONG NonPagedPoolFrees;
+    ULONG FreeSystemPtes;
+    ULONG ResidentSystemCodePage;
+    ULONG TotalSystemDriverPages;
+    ULONG TotalSystemCodePages;
+    ULONG NonPagedPoolLookasideHits;
+    ULONG PagedPoolLookasideHits;
+    ULONG AvailablePagedPoolPages;
+    ULONG ResidentSystemCachePage;
+    ULONG ResidentPagedPoolPage;
+    ULONG ResidentSystemDriverPage;
+    ULONG CcFastReadNoWait;
+    ULONG CcFastReadWait;
+    ULONG CcFastReadResourceMiss;
+    ULONG CcFastReadNotPossible;
+    ULONG CcFastMdlReadNoWait;
+    ULONG CcFastMdlReadWait;
+    ULONG CcFastMdlReadResourceMiss;
+    ULONG CcFastMdlReadNotPossible;
+    ULONG CcMapDataNoWait;
+    ULONG CcMapDataWait;
+    ULONG CcMapDataNoWaitMiss;
+    ULONG CcMapDataWaitMiss;
+    ULONG CcPinMappedDataCount;
+    ULONG CcPinReadNoWait;
+    ULONG CcPinReadWait;
+    ULONG CcPinReadNoWaitMiss;
+    ULONG CcPinReadWaitMiss;
+    ULONG CcCopyReadNoWait;
+    ULONG CcCopyReadWait;
+    ULONG CcCopyReadNoWaitMiss;
+    ULONG CcCopyReadWaitMiss;
+    ULONG CcMdlReadNoWait;
+    ULONG CcMdlReadWait;
+    ULONG CcMdlReadNoWaitMiss;
+    ULONG CcMdlReadWaitMiss;
+    ULONG CcReadAheadIos;
+    ULONG CcLazyWriteIos;
+    ULONG CcLazyWritePages;
+    ULONG CcDataFlushes;
+    ULONG CcDataPages;
+    ULONG ContextSwitches;
+    ULONG FirstLevelTbFills;
+    ULONG SecondLevelTbFills;
+    ULONG SystemCalls;
+    ULONGLONG CcTotalDirtyPages;
+    ULONGLONG CcDirtyPageThreshold;
+    LONGLONG ResidentAvailablePages;
+    ULONGLONG SharedCommittedPages;
+    ULONGLONG MdlPagesAllocated;
+    ULONGLONG PfnDatabaseCommittedPages;
+    ULONGLONG SystemPageTableCommittedPages;
+    ULONGLONG ContiguousPagesAllocated;
+} SYSTEM_PERFORMANCE_INFORMATION, * PSYSTEM_PERFORMANCE_INFORMATION;
+
 typedef struct _SYSTEM_ISOLATED_USER_MODE_INFORMATION {
-	BOOLEAN SecureKernelRunning : 1;
-	BOOLEAN HvciEnabled : 1;
-	BOOLEAN HvciStrictMode : 1;
-	BOOLEAN DebugEnabled : 1;
-	BOOLEAN FirmwarePageProtection : 1;
-	BOOLEAN EncryptionKeyAvailable : 1;
-	BOOLEAN SpareFlags : 2;
-	BOOLEAN TrustletRunning : 1;
-	BOOLEAN HvciDisableAllowed : 1;
-	BOOLEAN HardwareEnforcedVbs : 1;
-	BOOLEAN NoSecrets : 1;
-	BOOLEAN EncryptionKeyPersistent : 1;
-	BOOLEAN HardwareEnforcedHvpt : 1;
-	BOOLEAN HardwareHvptAvailable : 1;
-	BOOLEAN SpareFlags2 : 1;
-	BOOLEAN EncryptionKeyTpmBound : 1;
-	BOOLEAN Spare0[5];
-	ULONGLONG Spare1;
-} SYSTEM_ISOLATED_USER_MODE_INFORMATION, * PSYSTEM_ISOLATED_USER_MODE_INFORMATION;
+    BOOLEAN SecureKernelRunning : 1;
+    BOOLEAN HvciEnabled : 1;
+    BOOLEAN HvciStrictMode : 1;
+    BOOLEAN DebugEnabled : 1;
+    BOOLEAN FirmwarePageProtection : 1;
+    BOOLEAN EncryptionKeyAvailable : 1;
+    BOOLEAN SpareFlags : 2;
+    BOOLEAN TrustletRunning : 1;
+    BOOLEAN HvciDisableAllowed : 1;
+    BOOLEAN HardwareEnforcedVbs : 1;
+    BOOLEAN NoSecrets : 1;
+    BOOLEAN EncryptionKeyPersistent : 1;
+    BOOLEAN HardwareEnforcedHvpt : 1;
+    BOOLEAN HardwareHvptAvailable : 1;
+    BOOLEAN SpareFlags2 : 1;
+    BOOLEAN EncryptionKeyTpmBound : 1;
+    BOOLEAN Spare0[5];
+    ULONGLONG Spare1;
+} SYSTEM_ISOLATED_USER_MODE_INFORMATION, *PSYSTEM_ISOLATED_USER_MODE_INFORMATION;
 
 typedef struct _SYSTEM_PROCESSOR_FEATURES_INFORMATION { //chappell
     ULONGLONG ProcessorFeatureBits;
@@ -1020,6 +1159,25 @@ typedef struct _SYSTEM_BIGPOOL_INFORMATION {
 typedef struct _SYSTEM_FIRMWARE_PARTITION_INFORMATION {
     UNICODE_STRING FirmwarePartition; // \Device\HarddiskX
 } SYSTEM_FIRMWARE_PARTITION_INFORMATION, * PSYSTEM_FIRMWARE_PARTITION_INFORMATION;
+
+typedef struct _SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION {
+    LARGE_INTEGER IdleTime;
+    LARGE_INTEGER KernelTime;
+    LARGE_INTEGER UserTime;
+    LARGE_INTEGER DpcTime;
+    LARGE_INTEGER InterruptTime;
+    ULONG InterruptCount;
+    ULONG Spare0;
+} SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION, * PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION;
+
+_Struct_size_bytes_(NextEntryOffset)
+typedef struct _SYSTEM_PAGEFILE_INFORMATION {
+    ULONG NextEntryOffset;
+    ULONG TotalSize;
+    ULONG TotalInUse;
+    ULONG PeakUsage;
+    UNICODE_STRING PageFileName;
+} SYSTEM_PAGEFILE_INFORMATION, * PSYSTEM_PAGEFILE_INFORMATION;
 
 typedef struct _RTL_PROCESS_BACKTRACE_INFORMATION {
     PCHAR SymbolicBackTrace;
@@ -5790,6 +5948,7 @@ typedef enum _MEMORY_INFORMATION_CLASS {
     MemoryPhysicalContiguityInformation,
     MemoryBadInformation,
     MemoryBadInformationAllProcesses,
+    MemoryImageExtensionInformation,
     MaxMemoryInfoClass
 } MEMORY_INFORMATION_CLASS, *PMEMORY_INFORMATION_CLASS;
 
@@ -5967,6 +6126,19 @@ typedef struct _MEMORY_WORKING_SET_EX_INFORMATION {
         ULONG_PTR Long;
     } u1;
 } MEMORY_WORKING_SET_EX_INFORMATION, * PMEMORY_WORKING_SET_EX_INFORMATION;
+
+typedef enum _MEMORY_IMAGE_EXTENSION_TYPE {
+    MemoryImageExtensionCfgScp,
+    MemoryImageExtensionCfgEmulatedScp,
+    MemoryImageExtensionTypeMax,
+} MEMORY_IMAGE_EXTENSION_TYPE;
+
+typedef struct _MEMORY_IMAGE_EXTENSION_INFORMATION {
+    MEMORY_IMAGE_EXTENSION_TYPE ExtensionType;
+    ULONG Flags;
+    PVOID ExtensionImageBaseRva;
+    SIZE_T ExtensionSize;
+} MEMORY_IMAGE_EXTENSION_INFORMATION, * PMEMORY_IMAGE_EXTENSION_INFORMATION;
 
 #define MM_ZERO_ACCESS         0  // this value is not used.
 #define MM_READONLY            1
@@ -10647,6 +10819,8 @@ RtlWow64SetThreadContext(
 *
 ************************************************************************************/
 
+#define RtlProcessHeap() (NtCurrentPeb()->ProcessHeap)
+
 typedef NTSTATUS(NTAPI * PRTL_HEAP_COMMIT_ROUTINE)(
     _In_  PVOID Base,
     _Inout_ PVOID *CommitAddress,
@@ -10770,6 +10944,33 @@ NTAPI
 RtlEnumProcessHeaps(
     _In_ PRTL_ENUM_HEAPS_ROUTINE EnumRoutine,
     _In_ PVOID Parameter);
+
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlValidateHeap(
+    _In_opt_ HANDLE HeapHandle,
+    _In_ ULONG Flags,
+    _In_opt_ PVOID BaseAddress);
+
+NTSYSAPI
+SIZE_T
+NTAPI
+RtlCompactHeap(
+    _In_ HANDLE HeapHandle,
+    _In_ ULONG Flags);
+
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlLockHeap(
+    _In_ HANDLE HeapHandle);
+
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlUnlockHeap(
+    _In_ HANDLE HeapHandle);
 
 /************************************************************************************
 *
@@ -11079,6 +11280,132 @@ RtlCaptureStackBackTrace(
     _In_ ULONG FramesToCapture,
     _Out_writes_to_(FramesToCapture, return) PVOID* BackTrace,
     _Out_opt_ PULONG BackTraceHash);
+
+typedef struct _RTL_PROCESS_MODULES* PRTL_PROCESS_MODULES;
+typedef struct _RTL_PROCESS_MODULE_INFORMATION_EX* PRTL_PROCESS_MODULE_INFORMATION_EX;
+typedef struct _RTL_PROCESS_BACKTRACES* PRTL_PROCESS_BACKTRACES;
+typedef struct _RTL_PROCESS_LOCKS* PRTL_PROCESS_LOCKS;
+
+typedef struct _RTL_PROCESS_VERIFIER_OPTIONS {
+    ULONG SizeStruct;
+    ULONG Option;
+    UCHAR OptionData[1];
+} RTL_PROCESS_VERIFIER_OPTIONS, * PRTL_PROCESS_VERIFIER_OPTIONS;
+
+typedef struct _RTL_DEBUG_INFORMATION {
+    HANDLE SectionHandleClient;
+    PVOID ViewBaseClient;
+    PVOID ViewBaseTarget;
+    ULONG_PTR ViewBaseDelta;
+    HANDLE EventPairClient;
+    HANDLE EventPairTarget;
+    HANDLE TargetProcessId;
+    HANDLE TargetThreadHandle;
+    ULONG Flags;
+    SIZE_T OffsetFree;
+    SIZE_T CommitSize;
+    SIZE_T ViewSize;
+    union
+    {
+        PRTL_PROCESS_MODULES Modules;
+        PRTL_PROCESS_MODULE_INFORMATION_EX ModulesEx;
+    };
+    PRTL_PROCESS_BACKTRACES BackTraces;
+    PVOID Heaps;
+    PRTL_PROCESS_LOCKS Locks;
+    PVOID SpecificHeap;
+    HANDLE TargetProcessHandle;
+    PRTL_PROCESS_VERIFIER_OPTIONS VerifierOptions;
+    PVOID ProcessHeap;
+    HANDLE CriticalSectionHandle;
+    HANDLE CriticalSectionOwnerThread;
+    PVOID Reserved[4];
+} RTL_DEBUG_INFORMATION, * PRTL_DEBUG_INFORMATION;
+
+NTSYSAPI
+PRTL_DEBUG_INFORMATION
+NTAPI
+RtlCreateQueryDebugBuffer(
+    _In_opt_ ULONG MaximumCommit,
+    _In_ BOOLEAN UseEventPair);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlDestroyQueryDebugBuffer(
+    _In_ PRTL_DEBUG_INFORMATION Buffer);
+
+#define RTL_QUERY_PROCESS_MODULES 0x00000001
+#define RTL_QUERY_PROCESS_BACKTRACES 0x00000002
+#define RTL_QUERY_PROCESS_HEAP_SUMMARY 0x00000004 
+#define RTL_QUERY_PROCESS_HEAP_TAGS 0x00000008
+#define RTL_QUERY_PROCESS_HEAP_ENTRIES 0x00000010 
+#define RTL_QUERY_PROCESS_LOCKS 0x00000020
+#define RTL_QUERY_PROCESS_MODULES32 0x00000040 
+#define RTL_QUERY_PROCESS_VERIFIER_OPTIONS 0x00000080 
+#define RTL_QUERY_PROCESS_MODULESEX 0x00000100 
+#define RTL_QUERY_PROCESS_HEAP_SEGMENTS 0x00000200 
+#define RTL_QUERY_PROCESS_CS_OWNER 0x00000400 
+#define RTL_QUERY_PROCESS_USE_CURRENT_PROCESS 0x40000000 
+#define RTL_QUERY_PROCESS_NONINVASIVE 0x80000000 
+#define RTL_QUERY_PROCESS_NONINVASIVE_CS_OWNER 0x80000800 
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlQueryProcessDebugInformation(
+    _In_ HANDLE UniqueProcessId,
+    _In_ ULONG Flags,
+    _Inout_ PRTL_DEBUG_INFORMATION Buffer);
+
+// Windows 7/8/10
+typedef struct _RTL_HEAP_INFORMATION_V1 {
+    PVOID BaseAddress;
+    ULONG Flags;
+    USHORT EntryOverhead;
+    USHORT CreatorBackTraceIndex;
+    SIZE_T BytesAllocated;
+    SIZE_T BytesCommitted;
+    ULONG NumberOfTags;
+    ULONG NumberOfEntries;
+    ULONG NumberOfPseudoTags;
+    ULONG PseudoTagGranularity;
+    ULONG Reserved[5];
+    PVOID Tags;
+    PVOID Entries;
+} RTL_HEAP_INFORMATION_V1, * PRTL_HEAP_INFORMATION_V1;
+
+// Windows 11 > 22000
+typedef struct _RTL_HEAP_INFORMATION_V2 {
+    PVOID BaseAddress;
+    ULONG Flags;
+    USHORT EntryOverhead;
+    USHORT CreatorBackTraceIndex;
+    SIZE_T BytesAllocated;
+    SIZE_T BytesCommitted;
+    ULONG NumberOfTags;
+    ULONG NumberOfEntries;
+    ULONG NumberOfPseudoTags;
+    ULONG PseudoTagGranularity;
+    ULONG Reserved[5];
+    PVOID Tags;
+    PVOID Entries;
+    ULONG64 HeapTag;
+} RTL_HEAP_INFORMATION_V2, * PRTL_HEAP_INFORMATION_V2;
+
+#define RTL_HEAP_SIGNATURE 0xFFEEFFEEUL
+#define RTL_HEAP_SEGMENT_SIGNATURE 0xDDEEDDEEUL
+
+typedef struct _RTL_PROCESS_HEAPS_V1 {
+    ULONG NumberOfHeaps;
+    _Field_size_(NumberOfHeaps) RTL_HEAP_INFORMATION_V1 Heaps[1];
+} RTL_PROCESS_HEAPS_V1, * PRTL_PROCESS_HEAPS_V1;
+
+typedef struct _RTL_PROCESS_HEAPS_V2 {
+    ULONG NumberOfHeaps;
+    _Field_size_(NumberOfHeaps) RTL_HEAP_INFORMATION_V2 Heaps[1];
+} RTL_PROCESS_HEAPS_V2, * PRTL_PROCESS_HEAPS_V2;
+
 
 /************************************************************************************
 *
@@ -11493,6 +11820,123 @@ RtlSetIoCompletionCallback(
 
 /************************************************************************************
 *
+* RTL WNF (Windows Notification Facility support.
+*
+************************************************************************************/
+
+#define WNF_STATE_KEY 0x41C64E6DA3BC0074
+
+typedef ULONG WNF_CHANGE_STAMP, * PWNF_CHANGE_STAMP;
+
+typedef enum _WNF_STATE_NAME_INFORMATION {
+    WnfInfoStateNameExist,
+    WnfInfoSubscribersPresent,
+    WnfInfoIsQuiescent
+} WNF_STATE_NAME_INFORMATION;
+
+typedef struct _WNF_STATE_NAME {
+    union
+    {
+        ULONGLONG Value;
+        ULONG Data[2];
+        struct
+        {
+            ULONG64 Version : 4;
+            ULONG64 NameLifetime : 2;
+            ULONG64 DataScope : 4;
+            ULONG64 PermanentData : 1;
+            ULONG64 Unique : 53;
+        };
+    };
+} WNF_STATE_NAME, * PWNF_STATE_NAME;
+typedef const WNF_STATE_NAME* PCWNF_STATE_NAME;
+
+typedef enum _WNF_STATE_NAME_LIFETIME {
+    WnfWellKnownStateName,
+    WnfPermanentStateName,
+    WnfPersistentStateName,
+    WnfTemporaryStateName
+} WNF_STATE_NAME_LIFETIME;
+
+typedef enum _WNF_DATA_SCOPE {
+    WnfDataScopeSystem,
+    WnfDataScopeSession,
+    WnfDataScopeUser,
+    WnfDataScopeProcess,
+    WnfDataScopeMachine,
+    WnfDataScopePhysicalMachine,
+} WNF_DATA_SCOPE;
+
+typedef struct _WNF_TYPE_ID {
+    GUID TypeId;
+} WNF_TYPE_ID, * PWNF_TYPE_ID;
+typedef const WNF_TYPE_ID* PCWNF_TYPE_ID;
+
+_Must_inspect_result_
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlEqualWnfChangeStamps(
+    _In_ WNF_CHANGE_STAMP ChangeStamp1,
+    _In_ WNF_CHANGE_STAMP ChangeStamp2);
+
+_Always_(_Post_satisfies_(return == STATUS_NO_MEMORY || return == STATUS_RETRY || return == STATUS_SUCCESS))
+typedef _Function_class_(WNF_USER_CALLBACK)
+NTSTATUS NTAPI WNF_USER_CALLBACK(
+    _In_ WNF_STATE_NAME StateName,
+    _In_ WNF_CHANGE_STAMP ChangeStamp,
+    _In_opt_ PWNF_TYPE_ID TypeId,
+    _In_opt_ PVOID CallbackContext,
+    _In_reads_bytes_opt_(Length) const VOID* Buffer,
+    _In_ ULONG Length);
+
+typedef WNF_USER_CALLBACK* PWNF_USER_CALLBACK;
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlQueryWnfStateData(
+    _Out_ PWNF_CHANGE_STAMP ChangeStamp,
+    _In_ WNF_STATE_NAME StateName,
+    _In_ PWNF_USER_CALLBACK Callback,
+    _In_opt_ PVOID CallbackContext,
+    _In_opt_ PWNF_TYPE_ID TypeId);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlPublishWnfStateData(
+    _In_ WNF_STATE_NAME StateName,
+    _In_opt_ PCWNF_TYPE_ID TypeId,
+    _In_reads_bytes_opt_(Length) const VOID * Buffer,
+    _In_opt_ ULONG Length,
+    _In_opt_ const VOID * ExplicitScope);
+
+typedef struct WNF_USER_SUBSCRIPTION* PWNF_USER_SUBSCRIPTION;
+
+#define WNF_CREATE_SERIALIZATION_GROUP_FLAG 0x00000001L
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlSubscribeWnfStateChangeNotification(
+    _Out_ PWNF_USER_SUBSCRIPTION * SubscriptionHandle,
+    _In_ WNF_STATE_NAME StateName,
+    _In_ WNF_CHANGE_STAMP ChangeStamp,
+    _In_ PWNF_USER_CALLBACK Callback,
+    _In_opt_ PVOID CallbackContext,
+    _In_opt_ PCWNF_TYPE_ID TypeId,
+    _In_opt_ ULONG SerializationGroup,
+    _In_ ULONG Flags);
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlUnsubscribeWnfStateChangeNotification(
+    _In_ PWNF_USER_SUBSCRIPTION SubscriptionHandle);
+
+/************************************************************************************
+*
 * RTL data exports.
 *
 ************************************************************************************/
@@ -11515,13 +11959,39 @@ NTSYSAPI UNICODE_STRING RtlNtPathSeperatorString;
 *
 ************************************************************************************/
 
+#ifndef EVENT_DESCRIPTOR_DEF
+#define EVENT_DESCRIPTOR_DEF
+typedef struct _EVENT_DESCRIPTOR {
+    USHORT Id;
+    UCHAR Version;
+    UCHAR Channel;
+    UCHAR Level;
+    UCHAR Opcode;
+    USHORT Task;
+    ULONGLONG Keyword;
+} EVENT_DESCRIPTOR, * PEVENT_DESCRIPTOR;
+typedef const EVENT_DESCRIPTOR* PCEVENT_DESCRIPTOR;
+
+typedef enum _EVENT_INFO_CLASS {
+    EventProviderBinaryTrackInfo,
+    EventProviderSetReserved1,
+    EventProviderSetTraits,
+    EventProviderUseDescriptorType,
+    MaxEventInfo
+} EVENT_INFO_CLASS;
+#endif
+
+typedef struct _EVENT_FILTER_DESCRIPTOR* PEVENT_FILTER_DESCRIPTOR;
+typedef struct _EVENT_DATA_DESCRIPTOR EVENT_DATA_DESCRIPTOR, * PEVENT_DATA_DESCRIPTOR;
+typedef enum _EVENT_INFO_CLASS EVENT_INFO_CLASS;
+
 typedef VOID(NTAPI *PETWENABLECALLBACK)(
     _In_ LPCGUID SourceId,
     _In_ ULONG IsEnabled,
     _In_ UCHAR Level,
     _In_ ULONGLONG MatchAnyKeyword,
     _In_ ULONGLONG MatchAllKeyword,
-    _In_opt_ /*EVENT_FILTER_DESCRIPTOR*/ PVOID FilterData,
+    _In_opt_ PEVENT_FILTER_DESCRIPTOR FilterData,
     _Inout_opt_ PVOID CallbackContext
     );
 
@@ -11537,12 +12007,26 @@ EtwEventRegister(
 NTSYSAPI
 ULONG
 NTAPI
+EtwEventUnregister(
+    _In_ REGHANDLE RegHandle);
+
+NTSYSAPI
+ULONG
+NTAPI
 EtwEventWriteNoRegistration(
     _In_ LPCGUID ProviderId,
-    _In_ /*PCEVENT_DESCRIPTOR*/ PVOID EventDescriptor,
+    _In_ PCEVENT_DESCRIPTOR EventDescriptor,
     _In_ ULONG UserDataCount,
-    _In_reads_opt_(UserDataCount) /*PEVENT_DATA_DESCRIPTOR*/PVOID UserData);
+    _In_reads_opt_(UserDataCount) PEVENT_DATA_DESCRIPTOR UserData);
 
+NTSYSAPI
+ULONG
+NTAPI
+EtwEventSetInformation(
+    _In_ REGHANDLE RegHandle,
+    _In_ EVENT_INFO_CLASS InformationClass,
+    _In_reads_bytes_(InformationLength) PVOID EventInformation,
+    _In_ ULONG InformationLength);
 
 /*
 ** Runtime Library API END
@@ -12033,52 +12517,6 @@ NtReleaseSemaphore(
 * WNF API.
 *
 ************************************************************************************/
-
-typedef ULONG WNF_CHANGE_STAMP, * PWNF_CHANGE_STAMP;
-
-typedef enum _WNF_STATE_NAME_INFORMATION {
-    WnfInfoStateNameExist,
-    WnfInfoSubscribersPresent,
-    WnfInfoIsQuiescent
-} WNF_STATE_NAME_INFORMATION;
-
-typedef struct _WNF_STATE_NAME {
-    union
-    {
-        ULONGLONG Value;
-        ULONG Data[2];
-        struct
-        {
-            ULONG64 Version : 4;
-            ULONG64 NameLifetime : 2;
-            ULONG64 DataScope : 4;
-            ULONG64 PermanentData : 1;
-            ULONG64 Unique : 53;
-        };
-    };
-} WNF_STATE_NAME, * PWNF_STATE_NAME;
-typedef const WNF_STATE_NAME* PCWNF_STATE_NAME;
-
-typedef enum _WNF_STATE_NAME_LIFETIME {
-    WnfWellKnownStateName,
-    WnfPermanentStateName,
-    WnfPersistentStateName,
-    WnfTemporaryStateName
-} WNF_STATE_NAME_LIFETIME;
-
-typedef enum _WNF_DATA_SCOPE {
-    WnfDataScopeSystem,
-    WnfDataScopeSession,
-    WnfDataScopeUser,
-    WnfDataScopeProcess,
-    WnfDataScopeMachine,
-    WnfDataScopePhysicalMachine,
-} WNF_DATA_SCOPE;
-
-typedef struct _WNF_TYPE_ID {
-    GUID TypeId;
-} WNF_TYPE_ID, * PWNF_TYPE_ID;
-typedef const WNF_TYPE_ID* PCWNF_TYPE_ID;
 
 NTSYSAPI
 NTSTATUS

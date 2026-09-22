@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.05
 *
-*  DATE:        12 Jun 2026
+*  DATE:        12 Sep 2026
 *
 *  DBPACK - KDU's Provider Database packager.
 *
@@ -425,8 +425,10 @@ int main()
         "dbmanifest.txt",
         "kdu.db"))
     {
+        printf_s("Error during building KDU external database file\n");
         return 1;
     }
 
+    printf_s("Successfully built KDU external database file\n");
     return 0;
 }

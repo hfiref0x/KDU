@@ -4,9 +4,9 @@
 *
 *  TITLE:       NTSUP.C
 *
-*  VERSION:     2.29
+*  VERSION:     2.34
 *
-*  DATE:        22 Jul 2026
+*  DATE:        18 Aug 2026
 *
 *  Native API support functions.
 *
@@ -23,19 +23,12 @@
 
 #pragma warning(push)
 #pragma warning(disable: 26812) // Prefer 'enum class' over 'enum'
-#pragma warning(disable: 6320) // exception may mask
+#pragma warning(disable: 6320)  // exception may mask
 
 /*
-* 
-* SHA256 algo (used by Ronova so keep it here).
-* 
+* Ronova port start.
+* SHA256 algo.
 */
-
-typedef struct _NTSUP_SHA256_CTX {
-    ULONG State[8];
-    ULONG64 BitCount;
-    UCHAR Buffer[64];
-} NTSUP_SHA256_CTX, * PNTSUP_SHA256_CTX;
 
 #define NTSUP_ROTR32(v,b) _rotr(v,b)
 #define NTSUP_CH(x,y,z)   (((x) & (y)) ^ ((~x) & (z)))
@@ -210,6 +203,1210 @@ VOID ntsupSha256Final(
 }
 
 /*
+* ntsupIsAddressValid
+*
+* Purpose:
+*
+* Validates that a given virtual memory address range is accessible
+* in the current process address space.
+*
+* The routine checks:
+*
+* - Address is not NULL.
+* - Memory region can be queried using NtQueryVirtualMemory.
+* - Memory state is committed (MEM_COMMIT).
+* - Memory protection does not include PAGE_NOACCESS.
+* - Memory protection does not include PAGE_GUARD.
+* - Requested size fits completely inside the queried memory region.
+*
+*/
+BOOLEAN NTAPI ntsupIsAddressValid(
+    _In_ PVOID Address,
+    _In_ SIZE_T Size
+)
+{
+    MEMORY_BASIC_INFORMATION mbi;
+    NTSTATUS status;
+
+    if (Address == NULL)
+        return FALSE;
+
+    status = NtQueryVirtualMemory(
+        NtCurrentProcess(),
+        Address,
+        MemoryBasicInformation,
+        &mbi,
+        sizeof(mbi),
+        NULL);
+
+    if (!NT_SUCCESS(status))
+        return FALSE;
+
+    if (mbi.State != MEM_COMMIT)
+        return FALSE;
+
+    if (mbi.Protect & PAGE_NOACCESS)
+        return FALSE;
+
+    if (mbi.Protect & PAGE_GUARD)
+        return FALSE;
+
+    if (Size != 0) {
+
+        if ((ULONG_PTR)Address < (ULONG_PTR)mbi.BaseAddress)
+            return FALSE;
+
+        if (((ULONG_PTR)Address + Size) >
+            ((ULONG_PTR)mbi.BaseAddress + mbi.RegionSize))
+        {
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+/*
+* Ronova port end.
+*/
+
+/*
+* ntsupStrChrW
+*
+* Purpose:
+*
+* Returns a pointer to the first occurrence of Character in String
+* (including the terminator if Character is 0), or NULL if not found.
+*
+*/
+LPWSTR ntsupStrChrW(
+    _In_z_ LPCWSTR String,
+    _In_ WCHAR Character
+)
+{
+    while (*String != UNICODE_NULL) {
+        if (*String == Character)
+            return (LPWSTR)String;
+        String++;
+    }
+
+    if (Character == UNICODE_NULL)
+        return (LPWSTR)String;
+
+    return NULL;
+}
+
+/*
+* ntsupStrChrA
+*
+* Purpose:
+*
+* Returns a pointer to the first occurrence of Character in String
+* (including the terminator if Character is 0), or NULL if not found.
+*
+*/
+LPSTR ntsupStrChrA(
+    _In_z_ LPCSTR String,
+    _In_ CHAR Character
+)
+{
+    while (*String != ANSI_NULL) {
+        if (*String == Character)
+            return (LPSTR)String;
+        String++;
+    }
+
+    if (Character == ANSI_NULL)
+        return (LPSTR)String;
+
+    return NULL;
+}
+
+/*
+* ntsupStrLenA
+*
+* Purpose:
+*
+* Returns the length, in characters, of a null-terminated ANSI string, or 0 if the pointer is NULL.
+*
+*/
+SIZE_T ntsupStrLenA(
+    _In_opt_ LPCSTR String
+)
+{
+    LPCSTR String0 = String;
+
+    if (String == NULL)
+        return 0;
+
+    while (*String != ANSI_NULL)
+        String++;
+
+    return (SIZE_T)(String - String0);
+}
+
+/*
+* ntsupStrLenW
+*
+* Purpose:
+*
+* Returns the length, in characters, of a null-terminated UTF-16 string, or 0 if the pointer is NULL.
+*
+*/
+SIZE_T ntsupStrLenW(
+    _In_opt_ LPCWSTR String
+)
+{
+    LPCWSTR String0 = String;
+
+    if (String == NULL)
+        return 0;
+
+    while (*String != UNICODE_NULL)
+        String++;
+
+    return (SIZE_T)(String - String0);
+}
+
+/*
+* ntsupStrCmpA
+*
+* Purpose:
+*
+* Performs a case-sensitive comparison of two null-terminated ANSI strings.
+*
+*/
+INT ntsupStrCmpA(
+    _In_opt_ LPCSTR String1,
+    _In_opt_ LPCSTR String2
+)
+{
+    CHAR c1, c2;
+
+    if (String1 == String2)
+        return 0;
+
+    if (String1 == NULL)
+        return -1;
+
+    if (String2 == NULL)
+        return 1;
+
+    do {
+        c1 = *String1;
+        c2 = *String2;
+        String1++;
+        String2++;
+    } while ((c1 != ANSI_NULL) && (c1 == c2));
+
+    return (INT)(c1 - c2);
+}
+
+/*
+* ntsupStrCmpW
+*
+* Purpose:
+*
+* Performs a case-sensitive comparison of two null-terminated UTF-16 strings.
+*
+*/
+INT ntsupStrCmpW(
+    _In_opt_ LPCWSTR String1,
+    _In_opt_ LPCWSTR String2
+)
+{
+    WCHAR c1, c2;
+
+    if (String1 == String2)
+        return 0;
+
+    if (String1 == NULL)
+        return -1;
+
+    if (String2 == NULL)
+        return 1;
+
+    do {
+        c1 = *String1;
+        c2 = *String2;
+        String1++;
+        String2++;
+    } while ((c1 != UNICODE_NULL) && (c1 == c2));
+
+    return (INT)(c1 - c2);
+}
+
+/*
+* ntsupStrCmpIA
+*
+* Purpose:
+*
+* Performs a case-insensitive comparison of two null-terminated ANSI strings.
+*
+*/
+INT ntsupStrCmpIA(
+    _In_opt_ LPCSTR String1,
+    _In_opt_ LPCSTR String2
+)
+{
+    CHAR c1, c2;
+
+    if (String1 == String2)
+        return 0;
+
+    if (String1 == NULL)
+        return -1;
+
+    if (String2 == NULL)
+        return 1;
+
+    do {
+        c1 = ntsupLowerCharA(*String1);
+        c2 = ntsupLowerCharA(*String2);
+        String1++;
+        String2++;
+    } while ((c1 != ANSI_NULL) && (c1 == c2));
+
+    return (INT)(c1 - c2);
+}
+
+/*
+* ntsupStrCmpIW
+*
+* Purpose:
+*
+* Performs a case-insensitive comparison of two null-terminated UTF-16 strings.
+*
+*/
+INT ntsupStrCmpIW(
+    _In_opt_ LPCWSTR String1,
+    _In_opt_ LPCWSTR String2
+)
+{
+    WCHAR c1, c2;
+
+    if (String1 == String2)
+        return 0;
+
+    if (String1 == NULL)
+        return -1;
+
+    if (String2 == NULL)
+        return 1;
+
+    do {
+        c1 = ntsupLowerCharW(*String1);
+        c2 = ntsupLowerCharW(*String2);
+        String1++;
+        String2++;
+    } while ((c1 != UNICODE_NULL) && (c1 == c2));
+
+    return (INT)(c1 - c2);
+}
+
+/*
+* ntsupStrCopyA
+*
+* Purpose:
+*
+* Copies a null-terminated ANSI string from Source to Destination
+* (unbounded, caller-guaranteed capacity).
+*
+*/
+LPSTR ntsupStrCopyA(
+    _Out_writes_z_(_String_length_(Source) + 1) LPSTR Destination,
+    _In_z_ LPCSTR Source
+)
+{
+    LPSTR p;
+
+    if ((Destination == NULL) || (Source == NULL))
+        return Destination;
+
+    p = Destination;
+
+    while (*Source != ANSI_NULL) {
+        *p = *Source;
+        p++;
+        Source++;
+    }
+
+    *p = ANSI_NULL;
+
+    return Destination;
+}
+
+/*
+* ntsupStrCopyW
+*
+* Purpose:
+*
+* Copies a null-terminated wide-character (UTF-16) string from Source to Destination
+* (unbounded, caller-guaranteed capacity)
+*
+*/
+LPWSTR ntsupStrCopyW(
+    _Out_writes_z_(_String_length_(Source) + 1) LPWSTR Destination,
+    _In_z_ LPCWSTR Source
+)
+{
+    LPWSTR p;
+
+    if ((Destination == NULL) || (Source == NULL))
+        return Destination;
+
+    p = Destination;
+
+    while (*Source != UNICODE_NULL) {
+        *p = *Source;
+        p++;
+        Source++;
+    }
+
+    *p = UNICODE_NULL;
+
+    return Destination;
+}
+
+/*
+* ntsupStrNCopyA
+*
+* Purpose:
+*
+* Copies up to SourceCount characters from an ANSI source string
+* into a fixed-size destination buffer, always null-terminating.
+*
+*/
+LPSTR ntsupStrNCopyA(
+    _Out_writes_z_(DestinationCount) LPSTR Destination,
+    _In_ SIZE_T DestinationCount,
+    _In_reads_(SourceCount) LPCSTR Source,
+    _In_ SIZE_T SourceCount
+)
+{
+    LPSTR p;
+
+    if ((Destination == NULL) || (Source == NULL) || (DestinationCount == 0))
+        return Destination;
+
+    DestinationCount--;
+    p = Destination;
+
+    while ((*Source != ANSI_NULL) &&
+        (DestinationCount > 0) &&
+        (SourceCount > 0))
+    {
+        *p = *Source;
+        p++;
+        Source++;
+        DestinationCount--;
+        SourceCount--;
+    }
+
+    *p = ANSI_NULL;
+
+    return Destination;
+}
+
+/*
+* ntsupStrNCopyW
+*
+* Purpose:
+*
+* Copies up to SourceCount characters from a UTF-16 source string
+* into a fixed-size destination buffer, always null-terminating.
+*
+*/
+LPWSTR ntsupStrNCopyW(
+    _Out_writes_z_(DestinationCount) LPWSTR Destination,
+    _In_ SIZE_T DestinationCount,
+    _In_reads_(SourceCount) LPCWSTR Source,
+    _In_ SIZE_T SourceCount
+)
+{
+    LPWSTR p;
+
+    if ((Destination == NULL) || (Source == NULL) || (DestinationCount == 0))
+        return Destination;
+
+    DestinationCount--;
+    p = Destination;
+
+    while ((*Source != UNICODE_NULL) &&
+        (DestinationCount > 0) &&
+        (SourceCount > 0))
+    {
+        *p = *Source;
+        p++;
+        Source++;
+        DestinationCount--;
+        SourceCount--;
+    }
+
+    *p = UNICODE_NULL;
+
+    return Destination;
+}
+
+INT ntsupStrNCmpA(
+    _In_opt_ LPCSTR String1,
+    _In_opt_ LPCSTR String2,
+    _In_ SIZE_T Count
+)
+{
+    CHAR c1, c2;
+
+    if (String1 == String2)
+        return 0;
+
+    if (String1 == NULL)
+        return -1;
+
+    if (String2 == NULL)
+        return 1;
+
+    if (Count == 0)
+        return 0;
+
+    do {
+        c1 = *String1;
+        c2 = *String2;
+        String1++;
+        String2++;
+        Count--;
+    } while ((c1 != ANSI_NULL) &&
+        (c1 == c2) &&
+        (Count > 0));
+
+    return (INT)(c1 - c2);
+}
+
+INT ntsupStrNCmpW(
+    _In_opt_ LPCWSTR String1,
+    _In_opt_ LPCWSTR String2,
+    _In_ SIZE_T Count
+)
+{
+    WCHAR c1, c2;
+
+    if (String1 == String2)
+        return 0;
+
+    if (String1 == NULL)
+        return -1;
+
+    if (String2 == NULL)
+        return 1;
+
+    if (Count == 0)
+        return 0;
+
+    do {
+        c1 = *String1;
+        c2 = *String2;
+        String1++;
+        String2++;
+        Count--;
+    } while ((c1 != UNICODE_NULL) &&
+        (c1 == c2) &&
+        (Count > 0));
+
+    return (INT)(c1 - c2);
+}
+
+/*
+* ntsupStrStrIA
+*
+* Purpose:
+*
+* Case insensitive string search.
+*
+*/
+LPCSTR ntsupStrStrIA(
+    _In_ LPCSTR String,
+    _In_ LPCSTR SubString
+)
+{
+    CHAR c0, c1, c2;
+    LPCSTR tmpString;
+    LPCSTR tmpSubString;
+
+    if (String == SubString)
+        return String;
+
+    if (String == NULL)
+        return NULL;
+
+    if (SubString == NULL)
+        return NULL;
+
+    //
+    // Empty substring matches at beginning.
+    //
+    if (*SubString == 0)
+        return String;
+
+    c0 = ntsupLowerCharA(*SubString);
+
+    while (c0 != 0) {
+
+        while (*String != 0) {
+
+            c2 = ntsupLowerCharA(*String);
+
+            if (c2 == c0)
+                break;
+
+            String++;
+        }
+
+        if (*String == 0)
+            return NULL;
+
+        tmpString = String;
+        tmpSubString = SubString;
+
+        do {
+
+            c1 = ntsupLowerCharA(*tmpString);
+            c2 = ntsupLowerCharA(*tmpSubString);
+
+            tmpString++;
+            tmpSubString++;
+
+        } while ((c1 == c2) && (c2 != 0));
+
+
+        if (c2 == 0)
+            return String;
+
+        String++;
+    }
+
+    return NULL;
+}
+
+/*
+* ntsupStrStrIW
+*
+* Purpose:
+*
+* Case insensitive string search.
+*
+*/
+LPCWSTR ntsupStrStrIW(
+    _In_ LPCWSTR String,
+    _In_ LPCWSTR SubString
+)
+{
+    WCHAR c0, c1, c2;
+    LPCWSTR tmpString;
+    LPCWSTR tmpSubString;
+
+    if (String == SubString)
+        return String;
+
+    if (String == NULL)
+        return NULL;
+
+    if (SubString == NULL)
+        return NULL;
+
+    //
+    // Empty substring matches at beginning.
+    //
+    if (*SubString == 0)
+        return String;
+
+    c0 = ntsupLowerCharW(*SubString);
+
+    while (c0 != 0) {
+
+        while (*String != 0) {
+
+            c2 = ntsupLowerCharW(*String);
+
+            if (c2 == c0)
+                break;
+
+            String++;
+        }
+
+        if (*String == 0)
+            return NULL;
+
+        tmpString = String;
+        tmpSubString = SubString;
+
+        do {
+
+            c1 = ntsupLowerCharW(*tmpString);
+            c2 = ntsupLowerCharW(*tmpSubString);
+
+            tmpString++;
+            tmpSubString++;
+
+        } while ((c1 == c2) && (c2 != 0));
+
+
+        if (c2 == 0)
+            return String;
+
+        String++;
+    }
+
+    return NULL;
+}
+
+/*
+* ntsupStrStrA
+*
+* Purpose:
+*
+* Case sensitive string search.
+*
+*/
+LPCSTR ntsupStrStrA(
+    _In_ LPCSTR String,
+    _In_ LPCSTR SubString
+)
+{
+    CHAR c0, c1, c2;
+    LPCSTR tmpString;
+    LPCSTR tmpSubString;
+
+    if (String == SubString)
+        return String;
+
+    if (String == NULL)
+        return NULL;
+
+    if (SubString == NULL)
+        return NULL;
+
+    //
+    // Empty substring matches at beginning.
+    //
+    if (*SubString == 0)
+        return String;
+
+    c0 = *SubString;
+
+    while (c0 != 0) {
+
+        while (*String != 0) {
+
+            c2 = *String;
+
+            if (c2 == c0)
+                break;
+
+            String++;
+        }
+
+        if (*String == 0)
+            return NULL;
+
+        tmpString = String;
+        tmpSubString = SubString;
+
+        do {
+
+            c1 = *tmpString;
+            c2 = *tmpSubString;
+
+            tmpString++;
+            tmpSubString++;
+
+        } while ((c1 == c2) && (c2 != 0));
+
+
+        if (c2 == 0)
+            return String;
+
+        String++;
+    }
+
+    return NULL;
+}
+
+/*
+* ntsupStrStrW
+*
+* Purpose:
+*
+* Case sensitive string search.
+*
+*/
+LPCWSTR ntsupStrStrW(
+    _In_ LPCWSTR String,
+    _In_ LPCWSTR SubString
+)
+{
+    WCHAR c0, c1, c2;
+    LPCWSTR tmpString;
+    LPCWSTR tmpSubString;
+
+    if (String == SubString)
+        return String;
+
+    if (String == NULL)
+        return NULL;
+
+    if (SubString == NULL)
+        return NULL;
+
+    //
+    // Empty substring matches at beginning.
+    //
+    if (*SubString == 0)
+        return String;
+
+    c0 = *SubString;
+
+    while (c0 != 0) {
+
+        while (*String != 0) {
+
+            c2 = *String;
+
+            if (c2 == c0)
+                break;
+
+            String++;
+        }
+
+        if (*String == 0)
+            return NULL;
+
+        tmpString = String;
+        tmpSubString = SubString;
+
+        do {
+
+            c1 = *tmpString;
+            c2 = *tmpSubString;
+
+            tmpString++;
+            tmpSubString++;
+
+        } while ((c1 == c2) && (c2 != 0));
+
+
+        if (c2 == 0)
+            return String;
+
+        String++;
+    }
+
+    return NULL;
+}
+
+/*
+* ntsupStrCatA
+*
+* Purpose:
+*
+* Append source string to destination string.
+*
+*/
+LPSTR ntsupStrCatA(
+    _Inout_ LPSTR Destination,
+    _In_ LPCSTR Source
+)
+{
+    if ((Destination == NULL) || (Source == NULL))
+        return Destination;
+
+    while (*Destination != 0)
+        Destination++;
+
+    while (*Source != 0) {
+
+        *Destination = *Source;
+
+        Destination++;
+        Source++;
+    }
+
+    *Destination = 0;
+
+    return Destination;
+}
+
+
+/*
+* ntsupStrCatW
+*
+* Purpose:
+*
+* Append source string to destination string.
+*
+*/
+LPWSTR ntsupStrCatW(
+    _Inout_ LPWSTR Destination,
+    _In_ LPCWSTR Source
+)
+{
+    if ((Destination == NULL) || (Source == NULL))
+        return Destination;
+
+    while (*Destination != 0)
+        Destination++;
+
+    while (*Source != 0) {
+
+        *Destination = *Source;
+
+        Destination++;
+        Source++;
+    }
+
+    *Destination = 0;
+
+    return Destination;
+}
+
+/*
+* ntsupStrCatExA
+*
+* Purpose:
+*
+* Append source string to destination string.
+*
+* Destination buffer is always NULL terminated if size permits.
+*
+*/
+LPSTR ntsupStrCatExA(
+    _Inout_updates_z_(DestinationCount) LPSTR Destination,
+    _In_ SIZE_T DestinationCount,
+    _In_ LPCSTR Source
+)
+{
+    LPSTR p;
+
+    if ((Destination == NULL) ||
+        (Source == NULL) ||
+        (DestinationCount == 0))
+    {
+        return Destination;
+    }
+
+    p = Destination;
+    while ((*p != 0) && (DestinationCount > 1)) {
+        p++;
+        DestinationCount--;
+    }
+
+    while ((*Source != 0) && (DestinationCount > 1)) {
+
+        *p = *Source;
+
+        p++;
+        Source++;
+
+        DestinationCount--;
+    }
+
+    *p = 0;
+    return Destination;
+}
+
+/*
+* ntsupStrCatExW
+*
+* Purpose:
+*
+* Append source string to destination string.
+*
+* Destination buffer is always NULL terminated if size permits.
+*
+*/
+LPWSTR ntsupStrCatExW(
+    _Inout_updates_z_(DestinationCount) LPWSTR Destination,
+    _In_ SIZE_T DestinationCount,
+    _In_ LPCWSTR Source
+)
+{
+    LPWSTR p;
+
+    if ((Destination == NULL) ||
+        (Source == NULL) ||
+        (DestinationCount == 0))
+    {
+        return Destination;
+    }
+
+    p = Destination;
+    while ((*p != 0) && (DestinationCount > 1)) {
+        p++;
+        DestinationCount--;
+    }
+
+    while ((*Source != 0) && (DestinationCount > 1)) {
+
+        *p = *Source;
+
+        p++;
+        Source++;
+
+        DestinationCount--;
+    }
+
+    *p = 0;
+    return Destination;
+}
+
+/*
+* ntsupStrToUInt64A
+*
+* Purpose:
+*
+* Converts a decimal ANSI string to its ULONGLONG value.
+*
+*/
+BOOL ntsupStrToUInt64A(
+    _In_ LPCSTR String,
+    _Out_ PULONGLONG Value
+)
+{
+    ULONGLONG result = 0;
+    ULONGLONG digit;
+
+    *Value = 0;
+
+    if (!String || !*String)
+        return FALSE;
+
+    while (*String) {
+
+        if (!ntsupIsDigitA(*String))
+            return FALSE;
+
+        digit = (ULONGLONG)(*String - '0');
+
+        if (result > (ULLONG_MAX - digit) / 10)
+            return FALSE;
+
+        result = result * 10 + digit;
+        String++;
+    }
+
+    *Value = result;
+
+    return TRUE;
+}
+
+/*
+* ntsupStrToUInt64W
+*
+* Purpose:
+*
+* Converts a UTF-16 string to its ULONGLONG value.
+*
+*/
+BOOL ntsupStrToUInt64W(
+    _In_ LPCWSTR String,
+    _Out_ PULONGLONG Value
+)
+{
+    ULONGLONG result = 0;
+    ULONGLONG digit;
+
+    *Value = 0;
+
+    if (!String || !*String)
+        return FALSE;
+
+    while (*String) {
+
+        if (!ntsupIsDigitW(*String))
+            return FALSE;
+
+        digit = (ULONGLONG)(*String - L'0');
+
+        if (result > (ULLONG_MAX - digit) / 10)
+            return FALSE;
+
+        result = result * 10 + digit;
+        String++;
+    }
+
+    *Value = result;
+
+    return TRUE;
+}
+
+/*
+* ntsupUInt64ToStrW
+*
+* Purpose:
+*
+* Converts a ULONGLONG value to its UTF-16 string representation.
+*
+*/
+SIZE_T ntsupUInt64ToStrW(
+    _In_ ULONGLONG Value,
+    _Out_writes_z_(BufferCount) LPWSTR Buffer,
+    _In_ SIZE_T BufferCount
+)
+{
+    WCHAR temp[21];
+    SIZE_T length;
+    SIZE_T i;
+
+    if (!Buffer || BufferCount == 0)
+        return 0;
+
+    Buffer[0] = 0;
+
+    if (Value == 0) {
+        if (BufferCount < 2)
+            return 0;
+
+        Buffer[0] = L'0';
+        Buffer[1] = 0;
+        return 1;
+    }
+
+    length = 0;
+
+    while (Value != 0 && length < RTL_NUMBER_OF(temp)) {
+        temp[length++] = (WCHAR)(L'0' + (Value % 10));
+        Value /= 10;
+    }
+
+    if (Value != 0) //msvc shut up
+        return 0;
+
+    if ((length + 1) > BufferCount)
+        return 0;
+
+    for (i = 0; i < length; i++)
+        Buffer[i] = temp[length - i - 1];
+
+    Buffer[length] = 0;
+
+    return length;
+}
+
+/*
+* ntsupUInt64ToStrA
+*
+* Purpose:
+*
+* Converts a ULONGLONG value to its ANSI string representation.
+*
+*/
+SIZE_T ntsupUInt64ToStrA(
+    _In_ ULONGLONG Value,
+    _Out_writes_z_(BufferCount) LPSTR Buffer,
+    _In_ SIZE_T BufferCount
+)
+{
+    CHAR temp[21];
+    SIZE_T length;
+    SIZE_T i;
+
+    if (!Buffer || BufferCount == 0)
+        return 0;
+
+    Buffer[0] = 0;
+
+    if (Value == 0) {
+        if (BufferCount < 2)
+            return 0;
+
+        Buffer[0] = '0';
+        Buffer[1] = 0;
+
+        return 1;
+    }
+
+    length = 0;
+
+    while (Value != 0 && length < RTL_NUMBER_OF(temp)) {
+        temp[length++] = (CHAR)('0' + (Value % 10));
+        Value /= 10;
+    }
+
+    if (Value != 0) //msvc shut up
+        return 0;
+
+    if ((length + 1) > BufferCount)
+        return 0;
+
+    for (i = 0; i < length; i++)
+        Buffer[i] = temp[length - i - 1];
+
+    Buffer[length] = 0;
+
+    return length;
+}
+
+/*
+* ntsupHexToUInt64A
+*
+* Purpose:
+*
+* Converts a ANSI hexademical string to the ULONGLONG value.
+*
+*/
+ULONGLONG ntsupHexToUInt64A(
+    _In_opt_ LPCSTR String
+)
+{
+    INT digit;
+    ULONGLONG value = 0;
+
+    if (!String)
+        return 0;
+
+    while (*String) {
+
+        digit = ntsupHexDigitToInt((UCHAR)*String);
+        if (digit < 0)
+            break;
+
+        value = (value << 4) | (ULONG)digit;
+        String++;
+    }
+
+    return value;
+}
+
+/*
+* ntsupHexToUInt64W
+*
+* Purpose:
+*
+* Converts a UTF-16 hexademical string to the ULONGLONG value.
+*
+*/
+ULONGLONG ntsupHexToUInt64W(
+    _In_opt_ LPCWSTR String
+)
+{
+    INT digit;
+    ULONGLONG value = 0;
+
+    if (!String)
+        return 0;
+
+    while (*String) {
+
+        digit = ntsupHexDigitToInt((WCHAR)*String);
+        if (digit < 0)
+            break;
+
+        value = (value << 4) | (ULONG)digit;
+        String++;
+    }
+
+    return value;
+}
+
+/*
 * ntsupHeapAlloc
 *
 * Purpose:
@@ -217,11 +1414,30 @@ VOID ntsupSha256Final(
 * Wrapper for RtlAllocateHeap with process heap.
 *
 */
-PVOID ntsupHeapAlloc(
+PVOID NTAPI ntsupHeapAlloc(
     _In_ SIZE_T Size
 )
 {
-    return RtlAllocateHeap(ntsupProcessHeap(), HEAP_ZERO_MEMORY, Size);
+    return RtlAllocateHeap(RtlProcessHeap(), HEAP_ZERO_MEMORY, Size);
+}
+
+/*
+* ntsupHeapReAlloc
+*
+* Purpose:
+*
+* Wrapper for RtlReAllocateHeap with process heap.
+*
+*/
+PVOID NTAPI ntsupHeapReAlloc(
+    _In_ PVOID BaseAddress,
+    _In_ SIZE_T Size
+)
+{
+    if (BaseAddress == NULL)
+        return ntsupHeapAlloc(Size);
+
+    return RtlReAllocateHeap(RtlProcessHeap(), HEAP_ZERO_MEMORY, BaseAddress, Size);
 }
 
 /*
@@ -232,11 +1448,86 @@ PVOID ntsupHeapAlloc(
 * Wrapper for RtlFreeHeap with process heap.
 *
 */
-BOOL ntsupHeapFree(
+BOOL NTAPI ntsupHeapFree(
     _In_ PVOID BaseAddress
 )
 {
-    return RtlFreeHeap(ntsupProcessHeap(), 0, BaseAddress);
+    return RtlFreeHeap(RtlProcessHeap(), 0, BaseAddress);
+}
+
+/*
+* ntsupHeapSize
+*
+* Purpose:
+*
+* Wrapper for RtlSizeHeap with process heap.
+*
+*/
+SIZE_T NTAPI ntsupHeapSize(
+    _In_ PVOID BaseAddress
+)
+{
+    return RtlSizeHeap(RtlProcessHeap(), 0, BaseAddress);
+}
+
+/*
+* ntsupHeapValidate
+*
+* Purpose:
+*
+* Wrapper for RtlValidateHeap with process heap.
+*
+*/
+BOOL NTAPI ntsupHeapValidate(
+    _In_ PVOID BaseAddress
+)
+{
+    return RtlValidateHeap(RtlProcessHeap(), 0, BaseAddress);
+}
+
+/*
+* ntsupHeapCompact
+*
+* Purpose:
+*
+* Wrapper for RtlCompactHeap with process heap.
+*
+*/
+SIZE_T NTAPI ntsupHeapCompact(
+    VOID
+)
+{
+    return RtlCompactHeap(RtlProcessHeap(), 0);
+}
+
+/*
+* ntsupHeapLock
+*
+* Purpose:
+*
+* Wrapper for RtlLockHeap with process heap.
+*
+*/
+BOOL NTAPI ntsupHeapLock(
+    VOID
+)
+{
+    return RtlLockHeap(RtlProcessHeap());
+}
+
+/*
+* ntsupHeapUnlock
+*
+* Purpose:
+*
+* Wrapper for RtlUnlockHeap with process heap.
+*
+*/
+BOOL NTAPI ntsupHeapUnlock(
+    VOID
+)
+{
+    return RtlUnlockHeap(RtlProcessHeap());
 }
 
 /*
@@ -247,7 +1538,7 @@ BOOL ntsupHeapFree(
 * Wrapper for ntsupVirtualAllocEx with standard parameters.
 *
 */
-PVOID ntsupVirtualAllocEx(
+PVOID NTAPI ntsupVirtualAllocEx(
     _In_ SIZE_T Size,
     _In_ ULONG AllocationType,
     _In_ ULONG Protect)
@@ -281,7 +1572,7 @@ PVOID ntsupVirtualAllocEx(
 * Wrapper for supVirtualAllocEx.
 *
 */
-PVOID ntsupVirtualAlloc(
+PVOID NTAPI ntsupVirtualAlloc(
     _In_ SIZE_T Size)
 {
     return ntsupVirtualAllocEx(Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -295,7 +1586,7 @@ PVOID ntsupVirtualAlloc(
 * Wrapper for NtLockVirtualMemory.
 *
 */
-BOOL ntsupVirtualLock(
+BOOL NTAPI ntsupVirtualLock(
     _In_ LPVOID lpAddress,
     _In_ SIZE_T dwSize
 )
@@ -314,7 +1605,7 @@ BOOL ntsupVirtualLock(
 * Wrapper for NtUnlockVirtualMemory.
 *
 */
-BOOL ntsupVirtualUnlock(
+BOOL NTAPI ntsupVirtualUnlock(
     _In_ LPVOID lpAddress,
     _In_ SIZE_T dwSize
 )
@@ -333,7 +1624,7 @@ BOOL ntsupVirtualUnlock(
 * Wrapper for NtFreeVirtualMemory.
 *
 */
-BOOL ntsupVirtualFree(
+BOOL NTAPI ntsupVirtualFree(
     _In_ PVOID Memory)
 {
     NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
@@ -363,7 +1654,7 @@ BOOL ntsupVirtualFree(
 * Create new file (or open existing) and write buffer to it.
 *
 */
-SIZE_T ntsupWriteBufferToFile(
+SIZE_T NTAPI ntsupWriteBufferToFile(
     _In_ PCWSTR FileName,
     _In_ PVOID Buffer,
     _In_ SIZE_T Size,
@@ -470,7 +1761,7 @@ SIZE_T ntsupWriteBufferToFile(
             NtClose(hFile);
         }
         RtlFreeUnicodeString(&ntFileName);
-        if (Result) *Result = ntStatus;
+        if (Result)*Result = ntStatus;
     }
     return bytesWritten;
 }
@@ -483,7 +1774,7 @@ SIZE_T ntsupWriteBufferToFile(
 * Find Module entry for given name.
 *
 */
-PVOID ntsupFindModuleEntryByName(
+PVOID NTAPI ntsupFindModuleEntryByName(
     _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ LPCSTR ModuleName
 )
@@ -497,7 +1788,7 @@ PVOID ntsupFindModuleEntryByName(
         moduleEntry = &ModulesList->Modules[i];
         fnameOffset = moduleEntry->OffsetToFileName;
         entryName = (LPSTR)&moduleEntry->FullPathName[fnameOffset];
-        if (_strcmpi_a(entryName, ModuleName) == 0)
+        if (ntsupStrCmpIA(entryName, ModuleName) == 0)
             return moduleEntry;
     }
 
@@ -512,7 +1803,7 @@ PVOID ntsupFindModuleEntryByName(
 * Find Module entry for given name.
 *
 */
-PVOID ntsupFindModuleEntryByName_U(
+PVOID NTAPI ntsupFindModuleEntryByName_U(
     _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ LPCWSTR ModuleName
 )
@@ -534,7 +1825,7 @@ PVOID ntsupFindModuleEntryByName_U(
                 moduleEntry = &ModulesList->Modules[i];
                 fnameOffset = moduleEntry->OffsetToFileName;
                 entryName = (LPSTR)&moduleEntry->FullPathName[fnameOffset];
-                if (_strcmpi_a(entryName, moduleName.Buffer) == 0) {
+                if (ntsupStrCmpIA(entryName, moduleName.Buffer) == 0) {
                     result = moduleEntry;
                     break;
                 }
@@ -556,7 +1847,7 @@ PVOID ntsupFindModuleEntryByName_U(
 * Returns module entry if found, NULL otherwise.
 *
 */
-BOOL ntsupFindModuleEntryByAddress(
+BOOL NTAPI ntsupFindModuleEntryByAddress(
     _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ PVOID Address,
     _Out_ PULONG ModuleIndex
@@ -586,7 +1877,7 @@ BOOL ntsupFindModuleEntryByAddress(
 * Get Module Entry for given Address.
 *
 */
-PVOID ntsupGetModuleEntryByAddress(
+PVOID NTAPI ntsupGetModuleEntryByAddress(
     _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ PVOID Address
 )
@@ -597,7 +1888,7 @@ PVOID ntsupGetModuleEntryByAddress(
         if (IN_REGION(Address,
             ModulesList->Modules[i].ImageBase,
             ModulesList->Modules[i].ImageSize))
-        {           
+        {
             return &ModulesList->Modules[i];
         }
     }
@@ -612,7 +1903,7 @@ PVOID ntsupGetModuleEntryByAddress(
 * Find Module Name for given Address.
 *
 */
-PVOID ntsupFindModuleNameByAddress(
+PVOID NTAPI ntsupFindModuleNameByAddress(
     _In_ PRTL_PROCESS_MODULES ModulesList,
     _In_ PVOID Address,
     _Inout_	LPWSTR Buffer,
@@ -643,12 +1934,12 @@ PVOID ntsupFindModuleNameByAddress(
                 (LPSTR)&moduleEntry->FullPathName[moduleEntry->OffsetToFileName],
                 &usConvertedName);
 
-            if (NT_SUCCESS(ntStatus)) {
+            if (NT_SUCCESS(ntStatus) && (usConvertedName.Buffer != NULL)) {
 
                 copyLength = usConvertedName.Length / sizeof(WCHAR);
                 copyLength = MIN(copyLength, (SIZE_T)ccBuffer - 1);
 
-                _strncpy(
+                ntsupStrNCopy(
                     Buffer,
                     ccBuffer,
                     usConvertedName.Buffer,
@@ -677,7 +1968,7 @@ PVOID ntsupFindModuleNameByAddress(
 * If function succeeded - use RtlFreeUnicodeString to release allocated string.
 *
 */
-NTSTATUS ntsupConvertToUnicode(
+NTSTATUS NTAPI ntsupConvertToUnicode(
     _In_ LPCSTR AnsiString,
     _Inout_ PUNICODE_STRING UnicodeString)
 {
@@ -698,7 +1989,7 @@ NTSTATUS ntsupConvertToUnicode(
 * If function succeeded - use RtlFreeAnsiString to release allocated string.
 *
 */
-NTSTATUS ntsupConvertToAnsi(
+NTSTATUS NTAPI ntsupConvertToAnsi(
     _In_ LPCWSTR UnicodeString,
     _Inout_ PANSI_STRING AnsiString)
 {
@@ -716,7 +2007,7 @@ NTSTATUS ntsupConvertToAnsi(
 * Adjust privilege for the token.
 *
 */
-NTSTATUS ntsupSetPrivilege(
+NTSTATUS NTAPI ntsupSetPrivilege(
     _In_ HANDLE TokenHandle,
     _In_ DWORD Privilege,
     _In_ BOOLEAN Enable,
@@ -767,7 +2058,7 @@ NTSTATUS ntsupSetPrivilege(
 * Return FALSE on any error.
 *
 */
-BOOLEAN ntsupEnablePrivilege(
+BOOLEAN NTAPI ntsupEnablePrivilege(
     _In_ DWORD Privilege,
     _In_ BOOLEAN Enable
 )
@@ -807,7 +2098,7 @@ BOOLEAN ntsupEnablePrivilege(
 * Return current process token value with TOKEN_QUERY access right.
 *
 */
-HANDLE ntsupGetCurrentProcessToken(
+HANDLE NTAPI ntsupGetCurrentProcessToken(
     VOID)
 {
     HANDLE tokenHandle = NULL;
@@ -830,7 +2121,7 @@ HANDLE ntsupGetCurrentProcessToken(
 * Return MmSystemRangeStart value.
 *
 */
-ULONG_PTR ntsupQuerySystemRangeStart(
+ULONG_PTR NTAPI ntsupQuerySystemRangeStart(
     VOID
 )
 {
@@ -858,7 +2149,7 @@ ULONG_PTR ntsupQuerySystemRangeStart(
 * Return user mode applications accessible address range.
 *
 */
-BOOLEAN ntsupQueryUserModeAccessibleRange(
+BOOLEAN NTAPI ntsupQueryUserModeAccessibleRange(
     _Out_ PULONG_PTR MinimumUserModeAddress,
     _Out_ PULONG_PTR MaximumUserModeAddress
 )
@@ -900,7 +2191,7 @@ BOOLEAN ntsupQueryUserModeAccessibleRange(
 * Perform check if the kernel debugger active.
 *
 */
-BOOLEAN ntsupIsKdEnabled(
+BOOLEAN NTAPI ntsupIsKdEnabled(
     _Out_opt_ PBOOLEAN DebuggerAllowed,
     _Out_opt_ PBOOLEAN DebuggerNotPresent
 )
@@ -967,7 +2258,7 @@ BOOLEAN ntsupIsKdEnabled(
 * Return TRUE if process is wow64.
 *
 */
-BOOL ntsupIsProcess32bit(
+BOOL NTAPI ntsupIsProcess32bit(
     _In_ HANDLE hProcess
 )
 {
@@ -998,7 +2289,7 @@ BOOL ntsupIsProcess32bit(
 * Read list of loaded kernel modules.
 *
 */
-PVOID ntsupGetLoadedModulesListEx(
+PVOID NTAPI ntsupGetLoadedModulesListEx(
     _In_ BOOL ExtendedOutput,
     _Out_opt_ PULONG ReturnLength,
     _In_ PNTSUPMEMALLOC AllocMem,
@@ -1082,7 +2373,7 @@ PVOID ntsupGetLoadedModulesListEx(
 * Returned buffer must be freed with ntsupHeapFree after usage.
 *
 */
-PVOID ntsupGetLoadedModulesList(
+PVOID NTAPI ntsupGetLoadedModulesList(
     _Out_opt_ PULONG ReturnLength
 )
 {
@@ -1103,7 +2394,7 @@ PVOID ntsupGetLoadedModulesList(
 * Returned buffer must be freed with ntsupHeapFree after usage.
 *
 */
-PVOID ntsupGetLoadedModulesList2(
+PVOID NTAPI ntsupGetLoadedModulesList2(
     _Out_opt_ PULONG ReturnLength
 )
 {
@@ -1124,7 +2415,7 @@ PVOID ntsupGetLoadedModulesList2(
 * Returned buffer must be freed with FreeMem function after usage.
 *
 */
-PVOID ntsupGetSystemInfoEx(
+PVOID NTAPI ntsupGetSystemInfoEx(
     _In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
     _Out_opt_ PULONG ReturnLength,
     _In_ PNTSUPMEMALLOC AllocMem,
@@ -1181,7 +2472,7 @@ PVOID ntsupGetSystemInfoEx(
 * Returned buffer must be freed with ntsupHeapFree after usage.
 *
 */
-PVOID ntsupGetSystemInfo(
+PVOID NTAPI ntsupGetSystemInfo(
     _In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
     _Out_opt_ PULONG ReturnLength
 )
@@ -1203,7 +2494,7 @@ PVOID ntsupGetSystemInfo(
 * Return FALSE on any error.
 *
 */
-BOOL ntsupResolveSymbolicLink(
+BOOL NTAPI ntsupResolveSymbolicLink(
     _In_opt_ HANDLE RootDirectoryHandle,
     _In_ PUNICODE_STRING LinkName,
     _Inout_ LPWSTR Buffer,
@@ -1263,7 +2554,7 @@ BOOL ntsupResolveSymbolicLink(
 * Lookups thread win32 start address.
 *
 */
-BOOL ntsupQueryThreadWin32StartAddress(
+BOOL NTAPI ntsupQueryThreadWin32StartAddress(
     _In_ HANDLE ThreadHandle,
     _Out_opt_ PULONG_PTR Win32StartAddress
 )
@@ -1294,7 +2585,7 @@ BOOL ntsupQueryThreadWin32StartAddress(
 *
 */
 _Success_(return)
-NTSTATUS ntsupOpenDirectoryEx(
+NTSTATUS NTAPI ntsupOpenDirectoryEx(
     _Out_ PHANDLE DirectoryHandle,
     _In_opt_ HANDLE RootDirectoryHandle,
     _In_ PUNICODE_STRING DirectoryName,
@@ -1325,7 +2616,7 @@ NTSTATUS ntsupOpenDirectoryEx(
 * Open directory handle with DIRECTORY_QUERY access, with root directory support.
 *
 */
-NTSTATUS ntsupOpenDirectory(
+NTSTATUS NTAPI ntsupOpenDirectory(
     _Out_ PHANDLE DirectoryHandle,
     _In_opt_ HANDLE RootDirectoryHandle,
     _In_ LPCWSTR DirectoryName,
@@ -1348,7 +2639,7 @@ NTSTATUS ntsupOpenDirectory(
 * If nothing found return FALSE.
 *
 */
-BOOL ntsupQueryProcessName(
+BOOL NTAPI ntsupQueryProcessName(
     _In_ ULONG_PTR dwProcessId,
     _In_ PVOID ProcessList,
     _Inout_ LPWSTR Buffer,
@@ -1370,7 +2661,7 @@ BOOL ntsupQueryProcessName(
 
         if ((ULONG_PTR)List.Process->UniqueProcessId == dwProcessId) {
 
-            _strncpy(
+            ntsupStrNCopy(
                 Buffer,
                 ccBuffer,
                 List.Process->ImageName.Buffer,
@@ -1398,10 +2689,10 @@ BOOL ntsupQueryProcessName(
 * If nothing found return FALSE.
 *
 */
-BOOL ntsupQueryProcessEntryById(
+BOOL NTAPI ntsupQueryProcessEntryById(
     _In_ HANDLE UniqueProcessId,
     _In_ PVOID ProcessList,
-    _Out_ PSYSTEM_PROCESS_INFORMATION* Entry
+    _Out_ PSYSTEM_PROCESS_INFORMATION * Entry
 )
 {
     ULONG NextEntryDelta = 0, iteration = 0;
@@ -1443,7 +2734,7 @@ BOOL ntsupQueryProcessEntryById(
 * Use FreeMem to release allocated buffer.
 *
 */
-NTSTATUS ntsupQueryProcessImageFileNameByProcessId(
+NTSTATUS NTAPI ntsupQueryProcessImageFileNameByProcessId(
     _In_ HANDLE UniqueProcessId,
     _Out_ PUNICODE_STRING ProcessImageFileName,
     _In_ PNTSUPMEMALLOC AllocMem,
@@ -1491,11 +2782,11 @@ NTSTATUS ntsupQueryProcessImageFileNameByProcessId(
 * Use FreeMem to release allocated buffer.
 *
 */
-NTSTATUS ntsupQuerySystemObjectInformationVariableSize(
+NTSTATUS NTAPI ntsupQuerySystemObjectInformationVariableSize(
     _In_ PFN_NTQUERYROUTINE QueryRoutine,
     _In_opt_ HANDLE ObjectHandle,
     _In_ DWORD InformationClass,
-    _Out_ PVOID* Buffer,
+    _Out_ PVOID * Buffer,
     _Out_opt_ PULONG ReturnLength,
     _In_ PNTSUPMEMALLOC AllocMem,
     _In_ PNTSUPMEMFREE FreeMem
@@ -1506,7 +2797,7 @@ NTSTATUS ntsupQuerySystemObjectInformationVariableSize(
     ULONG returnLengthLocal = 0;
 
     *Buffer = NULL;
-    if (ReturnLength) *ReturnLength = 0;
+    if (ReturnLength)*ReturnLength = 0;
 
     ntStatus = QueryRoutine(ObjectHandle,
         InformationClass,
@@ -1539,11 +2830,98 @@ NTSTATUS ntsupQuerySystemObjectInformationVariableSize(
 
     if (NT_SUCCESS(ntStatus)) {
         *Buffer = queryBuffer;
-        if (ReturnLength) *ReturnLength = returnLengthLocal;
+        if (ReturnLength)*ReturnLength = returnLengthLocal;
     }
     else {
         FreeMem(queryBuffer);
     }
+
+    return ntStatus;
+}
+
+/*
+* ntsupQuerySystemObjectInformationVariableSizeEx
+*
+* Purpose:
+*
+* Generic object information query routine with automatic buffer growth.
+*
+* Use FreeMem to release allocated buffer.
+*
+*/
+NTSTATUS NTAPI ntsupQuerySystemObjectInformationVariableSizeEx(
+    _In_ PFN_NTQUERYROUTINE QueryRoutine,
+    _In_opt_ HANDLE ObjectHandle,
+    _In_ DWORD InformationClass,
+    _Out_ PVOID * Buffer,
+    _Out_opt_ PULONG ReturnLength,
+    _In_ ULONG InitialBufferSize,
+    _In_ PNTSUPMEMALLOC AllocMem,
+    _In_ PNTSUPMEMFREE FreeMem
+)
+{
+    NTSTATUS ntStatus;
+    PVOID queryBuffer;
+    ULONG bufferSize;
+    ULONG returnLengthLocal = 0;
+
+    if (Buffer == NULL)
+        return STATUS_INVALID_PARAMETER;
+
+    *Buffer = NULL;
+
+    if (ReturnLength)
+        *ReturnLength = 0;
+
+    bufferSize = (InitialBufferSize != 0) ?
+        InitialBufferSize : PAGE_SIZE;
+
+    queryBuffer = AllocMem(bufferSize);
+    if (queryBuffer == NULL)
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    while ((ntStatus = QueryRoutine(
+        ObjectHandle,
+        InformationClass,
+        queryBuffer,
+        bufferSize,
+        &returnLengthLocal)) == STATUS_INFO_LENGTH_MISMATCH ||
+        ntStatus == STATUS_BUFFER_TOO_SMALL ||
+        ntStatus == STATUS_BUFFER_OVERFLOW)
+    {
+        FreeMem(queryBuffer);
+
+        //
+        // Prefer the returned size if available,
+        // otherwise grow exponentially.
+        //
+        if (returnLengthLocal > bufferSize)
+            bufferSize = returnLengthLocal;
+        else
+            bufferSize <<= 1;
+
+        if (bufferSize == 0 ||
+            bufferSize > MAX_NTSUP_BUFFER_SIZE)
+        {
+            return STATUS_INVALID_BUFFER_SIZE;
+        }
+
+        queryBuffer = AllocMem(bufferSize);
+        if (queryBuffer == NULL)
+            return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    if (NT_SUCCESS(ntStatus)) {
+
+        *Buffer = queryBuffer;
+
+        if (ReturnLength)
+            *ReturnLength = returnLengthLocal;
+
+        return ntStatus;
+    }
+
+    FreeMem(queryBuffer);
 
     return ntStatus;
 }
@@ -1556,7 +2934,7 @@ NTSTATUS ntsupQuerySystemObjectInformationVariableSize(
 * Query VSM protection information.
 *
 */
-BOOLEAN ntsupQueryVsmProtectionInformation(
+BOOLEAN NTAPI ntsupQueryVsmProtectionInformation(
     _Out_ PBOOLEAN pbDmaProtectionsAvailable,
     _Out_ PBOOLEAN pbDmaProtectionsInUse,
     _Out_ PBOOLEAN pbHardwareMbecAvailable,
@@ -1567,10 +2945,10 @@ BOOLEAN ntsupQueryVsmProtectionInformation(
     ULONG returnLength;
     SYSTEM_VSM_PROTECTION_INFORMATION svpi;
 
-    if (pbDmaProtectionsAvailable) *pbDmaProtectionsAvailable = FALSE;
-    if (pbDmaProtectionsInUse) *pbDmaProtectionsInUse = FALSE;
-    if (pbHardwareMbecAvailable) *pbHardwareMbecAvailable = FALSE;
-    if (pbApicVirtualizationAvailable) *pbApicVirtualizationAvailable = FALSE;
+    if (pbDmaProtectionsAvailable)*pbDmaProtectionsAvailable = FALSE;
+    if (pbDmaProtectionsInUse)*pbDmaProtectionsInUse = FALSE;
+    if (pbHardwareMbecAvailable)*pbHardwareMbecAvailable = FALSE;
+    if (pbApicVirtualizationAvailable)*pbApicVirtualizationAvailable = FALSE;
 
     RtlSecureZeroMemory(&svpi, sizeof(SYSTEM_VSM_PROTECTION_INFORMATION));
 
@@ -1581,10 +2959,10 @@ BOOLEAN ntsupQueryVsmProtectionInformation(
         &returnLength);
 
     if (NT_SUCCESS(ntStatus)) {
-        if (pbDmaProtectionsAvailable) *pbDmaProtectionsAvailable = svpi.DmaProtectionsAvailable;
-        if (pbDmaProtectionsInUse) *pbDmaProtectionsInUse = svpi.DmaProtectionsInUse;
-        if (pbHardwareMbecAvailable) *pbHardwareMbecAvailable = svpi.HardwareMbecAvailable;
-        if (pbApicVirtualizationAvailable) *pbApicVirtualizationAvailable = svpi.ApicVirtualizationAvailable;
+        if (pbDmaProtectionsAvailable)*pbDmaProtectionsAvailable = svpi.DmaProtectionsAvailable;
+        if (pbDmaProtectionsInUse)*pbDmaProtectionsInUse = svpi.DmaProtectionsInUse;
+        if (pbHardwareMbecAvailable)*pbHardwareMbecAvailable = svpi.HardwareMbecAvailable;
+        if (pbApicVirtualizationAvailable)*pbApicVirtualizationAvailable = svpi.ApicVirtualizationAvailable;
         return TRUE;
     }
     else {
@@ -1602,7 +2980,7 @@ BOOLEAN ntsupQueryVsmProtectionInformation(
 * Query VBS/HVCI state.
 *
 */
-BOOLEAN ntsupQueryVBSState(
+BOOLEAN NTAPI ntsupQueryVBSState(
     _Out_ PBOOLEAN pbVBSRunning,
     _Out_ PBOOLEAN pbHVCIEnabled,
     _Out_ PBOOLEAN pbHVCIStrictMode
@@ -1640,7 +3018,7 @@ BOOLEAN ntsupQueryVBSState(
 
     if (pbHVCIEnabled) {
         *pbHVCIEnabled = ((ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_ENABLED) &&
-                (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED));
+            (ci.CodeIntegrityOptions & CODEINTEGRITY_OPTION_HVCI_KMCI_ENABLED));
     }
 
     if (pbHVCIStrictMode) {
@@ -1670,33 +3048,39 @@ BOOLEAN ntsupQueryVBSState(
     // Prefer the isolated user mode information for HVCI state.
     // It reflects the actual VBS-backed HVCI status.
     //
-    if (pbHVCIEnabled) *pbHVCIEnabled = iumi.HvciEnabled;
+    if (pbHVCIEnabled)*pbHVCIEnabled = iumi.HvciEnabled;
 
-    if (pbHVCIStrictMode) *pbHVCIStrictMode = iumi.HvciStrictMode;
+    if (pbHVCIStrictMode)*pbHVCIStrictMode = iumi.HvciStrictMode;
 
     return TRUE;
 }
 
 /*
-* ntsupLookupImageSectionByName
+* ntsupLookupImageSectionByNameEx
 *
 * Purpose:
 *
-* Lookup section pointer and size for section name.
+* Lookup PE image section by name.
+*
+* If ImageSize is non-zero, the image is range-checked by
+* RtlImageNtHeaderEx. Otherwise, range checking is disabled.
 *
 */
-PVOID ntsupLookupImageSectionByName(
-    _In_ CHAR* SectionName,
+PVOID NTAPI ntsupLookupImageSectionByNameEx(
+    _In_ CHAR * SectionName,
     _In_ ULONG SectionNameLength,
     _In_ PVOID DllBase,
-    _Out_ PULONG SectionSize
+    _In_ SIZE_T ImageSize,
+    _Out_opt_ PULONG SectionSize
 )
 {
-    BOOLEAN bFound = FALSE;
+    NTSTATUS ntStatus;
     ULONG i;
+    SIZE_T cbSectionTable;
+    ULONG ntHeaderFlags;
     PVOID Section;
-    IMAGE_NT_HEADERS* NtHeaders = RtlImageNtHeader(DllBase);
-    IMAGE_SECTION_HEADER* SectionTableEntry;
+    PIMAGE_NT_HEADERS NtHeaders;
+    PIMAGE_SECTION_HEADER SectionTableEntry;
 
     //
     // Assume failure.
@@ -1704,44 +3088,89 @@ PVOID ntsupLookupImageSectionByName(
     if (SectionSize)
         *SectionSize = 0;
 
-    if (NtHeaders == NULL)
+    if (DllBase == NULL ||
+        SectionName == NULL ||
+        SectionNameLength == 0)
+    {
+        return NULL;
+    }
+
+    if (SectionNameLength > IMAGE_SIZEOF_SHORT_NAME)
+        SectionNameLength = IMAGE_SIZEOF_SHORT_NAME;
+
+    //
+    // Determine whether image range checking is possible.
+    //
+    ntHeaderFlags = (ImageSize == 0) ? RTL_IMAGE_NT_HEADER_EX_FLAG_NO_RANGE_CHECK : 0;
+
+    ntStatus = RtlImageNtHeaderEx(ntHeaderFlags, DllBase, ImageSize, &NtHeaders);
+    if (!NT_SUCCESS(ntStatus))
         return NULL;
 
-    SectionTableEntry = (PIMAGE_SECTION_HEADER)((PCHAR)NtHeaders +
-        sizeof(ULONG) +
-        sizeof(IMAGE_FILE_HEADER) +
-        NtHeaders->FileHeader.SizeOfOptionalHeader);
+    if (NtHeaders->FileHeader.NumberOfSections == 0)
+        return NULL;
+
+    cbSectionTable = (SIZE_T)NtHeaders->FileHeader.NumberOfSections *
+        sizeof(IMAGE_SECTION_HEADER);
+
+    //
+    // Overflow check.
+    //
+    if ((cbSectionTable / sizeof(IMAGE_SECTION_HEADER)) !=
+        NtHeaders->FileHeader.NumberOfSections)
+    {
+        return NULL;
+    }
+
+    SectionTableEntry = IMAGE_FIRST_SECTION(NtHeaders);
+    if (!ntsupIsAddressValid(SectionTableEntry, cbSectionTable))
+        return NULL;
 
     //
     // Locate section.
     //
-    i = NtHeaders->FileHeader.NumberOfSections;
-    while (i > 0) {
+    for (i = 0; i < NtHeaders->FileHeader.NumberOfSections; i++, SectionTableEntry++) {
 
-        if (_strncmp_a(
+        if (ntsupStrNCmpA(
             (CHAR*)SectionTableEntry->Name,
             SectionName,
             SectionNameLength) == 0)
         {
-            bFound = TRUE;
-            break;
-        }
+            Section = RtlOffsetToPointer(
+                DllBase,
+                SectionTableEntry->VirtualAddress);
 
-        i -= 1;
-        SectionTableEntry += 1;
+            if (SectionSize)
+                *SectionSize = SectionTableEntry->Misc.VirtualSize;
+
+            return Section;
+        }
     }
 
-    //
-    // Section not found, abort scan.
-    //
-    if (!bFound)
-        return NULL;
+    return NULL;
+}
 
-    Section = (PVOID)((ULONG_PTR)DllBase + SectionTableEntry->VirtualAddress);
-    if (SectionSize)
-        *SectionSize = SectionTableEntry->Misc.VirtualSize;
-
-    return Section;
+/*
+* ntsupLookupImageSectionByName
+*
+* Purpose:
+*
+* Lookup PE image section by name.
+*
+*/
+PVOID NTAPI ntsupLookupImageSectionByName(
+    _In_ CHAR * SectionName,
+    _In_ ULONG SectionNameLength,
+    _In_ PVOID DllBase,
+    _Out_ PULONG SectionSize
+)
+{
+    return ntsupLookupImageSectionByNameEx(
+        SectionName,
+        SectionNameLength,
+        DllBase,
+        0,              // Unknown image size.
+        SectionSize);
 }
 
 /*
@@ -1752,7 +3181,7 @@ PVOID ntsupLookupImageSectionByName(
 * Lookup pattern in buffer.
 *
 */
-PVOID ntsupFindPattern(
+PVOID NTAPI ntsupFindPattern(
     _In_ CONST PBYTE Buffer,
     _In_ SIZE_T BufferSize,
     _In_ CONST PBYTE Pattern,
@@ -1795,8 +3224,8 @@ PVOID ntsupFindPattern(
 * Lookup pattern in buffer with specified mask.
 *
 */
-DWORD ntsupFindPatternEx(
-    _In_ PATTERN_SEARCH_PARAMS* SearchParams
+DWORD NTAPI ntsupFindPatternEx(
+    _In_ PATTERN_SEARCH_PARAMS * SearchParams
 )
 {
     PBYTE   p;
@@ -1866,7 +3295,7 @@ DWORD ntsupFindPatternEx(
 * NtOpenProcess wrapper.
 *
 */
-NTSTATUS ntsupOpenProcess(
+NTSTATUS NTAPI ntsupOpenProcess(
     _In_ HANDLE UniqueProcessId,
     _In_ ACCESS_MASK DesiredAccess,
     _Out_ PHANDLE ProcessHandle
@@ -1891,22 +3320,23 @@ NTSTATUS ntsupOpenProcess(
 }
 
 /*
-* ntsupOpenThread
+* ntsupOpenThreadEx
 *
 * Purpose:
 *
 * NtOpenThread wrapper.
 *
 */
-NTSTATUS ntsupOpenThread(
+NTSTATUS NTAPI ntsupOpenThreadEx(
     _In_ PCLIENT_ID ClientId,
     _In_ ACCESS_MASK DesiredAccess,
+    _In_ ULONG ObjectAttributes,
     _Out_ PHANDLE ThreadHandle
 )
 {
     NTSTATUS ntStatus;
     HANDLE threadHandle = NULL;
-    OBJECT_ATTRIBUTES objectAttributes = RTL_INIT_OBJECT_ATTRIBUTES((PUNICODE_STRING)NULL, 0);
+    OBJECT_ATTRIBUTES objectAttributes = RTL_INIT_OBJECT_ATTRIBUTES((PUNICODE_STRING)NULL, ObjectAttributes);
 
     ntStatus = NtOpenThread(
         &threadHandle,
@@ -1920,6 +3350,26 @@ NTSTATUS ntsupOpenThread(
 }
 
 /*
+* ntsupOpenThread
+*
+* Purpose:
+*
+* NtOpenThread wrapper.
+*
+*/
+NTSTATUS NTAPI ntsupOpenThread(
+    _In_ PCLIENT_ID ClientId,
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PHANDLE ThreadHandle
+)
+{
+    return ntsupOpenThreadEx(ClientId,
+        DesiredAccess,
+        0,
+        ThreadHandle);
+}
+
+/*
 * ntsupCICustomKernelSignersAllowed
 *
 * Purpose:
@@ -1927,7 +3377,7 @@ NTSTATUS ntsupOpenThread(
 * Return license state if present (EnterpriseG).
 *
 */
-NTSTATUS ntsupCICustomKernelSignersAllowed(
+NTSTATUS NTAPI ntsupCICustomKernelSignersAllowed(
     _Out_ PBOOLEAN bAllowed)
 {
     NTSTATUS ntStatus;
@@ -1957,7 +3407,7 @@ NTSTATUS ntsupCICustomKernelSignersAllowed(
 * Tests if the given token has the given privilege enabled/enabled by default.
 *
 */
-NTSTATUS ntsupPrivilegeEnabled(
+NTSTATUS NTAPI ntsupPrivilegeEnabled(
     _In_ HANDLE ClientToken,
     _In_ ULONG Privilege,
     _Out_ LPBOOL pfResult
@@ -1981,6 +3431,52 @@ NTSTATUS ntsupPrivilegeEnabled(
 }
 
 /*
+* ntsupSetEnvironmentVariable
+*
+* Purpose:
+*
+* Set environment variable.
+*
+*/
+BOOLEAN NTAPI ntsupSetEnvironmentVariable(
+    _In_ LPCWSTR Name,
+    _In_opt_ LPCWSTR Value
+)
+{
+    UNICODE_STRING usName;
+    UNICODE_STRING usValue;
+    NTSTATUS status;
+
+    if (Name == NULL)
+        return FALSE;
+
+    RtlInitUnicodeString(
+        &usName,
+        Name);
+
+    if (Value != NULL) {
+
+        RtlInitUnicodeString(
+            &usValue,
+            Value);
+
+        status = RtlSetEnvironmentVariable(
+            NULL,
+            &usName,
+            &usValue);
+    }
+    else {
+
+        status = RtlSetEnvironmentVariable(
+            NULL,
+            &usName,
+            NULL);
+    }
+
+    return NT_SUCCESS(status);
+}
+
+/*
 * ntsupQueryEnvironmentVariableOffset
 *
 * Purpose:
@@ -1988,13 +3484,16 @@ NTSTATUS ntsupPrivilegeEnabled(
 * Return offset to the given environment variable.
 *
 */
-LPWSTR ntsupQueryEnvironmentVariableOffset(
+LPWSTR NTAPI ntsupQueryEnvironmentVariableOffset(
     _In_ PUNICODE_STRING Value
 )
 {
     UNICODE_STRING   str1;
     PWCHAR           ptrEnvironment;
     ULONG            scanCount = 0;
+
+    if (Value == NULL || Value->Buffer == NULL)
+        return NULL;
 
     ptrEnvironment = (PWCHAR)RtlGetCurrentPeb()->ProcessParameters->Environment;
 
@@ -2006,7 +3505,7 @@ LPWSTR ntsupQueryEnvironmentVariableOffset(
         if (RtlPrefixUnicodeString(Value, &str1, TRUE))
             break;
 
-        ptrEnvironment += _strlen(ptrEnvironment) + 1;
+        ptrEnvironment += ntsupStrLen(ptrEnvironment) + 1;
 
     } while (1);
 
@@ -2021,7 +3520,7 @@ LPWSTR ntsupQueryEnvironmentVariableOffset(
 * Reimplemented ExpandEnvironmentStrings.
 *
 */
-DWORD ntsupExpandEnvironmentStrings(
+DWORD NTAPI ntsupExpandEnvironmentStrings(
     _In_ LPCWSTR lpSrc,
     _Out_writes_to_opt_(nSize, return) LPWSTR lpDst,
     _In_ DWORD nSize
@@ -2031,7 +3530,7 @@ DWORD ntsupExpandEnvironmentStrings(
     SIZE_T srcLength = 0, returnLength = 0, dstLength = (SIZE_T)nSize;
 
     if (lpSrc) {
-        srcLength = _strlen(lpSrc);
+        srcLength = ntsupStrLen(lpSrc);
     }
 
     ntStatus = RtlExpandEnvironmentStrings(
@@ -2063,7 +3562,7 @@ DWORD ntsupExpandEnvironmentStrings(
 * Function return operation status code.
 *
 */
-NTSTATUS ntsupIsUserHasInteractiveSid(
+NTSTATUS NTAPI ntsupIsUserHasInteractiveSid(
     _In_ HANDLE hToken,
     _Out_ PBOOL pbInteractiveSid)
 {
@@ -2153,7 +3652,7 @@ NTSTATUS ntsupIsUserHasInteractiveSid(
 * Function return operation status code.
 *
 */
-NTSTATUS ntsupIsLocalSystem(
+NTSTATUS NTAPI ntsupIsLocalSystem(
     _Out_ PBOOL pbResult)
 {
     BOOL                            bResult = FALSE;
@@ -2240,7 +3739,7 @@ NTSTATUS ntsupIsLocalSystem(
 * Returns process elevation type.
 *
 */
-BOOL ntsupGetProcessElevationType(
+BOOL NTAPI ntsupGetProcessElevationType(
     _In_opt_ HANDLE ProcessHandle,
     _Out_ TOKEN_ELEVATION_TYPE * lpType
 )
@@ -2281,7 +3780,7 @@ BOOL ntsupGetProcessElevationType(
 * Returns process elevation state.
 *
 */
-NTSTATUS ntsupIsProcessElevated(
+NTSTATUS NTAPI ntsupIsProcessElevated(
     _In_ ULONG ProcessId,
     _Out_ PBOOL Elevated)
 {
@@ -2290,7 +3789,7 @@ NTSTATUS ntsupIsProcessElevated(
     HANDLE processHandle = NULL, tokenHandle = NULL;
     TOKEN_ELEVATION tokenInfo;
 
-    if (Elevated) *Elevated = FALSE;
+    if (Elevated)*Elevated = FALSE;
 
     ntStatus = ntsupOpenProcess(
         UlongToHandle(ProcessId),
@@ -2333,7 +3832,7 @@ NTSTATUS ntsupIsProcessElevated(
 * Flush file cache and memory standby list.
 *
 */
-VOID ntsupPurgeSystemCache(
+VOID NTAPI ntsupPurgeSystemCache(
     VOID
 )
 {
@@ -2437,7 +3936,7 @@ VOID ntsupPurgeSystemCache(
 * Return system root directory silo session aware.
 *
 */
-PWSTR ntsupGetSystemRoot(
+PWSTR NTAPI ntsupGetSystemRoot(
     VOID
 )
 {
@@ -2457,7 +3956,7 @@ PWSTR ntsupGetSystemRoot(
 * Reference process debug object.
 *
 */
-NTSTATUS ntsupGetProcessDebugObject(
+NTSTATUS NTAPI ntsupGetProcessDebugObject(
     _In_ HANDLE ProcessHandle,
     _Out_ PHANDLE DebugObjectHandle
 )
@@ -2478,7 +3977,7 @@ NTSTATUS ntsupGetProcessDebugObject(
 * Load resource by given id (win32 FindResource, SizeofResource, LockResource).
 *
 */
-PBYTE ntsupQueryResourceData(
+PBYTE NTAPI ntsupQueryResourceData(
     _In_ ULONG_PTR ResourceId,
     _In_ PVOID DllHandle,
     _In_ PULONG DataSize
@@ -2521,7 +4020,7 @@ PBYTE ntsupQueryResourceData(
 * Enable/Disable Wow64 redirection.
 *
 */
-NTSTATUS ntsupEnableWow64Redirection(
+NTSTATUS NTAPI ntsupEnableWow64Redirection(
     _In_ BOOLEAN bEnable
 )
 {
@@ -2559,7 +4058,7 @@ NTSTATUS NTAPI ntsupDetectObjectCallback(
     }
 
     if (Entry->Name.Buffer) {
-        if (_strcmpi_w(Entry->Name.Buffer, Param->Buffer) == 0) {
+        if (ntsupStrCmpIW(Entry->Name.Buffer, Param->Buffer) == 0) {
             return STATUS_SUCCESS;
         }
     }
@@ -2660,7 +4159,7 @@ NTSTATUS NTAPI ntsupEnumSystemObjects(
 * Return TRUE if the given object exists, FALSE otherwise.
 *
 */
-BOOLEAN ntsupIsObjectExists(
+BOOLEAN NTAPI ntsupIsObjectExists(
     _In_ LPCWSTR RootDirectory,
     _In_ LPCWSTR ObjectName
 )
@@ -2668,7 +4167,7 @@ BOOLEAN ntsupIsObjectExists(
     OBJSCANPARAM Param;
 
     Param.Buffer = ObjectName;
-    Param.BufferSize = (ULONG)_strlen(ObjectName);
+    Param.BufferSize = (ULONG)ntsupStrLen(ObjectName);
 
     return NT_SUCCESS(ntsupEnumSystemObjects(RootDirectory, NULL, ntsupDetectObjectCallback, &Param));
 }
@@ -2681,7 +4180,7 @@ BOOLEAN ntsupIsObjectExists(
 * Tests if the current user is admin with full access token.
 *
 */
-BOOLEAN ntsupUserIsFullAdmin(
+BOOLEAN NTAPI ntsupUserIsFullAdmin(
     VOID
 )
 {
@@ -2751,7 +4250,7 @@ BOOLEAN ntsupUserIsFullAdmin(
 * Allocated memory must be freed by called with supHeapFree.
 *
 */
-NTSTATUS ntsupDuplicateUnicodeString(
+NTSTATUS NTAPI ntsupDuplicateUnicodeString(
     _In_ PCUNICODE_STRING SourceString,
     _Out_ PUNICODE_STRING DestinationString
 )
@@ -2810,7 +4309,7 @@ NTSTATUS ntsupDuplicateUnicodeString(
 * Allocated memory must be freed by called with supHeapFree.
 *
 */
-NTSTATUS ntsupDuplicateAnsiString(
+NTSTATUS NTAPI ntsupDuplicateAnsiString(
     _In_ PCANSI_STRING SourceString,
     _Out_ PANSI_STRING DestinationString
 )
@@ -2869,7 +4368,7 @@ NTSTATUS ntsupDuplicateAnsiString(
 * Allocated string must be freed by caller with RtlFreeUnicodeString.
 *
 */
-NTSTATUS ntsupQueryProcessCommandLine(
+NTSTATUS NTAPI ntsupQueryProcessCommandLine(
     _In_ HANDLE ProcessHandle,
     _Out_ PUNICODE_STRING CommandLine,
     _In_ PNTSUPMEMALLOC AllocMem,
@@ -2942,7 +4441,7 @@ NTSTATUS ntsupQueryProcessCommandLine(
 * executable section.
 *
 */
-NTSTATUS ntsupHashImageSections(
+NTSTATUS NTAPI ntsupHashImageSections(
     _In_ PVOID ImageBase,
     _In_ SIZE_T ImageSize,          // Size of image mapping
     _Out_writes_bytes_(HashBufferSize) PBYTE HashBuffer,
@@ -2977,7 +4476,7 @@ NTSTATUS ntsupHashImageSections(
     if (!NT_SUCCESS(RtlImageNtHeaderEx(0,
         ImageBase,
         ImageSize,
-        (PIMAGE_NT_HEADERS*)&ntHeaders)) || ntHeaders == NULL) 
+        (PIMAGE_NT_HEADERS*)&ntHeaders)) || ntHeaders == NULL)
     {
         return STATUS_INVALID_IMAGE_FORMAT;
     }
@@ -2989,7 +4488,7 @@ NTSTATUS ntsupHashImageSections(
     // Validate image size matches reported size.
     //
     if (ntHeaders->OptionalHeader.SizeOfImage > ImageSize &&
-        ImageType == ImageTypeLoaded) 
+        ImageType == ImageTypeLoaded)
     {
         return STATUS_INVALID_IMAGE_FORMAT;
     }
@@ -3080,7 +4579,7 @@ NTSTATUS ntsupHashImageSections(
         }
 
         if (sectionStart < baseAddress ||
-            sectionStart >= baseAddress + ImageSize) 
+            sectionStart >= baseAddress + ImageSize)
         {
             continue;
         }
@@ -3102,6 +4601,55 @@ NTSTATUS ntsupHashImageSections(
         return STATUS_NOT_FOUND;
 
     return STATUS_SUCCESS;
+}
+
+/*
+* ntsupQueryProcessDebugInformation
+*
+* Purpose:
+*
+* Allocate process debug information buffer.
+*
+*/
+PRTL_DEBUG_INFORMATION NTAPI ntsupQueryProcessDebugInformation(
+    _In_ HANDLE ProcessId,
+    _In_ ULONG Flags
+)
+{
+    PRTL_DEBUG_INFORMATION debugBuffer;
+    NTSTATUS ntStatus;
+
+    debugBuffer = RtlCreateQueryDebugBuffer(0, FALSE);
+    if (debugBuffer == NULL)
+        return NULL;
+
+    ntStatus = RtlQueryProcessDebugInformation(
+        ProcessId,
+        Flags,
+        debugBuffer);
+
+    if (!NT_SUCCESS(ntStatus)) {
+        RtlDestroyQueryDebugBuffer(debugBuffer);
+        return NULL;
+    }
+
+    return debugBuffer;
+}
+
+/*
+* ntsupFreeProcessDebugInformation
+*
+* Purpose:
+*
+* Free process debug information buffer.
+*
+*/
+VOID NTAPI ntsupFreeProcessDebugInformation(
+    _In_opt_ PRTL_DEBUG_INFORMATION DebugInformation
+)
+{
+    if (DebugInformation != NULL)
+        RtlDestroyQueryDebugBuffer(DebugInformation);
 }
 
 #pragma warning(pop)

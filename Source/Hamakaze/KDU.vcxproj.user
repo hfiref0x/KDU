@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>-dse 6 -prv 3</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-test</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArgumentsHistory>-dse 6|-dse 6 -prv 64|-dse 6 -prv 51|-dse 0 -prv 3|-dse 6 -prv 3|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerCommandArgumentsHistory>-dse 6 -prv 51|-dse 0 -prv 3|-dse 6 -prv 3|-dse 0 -prv 62|-test|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>-prv 64 -map c:\install\dummy.sys</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-listcsv</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArgumentsHistory>-map c:\install\dummy.sys -prv 51|-map c:\install\dummy.sys -prv 3|-list|-prv 51 -map c:\install\dummy.sys|-prv 64 -map c:\install\dummy.sys|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerCommandArgumentsHistory>-prv 51 -map c:\install\dummy.sys|-prv 64 -map c:\install\dummy.sys|-prv 65 -map c:\install\dummy.sys|-prv 65 -map c:\install\dummy2.sys|-listcsv|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
 </Project>

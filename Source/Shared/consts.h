@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.50
 *
-*  DATE:        19 Jul 2026
+*  DATE:        19 Sep 2026
 *
 *  Global consts.
 *
@@ -22,7 +22,7 @@
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       5
 #define KDU_VERSION_REVISION    0
-#define KDU_VERSION_BUILD       2607
+#define KDU_VERSION_BUILD       2609
 #define KDU_COPYRIGHT_YEAR      2026
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
@@ -173,6 +173,7 @@
 #define IDR_MATROX_MTXC9CB              164
 #define IDR_FLIR_PGRHOSTCONTROL         165
 #define IDR_LECOMA                      166
+#define IDR_ADLICE_ROOTLASER            167
 
 //
 // Vulnerable drivers providers id
@@ -242,6 +243,7 @@
 #define KDU_PROVIDER_MATROX_MTXC9CB     62
 #define KDU_PROVIDER_FLIR_PGRHOSTCTRL   63
 #define KDU_PROVIDER_LECOMA             64
+#define KDU_PROVIDER_ADLICE_ROOTLASER   65
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 
