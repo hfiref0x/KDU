@@ -1769,6 +1769,31 @@ static KDU_PROVIDER g_KDUProviders[] =
         (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
 
         (provOpenProcess)NULL
+    },
+
+    {
+        NULL,
+
+        (provStartVulnerableDriver)KDUProvStartVulnerableDriver,
+        (provStopVulnerableDriver)KDUProvStopVulnerableDriver,
+
+        (provRegisterDriver)NULL,
+        (provUnregisterDriver)NULL,
+        (provPreOpenDriver)NULL,
+        (provPostOpenDriver)KDUProviderPostOpen,
+        (provMapDriver)KDUMapDriver,
+        (provControlDSE)KDUControlDSE,
+
+        (provReadKernelVM)HpWksReadKernelVirtualMemory,
+        (provWriteKernelVM)HpWksWriteKernelVirtualMemory,
+
+        (provVirtualToPhysical)HpWksVirtualToPhysical,
+        (provReadPhysicalMemory)HpWksReadPhysicalMemory,
+        (provWritePhysicalMemory)HpWksWritePhysicalMemory,
+
+        (provValidatePrerequisites)KDUValidatePrerequisitesForSuperfetch,
+
+        (provOpenProcess)NULL
     }
 
 };

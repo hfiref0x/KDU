@@ -63,6 +63,8 @@
 165="drv\\PGRHostControl.bin"
 166="drv\\LECOMAx.bin"
 167="drv\\RootLaser.bin"
+168="drv\\ktapi.bin"
+169="drv\\hpwks.bin"
 1000="data\\dbutilcat.bin"
 1001="data\\dbutilinf.bin"
 1002="data\\KMUEXE.bin"

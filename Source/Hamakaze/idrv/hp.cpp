@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2023
+*  (C) COPYRIGHT AUTHORS, 2023 - 2026
 *
 *  TITLE:       HP.CPP
 *
-*  VERSION:     1.32
+*  VERSION:     1.50
 *
-*  DATE:        20 May 2022
+*  DATE:        24 Sep 2026
 *
 *  Hewlett Packard driver routines.
 *
@@ -104,4 +104,127 @@ BOOL WINAPI HpEtdWriteVirtualMemory(
     }
 
     return (writeBytes == NumberOfBytes);
+}
+
+/*
+ * HpWksReadPhysicalMemory
+ *
+ * Purpose:
+ *
+ * Read physical memory through IOCTL_HP_WKS_READ_VMEM.
+ *
+ */
+_Success_(return != FALSE)
+BOOL HpWksReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes
+)
+{
+    HPWKS_READ_INPUT request;
+
+    request.PhysicalAddress.QuadPart = PhysicalAddress;
+    request.NumberOfBytes = NumberOfBytes;
+
+    return supCallDriver(DeviceHandle,
+        IOCTL_HP_WKS_READ_VMEM,
+        &request,
+        sizeof(HPWKS_READ_INPUT),
+        Buffer,
+        NumberOfBytes);
+}
+
+/*
+ * HpWksWritePhysicalMemory
+ *
+ * Purpose:
+ *
+ * Write to physical memory through IOCTL_HP_WKS_WRITE_VMEM.
+ *
+ */
+_Success_(return != FALSE)
+BOOL HpWksWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes
+)
+{
+    HPWKS_WRITE_INPUT request;
+
+    request.PhysicalAddress.QuadPart = PhysicalAddress;
+    request.NumberOfBytes = NumberOfBytes;
+    request.SourceBuffer = Buffer;
+    request.MaxAllowedBytes = NumberOfBytes;
+
+    return supCallDriver(DeviceHandle,
+        IOCTL_HP_WKS_WRITE_VMEM,
+        &request,
+        sizeof(HPWKS_WRITE_INPUT),
+        &request,                   //unused but required
+        sizeof(HPWKS_WRITE_INPUT)); //unused but required
+}
+
+/*
+* HpWksVirtualToPhysical
+*
+* Purpose:
+*
+* Translate virtual address to the physical.
+*
+*/
+BOOL WINAPI HpWksVirtualToPhysical(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress
+)
+{
+    UNREFERENCED_PARAMETER(DeviceHandle);
+
+    return supVirtualToPhysicalWithSuperfetch(VirtualAddress, PhysicalAddress);
+}
+
+/*
+* HpWksReadKernelVirtualMemory
+*
+* Purpose:
+*
+* Read kernel virtual memory via Superfetch translation + physical memory read.
+*
+*/
+BOOL WINAPI HpWksReadKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes
+)
+{
+    return supReadKernelVirtualMemoryWithSuperfetch(DeviceHandle,
+        Address,
+        Buffer,
+        NumberOfBytes,
+        HpWksReadPhysicalMemory);
+}
+
+/*
+* HpWksWriteKernelVirtualMemory
+*
+* Purpose:
+*
+* Write kernel virtual memory via Superfetch translation + physical memory write.
+*
+*/
+BOOL WINAPI HpWksWriteKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes
+)
+{
+    return supWriteKernelVirtualMemoryWithSuperfetch(DeviceHandle,
+        Address,
+        Buffer,
+        NumberOfBytes,
+        HpWksWritePhysicalMemory);
 }

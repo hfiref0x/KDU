@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.50
 *
-*  DATE:        22 Sep 2026
+*  DATE:        25 Sep 2026
 *
 *  Global consts.
 *
@@ -177,6 +177,7 @@
 #define IDR_LECOMA                      166
 #define IDR_ADLICE_ROOTLASER            167
 #define IDR_KONTRON_KTAPI               168
+#define IDR_HP_WKS_TOOLS                169
 
 //
 // Vulnerable drivers providers id
@@ -248,6 +249,7 @@
 #define KDU_PROVIDER_LECOMA             64
 #define KDU_PROVIDER_ADLICE_ROOTLASER   65
 #define KDU_PROVIDER_KONTRON_KTAPI      66
+#define KDU_PROVIDER_HP_WKS_TOOLS       67
 
 #define KDU_PROVIDER_DEFAULT KDU_PROVIDER_INTEL_NAL
 

@@ -1,14 +1,14 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2023
+*  (C) COPYRIGHT AUTHORS, 2023 - 2026
 *
 *  TITLE:       HP.H
 *
-*  VERSION:     1.32
+*  VERSION:     1.50
 *
-*  DATE:        20 May 2023
+*  DATE:        24 Sep 2026
 *
-*  Hewlett Packard driver interface header.
+*  Hewlett Packard drivers interface header.
 *
 * THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 * ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
@@ -68,4 +68,63 @@ BOOL WINAPI HpEtdWriteVirtualMemory(
     _In_ HANDLE DeviceHandle,
     _In_ ULONG_PTR VirtualAddress,
     _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+//
+// Hewlett Packard interface for WKS tools driver.
+//
+#pragma pack(push, 1)
+typedef struct _HPWKS_WRITE_INPUT {
+    PHYSICAL_ADDRESS PhysicalAddress;
+    ULONG NumberOfBytes;
+    PVOID SourceBuffer;
+    ULONG MaxAllowedBytes;
+} HPWKS_WRITE_INPUT, * PHPWKS_WRITE_INPUT;
+
+typedef struct _HPWKS_READ_INPUT {
+    PHYSICAL_ADDRESS PhysicalAddress;
+    ULONG NumberOfBytes;
+} HPWKS_READ_INPUT, * PHPWKS_READ_INPUT;
+#pragma pack(pop)
+
+#define HP_WKS_DEVICE_TYPE      (DWORD)0x9C40
+
+#define HP_WKS_READ_VMEM  (DWORD)0x843
+#define HP_WKS_WRITE_VMEM (DWORD)0x844 
+
+#define IOCTL_HP_WKS_READ_VMEM        \
+    CTL_CODE(HP_WKS_DEVICE_TYPE, HP_WKS_READ_VMEM, METHOD_BUFFERED, FILE_READ_ACCESS) //0x9C40610C
+
+#define IOCTL_HP_WKS_WRITE_VMEM       \
+    CTL_CODE(HP_WKS_DEVICE_TYPE, HP_WKS_WRITE_VMEM, METHOD_BUFFERED, FILE_WRITE_ACCESS) //0x9C40A110
+
+_Success_(return != FALSE)
+BOOL HpWksReadPhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+_Success_(return != FALSE)
+BOOL HpWksWritePhysicalMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR PhysicalAddress,
+    _In_reads_bytes_(NumberOfBytes) PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI HpWksVirtualToPhysical(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR VirtualAddress,
+    _Out_ ULONG_PTR* PhysicalAddress);
+
+BOOL WINAPI HpWksReadKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
+    _In_ ULONG NumberOfBytes);
+
+BOOL WINAPI HpWksWriteKernelVirtualMemory(
+    _In_ HANDLE DeviceHandle,
+    _In_ ULONG_PTR Address,
+    _In_ PVOID Buffer,
     _In_ ULONG NumberOfBytes);

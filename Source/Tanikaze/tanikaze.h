@@ -1028,6 +1028,21 @@ KDU_DB_ENTRY gProvEntry[] = {
         (LPWSTR)L"Kontron AG",
         (LPWSTR)L"ktapi",
         (LPWSTR)L"ktapi"
+    },
+
+    {
+        KDU_MIN_NTBUILDNUMBER,
+        KDU_MAX_NTBUILDNUMBER,
+        IDR_HP_WKS_TOOLS,
+        KDU_PROVIDER_HP_WKS_TOOLS,
+        KDU_VICTIM_DEFAULT,
+        SourceBaseNone,
+        KDUPROV_FLAGS_SIGNATURE_WHQL | KDUPROV_FLAGS_PREFER_PHYSICAL | KDUPROV_FLAGS_USE_SUPERFETCH,
+        KDUPROV_SC_ALL_DEFAULT,
+        NULL,
+        (LPWSTR)L"HP SW TOOLS DRIVER",
+        (LPWSTR)L"hpwks",
+        (LPWSTR)L"HP_WKS_SWTOOLS_DRIVER"
     }
 
 };
