@@ -1,3 +1,12 @@
+v1.5.0 (Sep 29, 2026)
+Added Adlice RootLaser driver as provider 65
+Added Kontron AG ktapi driver (MAPMEM based) as provider 66
+Added HP WKS tools driver as provider 67
+New command: -pho to open any process with the vuln driver with PROCESS_ALL_ACCESS rights @evilele PR #142
+New Command: -pht only with -pho, to also open and inherit all threads of a given process with full access @evilele PR #143
+Block debug mode mapping attempts (Address #148  #147 and multiple others where users diligently ignored notes/warning messages in code and output and decided to map something using debug mode generated shellcode)
+Update RTLs
+
 v1.4.9 (Jun 12, 2026)
 Added AMD affdriver (RPMC) as provider 61
 Added Matrox driver as provider 62
