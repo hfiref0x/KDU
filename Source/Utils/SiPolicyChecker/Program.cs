@@ -1,12 +1,12 @@
 ﻿/*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2024 - 2025
+*  (C) COPYRIGHT AUTHORS, 2024 - 2026
 *
 *  TITLE:       PROGRAM.CS
 *
 *  VERSION:     1.00
 *
-*  DATE:        14 Jun 2025
+*  DATE:        08 Nov 2026
 *
 *  SPC entrypoint, KDU helper module
 * 
@@ -17,6 +17,7 @@
 *
 *******************************************************************************/
 
+using SiPolicyChecker;
 using System.Xml.Serialization;
 
 class Program
@@ -36,14 +37,21 @@ class Program
             siPolicyPath = args[1];
 
         if (args.Length == 0)
-            Console.WriteLine("Using default paths. To specify files: Program.exe [ProvidersXmlPath] [SiPolicyXmlPath]");
+            Console.WriteLine("Using default paths. To specify files: Program.exe [ProvidersXmlOrCsvPath] [SiPolicyXmlPath]");
 
         try
         {
-            using (var fs = new FileStream(providersPath, FileMode.Open))
+            if (string.Equals(Path.GetExtension(providersPath), ".csv", StringComparison.OrdinalIgnoreCase))
             {
-                var serializer = new XmlSerializer(typeof(CProviders));
-                providers = serializer.Deserialize(fs) as CProviders;
+                providers = CProviderCSV.Load(providersPath);
+            }
+            else
+            {
+                using (var fs = new FileStream(providersPath, FileMode.Open))
+                {
+                    var serializer = new XmlSerializer(typeof(CProviders));
+                    providers = serializer.Deserialize(fs) as CProviders;
+                }
             }
 
             using (var fs = new FileStream(siPolicyPath, FileMode.Open))
@@ -54,14 +62,14 @@ class Program
 
             if (providers?.Drivers == null || policy?.FileRules?.Deny == null)
             {
-                Console.WriteLine("Error: Failed to load XML files or they contain no relevant data.");
+                Console.WriteLine("Error: Failed to load input files or they contain no relevant data.");
                 return;
             }
 
             var denyHashes = policy.FileRules.Deny
                 .Where(d => !string.IsNullOrEmpty(d.Hash))
-                .Select(d => d.Hash?.ToUpperInvariant())
-                .ToHashSet();
+                .Select(d => d.Hash!)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             Console.WriteLine($"SiPolicy version {policy.VersionEx}");
             Console.WriteLine("==============================================================================\r\n");
@@ -107,7 +115,7 @@ class Program
 
             if (!matchesFound)
             {
-                Console.WriteLine("No matches found between Providers.xml and SiPolicy.xml deny rules.");
+                Console.WriteLine("No matches found between the provider data and SiPolicy.xml deny rules.");
             }
         }
         catch (Exception ex)

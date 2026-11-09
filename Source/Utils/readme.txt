@@ -5,3 +5,10 @@ GenAsIo2Unlock is a special utility used to generate the "unlocking" resource re
 PCOMP is an auxiliary utility used to compress provider files. It is not intended for general use and is only used when you need to generate new binary blobs for provider DLLs.
 
 SiPolicyChecker is an auxiliary utility used to check that KDU provider hashes (page SHA1, page SHA256, or file Authenticode) are present in the Microsoft drivers blocklist.
+How to use it: 
+1) Generate a provider CSV with "kdu -listcsv providers.csv"
+2) Download Microsoft Vulnerable Driver Blocklist package (https://www.microsoft.com/en-us/download/details.aspx?id=108667)
+3) Extract DriverPolicy_Enforced.xml as SiPolicy.xml
+4) Run "SiPolicyChecker.exe providers.csv SiPolicy.xml"
+With no arguments, the defaults remain Providers.xml and SiPolicy.xml in the current directory. CSV records with missing
+comparison hashes are reported as incomplete. The checker only compares hashes; it does not evaluate signer, filename, or policy applicability rules.
