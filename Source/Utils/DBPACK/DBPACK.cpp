@@ -4,9 +4,9 @@
 *
 *  TITLE:       DBPACK.CPP
 *
-*  VERSION:     1.05
+*  VERSION:     1.06
 *
-*  DATE:        12 Sep 2026
+*  DATE:        08 Nov 2026
 *
 *  DBPACK - KDU's Provider Database packager.
 *
@@ -30,6 +30,10 @@ extern "C" {
 }
 #endif
 
+__declspec(thread) static PACK_ITEM g_Items[MAX_PACK_ITEMS];
+__declspec(thread) static RESOURCE_DB_ENTRY g_Entries[MAX_PACK_ITEMS];
+__declspec(thread) static BYTE g_CopyBuffer[65536];
+
 BOOL StringToDword(
     LPCSTR String,
     DWORD* Value
@@ -37,23 +41,26 @@ BOOL StringToDword(
 {
     DWORD Result = 0;
 
-    if (!String || !*String)
+    if (!String || !*String || !Value)
         return FALSE;
 
-    while (*String)
-    {
+    while (*String) {
+
         CHAR Ch = *String++;
+        DWORD Digit;
 
         if (Ch < '0' || Ch > '9')
             return FALSE;
 
-        Result =
-            Result * 10 +
-            (DWORD)(Ch - '0');
+        Digit = (DWORD)(Ch - '0');
+
+        if (Result > (MAXDWORD - Digit) / 10)
+            return FALSE;
+
+        Result = Result * 10 + Digit;
     }
 
     *Value = Result;
-
     return TRUE;
 }
 
@@ -117,15 +124,11 @@ BOOL LoadManifest(
     DWORD* CountOut
 )
 {
-    HANDLE hFile;
-
-    DWORD FileSize;
-    DWORD ReadBytes;
-
-    LPSTR Buffer;
-    LPSTR Current;
-
     DWORD Count = 0;
+    DWORD FileSize, FileSizeHigh;
+    DWORD ReadBytes, TotalRead;
+    LPSTR Buffer, Current;
+    HANDLE hFile;
 
     hFile = CreateFileA(
         FileName,
@@ -139,29 +142,35 @@ BOOL LoadManifest(
     if (hFile == INVALID_HANDLE_VALUE)
         return FALSE;
 
-    FileSize = GetFileSize(hFile, NULL);
+    FileSize = GetFileSize(hFile, &FileSizeHigh);
+    if (FileSize == INVALID_FILE_SIZE || FileSizeHigh != 0 || FileSize >= 0x7FFFFFFF) {
+        CloseHandle(hFile);
+        return FALSE;
+    }
+
     Buffer = (LPSTR)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, FileSize + 1);
     if (!Buffer) {
         CloseHandle(hFile);
         return FALSE;
     }
 
-    if (!ReadFile(
-        hFile,
-        Buffer,
-        FileSize,
-        &ReadBytes,
-        NULL))
-    {
-        HeapFree(GetProcessHeap(), 0, Buffer);
-        CloseHandle(hFile);
-        return FALSE;
+    TotalRead = 0;
+    while (TotalRead < FileSize) {
+        if (!ReadFile(hFile, Buffer + TotalRead,
+            FileSize - TotalRead, &ReadBytes, NULL) ||
+            ReadBytes == 0)
+        {
+            HeapFree(GetProcessHeap(), 0, Buffer);
+            CloseHandle(hFile);
+            return FALSE;
+        }
+        TotalRead += ReadBytes;
     }
 
     CloseHandle(hFile);
+    Buffer[FileSize] = 0;
 
     Current = Buffer;
-
     while (*Current) {
 
         LPSTR End;
@@ -189,10 +198,7 @@ BOOL LoadManifest(
                 return FALSE;
             }
 
-            if (!ParseManifestLine(
-                Current,
-                &Items[Count]))
-            {
+            if (!ParseManifestLine(Current, &Items[Count])) {
                 HeapFree(GetProcessHeap(), 0, Buffer);
                 return FALSE;
             }
@@ -271,144 +277,139 @@ BOOL GetFileSize32(
     return TRUE;
 }
 
+BOOL WriteData(HANDLE hFile, LPCVOID Data, DWORD Size)
+{
+    DWORD Written;
+    while (Size > 0) {
+        if (!WriteFile(hFile, Data, Size, &Written, NULL) || Written == 0)
+            return FALSE;
+        Data = (LPCBYTE)Data + Written;
+        Size -= Written;
+    }
+    return TRUE;
+}
+
 BOOL BuildDatabase(
     LPCSTR ManifestFile,
     LPCSTR OutputFile
 )
 {
-    PACK_ITEM Items[MAX_PACK_ITEMS];
-    RESOURCE_DB_ENTRY Entries[MAX_PACK_ITEMS];
-
+    BOOL bResult = FALSE;
+    DWORD i, Count, CurrentOffset;
+    HANDLE hOut = INVALID_HANDLE_VALUE, hIn;
     RESOURCE_DB_HEADER Header;
 
-    HANDLE hOut;
+    do {
+        // 1. Load and sort
+        if (!LoadManifest(ManifestFile, g_Items, &Count))
+            break;
 
-    DWORD Count;
-    DWORD i;
-    DWORD Written;
+        SortItems(g_Items, Count);
 
-    DWORD CurrentOffset;
-
-    if (!LoadManifest(
-        ManifestFile,
-        Items,
-        &Count))
-    {
-        return FALSE;
-    }
-
-    SortItems(
-        Items,
-        Count);
-
-    for (i = 1; i < Count; i++) {
-        if (Items[i].Id ==
-            Items[i - 1].Id)
-        {
-            OutputDebugStringA("Duplicate resource ID\n");
-            return FALSE;
+        // 2. Check for duplicate IDs
+        for (i = 1; i < Count; i++) {
+            if (g_Items[i].Id == g_Items[i - 1].Id) {
+                OutputDebugStringA("Duplicate resource ID\n");
+                break;
+            }
         }
-    }
+        if (i < Count)
+            break;
 
-    CurrentOffset = sizeof(Header) + Count * sizeof(RESOURCE_DB_ENTRY);
+        // 3. Compute offsets and validate total size
+        CurrentOffset = sizeof(Header) + Count * sizeof(RESOURCE_DB_ENTRY);
 
-    for (i = 0; i < Count; i++) {
-        if (!GetFileSize32(
-            Items[i].Path,
-            &Items[i].Size))
-        {
-            return FALSE;
+        for (i = 0; i < Count; i++) {
+            if (!GetFileSize32(g_Items[i].Path, &g_Items[i].Size))
+                break;
+
+            if (g_Items[i].Size > MAXDWORD - CurrentOffset) {
+                OutputDebugStringA("Total payload size exceeds 4 GB\n");
+                break;
+            }
+
+            g_Items[i].Offset = CurrentOffset;
+
+            g_Entries[i].Id = g_Items[i].Id;
+            g_Entries[i].Offset = CurrentOffset;
+            g_Entries[i].Size = g_Items[i].Size;
+
+            CurrentOffset += g_Items[i].Size;
         }
+        if (i < Count)
+            break;
 
-        Items[i].Offset =
-            CurrentOffset;
+        // 4. Populate header
+        Header.Signature = RESOURCE_DB_SIGNATURE;
+        Header.Version = RESOURCE_DB_VERSION;
+        Header.EntryCount = Count;
 
-        Entries[i].Id =
-            Items[i].Id;
-
-        Entries[i].Offset =
-            CurrentOffset;
-
-        Entries[i].Size =
-            Items[i].Size;
-
-        CurrentOffset +=
-            Items[i].Size;
-    }
-
-    Header.Signature = RESOURCE_DB_SIGNATURE;
-    Header.Version = RESOURCE_DB_VERSION;
-    Header.EntryCount = Count;
-
-    hOut = CreateFileA(
-        OutputFile,
-        GENERIC_WRITE,
-        0,
-        NULL,
-        CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL,
-        NULL);
-
-    if (hOut == INVALID_HANDLE_VALUE)
-        return FALSE;
-
-    WriteFile(
-        hOut,
-        &Header,
-        sizeof(Header),
-        &Written,
-        NULL);
-
-    WriteFile(
-        hOut,
-        Entries,
-        Count * sizeof(RESOURCE_DB_ENTRY),
-        &Written,
-        NULL);
-
-    for (i = 0; i < Count; i++) {
-        HANDLE hIn;
-
-        BYTE Buffer[65536];
-
-        DWORD ReadBytes;
-
-        hIn = CreateFileA(
-            Items[i].Path,
-            GENERIC_READ,
-            FILE_SHARE_READ,
+        // 5. Create output file
+        hOut = CreateFileA(
+            OutputFile,
+            GENERIC_WRITE,
+            0,
             NULL,
-            OPEN_EXISTING,
+            CREATE_ALWAYS,
             FILE_ATTRIBUTE_NORMAL,
             NULL);
 
-        if (hIn == INVALID_HANDLE_VALUE) {
-            CloseHandle(hOut);
-            return FALSE;
-        }
+        if (hOut == INVALID_HANDLE_VALUE)
+            break;
 
-        while (ReadFile(
-            hIn,
-            Buffer,
-            sizeof(Buffer),
-            &ReadBytes,
-            NULL) &&
-            ReadBytes)
-        {
-            WriteFile(
-                hOut,
-                Buffer,
-                ReadBytes,
-                &Written,
+        // 6. Write header and directory
+        if (!WriteData(hOut, &Header, sizeof(Header)))
+            break;
+
+        if (!WriteData(hOut, g_Entries, Count * sizeof(RESOURCE_DB_ENTRY)))
+            break;
+
+        // 7. Append file data
+        for (i = 0; i < Count; i++) {
+            BOOL bCopyOk = TRUE;
+            DWORD ReadBytes;
+
+            hIn = CreateFileA(
+                g_Items[i].Path,
+                GENERIC_READ,
+                FILE_SHARE_READ,
+                NULL,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
                 NULL);
+
+            if (hIn == INVALID_HANDLE_VALUE) {
+                bCopyOk = FALSE;
+            }
+            else {
+                while (ReadFile(hIn, g_CopyBuffer, sizeof(g_CopyBuffer), &ReadBytes, NULL) && ReadBytes) {
+                    if (!WriteData(hOut, g_CopyBuffer, ReadBytes)) {
+                        bCopyOk = FALSE;
+                        break;
+                    }
+                }
+                CloseHandle(hIn);
+            }
+
+            if (!bCopyOk)
+                break;
         }
+        if (i < Count)
+            break;
 
-        CloseHandle(hIn);
-    }
+        // Success path
+        bResult = TRUE;
 
-    CloseHandle(hOut);
+    } while (FALSE);
 
-    return TRUE;
+    // Cleanup
+    if (hOut != INVALID_HANDLE_VALUE)
+        CloseHandle(hOut);
+
+    if (!bResult)
+        DeleteFileA(OutputFile);
+
+    return bResult;
 }
 
 /*
