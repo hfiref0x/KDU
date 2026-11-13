@@ -753,13 +753,8 @@ BOOL KDUProviderVerifyActionType(
     // 1st check the relevant primitives
     switch (ActionType) {
 
-    case ActionTypeOpenProcessHandle:
-        break; 
-		// the OpenProcess action may need Callbacks.OpenProcess, Callbacks.ReadKernelVM && Callbacks.WriteKernelVM, neither, or both
-		// this depends on the protection and context when running KDU, so only check on runtime, skip here (do not forget to check on runtime!)
-
-    case ActionTypeDKOM:
     case ActionTypeMapDriver:
+    case ActionTypeDKOM:
     case ActionTypeDSECorruption:
 
         //
@@ -813,6 +808,11 @@ BOOL KDUProviderVerifyActionType(
         }
 
         break;
+
+    case ActionTypeOpenProcessHandle:
+        break;
+        // the OpenProcess action may need Callbacks.OpenProcess, Callbacks.ReadKernelVM && Callbacks.WriteKernelVM, neither, or both
+        // this depends on the protection and context when running KDU, so only check on runtime, skip here (do not forget to check on runtime!)
 
     default:
         break;

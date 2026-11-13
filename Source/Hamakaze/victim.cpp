@@ -4,9 +4,9 @@
 *
 *  TITLE:       VICTIM.CPP
 *
-*  VERSION:     1.48
+*  VERSION:     1.51
 *
-*  DATE:        01 Apr 2026
+*  DATE:        08 Nov 2026
 *
 *  Victim support routines.
 *
@@ -59,7 +59,7 @@ BOOL VpCreate(
 *
 */
 BOOL VpRelease(
-    _In_ PKDU_VICTIM_PROVIDER Context,
+    _Inout_ PKDU_VICTIM_PROVIDER Context,
     _Inout_opt_ PHANDLE VictimHandle
 )
 {
@@ -73,8 +73,10 @@ BOOL VpRelease(
         }
     }
 
-    if (Context->Data.VictimImage)
+    if (Context->Data.VictimImage) {
         VirtualFree(Context->Data.VictimImage, 0, MEM_RELEASE);
+        Context->Data.VictimImage = NULL;
+    }
 
     return Context->Callbacks.Release(Context->Name);
 }
@@ -610,6 +612,11 @@ BOOL VpQueryInformation(
             dispatchSignature = Context->Data.DispatchSignature;
             signatureSize = Context->Data.DispatchSignatureLength;
 
+            if (dispatchSignature == NULL || signatureSize == 0) {
+                RtlSecureZeroMemory(imageInfo, sizeof(*imageInfo));
+                break;
+            }
+
             sectionBase = ntsupLookupImageSectionByName((CHAR*)TEXT_SECTION,
                 TEXT_SECTION_LENGTH,
                 (PVOID)Context->Data.VictimImage,
@@ -625,30 +632,30 @@ BOOL VpQueryInformation(
                     signatureSize);
 
                 if (ptrCode) {
-                    imageInfo->DispatchOffset = (ULONG_PTR)ptrCode & 0xffff;
+                    ULONG_PTR imageBase = (ULONG_PTR)Context->Data.VictimImage;
+                    imageInfo->DispatchOffset = (ULONG)((ULONG_PTR)ptrCode - imageBase);
                     imageInfo->DispatchPageOffset = imageInfo->DispatchOffset & 0xfff;
 
-                    LONG_PTR rel = (LONG_PTR)sectionBase - (LONG_PTR)ptrCode - 5;
+                    ULONG_PTR pageHead = (ULONG_PTR)ptrCode & ~(ULONG_PTR)0xfff;
+                    imageInfo->JumpValue = (ULONG)((LONG_PTR)pageHead - (LONG_PTR)ptrCode - 5);
 
-                    imageInfo->JumpValue = (ULONG)rel;
+                    printf_s("[+] Victim dispatch: rva 0x%lX (image base 0x%p, section 0x%p), jump 0x%lX\r\n",
+                        imageInfo->DispatchOffset, (PVOID)imageBase, sectionBase, imageInfo->JumpValue);
                 }
                 else {
                     SetLastError(ERROR_NOT_FOUND);
                     bResult = FALSE;
                 }
-
             }
             else {
                 SetLastError(ERROR_SECTION_NOT_FOUND);
                 bResult = FALSE;
             }
-
         }
         else {
             SetLastError(ERROR_INVALID_PARAMETER);
             bResult = FALSE;
         }
-
         break;
 
     case VictimDriverInformation:

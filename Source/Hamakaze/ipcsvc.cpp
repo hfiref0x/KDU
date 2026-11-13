@@ -4,9 +4,9 @@
 *
 *  TITLE:       IPCSVC.CPP
 *
-*  VERSION:     1.46
+*  VERSION:     1.51
 *
-*  DATE:        12 Feb 2026
+*  DATE:        12 Nov 2026
 *
 *  Inter-process communication, simplified ALPC server.
 *
@@ -295,7 +295,7 @@ BOOL IpcStopApiServer(
         return FALSE;
     }
 
-    if (WaitForSingleObject(params->ServerHandle, 2000) == WAIT_TIMEOUT)
+    if (WaitForSingleObject(params->ServerHandle, KDU_IPC_TIMEOUT_MS) == WAIT_TIMEOUT)
         TerminateThread(params->ServerHandle, 0);
 
     CloseHandle(params->ServerHandle);
