@@ -501,7 +501,7 @@ BOOL DbkpMapAndExecuteCode(
                     }
                     else
                     {
-                        KDUShowPayloadResult(Context, SectionHandle);
+                        KDUShowPayloadResult(Context, SectionHandle, bSuccess);
                     }
                 }
             }

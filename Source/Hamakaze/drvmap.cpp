@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.51
 *
-*  DATE:        12 Nov 2026
+*  DATE:        14 Nov 2026
 *
 *  Driver mapping routines.
 *
@@ -29,12 +29,15 @@
 */
 VOID KDUShowPayloadResult(
     _In_ PKDU_CONTEXT Context,
-    _In_ HANDLE SectionHandle
+    _In_ HANDLE SectionHandle,
+    _In_ BOOL EventSignaled
 )
 {
     NTSTATUS ntStatus;
     ULONG payloadSize = 0;
+    NTSTATUS payloadStatus;
     SIZE_T viewSize;
+    ULONG_PTR payloadInformation;
 
     union {
         union {
@@ -61,40 +64,55 @@ VOID KDUShowPayloadResult(
         0,
         PAGE_READONLY);
 
-    if (NT_SUCCESS(ntStatus) && pvPayloadHead.Ref) {
-
-        //
-        // IoStatus is at a version - independent offset, print the status for every version.
-        //
-        supPrintfEvent(kduEventInformation,
-            "[~] Shellcode result: NTSTATUS (0x%lX)\r\n",
-            pvPayloadHead.Version.v1->IoStatus.Status);
-
-        //
-        // Shellcode V2 saves WorkItem address in the Information field.
-        // 
-        if (Context->ShellVersion == KDU_SHELLCODE_V2) {
-            supPrintfEvent(kduEventInformation,
-                "[~] Shellcode result, system worker: 0x%p\r\n",
-                (PVOID)pvPayloadHead.Version.v1->IoStatus.Information);
-        }
-
-        //
-        // Explicitly check the status against preinitialized value.
-        //
-        if (pvPayloadHead.Version.v1->IoStatus.Status == STATUS_UNSUCCESSFUL) {
-            supPrintfEvent(kduEventInformation,
-                "[~] Status equals the pre-map initializer: stager probably never ran\r\n");
-        }
-
-        NtUnmapViewOfSection(NtCurrentProcess(), pvPayloadHead.Ref);
-    }
-    else {
-
+    if (!NT_SUCCESS(ntStatus) || pvPayloadHead.Ref == NULL) {
         supPrintfEvent(kduEventError,
             "[!] Cannot map shellcode section, NTSTATUS (%lX)\r\n", ntStatus);
-
+        return;
     }
+
+    //
+    // IoStatus is at a version-independent offset.
+    //
+    payloadStatus = pvPayloadHead.Version.v1->IoStatus.Status;
+    payloadInformation = pvPayloadHead.Version.v1->IoStatus.Information;
+
+    supPrintfEvent(kduEventInformation,
+        "[~] Shellcode result: NTSTATUS (0x%lX)\r\n", (ULONG)payloadStatus);
+
+    switch (Context->ShellVersion) {
+
+    case KDU_SHELLCODE_V2:
+        supPrintfEvent(kduEventInformation,
+            "[~] V2: status reports work item queuing, not payload completion\r\n");
+        supPrintfEvent(kduEventInformation,
+            "[~] System worker: 0x%p\r\n", (PVOID)payloadInformation);
+        break;
+
+    case KDU_SHELLCODE_V3:
+        supPrintfEvent(kduEventInformation,
+            "[~] V3: final stage result (driver object creation or DriverEntry)\r\n");
+        break;
+
+    case KDU_SHELLCODE_V4:
+    case KDU_SHELLCODE_V1:
+    default:
+        supPrintfEvent(kduEventInformation,
+            "[~] V1/V4: status reports system thread creation, not DriverEntry result\r\n");
+        break;
+    }
+
+    if (payloadStatus == STATUS_UNSUCCESSFUL) {
+        if (EventSignaled) {
+            supPrintfEvent(kduEventWarning,
+                "[~] Pre-map initializer, but stager signalled: it ran and failed before storing a result (section map or pool allocation)\r\n");
+        }
+        else {
+            supPrintfEvent(kduEventInformation,
+                "[~] Pre-map initializer, no signal: stager never ran, or failed to reference the payload section\r\n");
+        }
+    }
+
+    NtUnmapViewOfSection(NtCurrentProcess(), pvPayloadHead.Ref);
 }
 
 /*
@@ -538,6 +556,13 @@ BOOL WINAPI KDUPagePatchCallback(
     ULONG dispatchPageOffset = Params->DispatchHandlerPageOffset;
 
     BYTE buffer[PAGE_SIZE];
+
+    //
+    // Signature must fit inside the page buffer.
+    //
+    if ((SIZE_T)dispatchPageOffset + signatureSize > PAGE_SIZE)
+        return FALSE;
+
     RtlSecureZeroMemory(&buffer, sizeof(buffer));
 
     if (ReadPhysicalMemory(Params->DeviceHandle,
@@ -744,6 +769,18 @@ BOOL KDUpMapDriverPhysicalTranslate(
         }
     }
 
+    //
+    // No rollback possible if we couldn't archive - refuse to patch.
+    //
+    if (entryIsJmp ? (!haveEntryJmp || !haveStager) : !haveEntry) {
+        supPrintfEvent(kduEventError, "[!] Cannot archive original victim bytes, refusing to patch\r\n");
+        if (originalStager)
+            supHeapFree(originalStager);
+        if (originalEntry)
+            supHeapFree(originalEntry);
+        return FALSE;
+    }
+
     do {
 
         if (entryIsJmp) {
@@ -818,7 +855,7 @@ BOOL KDUpMapDriverPhysicalTranslate(
             bSuccess = TRUE;
         }
 
-        KDUShowPayloadResult(Context, ScSectionHandle);
+        KDUShowPayloadResult(Context, ScSectionHandle, bSuccess);
 
 
     } while (FALSE);
@@ -924,7 +961,7 @@ BOOL KDUpMapDriverPhysicalBruteForce(
             bSuccess = TRUE;
         }
 
-        KDUShowPayloadResult(Context, ScSectionHandle);
+        KDUShowPayloadResult(Context, ScSectionHandle, bSuccess);
 
     }
     else {
@@ -1008,6 +1045,19 @@ BOOL KDUpMapDriverDirectVM(
         }
     }
 
+    //
+    // No rollback possible if we couldn't archive - refuse to patch.
+    //
+    if (usingCave ? (!haveEntryJmp || !haveStager) : !haveEntry) {
+        supPrintfEvent(kduEventError, "[!] Cannot archive original victim bytes, refusing to patch\r\n");
+        if (originalStager) 
+            supHeapFree(originalStager);
+        if (originalEntry)  
+            supHeapFree(originalEntry);
+
+        return FALSE; 
+    }
+
     do {
 
         if (!WriteKernelVM(Context->DeviceHandle,
@@ -1082,14 +1132,13 @@ BOOL KDUpMapDriverDirectVM(
         if (WAIT_OBJECT_0 != WaitForSingleObject(ReadyEventHandle, KDU_SHELLCODE_TIMEOUT_MS)) {
             supPrintfEvent(kduEventError,
                 "[!] Shellcode did not trigger the event within %lu ms.\r\n", (ULONG)KDU_SHELLCODE_TIMEOUT_MS);
-
             printf_s("[!] Payload result as left by the shellcode:\r\n");
-            KDUShowPayloadResult(Context, ScSectionHandle);
         }
         else {
-            KDUShowPayloadResult(Context, ScSectionHandle);
             bSuccess = TRUE;
         }
+
+        KDUShowPayloadResult(Context, ScSectionHandle, bSuccess);
 
     } while (FALSE);
 

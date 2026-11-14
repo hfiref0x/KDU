@@ -190,7 +190,6 @@ typedef struct _KDU_PROVIDER {
 } KDU_PROVIDER, * PKDU_PROVIDER;
 
 typedef struct _KDU_CONTEXT {
-    ULONG HvciEnabled;
     ULONG NtBuildNumber;
     ULONG ShellVersion;
     union {
