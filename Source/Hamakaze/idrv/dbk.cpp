@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2022 - 2023
+*  (C) COPYRIGHT AUTHORS, 2022 - 2026
 *
 *  TITLE:       DBK.CPP
 *
-*  VERSION:     1.40
+*  VERSION:     1.51
 *
-*  DATE:        20 Oct 2023
+*  DATE:        12 Nov 2026
 *
 *  Cheat Engine's DBK driver routines.
 *
@@ -492,7 +492,7 @@ BOOL DbkpMapAndExecuteCode(
                     //
                     // Wait for the shellcode to trigger the event
                     //
-                    if (WaitForSingleObject(ReadyEventHandle, 2000) != WAIT_OBJECT_0) {
+                    if (WaitForSingleObject(ReadyEventHandle, KDU_SHELLCODE_TIMEOUT_MS) != WAIT_OBJECT_0) {
 
                         supPrintfEvent(kduEventError,
                             "[!] Shellcode did not trigger the event within two seconds.\r\n");
@@ -501,11 +501,9 @@ BOOL DbkpMapAndExecuteCode(
                     }
                     else
                     {
-
-                        KDUShowPayloadResult(Context, SectionHandle);
+                        KDUShowPayloadResult(Context, SectionHandle, bSuccess);
                     }
                 }
-
             }
             else {
                 supShowWin32Error("[!] Failed to execute code", GetLastError());

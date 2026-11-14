@@ -4,9 +4,9 @@
 *
 *  TITLE:       TESTS.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.51
 *
-*  DATE:        19 Sep 2026
+*  DATE:        08 Nov 2026
 *
 *  KDU tests.
 *
@@ -288,7 +288,7 @@ VOID KDUTest()
     //KDUTestLoad();
     //TestSymbols();
     //KDUTestDSEQuery(NT_WIN11_24H2);
-    Context = KDUProviderCreate(KDU_PROVIDER_KONTRON_KTAPI,
+    Context = KDUProviderCreate(KDU_PROVIDER_ADLICE_ROOTLASER,
         FALSE,
         NT_WIN10_20H1,
         KDU_SHELLCODE_V1,

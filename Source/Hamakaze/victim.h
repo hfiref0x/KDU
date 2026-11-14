@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2018 - 2023
+*  (C) COPYRIGHT AUTHORS, 2018 - 2026
 *
 *  TITLE:       VICTIM.H
 *
-*  VERSION:     1.30
+*  VERSION:     1.51
 *
-*  DATE:        20 Mar 2023
+*  DATE:        08 Nov 2026
 *
 *  Victim support prototypes and definitions.
 *
@@ -73,7 +73,7 @@ typedef struct _VICTIM_LOAD_PARAMETERS {
 #define KDU_VICTIM_FLAGS_SUPPORT_RELOAD     0x00000001
 
 typedef struct _KDU_VICTIM_PROVIDER {
-    LPCWSTR Name; //same as device name
+    LPCWSTR Name; //can be the same as device name
     LPCWSTR Desc; //optional
     ULONG ResourceId;
     ULONG VictimId;
@@ -107,7 +107,7 @@ BOOL VpCreate(
     _In_opt_ PVOID CallbackParam);
 
 BOOL VpRelease(
-    _In_ PKDU_VICTIM_PROVIDER Context,
+    _Inout_ PKDU_VICTIM_PROVIDER Context,
     _Inout_opt_ PHANDLE VictimHandle);
 
 VOID VpExecutePayload(

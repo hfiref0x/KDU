@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.CPP
 *
-*  VERSION:     1.50
+*  VERSION:     1.51
 *
-*  DATE:        19 Jul 2026
+*  DATE:        14 Nov 2026
 *
 *  Program global support routines.
 *
@@ -1222,7 +1222,7 @@ NTSTATUS supUnloadDriver(
 NTSTATUS supOpenDriverEx(
     _In_ LPCWSTR DriverName,
     _In_ ACCESS_MASK DesiredAccess,
-    _Out_opt_ PHANDLE DeviceHandle
+    _Out_ PHANDLE DeviceHandle
 )
 {
     HANDLE deviceHandle = NULL;
@@ -1248,8 +1248,7 @@ NTSTATUS supOpenDriverEx(
         0);
 
     if (NT_SUCCESS(ntStatus)) {
-        if (DeviceHandle)
-            *DeviceHandle = deviceHandle;
+        *DeviceHandle = deviceHandle;
     }
 
     return ntStatus;

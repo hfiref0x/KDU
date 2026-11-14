@@ -4,9 +4,9 @@
 *
 *  TITLE:       KDUPROV.H
 *
-*  VERSION:     1.50
+*  VERSION:     1.51
 *
-*  DATE:        19 Jul 2026
+*  DATE:        12 Nov 2026
 *
 *  Provider support routines.
 *
@@ -190,7 +190,6 @@ typedef struct _KDU_PROVIDER {
 } KDU_PROVIDER, * PKDU_PROVIDER;
 
 typedef struct _KDU_CONTEXT {
-    ULONG HvciEnabled;
     ULONG NtBuildNumber;
     ULONG ShellVersion;
     union {
@@ -221,7 +220,10 @@ typedef struct _KDU_CONTEXT {
     FIXED_UNICODE_STRING DriverRegistryPath;
 
     //other
-    ULONG64 ArbitraryData;
+    union {
+        ULONG64 ArbitraryData;
+        ULONG64 DispatchRva;
+    };
 
 } KDU_CONTEXT, * PKDU_CONTEXT;
 
