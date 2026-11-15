@@ -4,9 +4,9 @@
 *
 *  TITLE:       PS.H
 *
-*  VERSION:     1.46
+*  VERSION:     1.51
 *
-*  DATE:        12 Feb 2026
+*  DATE:        14 Nov 2026
 *
 *  Processes support prototypes and definitions.
 *
@@ -27,7 +27,7 @@
 #define PsProtectionOffset_18362 0x6FA
 #define PsProtectionOffset_18363 0x6FA
 #define PsProtectionOffset_19041 0x87A //same for 19042..19045
-#define PsProtectionOffset_26100 0x5FA //same for 26100..26200 (24H2, 25H2)
+#define PsProtectionOffset_26100 0x5FA //same for 26100..26300 (24H2, 25H2, 26H2)
 
 //RS3..RS4
 #define PsMitigationFlags1Offset_RS3    0x828
