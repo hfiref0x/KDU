@@ -402,6 +402,7 @@ BOOL KDUGetEprocessOffsets(
 
     case NT_WIN11_24H2:
     case NT_WIN11_25H2:
+    case NT_WIN11_26H2:
         Offsets->PsProtectionOffset = PsProtectionOffset_26100;
         Offsets->MitigationFlags1Offset = PsMitigationFlags1Offset_26100;
         Offsets->MitigationFlags2Offset = PsMitigationFlags2Offset_26100;
