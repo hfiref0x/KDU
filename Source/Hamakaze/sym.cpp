@@ -4,9 +4,9 @@
 *
 *  TITLE:       SYM.CPP
 *
-*  VERSION:     1.46
+*  VERSION:     1.51
 *
-*  DATE:        12 Feb 2026
+*  DATE:        15 Nov 2026
 *
 *  Program symbols support routines.
 *
@@ -145,6 +145,8 @@ BOOL symLookupAddressBySymbol(
     return bResult;
 }
 
+#define SYMSRV_SUFFIX 16 // "\symsrv.dll" + terminator
+
 /*
 * symInit
 *
@@ -157,6 +159,7 @@ BOOL symInit()
 {
     DWORD cch;
     BOOL bInitSuccess = FALSE;
+    WCHAR szFileName[MAX_PATH * 2];
 
     if (g_symInitialized)
         return TRUE;
@@ -164,12 +167,11 @@ BOOL symInit()
     SetDllDirectory(NULL);
 
     do {
-        WCHAR szFileName[MAX_PATH * 2];
 
         RtlSecureZeroMemory(&szFileName, sizeof(szFileName));
 
-        cch = GetCurrentDirectory(MAX_PATH, szFileName);
-        if (cch == 0 || cch > MAX_PATH) {
+        cch = GetCurrentDirectory((MAX_PATH * 2) - SYMSRV_SUFFIX, szFileName);
+        if (cch == 0 || cch >= (MAX_PATH * 2) - SYMSRV_SUFFIX) {
             supShowWin32Error("[!] Cannot query current directory", GetLastError());
             break;
         }

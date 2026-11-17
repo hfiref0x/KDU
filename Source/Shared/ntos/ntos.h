@@ -5,9 +5,9 @@
 *
 *  TITLE:       NTOS.H
 *
-*  VERSION:     1.252
+*  VERSION:     1.253
 *
-*  DATE:        12 Aug 2026
+*  DATE:        14 Nov 2026
 *
 *  Common header file for the ntos API functions and definitions.
 *
@@ -3940,9 +3940,6 @@ typedef struct _OBJECT_TYPE_INITIALIZER_RS2 {
             UCHAR MaintainTypeList : 1;
             UCHAR SupportsObjectCallbacks : 1;
             UCHAR CacheAligned : 1;
-        };
-        struct
-        {
             UCHAR UseExtendedParameters : 1;//for ParseProcedureEx
             UCHAR Reserved : 7;
         };
@@ -3970,6 +3967,50 @@ typedef struct _OBJECT_TYPE_INITIALIZER_RS2 {
     USHORT WaitObjectFlagOffset;
     USHORT WaitObjectPointerOffset;
 } OBJECT_TYPE_INITIALIZER_RS2, *POBJECT_TYPE_INITIALIZER_RS2;
+
+typedef struct _OBJECT_TYPE_INITIALIZER_24H2 {
+    USHORT Length;
+    union
+    {
+        USHORT ObjectTypeFlags;
+        struct
+        {
+            UCHAR CaseInsensitive : 1;
+            UCHAR UnnamedObjectsOnly : 1;
+            UCHAR UseDefaultObject : 1;
+            UCHAR SecurityRequired : 1;
+            UCHAR MaintainHandleCount : 1;
+            UCHAR MaintainTypeList : 1;
+            UCHAR SupportsObjectCallbacks : 1;
+            UCHAR CacheAligned : 1;
+            UCHAR UseExtendedParameters : 1;//for ParseProcedureEx
+            UCHAR SeTrustConstraintMaskPresent : 1;
+            UCHAR Reserved : 6;
+        };
+    };
+    ULONG ObjectTypeCode;
+    ULONG InvalidAttributes;
+    GENERIC_MAPPING GenericMapping;
+    ULONG ValidAccessMask;
+    ULONG RetainAccess;
+    POOL_TYPE PoolType;
+    ULONG DefaultPagedPoolCharge;
+    ULONG DefaultNonPagedPoolCharge;
+    PVOID DumpProcedure;
+    PVOID OpenProcedure;
+    PVOID CloseProcedure;
+    PVOID DeleteProcedure;
+    union {
+        PVOID ParseProcedure;
+        PVOID ParseProcedureEx;
+    };
+    PVOID SecurityProcedure;
+    PVOID QueryNameProcedure;
+    PVOID OkayToCloseProcedure;
+    ULONG WaitObjectFlagMask;
+    USHORT WaitObjectFlagOffset;
+    USHORT WaitObjectPointerOffset;
+} OBJECT_TYPE_INITIALIZER_24H2, * POBJECT_TYPE_INITIALIZER_24H2;
 
 //
 // OBJECT_TYPE definition vary only because of OBJECT_TYPE_INITIALIZER changes.
@@ -4033,6 +4074,23 @@ typedef struct _OBJECT_TYPE_RS2 {
     ULONG Key;
     LIST_ENTRY CallbackList;
 } OBJECT_TYPE_RS2, POBJECT_TYPE_RS2;
+
+typedef struct _OBJECT_TYPE_24H2 {
+    LIST_ENTRY TypeList;
+    UNICODE_STRING Name;
+    PVOID DefaultObject;
+    UCHAR Index;
+    ULONG TotalNumberOfObjects;
+    ULONG TotalNumberOfHandles;
+    ULONG HighWaterNumberOfObjects;
+    ULONG HighWaterNumberOfHandles;
+    OBJECT_TYPE_INITIALIZER_24H2 TypeInfo;
+    EX_PUSH_LOCK TypeLock;
+    ULONG Key;
+    LIST_ENTRY CallbackList;
+    ULONG SeMandatoryLabelMask;
+    ULONG SeTrustConstraintMask;
+} OBJECT_TYPE_24H2, * POBJECT_TYPE_24H2;
 
 /*
 ** brand new header starting from 6.1

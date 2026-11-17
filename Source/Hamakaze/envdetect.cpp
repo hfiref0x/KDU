@@ -4,9 +4,9 @@
 *
 *  TITLE:       ENVDETECT.CPP
 *
-*  VERSION:     1.00
+*  VERSION:     1.51
 *
-*  DATE:        01 Apr 2026
+*  DATE:        16 Nov 2026
 *
 *  Environment diagnostics support.
 *
@@ -73,7 +73,7 @@ VOID KDUAppendEnvironmentIndicator(
     cch = _strlen(EnvironmentInfo->Description);
     remain = RTL_NUMBER_OF(EnvironmentInfo->Description) - cch;
 
-    if (remain <= 3)
+    if (_strlen(Indicator) + 3 > remain)
         return;
 
     _strcat(EnvironmentInfo->Description, L", ");

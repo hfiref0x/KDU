@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.51
 *
-*  DATE:        14 Nov 2026
+*  DATE:        16 Nov 2026
 *
 *  Program global support routines.
 *
@@ -2560,12 +2560,20 @@ BOOL supSetupManagePnpDriverPackage(
     KDU_CONTEXT* context = (KDU_CONTEXT*)Context;
 
     PUNICODE_STRING CurrentDirectory = &NtCurrentPeb()->ProcessParameters->CurrentDirectory.DosPath;
-    SIZE_T allocSize = 64 +
-        ((_strlen(DriverPackage->CatalogFile) + _strlen(DriverPackage->InfFile)) * sizeof(WCHAR)) +
-        CurrentDirectory->Length +
-        sizeof(WCHAR);
+    SIZE_T cchCatalog = _strlen(DriverPackage->CatalogFile);
+    SIZE_T cchInf = _strlen(DriverPackage->InfFile);
 
     ULONG length, lastError = ERROR_SUCCESS;
+
+    if (cchCatalog >= MAX_PATH || cchInf >= MAX_PATH) {
+        SetLastError(ERROR_BAD_PATHNAME);
+        return FALSE;
+    }
+
+    SIZE_T allocSize = 64 +
+        ((cchCatalog + cchInf) * sizeof(WCHAR)) +
+        CurrentDirectory->Length +
+        sizeof(WCHAR);
 
     if (DoInstall) {
 
@@ -3293,10 +3301,11 @@ PCM_RESOURCE_LIST supQueryPhysicalMemoryLayout(
     VOID
 )
 {
+    BOOLEAN bValid;
     LPCWSTR lpKey = L"HARDWARE\\RESOURCEMAP\\System Resources\\Physical Memory";
     LPCWSTR lpValue = L".Translated";
     HKEY hKey;
-    DWORD dwType = REG_RESOURCE_LIST, cbData = 0;
+    DWORD dwType = REG_RESOURCE_LIST, cbData = 0, cbDataRead;
     PCM_RESOURCE_LIST pList = NULL;
 
     LRESULT result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpKey, 0, KEY_READ, &hKey);
@@ -3308,7 +3317,18 @@ PCM_RESOURCE_LIST supQueryPhysicalMemoryLayout(
 
             pList = (PCM_RESOURCE_LIST)supHeapAlloc((SIZE_T)cbData);
             if (pList) {
-                RegQueryValueEx(hKey, lpValue, 0, &dwType, (LPBYTE)pList, &cbData);
+
+                cbDataRead = cbData;
+                result = RegQueryValueEx(hKey, lpValue, 0, &dwType, (LPBYTE)pList, &cbData);
+
+                bValid = (result == ERROR_SUCCESS) && (dwType == REG_RESOURCE_LIST) &&
+                    (cbDataRead == cbData) && (cbDataRead >= sizeof(CM_RESOURCE_LIST)) &&
+                    (pList->Count <= ((cbDataRead - FIELD_OFFSET(CM_RESOURCE_LIST, List)) / sizeof(CM_FULL_RESOURCE_DESCRIPTOR)));
+
+                if (!bValid) {
+                    supHeapFree(pList);
+                    pList = NULL;
+                }
             }
         }
 

@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.51
 *
-*  DATE:        14 Nov 2026
+*  DATE:        16 Nov 2026
 *
 *  Driver mapping routines.
 *
@@ -664,6 +664,11 @@ BOOL KDUDriverMapInit(
 
         supPrintfEvent(kduEventError,
             "[!] Error while building shellcode, abort\r\n");
+
+        if (sectionHandle) {
+            NtClose(sectionHandle);
+            sectionHandle = NULL;
+        }
 
         return FALSE;
     }

@@ -4,9 +4,9 @@
 *
 *  TITLE:       SHELLCODE.CPP
 *
-*  VERSION:     1.49
+*  VERSION:     1.51
 *
-*  DATE:        09 Jul 2026
+*  DATE:        15 Nov 2026
 *
 *  Default driver mapping shellcode(s) implementation.
 *
@@ -1680,12 +1680,19 @@ BOOLEAN ScStoreVersionSpecificData(
 
         RtlSecureZeroMemory(&drvName, sizeof(drvName));
 
-        StringCchPrintf(drvName.Buffer, MAX_PATH,
+        if (FAILED(StringCchPrintf(drvName.Buffer,
+            RTL_NUMBER_OF(drvName.Buffer),
             L"%ws%ws",
             OB_DRIVER_PREFIX,
-            Context->DriverObjectName.Buffer);
+            Context->DriverObjectName.Buffer)))
+        {
+            return FALSE;
+        }
 
         drvName.Length = (USHORT)(_strlen(drvName.Buffer) * sizeof(WCHAR));
+        if (drvName.Length == 0 || drvName.Length >= (FIXED_UNICODE_STRING_LENGTH * sizeof(WCHAR)))
+            return FALSE;
+
         drvName.MaximumLength = drvName.Length + sizeof(WCHAR);
         drvName.Buffer[drvName.Length / sizeof(WCHAR)] = UNICODE_NULL;
 
@@ -1708,11 +1715,17 @@ BOOLEAN ScStoreVersionSpecificData(
 
         }
 
-        StringCchPrintf(regPath.Buffer, MAX_PATH,
+        if (FAILED(StringCchPrintf(regPath.Buffer, MAX_PATH,
             L"\\REGISTRY\\MACHINE\\SYSTEM\\CurrentControlSet\\Services\\%ws",
-            lpRegistryEntryName);
+            lpRegistryEntryName)))
+        {
+            return FALSE;
+        }
 
         regPath.Length = (USHORT)(_strlen(regPath.Buffer) * sizeof(WCHAR));
+        if (regPath.Length == 0 || regPath.Length >= (FIXED_UNICODE_STRING_LENGTH * sizeof(WCHAR)))
+            return FALSE;
+
         regPath.MaximumLength = regPath.Length + sizeof(WCHAR);
         regPath.Buffer[regPath.Length / sizeof(WCHAR)] = UNICODE_NULL;
 
