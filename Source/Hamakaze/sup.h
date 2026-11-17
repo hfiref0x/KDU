@@ -4,9 +4,9 @@
 *
 *  TITLE:       SUP.H
 *
-*  VERSION:     1.50
+*  VERSION:     1.51
 *
-*  DATE:        22 Jul 2026
+*  DATE:        14 Nov 2026
 *
 *  Support routines header file.
 *
@@ -186,7 +186,7 @@ NTSTATUS supUnloadDriver(
 NTSTATUS supOpenDriverEx(
     _In_ LPCWSTR DriverName,
     _In_ ACCESS_MASK DesiredAccess,
-    _Out_opt_ PHANDLE DeviceHandle);
+    _Out_ PHANDLE DeviceHandle);
 
 NTSTATUS supOpenDriver(
     _In_ LPCWSTR DriverName,

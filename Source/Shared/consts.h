@@ -4,9 +4,9 @@
 *
 *  TITLE:       CONSTS.H
 *
-*  VERSION:     1.50
+*  VERSION:     1.51
 *
-*  DATE:        25 Sep 2026
+*  DATE:        12 Nov 2026
 *
 *  Global consts.
 *
@@ -21,8 +21,8 @@
 
 #define KDU_VERSION_MAJOR       1
 #define KDU_VERSION_MINOR       5
-#define KDU_VERSION_REVISION    0
-#define KDU_VERSION_BUILD       2609
+#define KDU_VERSION_REVISION    1
+#define KDU_VERSION_BUILD       2611
 #define KDU_COPYRIGHT_YEAR      2026
 
 #define KDU_MIN_NTBUILDNUMBER   0x1DB1      //Windows 7 SP1
@@ -30,11 +30,10 @@
 
 #define IPC_GET_HANDLE          0x1337
 
-#define KDU_SYNC_MUTANT         0x2607
+#define KDU_SYNC_MUTANT         0x2611
 
 #define NT_REG_PREP             L"\\Registry\\Machine"
 #define DRIVER_REGKEY           L"%wS\\System\\CurrentControlSet\\Services\\%wS"
-#define WDAC_POLICY_FILE        L"\\systemroot\\system32\\CodeIntegrity\\driversipolicy.p7b"
 
 #define PROCEXP152              L"PROCEXP152"
 #define PROCEXP1627_DESC        L"Process Explorer v16"
@@ -77,13 +76,16 @@
 #define MAX_CLASS_NAME_LEN      256
 #endif
 
+#define KDU_IPC_TIMEOUT_MS       2000
+#define KDU_SHELLCODE_TIMEOUT_MS 5000
+
 //
 // Victim providers id table
 //
-#define KDU_VICTIM_PE1627  0
-#define KDU_VICTIM_PE1702  1
-#define KDU_VICTIM_MAX     2
-#define KDU_VICTIM_DEFAULT KDU_VICTIM_PE1702
+#define KDU_VICTIM_PE1627       0
+#define KDU_VICTIM_PE1702       1
+#define KDU_VICTIM_MAX          2
+#define KDU_VICTIM_DEFAULT      KDU_VICTIM_PE1702
 
 //
 // Companion id table

