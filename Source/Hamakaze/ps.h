@@ -6,7 +6,7 @@
 *
 *  VERSION:     1.51
 *
-*  DATE:        14 Nov 2026
+*  DATE:        21 Nov 2026
 *
 *  Processes support prototypes and definitions.
 *
@@ -24,8 +24,7 @@
 #define PsProtectionOffset_10586 0x6B2
 #define PsProtectionOffset_14393 0x6C2
 #define PsProtectionOffset_15063 0x6CA //same for 16299, 17134, 17763
-#define PsProtectionOffset_18362 0x6FA
-#define PsProtectionOffset_18363 0x6FA
+#define PsProtectionOffset_18362 0x6FA //same for 18363
 #define PsProtectionOffset_19041 0x87A //same for 19042..19045
 #define PsProtectionOffset_26100 0x5FA //same for 26100..26300 (24H2, 25H2, 26H2)
 
@@ -64,7 +63,7 @@
 #define EPROCESS_TO_PROTECTION(Object, Offset) ((ULONG_PTR)(Object) + (Offset))
 #define EPROCESS_TO_MITIGATIONFLAGS(Object, FlagsOffset) ((ULONG_PTR)(Object) + (FlagsOffset))
 
-#define EPROCESS_TO_OBJECTTABLE(Object, Offset) ((ULONG_PTR)(Object) + (Offset))
+#define EPROCESS_TO_OBJECT_TABLE(Object, Offset) ((ULONG_PTR)(Object) + (Offset))
 #define HANDLE_TABLE_OFFSET(Object, Offset) ((ULONG_PTR)(Object) + (Offset))
 
 typedef struct _KDU_EPROCESS_OFFSETS {
